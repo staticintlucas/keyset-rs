@@ -1,0 +1,16 @@
+[package]
+name = "keyset-rs"
+version = "0.1.0"
+authors = ["Lucas <7199136+staticintlucas@users.noreply.github.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+euclid = "0.22"
+result = "1.0"
+itertools = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_ignored = "0.1"
