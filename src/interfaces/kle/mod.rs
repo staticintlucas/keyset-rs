@@ -1,8 +1,9 @@
 mod deserialize;
 
-use crate::{error::Result, interfaces::kle::deserialize::deserialize};
+use crate::error::Result;
+use crate::interfaces::kle::deserialize::deserialize;
 use crate::layout::{HomingType, Key, KeyType};
-use crate::types::{rect, Color};
+use crate::types::{Rect, Point, Color};
 
 use deserialize::{RawKleProps, RawKlePropsOrLegend, RawKleMetaDataOrRow};
 
@@ -142,8 +143,9 @@ impl KeyProps {
 
     fn to_key(&self, legends: [String; LEGEND_MAP_LEN]) -> Key {
 
-        let position = rect(
-            self.x, self.y, self.x + self.w, self.y + self.h
+        let position = Rect::new(
+            Point::new(self.x, self.y),
+            Point::new(self.x + self.w, self.y + self.h),
         );
 
         let is_scooped = ["scoop", "deep", "dish"]
