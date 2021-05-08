@@ -2,8 +2,8 @@ use result::prelude::*;
 use serde::Deserialize;
 use serde_json;
 
-use crate::types::Color;
 use crate::error::Result;
+use crate::types::Color;
 
 #[derive(Debug, Deserialize)]
 pub struct RawKleProps {
@@ -62,12 +62,12 @@ pub enum RawKleMetaDataOrRow {
 }
 
 pub fn deserialize(json: &str) -> Result<Vec<RawKleMetaDataOrRow>> {
-
     let mut jd = serde_json::Deserializer::from_str(json);
 
     serde_ignored::deserialize(&mut jd, |path| {
         println!("Warning: unrecognized KLE key {}", path);
-    }).map_err(|e| e.into())
+    })
+    .map_err(|e| e.into())
 }
 
 fn parse_color<'de, D>(deserializer: D) -> std::result::Result<Option<Color>, D::Error>
@@ -83,7 +83,9 @@ where
         .invert()
 }
 
-fn parse_color_vec<'de, D>(deserializer: D) -> std::result::Result<Option<Vec<Option<Color>>>, D::Error>
+fn parse_color_vec<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<Vec<Option<Color>>>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {

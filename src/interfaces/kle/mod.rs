@@ -3,9 +3,9 @@ mod deserialize;
 use crate::error::Result;
 use crate::interfaces::kle::deserialize::deserialize;
 use crate::layout::{HomingType, Key, KeyType};
-use crate::types::{Rect, Point, Color};
+use crate::types::{Color, Point, Rect};
 
-use deserialize::{RawKleProps, RawKlePropsOrLegend, RawKleMetaDataOrRow};
+use deserialize::{RawKleMetaDataOrRow, RawKleProps, RawKlePropsOrLegend};
 
 const LEGEND_MAP_LEN: usize = 12;
 
@@ -22,7 +22,6 @@ const KLE_2_ORD: [[usize; LEGEND_MAP_LEN]; 8] = [
     [1, 3, 5, 0, 8, 2, 6, 7, 9, 10, 4, 11], // 6 = center front & y
     [1, 2, 3, 5, 0, 6, 7, 8, 9, 10, 4, 11], // 7 = center front & x & y
 ];
-
 
 #[derive(Debug)]
 struct KeyProps {
@@ -41,13 +40,13 @@ struct KeyProps {
     // Persistent properties
     c: Color, // color
     // Note: t stores the default color while ta stores the array, so slightly different from KLE
-    t: Color, // legend color
+    t: Color,                    // legend color
     ta: [Color; LEGEND_MAP_LEN], // legend color array
-    a: u8,         // alignment
-    p: String,     // profile
-    f: u8,         // font size
-    f2: u8,        // secondary font size
-    fa: [u8; LEGEND_MAP_LEN],  // font size array
+    a: u8,                       // alignment
+    p: String,                   // profile
+    f: u8,                       // font size
+    f2: u8,                      // secondary font size
+    fa: [u8; LEGEND_MAP_LEN],    // font size array
 }
 
 impl KeyProps {
@@ -64,9 +63,9 @@ impl KeyProps {
             l: false,
             n: false,
             d: false,
-            c: Color::new(0xCC, 0xCC, 0xCC),
-            t: Color::new(0, 0, 0),
-            ta: [Color::new(0, 0, 0); LEGEND_MAP_LEN],
+            c: Color::new(0.8, 0.8, 0.8),
+            t: Color::new(0., 0., 0.),
+            ta: [Color::new(0., 0., 0.); LEGEND_MAP_LEN],
             a: 4,
             p: "".to_string(),
             f: 3,
@@ -76,8 +75,12 @@ impl KeyProps {
     }
 
     fn update(&mut self, props: RawKleProps) {
-        if let Some(x) = props.x { self.x = x };
-        if let Some(y) = props.y { self.y = y };
+        if let Some(x) = props.x {
+            self.x = x
+        };
+        if let Some(y) = props.y {
+            self.y = y
+        };
         self.w = props.w.unwrap_or(1.);
         self.h = props.h.unwrap_or(1.);
         self.x2 = props.x2.unwrap_or(0.);
@@ -88,7 +91,9 @@ impl KeyProps {
         self.n = props.n.unwrap_or(false);
         self.d = props.d.unwrap_or(false);
 
-        if let Some(c) = props.c { self.c = c };
+        if let Some(c) = props.c {
+            self.c = c
+        };
         match props.t {
             Some(ta) if ta.len() > 0 => {
                 if let Some(t) = ta[0] {
@@ -97,11 +102,15 @@ impl KeyProps {
                 let ta: Vec<_> = ta.iter().map(|color| color.unwrap_or(self.t)).collect();
                 let len = usize::min(ta.len(), self.ta.len());
                 self.ta[0..len].copy_from_slice(&ta[0..len]);
-            },
+            }
             _ => (),
         }
-        if let Some(a) = props.a { self.a = a };
-        if let Some(p) = props.p { self.p = p };
+        if let Some(a) = props.a {
+            self.a = a
+        };
+        if let Some(p) = props.p {
+            self.p = p
+        };
         if let Some(f) = props.f {
             self.f = f;
             self.f2 = f;
@@ -113,7 +122,10 @@ impl KeyProps {
             self.fa[0] = self.f;
         }
         if let Some(fa) = props.fa {
-            let fa: Vec<_> = fa.iter().map(|&size| if size != 0 { size } else { self.f }).collect();
+            let fa: Vec<_> = fa
+                .iter()
+                .map(|&size| if size != 0 { size } else { self.f })
+                .collect();
             let len = usize::min(fa.len(), self.fa.len());
             self.fa[0..len].copy_from_slice(&fa[0..len]);
         }
@@ -142,7 +154,6 @@ impl KeyProps {
     }
 
     fn to_key(&self, legends: [String; LEGEND_MAP_LEN]) -> Key {
-
         let position = Rect::new(
             Point::new(self.x, self.y),
             Point::new(self.x + self.w, self.y + self.h),
@@ -192,7 +203,6 @@ impl KeyProps {
 }
 
 pub fn parse(json: &str) -> Result<Vec<Key>> {
-
     let parsed = deserialize(json)?;
 
     println!("{:?}", parsed);
@@ -209,12 +219,14 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
                     }
                     RawKlePropsOrLegend::String(legends) => {
                         let legend_array = {
-                            let mut line_vec = legends.lines().map(String::from).collect::<Vec<_>>();
+                            let mut line_vec =
+                                legends.lines().map(String::from).collect::<Vec<_>>();
                             line_vec.resize(LEGEND_MAP_LEN, String::new());
                             // Note re unsafe: This memory is overwritten in its entirety in the
                             // next line, using uninitialized memory avoids the need to require a
                             // Default trait bound on the type T.
-                            let mut line_arr: [String; LEGEND_MAP_LEN] = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+                            let mut line_arr: [String; LEGEND_MAP_LEN] =
+                                unsafe { std::mem::MaybeUninit::uninit().assume_init() };
                             line_arr.clone_from_slice(&line_vec);
                             line_arr
                         };
@@ -231,7 +243,6 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
 }
 
 fn realign<T: Clone>(values: [T; LEGEND_MAP_LEN], alignment: u8) -> [T; 9] {
-
     let alignment = if (alignment as usize) > KLE_2_ORD.len() {
         0
     } else {
@@ -241,7 +252,12 @@ fn realign<T: Clone>(values: [T; LEGEND_MAP_LEN], alignment: u8) -> [T; 9] {
     // Note re unsafe: This memory is overwritten in its entirety in the next line, using
     // uninitialized memory avoids the need to require a Default trait bound on the type T.
     let mut ordered: [T; 9] = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-    ordered.clone_from_slice(&KLE_2_ORD[alignment].iter().map(|&item| values[item].clone()).collect::<Vec<_>>()[0..9]);
+    ordered.clone_from_slice(
+        &KLE_2_ORD[alignment]
+            .iter()
+            .map(|&item| values[item].clone())
+            .collect::<Vec<_>>()[0..9],
+    );
 
     ordered
 }

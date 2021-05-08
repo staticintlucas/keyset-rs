@@ -17,7 +17,6 @@ pub(crate) struct VerticalAlign<T> {
 pub(crate) type LegendMap<T> = VerticalAlign<HorizontalAlign<T>>;
 
 pub(crate) fn legend_map<T>(values: [T; 9]) -> LegendMap<T> {
-
     // Note: we have to assign to these temporary values from the array because the compiler won't
     // let me do it directly as I'm moving out of a non-copy array.
     let [top_lft, top_mid, top_rgt, mid_lft, mid_mid, mid_rgt, btm_lft, btm_mid, btm_rgt] = values;
@@ -44,24 +43,29 @@ pub(crate) fn legend_map<T>(values: [T; 9]) -> LegendMap<T> {
 impl<T> From<LegendMap<T>> for Vec<T> {
     fn from(error: LegendMap<T>) -> Vec<T> {
         let VerticalAlign {
-            top: HorizontalAlign {
-                left: top_lft,
-                middle: top_mid,
-                right: top_rgt,
-            },
-            middle: HorizontalAlign {
-                left: mid_lft,
-                middle: mid_mid,
-                right: mid_rgt,
-            },
-            bottom: HorizontalAlign {
-                left: btm_lft,
-                middle: btm_mid,
-                right: btm_rgt,
-            },
+            top:
+                HorizontalAlign {
+                    left: top_lft,
+                    middle: top_mid,
+                    right: top_rgt,
+                },
+            middle:
+                HorizontalAlign {
+                    left: mid_lft,
+                    middle: mid_mid,
+                    right: mid_rgt,
+                },
+            bottom:
+                HorizontalAlign {
+                    left: btm_lft,
+                    middle: btm_mid,
+                    right: btm_rgt,
+                },
         } = error;
 
-        vec![top_lft, top_mid, top_rgt, mid_lft, mid_mid, mid_rgt, btm_lft, btm_mid, btm_rgt]
+        vec![
+            top_lft, top_mid, top_rgt, mid_lft, mid_mid, mid_rgt, btm_lft, btm_mid, btm_rgt,
+        ]
     }
 }
 
