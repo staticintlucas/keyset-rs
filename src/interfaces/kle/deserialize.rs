@@ -5,62 +5,62 @@ use crate::error::Result;
 use crate::types::Color;
 
 #[derive(Debug, Deserialize)]
-pub struct RawKleProps {
+pub(super) struct RawKleProps {
     #[serde(default)]
-    pub x: Option<f32>,
+    pub(super) x: Option<f32>,
     #[serde(default)]
-    pub y: Option<f32>,
+    pub(super) y: Option<f32>,
     #[serde(default)]
-    pub w: Option<f32>,
+    pub(super) w: Option<f32>,
     #[serde(default)]
-    pub h: Option<f32>,
+    pub(super) h: Option<f32>,
     #[serde(default)]
-    pub x2: Option<f32>,
+    pub(super) x2: Option<f32>,
     #[serde(default)]
-    pub y2: Option<f32>,
+    pub(super) y2: Option<f32>,
     #[serde(default)]
-    pub w2: Option<f32>,
+    pub(super) w2: Option<f32>,
     #[serde(default)]
-    pub h2: Option<f32>,
+    pub(super) h2: Option<f32>,
     #[serde(default)]
-    pub l: Option<bool>,
+    pub(super) l: Option<bool>,
     #[serde(default)]
-    pub n: Option<bool>,
+    pub(super) n: Option<bool>,
     #[serde(default)]
-    pub d: Option<bool>,
+    pub(super) d: Option<bool>,
     #[serde(default)]
     #[serde(deserialize_with = "parse_color")]
-    pub c: Option<Color>,
+    pub(super) c: Option<Color>,
     #[serde(default)]
     #[serde(deserialize_with = "parse_color_vec")]
-    pub t: Option<Vec<Option<Color>>>,
+    pub(super) t: Option<Vec<Option<Color>>>,
     #[serde(default)]
-    pub a: Option<u8>,
+    pub(super) a: Option<u8>,
     #[serde(default)]
-    pub p: Option<String>,
+    pub(super) p: Option<String>,
     #[serde(default)]
-    pub f: Option<u8>,
+    pub(super) f: Option<u8>,
     #[serde(default)]
-    pub f2: Option<u8>,
+    pub(super) f2: Option<u8>,
     #[serde(default)]
-    pub fa: Option<Vec<u8>>,
+    pub(super) fa: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-pub enum RawKlePropsOrLegend {
-    Object(RawKleProps),
+pub(super) enum RawKlePropsOrLegend {
+    Object(Box<RawKleProps>),
     String(String),
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-pub enum RawKleMetaDataOrRow {
+pub(super) enum RawKleMetaDataOrRow {
     Object(serde_json::Value),
     Array(Vec<RawKlePropsOrLegend>),
 }
 
-pub fn deserialize(json: &str) -> Result<Vec<RawKleMetaDataOrRow>> {
+pub(super) fn deserialize(json: &str) -> Result<Vec<RawKleMetaDataOrRow>> {
     let mut jd = serde_json::Deserializer::from_str(json);
 
     serde_ignored::deserialize(&mut jd, |path| {

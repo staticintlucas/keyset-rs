@@ -1,10 +1,10 @@
-mod color;
+pub(crate) mod color;
 
-pub use color::Color;
+pub type Color = color::Color;
 pub(crate) use color::InvalidColor;
 
 /// Default unit used by keyset-rs. 1u == size of an alpha key == 19.05mm == 0.75in
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Unit;
 
 pub type Point = euclid::Point2D<f32, Unit>;

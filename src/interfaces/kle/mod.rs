@@ -1,5 +1,7 @@
 mod deserialize;
 
+use std::convert::TryInto;
+
 use crate::error::Result;
 use crate::interfaces::kle::deserialize::deserialize;
 use crate::layout::{HomingType, Key, KeyType};
@@ -74,7 +76,7 @@ impl KeyProps {
         }
     }
 
-    fn update(&mut self, props: RawKleProps) {
+    fn update(&mut self, props: &RawKleProps) {
         if let Some(x) = props.x {
             self.x = x
         };
@@ -94,7 +96,7 @@ impl KeyProps {
         if let Some(c) = props.c {
             self.c = c
         };
-        match props.t {
+        match &props.t {
             Some(ta) if ta.is_empty() => {
                 if let Some(t) = ta[0] {
                     self.t = t;
@@ -108,8 +110,8 @@ impl KeyProps {
         if let Some(a) = props.a {
             self.a = a
         };
-        if let Some(p) = props.p {
-            self.p = p
+        if let Some(p) = &props.p {
+            self.p = p.clone()
         };
         if let Some(f) = props.f {
             self.f = f;
@@ -121,7 +123,7 @@ impl KeyProps {
             self.fa = [f2; LEGEND_MAP_LEN];
             self.fa[0] = self.f;
         }
-        if let Some(fa) = props.fa {
+        if let Some(fa) = &props.fa {
             let fa: Vec<_> = fa
                 .iter()
                 .map(|&size| if size != 0 { size } else { self.f })
@@ -215,20 +217,14 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
             for data in row {
                 match data {
                     RawKlePropsOrLegend::Object(raw_props) => {
-                        props.update(raw_props);
+                        props.update(&raw_props);
                     }
                     RawKlePropsOrLegend::String(legends) => {
-                        let legend_array = {
+                        let legend_array: [String; LEGEND_MAP_LEN] = {
                             let mut line_vec =
                                 legends.lines().map(String::from).collect::<Vec<_>>();
                             line_vec.resize(LEGEND_MAP_LEN, String::new());
-                            // Note re unsafe: This memory is overwritten in its entirety in the
-                            // next line, using uninitialized memory avoids the need to require a
-                            // Default trait bound on the type T.
-                            let mut line_arr: [String; LEGEND_MAP_LEN] =
-                                unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-                            line_arr.clone_from_slice(&line_vec);
-                            line_arr
+                            line_vec.try_into().unwrap()
                         };
                         keys.push(props.to_key(legend_array));
                         props.next_key();
@@ -242,24 +238,20 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
     Ok(keys)
 }
 
-fn realign<T: Clone>(values: [T; LEGEND_MAP_LEN], alignment: u8) -> [T; 9] {
+fn realign<T: std::fmt::Debug + Clone>(values: [T; LEGEND_MAP_LEN], alignment: u8) -> [T; 9] {
     let alignment = if (alignment as usize) > KLE_2_ORD.len() {
         0
     } else {
         alignment as usize
     };
 
-    // Note re unsafe: This memory is overwritten in its entirety in the next line, using
-    // uninitialized memory avoids the need to require a Default trait bound on the type T.
-    let mut ordered: [T; 9] = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-    ordered.clone_from_slice(
-        &KLE_2_ORD[alignment]
-            .iter()
-            .map(|&item| values[item].clone())
-            .collect::<Vec<_>>()[0..9],
-    );
-
-    ordered
+    KLE_2_ORD[alignment]
+        .iter()
+        .map(|&item| values[item].clone())
+        .take(9)
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap()
 }
 
 #[cfg(test)]

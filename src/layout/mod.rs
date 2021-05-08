@@ -69,7 +69,7 @@ impl<T> From<LegendMap<T>> for Vec<T> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum HomingType {
     Default, // The default for this profile
     Scoop,   // Homing scoop a.k.a. deep dish
@@ -77,7 +77,7 @@ pub enum HomingType {
     Bump,    // Homing bump a.k.a. nub, dot, or nipple
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum KeyType {
     None,   // i.e. decal in KLE
     Normal, // Just a regular ol' key
