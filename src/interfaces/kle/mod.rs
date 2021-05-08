@@ -95,7 +95,7 @@ impl KeyProps {
             self.c = c
         };
         match props.t {
-            Some(ta) if ta.len() > 0 => {
+            Some(ta) if ta.is_empty() => {
                 if let Some(t) = ta[0] {
                     self.t = t;
                 }

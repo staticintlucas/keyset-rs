@@ -1,6 +1,5 @@
 use result::prelude::*;
 use serde::Deserialize;
-use serde_json;
 
 use crate::error::Result;
 use crate::types::Color;
@@ -95,10 +94,10 @@ where
             string
                 .lines()
                 .map(|hex| {
-                    if hex.len() == 0 {
+                    if hex.is_empty() {
                         Ok(None)
                     } else {
-                        Color::from_hex(&hex).map(|c| Some(c)).map_err(|_| {
+                        Color::from_hex(&hex).map(Some).map_err(|_| {
                             D::Error::invalid_value(Unexpected::Str(&hex), &"a hex color code")
                         })
                     }

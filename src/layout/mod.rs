@@ -105,9 +105,9 @@ impl Key {
         legend_color: [Color; 9],
     ) -> Self {
         Self {
-            position: position,
-            key_type: key_type,
-            key_color: key_color,
+            position,
+            key_type,
+            key_color,
             legend: legend_map(legend),
             legend_size: legend_map(legend_size),
             legend_color: legend_map(legend_color),

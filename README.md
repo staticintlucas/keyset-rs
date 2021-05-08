@@ -2,6 +2,11 @@
 
 A reimplementation of `pykeyset` in Rust for improved performance.
 
+## Minimum supported Rust version
+
+Current MSRV is 1.50.0.
+In future there will be work to reduce this constraint, but for now this version is required.
+
 ## Licence
 
 Licensed under either of

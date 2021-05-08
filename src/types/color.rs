@@ -104,7 +104,7 @@ impl Color {
                 .into_iter()
                 .map(|i| i.collect::<String>())
                 .map(|x| {
-                    u8::from_str_radix(&x.to_string(), 16).map_err(|_| {
+                    u8::from_str_radix(&x, 16).map_err(|_| {
                         InvalidColor {
                             color: hex.to_string(),
                         }

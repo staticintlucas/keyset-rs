@@ -1,7 +1,5 @@
 mod color;
 
-use euclid;
-
 pub use color::Color;
 pub(crate) use color::InvalidColor;
 

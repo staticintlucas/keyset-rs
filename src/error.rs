@@ -1,7 +1,5 @@
 use std::fmt;
 
-use serde_json;
-
 use crate::types::InvalidColor;
 
 #[derive(Debug)]
