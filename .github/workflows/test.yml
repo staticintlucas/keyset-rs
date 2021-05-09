@@ -24,11 +24,15 @@ jobs:
         with:
           command: build
           args: --release
+        env:
+          RUSTFLAGS: -D warnings
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all
+        env:
+          RUSTFLAGS: -D warnings
 #       - name: Run tarpaulin
 #         uses: actions-rs/tarpaulin@v0.1
 #         if: matrix.rust == "stable"
@@ -50,10 +54,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - name: Setup rustfmt & clippy
-        run: |
-          rustup component add rustfmt
-          rustup component add clippy
+          components: rustfmt, clippy
       - name: Run rustfmt
         uses: actions-rs/cargo@v1
         with:
