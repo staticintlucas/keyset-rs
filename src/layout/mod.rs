@@ -1,47 +1,51 @@
 use crate::types::{Color, Rect};
 
-#[derive(Debug, Clone)]
-pub(crate) struct HorizontalAlign<T> {
+#[derive(Debug, Clone, PartialEq)]
+struct HorizontalAlign<T> {
     left: T,
     middle: T,
     right: T,
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct VerticalAlign<T> {
+#[derive(Debug, Clone, PartialEq)]
+struct VerticalAlign<T> {
     top: T,
     middle: T,
     bottom: T,
 }
 
-pub(crate) type LegendMap<T> = VerticalAlign<HorizontalAlign<T>>;
+#[derive(Debug, Clone)]
+pub(crate) struct LegendMap<T>(VerticalAlign<HorizontalAlign<T>>);
 
-pub(crate) fn legend_map<T>(values: [T; 9]) -> LegendMap<T> {
-    // Note: we have to assign to these temporary values from the array because the compiler won't
-    // let me do it directly as I'm moving out of a non-copy array.
-    let [top_lft, top_mid, top_rgt, mid_lft, mid_mid, mid_rgt, btm_lft, btm_mid, btm_rgt] = values;
+impl<T> LegendMap<T> {
+    pub(crate) fn new(values: [T; 9]) -> Self {
+        // Note: we have to assign to these temporary values from the array because the compiler won't
+        // let me do it directly as I'm moving out of a non-copy array.
+        let [top_lft, top_mid, top_rgt, mid_lft, mid_mid, mid_rgt, btm_lft, btm_mid, btm_rgt] =
+            values;
 
-    VerticalAlign {
-        top: HorizontalAlign {
-            left: top_lft,
-            middle: top_mid,
-            right: top_rgt,
-        },
-        middle: HorizontalAlign {
-            left: mid_lft,
-            middle: mid_mid,
-            right: mid_rgt,
-        },
-        bottom: HorizontalAlign {
-            left: btm_lft,
-            middle: btm_mid,
-            right: btm_rgt,
-        },
+        LegendMap(VerticalAlign {
+            top: HorizontalAlign {
+                left: top_lft,
+                middle: top_mid,
+                right: top_rgt,
+            },
+            middle: HorizontalAlign {
+                left: mid_lft,
+                middle: mid_mid,
+                right: mid_rgt,
+            },
+            bottom: HorizontalAlign {
+                left: btm_lft,
+                middle: btm_mid,
+                right: btm_rgt,
+            },
+        })
     }
 }
 
 impl<T> From<LegendMap<T>> for Vec<T> {
-    fn from(error: LegendMap<T>) -> Vec<T> {
+    fn from(map: LegendMap<T>) -> Vec<T> {
         let VerticalAlign {
             top:
                 HorizontalAlign {
@@ -61,7 +65,7 @@ impl<T> From<LegendMap<T>> for Vec<T> {
                     middle: btm_mid,
                     right: btm_rgt,
                 },
-        } = error;
+        } = map.0;
 
         vec![
             top_lft, top_mid, top_rgt, mid_lft, mid_mid, mid_rgt, btm_lft, btm_mid, btm_rgt,
@@ -69,7 +73,7 @@ impl<T> From<LegendMap<T>> for Vec<T> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HomingType {
     Default, // The default for this profile
     Scoop,   // Homing scoop a.k.a. deep dish
@@ -77,7 +81,7 @@ pub enum HomingType {
     Bump,    // Homing bump a.k.a. nub, dot, or nipple
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyType {
     None,   // i.e. decal in KLE
     Normal, // Just a regular ol' key
@@ -108,9 +112,97 @@ impl Key {
             position,
             key_type,
             key_color,
-            legend: legend_map(legend),
-            legend_size: legend_map(legend_size),
-            legend_color: legend_map(legend_color),
+            legend: LegendMap::new(legend),
+            legend_size: LegendMap::new(legend_size),
+            legend_color: LegendMap::new(legend_color),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Point;
+
+    use super::*;
+
+    #[test]
+    fn test_legend_map_new() {
+        let legends = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
+        let map = LegendMap::new(legends);
+
+        assert_eq!(
+            map.0,
+            VerticalAlign {
+                top: HorizontalAlign {
+                    left: "A",
+                    middle: "B",
+                    right: "C",
+                },
+                middle: HorizontalAlign {
+                    left: "D",
+                    middle: "E",
+                    right: "F",
+                },
+                bottom: HorizontalAlign {
+                    left: "G",
+                    middle: "H",
+                    right: "I",
+                },
+            }
+        )
+    }
+
+    #[test]
+    fn test_legend_map_into() {
+        let legends = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
+        let map = LegendMap::new(legends);
+
+        assert_eq!(Vec::<_>::from(map), legends)
+    }
+
+    #[test]
+    fn test_key_new() {
+        let position = Rect::new(Point::new(1.0, 2.0), Point::new(3.0, 4.0));
+        let key_type = KeyType::Normal;
+        let key_color = Color::new(0.8, 0.4, 0.2);
+        let legend = [
+            "A".into(),
+            "B".into(),
+            "C".into(),
+            "D".into(),
+            "E".into(),
+            "F".into(),
+            "G".into(),
+            "H".into(),
+            "I".into(),
+        ];
+        let legend_size = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let legend_color = [
+            Color::new(0.1, 0.1, 0.1),
+            Color::new(0.2, 0.2, 0.2),
+            Color::new(0.3, 0.3, 0.3),
+            Color::new(0.4, 0.4, 0.4),
+            Color::new(0.5, 0.5, 0.5),
+            Color::new(0.6, 0.6, 0.6),
+            Color::new(0.7, 0.7, 0.7),
+            Color::new(0.8, 0.8, 0.8),
+            Color::new(0.9, 0.9, 0.9),
+        ];
+
+        let key = Key::new(
+            position,
+            key_type,
+            key_color,
+            legend.clone(),
+            legend_size,
+            legend_color,
+        );
+
+        assert_eq!(key.position, position);
+        assert_eq!(key.key_type, key_type);
+        assert_eq!(key.key_color, key_color);
+        assert_eq!(Vec::from(key.legend), legend);
+        assert_eq!(Vec::from(key.legend_size), legend_size);
+        assert_eq!(Vec::from(key.legend_color), legend_color);
     }
 }

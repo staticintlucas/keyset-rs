@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::error::Result;
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 struct Component(f32);
 
 impl Component {
@@ -55,7 +55,7 @@ impl std::ops::Div<f32> for Component {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Color {
     r: Component,
     g: Component,
@@ -270,12 +270,15 @@ mod tests {
 
     #[test]
     fn test_invalid_color_from_hex() {
-        let invalid = Color::from_hex("hex");
-        assert!(invalid.is_err());
-        assert_eq!(
-            format!("{}", invalid.unwrap_err()),
-            "error parsing color: invalid hex code hex"
-        )
+        let invalids = ["", "hex", "lööps", "#f000", "#eeffgg"];
+        for invalid in &invalids {
+            let result = Color::from_hex(invalid);
+            assert!(result.is_err());
+            assert_eq!(
+                format!("{}", result.unwrap_err()),
+                format!("error parsing color: invalid hex code {}", invalid),
+            )
+        }
     }
 
     #[test]

@@ -52,3 +52,39 @@ impl From<InvalidColor> for Error {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use crate::Color;
+
+    fn json_parse_error() -> super::Error {
+        let json = serde_json::from_str::<serde_json::Value>("invalid");
+        json.unwrap_err().into()
+    }
+
+    #[test]
+    fn test_display_error() {
+        let json_parse_error = json_parse_error();
+        assert_eq!(
+            format!("{}", json_parse_error),
+            "error parsing JSON: expected value at line 1 column 1"
+        );
+
+        let invalid_color = Color::from_hex("invalid").unwrap_err();
+        assert_eq!(
+            format!("{}", invalid_color),
+            "error parsing color: invalid hex code invalid"
+        );
+    }
+
+    #[test]
+    fn test_error_source() {
+        let json_parse_error = json_parse_error();
+        assert!(json_parse_error.source().is_some());
+
+        let invalid_color = Color::from_hex("invalid").unwrap_err();
+        assert!(invalid_color.source().is_none());
+    }
+}
