@@ -8,6 +8,7 @@ use crate::layout::{HomingType, Key, KeyType};
 use crate::types::{Color, Point, Rect};
 
 use deserialize::{RawKleMetaDataOrRow, RawKleProps, RawKlePropsOrLegend};
+use itertools::Itertools;
 
 const LEGEND_MAP_LEN: usize = 12;
 
@@ -126,7 +127,7 @@ impl KeyProps {
         if let Some(fa) = &props.fa {
             let fa: Vec<_> = fa
                 .iter()
-                .map(|&size| if size != 0 { size } else { self.f })
+                .map(|&size| if size == 0 { self.f } else { size })
                 .collect();
             let len = usize::min(fa.len(), self.fa.len());
             self.fa[0..len].copy_from_slice(&fa[0..len]);
@@ -207,8 +208,6 @@ impl KeyProps {
 pub fn parse(json: &str) -> Result<Vec<Key>> {
     let parsed = deserialize(json)?;
 
-    println!("{:?}", parsed);
-
     let mut props = KeyProps::default();
     let mut keys = vec![];
 
@@ -245,9 +244,11 @@ fn realign<T: std::fmt::Debug + Clone>(values: [T; LEGEND_MAP_LEN], alignment: u
         alignment as usize
     };
 
-    KLE_2_ORD[alignment]
-        .iter()
-        .map(|&item| values[item].clone())
+    Vec::from(values)
+        .into_iter()
+        .enumerate()
+        .sorted_by_key(|(i, _v)| KLE_2_ORD[alignment][*i])
+        .map(|(_i, v)| v)
         .take(9)
         .collect::<Vec<_>>()
         .try_into()

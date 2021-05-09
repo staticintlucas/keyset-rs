@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 use std::fmt;
 
-use itertools::Itertools;
+use itertools::{Chunk, Itertools};
 
 use crate::error::Result;
 
@@ -102,7 +102,7 @@ impl Color {
             6 => char_iter
                 .chunks(2)
                 .into_iter()
-                .map(|i| i.collect::<String>())
+                .map(Chunk::collect::<String>)
                 .map(|x| {
                     u8::from_str_radix(&x, 16).map_err(|_| {
                         InvalidColor {
@@ -123,19 +123,20 @@ impl Color {
         let [r, g, b]: [u8; 3] = digits[0..3].try_into().unwrap();
 
         Ok(Self {
-            r: Component::new((r as f32) / (u8::MAX as f32)),
-            g: Component::new((g as f32) / (u8::MAX as f32)),
-            b: Component::new((b as f32) / (u8::MAX as f32)),
+            r: Component::new(f32::from(r) / f32::from(u8::MAX)),
+            g: Component::new(f32::from(g) / f32::from(u8::MAX)),
+            b: Component::new(f32::from(b) / f32::from(u8::MAX)),
         })
     }
 
     #[inline]
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn to_hex(&self) -> String {
         format!(
             "#{:02x}{:02x}{:02x}",
-            (self.r.0 * 255. + 0.5) as u8,
-            (self.g.0 * 255. + 0.5) as u8,
-            (self.b.0 * 255. + 0.5) as u8
+            (self.r.0 * 255.).round() as u8,
+            (self.g.0 * 255.).round() as u8,
+            (self.b.0 * 255.).round() as u8,
         )
     }
 
