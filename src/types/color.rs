@@ -11,7 +11,7 @@ struct Component(f32);
 impl Component {
     #[inline]
     fn new(val: f32) -> Self {
-        Component(val.clamp(0., 1.))
+        Component(val.max(0.).min(1.))
     }
 }
 
@@ -142,7 +142,7 @@ impl Color {
 
     #[inline]
     pub fn lighter(&self, val: f32) -> Self {
-        let val = val.clamp(0., 1.);
+        let val = val.max(0.).min(1.);
         Self {
             r: (Component::new(1.) * val) + (self.r * (1. - val)),
             g: (Component::new(1.) * val) + (self.g * (1. - val)),
@@ -152,7 +152,7 @@ impl Color {
 
     #[inline]
     pub fn darker(&self, val: f32) -> Self {
-        let val = val.clamp(0., 1.);
+        let val = val.max(0.).min(1.);
         Self {
             r: (Component::new(0.) * val) + (self.r * (1. - val)),
             g: (Component::new(0.) * val) + (self.g * (1. - val)),
