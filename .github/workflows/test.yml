@@ -55,13 +55,11 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
-      - name: Run rustfmt
-        uses: actions-rs/cargo@v1
+      - name: Setup Python
+        uses: actions/setup-python@v2
         with:
-          command: fmt
-          args: --all -- --check
-      - name: Run clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+          python-version: ~3.8
+      - name: Install pre-commit
+        run: pip install -U pre-commit
+      - name: Run pre-commit
+        run: pre-commit run -a
