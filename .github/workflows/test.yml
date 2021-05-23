@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: [stable, 1.50.0]
+        rust: [stable, 1.48.0]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
