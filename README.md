@@ -1,6 +1,7 @@
 # `keyset-rs`
 
-A reimplementation of `pykeyset` in Rust for improved performance.
+A (WIP) reimplementation of pykeyset in Rust for improved performance.
+Eventually this aims to become the backend for pykeyset using a Python wrapper around this project.
 
 ## Minimum supported Rust version
 
