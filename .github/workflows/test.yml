@@ -16,14 +16,10 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ~3.8
-      - name: Install pre-commit
-        run: pip install -U pre-commit
       - name: Run pre-commit
-        run: pre-commit run -a
+        uses: pre-commit/action@v2.0.2
+        with:
+          extra_args: --all-files
 
   test:
     name: Build & Test
