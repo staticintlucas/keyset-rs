@@ -3,7 +3,29 @@ name: Test
 on: [push, pull_request]
 
 jobs:
-  build:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ~3.8
+      - name: Install pre-commit
+        run: pip install -U pre-commit
+      - name: Run pre-commit
+        run: pre-commit run -a
+
+  test:
     name: Build & Test
     runs-on: ubuntu-latest
     strategy:
@@ -33,18 +55,11 @@ jobs:
           args: --all
         env:
           RUSTFLAGS: -D warnings
-#       - name: Run tarpaulin
-#         uses: actions-rs/tarpaulin@v0.1
-#         if: matrix.rust == "stable"
-#       - name: Upload to codecov.io
-#         uses: codecov/codecov-action@v1
-#         with:
-#           fail_ci_if_error: true
-#         if: matrix.rust == "stable"
 
-  lint:
-    name: Lint
+  coverage:
+    name: Test coverage
     runs-on: ubuntu-latest
+    needs: [lint, test]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -52,14 +67,23 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
+          components: llvm-tools-preview
           override: true
-          components: rustfmt, clippy
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - name: Setup grcov
+        run: |
+          wget https://github.com/mozilla/grcov/releases/download/v0.8.0/grcov-linux-x86_64.tar.bz2 -qO- | tar -xjvf -
+          mv grcov ~/.cargo/bin
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
         with:
-          python-version: ~3.8
-      - name: Install pre-commit
-        run: pip install -U pre-commit
-      - name: Run pre-commit
-        run: pre-commit run -a
+          command: test
+          args: --all
+        env:
+          RUSTFLAGS: "-Zinstrument-coverage"
+      - name: Run grcov
+        run: grcov . -s . -b ./target/debug/ -t lcov --branch --llvm --ignore-not-existing -o ./lcov.info --excl-line '^\s*#\[derive\([\w, ]*\)\]$'
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1
+        with:
+          file: lcov.info
