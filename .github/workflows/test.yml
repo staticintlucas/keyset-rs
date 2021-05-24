@@ -80,7 +80,8 @@ jobs:
           command: test
           args: --all
         env:
-          RUSTFLAGS: "-Zinstrument-coverage"
+          RUSTFLAGS: -Zinstrument-coverage
+          LLVM_PROFILE_FILE: keyset-rs-%p-%m.profraw
       - name: Run grcov
         run: grcov . -s . -b ./target/debug/ -t lcov --branch --llvm --ignore-not-existing -o ./lcov.info --excl-line '^\s*#\[derive\([\w, ]*\)\]$'
       - name: Upload to codecov.io
