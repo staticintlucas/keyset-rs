@@ -56,17 +56,12 @@ pub(super) enum RawKlePropsOrLegend {
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub(super) enum RawKleMetaDataOrRow {
-    Object(serde_json::Value),
     Array(Vec<RawKlePropsOrLegend>),
+    Object(serde_json::Value),
 }
 
 pub(super) fn deserialize(json: &str) -> Result<Vec<RawKleMetaDataOrRow>> {
-    let mut jd = serde_json::Deserializer::from_str(json);
-
-    serde_ignored::deserialize(&mut jd, |path| {
-        println!("Warning: unrecognized KLE key {}", path);
-    })
-    .map_err(|e| e.into())
+    serde_json::from_str(json).map_err(|e| e.into())
 }
 
 fn parse_color<'de, D>(deserializer: D) -> std::result::Result<Option<Color>, D::Error>
@@ -105,4 +100,58 @@ where
                 .collect::<std::result::Result<Vec<Option<Color>>, D::Error>>()
         })
         .invert()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use serde_json::Error;
+
+    #[test]
+    fn test_deserialize() {
+        let json = r#"[
+            {
+                "some": "metadata"
+            },
+            [
+                "a",
+                "b",
+                "c"
+            ],
+            [
+                {
+                    "invalid": "key"
+                }
+            ]
+        ]"#;
+
+        let data = deserialize(json).unwrap();
+
+        assert_eq!(data.len(), 3);
+        assert!(matches!(&data[0], RawKleMetaDataOrRow::Object(_)));
+        assert!(matches!(&data[1], RawKleMetaDataOrRow::Array(v) if v.len() == 3));
+    }
+
+    #[test]
+    fn test_parse_color() {
+        let color = parse_color(&mut serde_json::Deserializer::from_str(r##""#ff0000""##));
+        assert!(matches!(color, Ok(Some(Color { .. }))));
+
+        let color = parse_color(&mut serde_json::Deserializer::from_str(r#""invalid""#));
+        assert!(matches!(color, Err(Error { .. })));
+    }
+
+    #[test]
+    fn test_parse_color_vec() {
+        let colors = parse_color_vec(&mut serde_json::Deserializer::from_str(
+            r##""#f00\n\n#ba9""##,
+        ));
+        assert!(matches!(colors, Ok(Some(v)) if v.len() == 3 && v[1].is_none()));
+
+        let colors = parse_color_vec(&mut serde_json::Deserializer::from_str(
+            r##""#abc\\n#bad""##,
+        ));
+        assert!(matches!(colors, Err(Error { .. })));
+    }
 }

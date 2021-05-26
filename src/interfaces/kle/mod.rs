@@ -78,12 +78,8 @@ impl KeyProps {
     }
 
     fn update(&mut self, props: &RawKleProps) {
-        if let Some(x) = props.x {
-            self.x = x
-        };
-        if let Some(y) = props.y {
-            self.y = y
-        };
+        self.x = props.x.unwrap_or(self.x);
+        self.y = props.y.unwrap_or(self.y);
         self.w = props.w.unwrap_or(1.);
         self.h = props.h.unwrap_or(1.);
         self.x2 = props.x2.unwrap_or(0.);
@@ -93,24 +89,22 @@ impl KeyProps {
         self.l = props.l.unwrap_or(false);
         self.n = props.n.unwrap_or(false);
         self.d = props.d.unwrap_or(false);
+        self.c = props.c.unwrap_or(self.c);
 
-        if let Some(c) = props.c {
-            self.c = c
-        };
         match &props.t {
-            Some(ta) if ta.is_empty() => {
+            Some(ta) if !ta.is_empty() => {
                 if let Some(t) = ta[0] {
                     self.t = t;
                 }
-                let ta: Vec<_> = ta.iter().map(|color| color.unwrap_or(self.t)).collect();
-                let len = usize::min(ta.len(), self.ta.len());
-                self.ta[0..len].copy_from_slice(&ta[0..len]);
+                let mut ta: Vec<_> = ta.iter().map(|color| color.unwrap_or(self.t)).collect();
+                ta.resize(self.ta.len(), self.t);
+                self.ta.copy_from_slice(&ta);
             }
             _ => (),
         }
-        if let Some(a) = props.a {
-            self.a = a
-        };
+
+        self.a = props.a.unwrap_or(self.a);
+
         if let Some(p) = &props.p {
             self.p = p.clone()
         };
@@ -125,20 +119,13 @@ impl KeyProps {
             self.fa[0] = self.f;
         }
         if let Some(fa) = &props.fa {
-            let fa: Vec<_> = fa
+            let mut fa: Vec<_> = fa
                 .iter()
                 .map(|&size| if size == 0 { self.f } else { size })
                 .collect();
-            let len = usize::min(fa.len(), self.fa.len());
-            self.fa[0..len].copy_from_slice(&fa[0..len]);
+            fa.resize(self.fa.len(), self.f);
+            self.fa.copy_from_slice(&fa);
         }
-    }
-
-    #[inline]
-    fn next_line(&mut self) {
-        self.next_key();
-        self.x = 0.;
-        self.y += 1.;
     }
 
     fn next_key(&mut self) {
@@ -154,6 +141,13 @@ impl KeyProps {
         self.l = false;
         self.n = false;
         self.d = false;
+    }
+
+    #[inline]
+    fn next_line(&mut self) {
+        self.next_key();
+        self.x = 0.;
+        self.y += 1.;
     }
 
     fn to_key(&self, legends: [String; LEGEND_MAP_LEN]) -> Key {
@@ -258,26 +252,199 @@ fn realign<T: std::fmt::Debug + Clone>(values: [T; LEGEND_MAP_LEN], alignment: u
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assert_approx_eq::assert_approx_eq;
 
     #[test]
-    fn test_parse_json() {
-        let keys = parse(include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/test.json"
-        )))
-        .unwrap();
+    fn test_keyprops_default() {
+        let keyprops = KeyProps::default();
 
-        println!("{:#?}", keys);
+        assert_approx_eq!(keyprops.x, 0.);
+        assert_approx_eq!(keyprops.y, 0.);
+        assert_approx_eq!(keyprops.w, 1.);
+        assert_approx_eq!(keyprops.h, 1.);
+        assert_approx_eq!(keyprops.x2, 0.);
+        assert_approx_eq!(keyprops.y2, 0.);
+        assert_approx_eq!(keyprops.w2, 1.);
+        assert_approx_eq!(keyprops.h2, 1.);
+        assert_eq!(keyprops.l, false);
+        assert_eq!(keyprops.n, false);
+        assert_eq!(keyprops.d, false);
+        assert_eq!(keyprops.c, Color::new(0.8, 0.8, 0.8));
+        assert_eq!(keyprops.t, Color::new(0., 0., 0.));
+        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); LEGEND_MAP_LEN]);
+        assert_eq!(keyprops.a, 4);
+        assert_eq!(keyprops.p, "".to_string());
+        assert_eq!(keyprops.f, 3);
+        assert_eq!(keyprops.f2, 3);
+        assert_eq!(keyprops.fa, [3; LEGEND_MAP_LEN]);
     }
 
     #[test]
-    fn test_parse_json2() {
-        let keys = parse(include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/test2.json"
-        )))
-        .unwrap();
+    fn test_keyprops_update() {
+        let mut keyprops = KeyProps::default();
 
-        println!("{:#?}", keys);
+        let rawprops = RawKleProps {
+            x: None,
+            y: None,
+            w: None,
+            h: None,
+            x2: None,
+            y2: None,
+            w2: None,
+            h2: None,
+            l: None,
+            n: None,
+            d: None,
+            c: None,
+            t: None,
+            a: None,
+            p: None,
+            f: None,
+            f2: None,
+            fa: None,
+        };
+        keyprops.update(&rawprops);
+
+        assert_approx_eq!(keyprops.x, 0.);
+        assert_approx_eq!(keyprops.y, 0.);
+        assert_approx_eq!(keyprops.w, 1.);
+        assert_approx_eq!(keyprops.h, 1.);
+        assert_approx_eq!(keyprops.x2, 0.);
+        assert_approx_eq!(keyprops.y2, 0.);
+        assert_approx_eq!(keyprops.w2, 1.);
+        assert_approx_eq!(keyprops.h2, 1.);
+        assert_eq!(keyprops.l, false);
+        assert_eq!(keyprops.n, false);
+        assert_eq!(keyprops.d, false);
+        assert_eq!(keyprops.c, Color::new(0.8, 0.8, 0.8));
+        assert_eq!(keyprops.t, Color::new(0., 0., 0.));
+        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); LEGEND_MAP_LEN]);
+        assert_eq!(keyprops.a, 4);
+        assert_eq!(keyprops.p, "".to_string());
+        assert_eq!(keyprops.f, 3);
+        assert_eq!(keyprops.f2, 3);
+        assert_eq!(keyprops.fa, [3; LEGEND_MAP_LEN]);
+
+        let rawprops = RawKleProps {
+            x: Some(1.),
+            y: Some(1.),
+            w: Some(2.),
+            h: Some(2.),
+            x2: Some(1.5),
+            y2: Some(1.5),
+            w2: Some(2.5),
+            h2: Some(2.5),
+            l: Some(true),
+            n: Some(true),
+            d: Some(true),
+            c: Some(Color::new(0.5, 0.2, 0.3)),
+            t: Some(vec![
+                Some(Color::new(0.1, 0.1, 0.1)),
+                None,
+                Some(Color::new(0.3, 0.15, 0.2)),
+            ]),
+            a: Some(5),
+            p: Some("space".to_string()),
+            f: Some(4),
+            f2: Some(4),
+            fa: Some(vec![4, 4, 4]),
+        };
+        keyprops.update(&rawprops);
+
+        assert_approx_eq!(keyprops.x, 1.);
+        assert_approx_eq!(keyprops.y, 1.);
+        assert_approx_eq!(keyprops.w, 2.);
+        assert_approx_eq!(keyprops.h, 2.);
+        assert_approx_eq!(keyprops.x2, 1.5);
+        assert_approx_eq!(keyprops.y2, 1.5);
+        assert_approx_eq!(keyprops.w2, 2.5);
+        assert_approx_eq!(keyprops.h2, 2.5);
+        assert_eq!(keyprops.l, true);
+        assert_eq!(keyprops.n, true);
+        assert_eq!(keyprops.d, true);
+        assert_eq!(keyprops.c, Color::new(0.5, 0.2, 0.3));
+        assert_eq!(keyprops.t, Color::new(0.1, 0.1, 0.1));
+        assert_eq!(
+            keyprops.ta,
+            [
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.3, 0.15, 0.2),
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.1, 0.1, 0.1),
+                Color::new(0.1, 0.1, 0.1)
+            ]
+        );
+        assert_eq!(keyprops.a, 5);
+        assert_eq!(keyprops.p, "space".to_string());
+        assert_eq!(keyprops.f, 4);
+        assert_eq!(keyprops.f2, 4);
+        assert_eq!(keyprops.fa, [4; LEGEND_MAP_LEN]);
     }
+
+    #[test]
+    fn test_next_key() {
+        let mut keyprops = KeyProps::default();
+        keyprops.x = 2.;
+        keyprops.w = 3.;
+        keyprops.h = 1.5;
+
+        keyprops.next_key();
+
+        assert_approx_eq!(keyprops.x, 5.);
+        assert_approx_eq!(keyprops.y, 0.);
+        assert_approx_eq!(keyprops.w, 1.);
+        assert_approx_eq!(keyprops.h, 1.);
+        assert_approx_eq!(keyprops.x2, 0.);
+        assert_approx_eq!(keyprops.y2, 0.);
+        assert_approx_eq!(keyprops.w2, 1.);
+        assert_approx_eq!(keyprops.h2, 1.);
+        assert_eq!(keyprops.l, false);
+        assert_eq!(keyprops.n, false);
+        assert_eq!(keyprops.d, false);
+    }
+
+    #[test]
+    fn test_next_line() {
+        let mut keyprops = KeyProps::default();
+        keyprops.x = 2.;
+
+        keyprops.next_line();
+
+        assert_approx_eq!(keyprops.x, 0.);
+        assert_approx_eq!(keyprops.y, 1.);
+        assert_approx_eq!(keyprops.w, 1.);
+        assert_approx_eq!(keyprops.h, 1.);
+        assert_approx_eq!(keyprops.x2, 0.);
+        assert_approx_eq!(keyprops.y2, 0.);
+        assert_approx_eq!(keyprops.w2, 1.);
+        assert_approx_eq!(keyprops.h2, 1.);
+        assert_eq!(keyprops.l, false);
+        assert_eq!(keyprops.n, false);
+        assert_eq!(keyprops.d, false);
+    }
+
+    // #[test]
+    // fn test_parse_json() {
+    //     let _ = parse(include_str!(concat!(
+    //         env!("CARGO_MANIFEST_DIR"),
+    //         "/tests/test.json"
+    //     )))
+    //     .unwrap();
+    // }
+
+    // #[test]
+    // fn test_parse_json2() {
+    //     let _ = parse(include_str!(concat!(
+    //         env!("CARGO_MANIFEST_DIR"),
+    //         "/tests/test2.json"
+    //     )))
+    //     .unwrap();
+    // }
 }
