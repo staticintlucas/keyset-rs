@@ -14,7 +14,7 @@ struct VerticalAlign<T> {
     bottom: T,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct LegendMap<T>(VerticalAlign<HorizontalAlign<T>>);
 
 impl<T> LegendMap<T> {
@@ -91,12 +91,12 @@ pub enum KeyType {
 
 #[derive(Debug)]
 pub struct Key {
-    position: Rect,
-    key_type: KeyType,
-    key_color: Color,
-    legend: LegendMap<String>,
-    legend_size: LegendMap<u8>,
-    legend_color: LegendMap<Color>,
+    pub(super) position: Rect,
+    pub(super) key_type: KeyType,
+    pub(super) key_color: Color,
+    pub(super) legend: LegendMap<String>,
+    pub(super) legend_size: LegendMap<u8>,
+    pub(super) legend_color: LegendMap<Color>,
 }
 
 impl Key {

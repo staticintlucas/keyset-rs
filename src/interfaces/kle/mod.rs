@@ -12,19 +12,24 @@ use itertools::Itertools;
 
 const LEGEND_MAP_LEN: usize = 12;
 
-// This map is stolen straight from the kle-serial source code, and inverted (swapped indeces with
-// values) since we only want to deserialize the data. Note the blanks are also filled in, so that
-// (as with a few other things) keyset-rs is slightly more permissive with invalid input than KLE.
+// This map is stolen straight from the kle-serial source code. Note the blanks are also filled in,
+// so keyset-rs is slightly more permissive than KLE with not-strictly-valid input.
 const KLE_2_ORD: [[usize; LEGEND_MAP_LEN]; 8] = [
-    [0, 8, 2, 6, 9, 7, 1, 10, 3, 4, 11, 5], // 0 = no centering
-    [2, 0, 3, 7, 6, 8, 9, 1, 10, 4, 11, 5], // 1 = center x
-    [1, 3, 6, 0, 8, 2, 7, 9, 10, 4, 11, 5], // 2 = center y
-    [1, 2, 3, 6, 0, 7, 8, 9, 10, 4, 11, 5], // 3 = center x & y
-    [0, 8, 2, 6, 9, 7, 1, 10, 3, 5, 4, 11], // 4 = center front (default)
-    [2, 0, 3, 5, 6, 7, 8, 1, 9, 10, 4, 11], // 5 = center front & x
-    [1, 3, 5, 0, 8, 2, 6, 7, 9, 10, 4, 11], // 6 = center front & y
-    [1, 2, 3, 5, 0, 6, 7, 8, 9, 10, 4, 11], // 7 = center front & x & y
+    [0, 6, 2, 8, 9, 11, 3, 5, 1, 4, 7, 10], // 0 = no centering
+    [1, 7, 0, 2, 9, 11, 4, 3, 5, 6, 8, 10], // 1 = center x
+    [3, 0, 5, 1, 9, 11, 2, 6, 4, 7, 8, 10], // 2 = center y
+    [4, 0, 1, 2, 9, 11, 3, 5, 6, 7, 8, 10], // 3 = center x & y
+    [0, 6, 2, 8, 10, 9, 3, 5, 1, 4, 7, 11], // 4 = center front (default)
+    [1, 7, 0, 2, 10, 3, 4, 5, 6, 8, 9, 11], // 5 = center front & x
+    [3, 0, 5, 1, 10, 2, 6, 7, 4, 8, 9, 11], // 6 = center front & y
+    [4, 0, 1, 2, 10, 3, 5, 6, 7, 8, 9, 11], // 7 = center front & x & y
 ];
+
+// The default alignment (index in KLE_2_ORD)
+const DEFAULT_ALIGNMENT: u8 = 4;
+
+// The default font size
+const DEFAULT_FONT_SIZE: u8 = 3;
 
 #[derive(Debug)]
 struct KeyProps {
@@ -69,11 +74,11 @@ impl KeyProps {
             c: Color::new(0.8, 0.8, 0.8),
             t: Color::new(0., 0., 0.),
             ta: [Color::new(0., 0., 0.); LEGEND_MAP_LEN],
-            a: 4,
+            a: DEFAULT_ALIGNMENT,
             p: "".to_string(),
-            f: 3,
-            f2: 3,
-            fa: [3; LEGEND_MAP_LEN],
+            f: DEFAULT_FONT_SIZE,
+            f2: DEFAULT_FONT_SIZE,
+            fa: [DEFAULT_FONT_SIZE; LEGEND_MAP_LEN],
         }
     }
 
@@ -233,10 +238,10 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
 
 fn realign<T: std::fmt::Debug + Clone>(values: [T; LEGEND_MAP_LEN], alignment: u8) -> [T; 9] {
     let alignment = if (alignment as usize) > KLE_2_ORD.len() {
-        0
+        DEFAULT_ALIGNMENT // This is the default used by KLE
     } else {
-        alignment as usize
-    };
+        alignment
+    } as usize;
 
     Vec::from(values)
         .into_iter()
@@ -252,6 +257,7 @@ fn realign<T: std::fmt::Debug + Clone>(values: [T; LEGEND_MAP_LEN], alignment: u
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{layout::LegendMap, types::Rect};
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
@@ -389,7 +395,7 @@ mod tests {
     }
 
     #[test]
-    fn test_next_key() {
+    fn test_keyprops_next_key() {
         let mut keyprops = KeyProps::default();
         keyprops.x = 2.;
         keyprops.w = 3.;
@@ -411,7 +417,7 @@ mod tests {
     }
 
     #[test]
-    fn test_next_line() {
+    fn test_keyprops_next_line() {
         let mut keyprops = KeyProps::default();
         keyprops.x = 2.;
 
@@ -430,21 +436,106 @@ mod tests {
         assert_eq!(keyprops.d, false);
     }
 
-    // #[test]
-    // fn test_parse_json() {
-    //     let _ = parse(include_str!(concat!(
-    //         env!("CARGO_MANIFEST_DIR"),
-    //         "/tests/test.json"
-    //     )))
-    //     .unwrap();
-    // }
+    #[test]
+    fn test_keyprops_to_key() {
+        let legends = [
+            "A".into(),
+            "B".into(),
+            "C".into(),
+            "D".into(),
+            "E".into(),
+            "F".into(),
+            "G".into(),
+            "H".into(),
+            "I".into(),
+            "J".into(),
+            "K".into(),
+            "L".into(),
+        ];
+        let ordered = [
+            "A".into(),
+            "I".into(),
+            "C".into(),
+            "G".into(),
+            "J".into(),
+            "H".into(),
+            "B".into(),
+            "K".into(),
+            "D".into(),
+        ];
 
-    // #[test]
-    // fn test_parse_json2() {
-    //     let _ = parse(include_str!(concat!(
-    //         env!("CARGO_MANIFEST_DIR"),
-    //         "/tests/test2.json"
-    //     )))
-    //     .unwrap();
-    // }
+        let mut keyprops = KeyProps::default();
+        let key = keyprops.to_key(legends.clone());
+
+        assert_eq!(
+            key.position,
+            Rect::new(Point::new(0., 0.), Point::new(1., 1.))
+        );
+        assert_eq!(key.key_type, KeyType::Normal);
+        assert_eq!(key.key_color, Color::new(0.8, 0.8, 0.8));
+        assert_eq!(key.legend, LegendMap::new(ordered));
+        assert_eq!(key.legend_size, LegendMap::new([3; 9]));
+        assert_eq!(
+            key.legend_color,
+            LegendMap::new([Color::new(0., 0., 0.); 9])
+        );
+
+        keyprops.d = true;
+        let key = keyprops.to_key(legends.clone());
+        assert_eq!(key.key_type, KeyType::None);
+
+        keyprops.n = true;
+        let key = keyprops.to_key(legends.clone());
+        assert_eq!(key.key_type, KeyType::Homing(HomingType::Default));
+
+        keyprops.p = "space".into();
+        let key = keyprops.to_key(legends.clone());
+        assert_eq!(key.key_type, KeyType::Space);
+
+        keyprops.p = "scoop".into();
+        let key = keyprops.to_key(legends.clone());
+        assert_eq!(key.key_type, KeyType::Homing(HomingType::Scoop));
+
+        keyprops.p = "bar".into();
+        let key = keyprops.to_key(legends.clone());
+        assert_eq!(key.key_type, KeyType::Homing(HomingType::Bar));
+
+        keyprops.p = "bump".into();
+        let key = keyprops.to_key(legends.clone());
+        assert_eq!(key.key_type, KeyType::Homing(HomingType::Bump));
+    }
+
+    #[test]
+    fn test_parse_json() {
+        let result = parse(
+            r#"[
+            {
+                "meta": "data"
+            },
+            [
+                {
+                    "a": 4,
+                    "unknown": "key"
+                },
+                "A",
+                "B",
+                "C"
+            ]
+        ]"#,
+        )
+        .unwrap();
+
+        assert_eq!(result.len(), 3);
+    }
+
+    #[test]
+    fn test_realign() {
+        let legends = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+        let result = ["A", "I", "C", "G", "J", "H", "B", "K", "D"];
+
+        assert_eq!(realign(legends, DEFAULT_ALIGNMENT), result);
+
+        // Using an invalid alignment so it should fall back to the default
+        assert_eq!(realign(legends, 42), result);
+    }
 }
