@@ -13,7 +13,6 @@ categories = ["command-line-utilities", "graphics", "multimedia::images", "rende
 crate-type = ["rlib"]
 
 [dependencies]
-euclid = "0.22"
 itertools = "0.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

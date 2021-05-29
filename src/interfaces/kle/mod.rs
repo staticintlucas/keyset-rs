@@ -5,7 +5,7 @@ use std::convert::TryInto;
 use crate::error::Result;
 use crate::interfaces::kle::deserialize::deserialize;
 use crate::layout::{HomingType, Key, KeyType};
-use crate::types::{Color, Point, Rect};
+use crate::types::{Color, Rect};
 
 use deserialize::{RawKleMetaDataOrRow, RawKleProps, RawKlePropsOrLegend};
 use itertools::Itertools;
@@ -156,10 +156,7 @@ impl KeyProps {
     }
 
     fn to_key(&self, legends: [String; LEGEND_MAP_LEN]) -> Key {
-        let position = Rect::new(
-            Point::new(self.x, self.y),
-            Point::new(self.x + self.w, self.y + self.h),
-        );
+        let position = Rect::new(self.x, self.y, self.w, self.h);
 
         let is_scooped = ["scoop", "deep", "dish"]
             .iter()
@@ -467,10 +464,7 @@ mod tests {
         let mut keyprops = KeyProps::default();
         let key = keyprops.to_key(legends.clone());
 
-        assert_eq!(
-            key.position,
-            Rect::new(Point::new(0., 0.), Point::new(1., 1.))
-        );
+        assert_eq!(key.position, Rect::new(0., 0., 1., 1.));
         assert_eq!(key.key_type, KeyType::Normal);
         assert_eq!(key.key_color, Color::new(0.8, 0.8, 0.8));
         assert_eq!(key.legend, LegendMap::new(ordered));

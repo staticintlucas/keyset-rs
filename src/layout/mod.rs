@@ -121,8 +121,6 @@ impl Key {
 
 #[cfg(test)]
 mod tests {
-    use crate::Point;
-
     use super::*;
 
     #[test]
@@ -162,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_key_new() {
-        let position = Rect::new(Point::new(1.0, 2.0), Point::new(3.0, 4.0));
+        let position = Rect::new(1.0, 2.0, 3.0, 4.0);
         let key_type = KeyType::Normal;
         let key_color = Color::new(0.8, 0.4, 0.2);
         let legend = [
