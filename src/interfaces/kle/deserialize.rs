@@ -149,6 +149,9 @@ mod tests {
 
         let color = parse_color(&mut serde_json::Deserializer::from_str(r#""invalid""#));
         assert!(matches!(color, Err(Error { .. })));
+
+        let color = parse_color(&mut serde_json::Deserializer::from_str("null"));
+        assert!(matches!(color, Ok(None)));
     }
 
     #[test]
@@ -162,5 +165,8 @@ mod tests {
             r##""#abc\\n#bad""##,
         ));
         assert!(matches!(colors, Err(Error { .. })));
+
+        let colors = parse_color_vec(&mut serde_json::Deserializer::from_str("null"));
+        assert!(matches!(colors, Ok(None)));
     }
 }
