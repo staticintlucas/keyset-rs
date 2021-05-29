@@ -1,4 +1,5 @@
-use result::prelude::*;
+use std::result::Result as StdResult;
+
 use serde::Deserialize;
 
 use crate::error::Result;
@@ -64,42 +65,50 @@ pub(super) fn deserialize(json: &str) -> Result<Vec<RawKleMetaDataOrRow>> {
     serde_json::from_str(json).map_err(|e| e.into())
 }
 
-fn parse_color<'de, D>(deserializer: D) -> std::result::Result<Option<Color>, D::Error>
+fn parse_color<'de, D>(deserializer: D) -> StdResult<Option<Color>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
     use serde::de::{Error, Unexpected};
-    Option::<String>::deserialize(deserializer)?
-        .map(|hex| {
-            Color::from_hex(&hex)
-                .map_err(|_| D::Error::invalid_value(Unexpected::Str(&hex), &"a hex color code"))
-        })
-        .invert()
+
+    let result = Option::<String>::deserialize(deserializer)?.map(|hex| {
+        Color::from_hex(&hex)
+            .map_err(|_| D::Error::invalid_value(Unexpected::Str(&hex), &"a hex color code"))
+    });
+
+    match result {
+        Some(Ok(value)) => Ok(Some(value)),
+        Some(Err(error)) => Err(error),
+        None => Ok(None),
+    }
 }
 
-fn parse_color_vec<'de, D>(
-    deserializer: D,
-) -> std::result::Result<Option<Vec<Option<Color>>>, D::Error>
+fn parse_color_vec<'de, D>(deserializer: D) -> StdResult<Option<Vec<Option<Color>>>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
     use serde::de::{Error, Unexpected};
-    Option::<String>::deserialize(deserializer)?
-        .map(|string| {
-            string
-                .lines()
-                .map(|hex| {
-                    if hex.is_empty() {
-                        Ok(None)
-                    } else {
-                        Color::from_hex(&hex).map(Some).map_err(|_| {
-                            D::Error::invalid_value(Unexpected::Str(&hex), &"a hex color code")
-                        })
-                    }
-                })
-                .collect::<std::result::Result<Vec<Option<Color>>, D::Error>>()
-        })
-        .invert()
+
+    let result = Option::<String>::deserialize(deserializer)?.map(|string| {
+        string
+            .lines()
+            .map(|hex| {
+                if hex.is_empty() {
+                    Ok(None)
+                } else {
+                    Color::from_hex(&hex).map(Some).map_err(|_| {
+                        D::Error::invalid_value(Unexpected::Str(&hex), &"a hex color code")
+                    })
+                }
+            })
+            .collect::<StdResult<Vec<Option<Color>>, D::Error>>()
+    });
+
+    match result {
+        Some(Ok(value)) => Ok(Some(value)),
+        Some(Err(error)) => Err(error),
+        None => Ok(None),
+    }
 }
 
 #[cfg(test)]
