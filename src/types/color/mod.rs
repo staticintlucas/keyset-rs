@@ -228,7 +228,7 @@ mod tests {
         assert_eq!(component0.0, 0.4);
         let component1 = Component::new(-256.0);
         assert_eq!(component1.0, 0.);
-        let component2 = Component::new(f32::INFINITY);
+        let component2 = Component::new(std::f32::INFINITY);
         assert_eq!(component2.0, 1.);
     }
 
@@ -273,7 +273,7 @@ mod tests {
         assert_eq!(color0.g.0, 0.5);
         assert_eq!(color0.b.0, 0.8);
 
-        let color1 = Color::new(-0.8, 42.0, f32::NEG_INFINITY);
+        let color1 = Color::new(-0.8, 42.0, std::f32::NEG_INFINITY);
         assert_eq!(color1.r.0, 0.);
         assert_eq!(color1.g.0, 1.);
         assert_eq!(color1.b.0, 0.);
