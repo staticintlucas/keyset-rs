@@ -1,19 +1,20 @@
-mod deserialize;
+mod utils;
 
 use std::convert::TryInto;
 
+use itertools::Itertools;
+use serde::Deserialize;
+use serde_json::{Map, Value};
+
+use self::utils::de_nl_delimited_colors;
 use crate::error::Result;
-use crate::interfaces::kle::deserialize::deserialize;
 use crate::layout::{HomingType, Key, KeyType};
 use crate::types::{Color, Rect};
-
-use deserialize::{RawKleMetaDataOrRow, RawKleProps, RawKlePropsOrLegend};
-use itertools::Itertools;
 
 const LEGEND_MAP_LEN: usize = 12;
 
 // This map is stolen straight from the kle-serial source code. Note the blanks are also filled in,
-// so keyset-rs is slightly more permissive than KLE with not-strictly-valid input.
+// so keyset-rs is slightly more permissive than KLE with not-strictly-valid KLE input.
 const KLE_2_ORD: [[usize; LEGEND_MAP_LEN]; 8] = [
     [0, 6, 2, 8, 9, 11, 3, 5, 1, 4, 7, 10], // 0 = no centering
     [1, 7, 0, 2, 9, 11, 4, 3, 5, 6, 8, 10], // 1 = center x
@@ -25,11 +26,64 @@ const KLE_2_ORD: [[usize; LEGEND_MAP_LEN]; 8] = [
     [4, 0, 1, 2, 10, 3, 5, 6, 7, 8, 9, 11], // 7 = center front & x & y
 ];
 
-// The default alignment (index in KLE_2_ORD)
+// The default alignment when none is specified in the KLE data (index in KLE_2_ORD)
 const DEFAULT_ALIGNMENT: u8 = 4;
 
 // The default font size
 const DEFAULT_FONT_SIZE: u8 = 3;
+
+#[derive(Deserialize)]
+struct RawKleProps {
+    #[serde(default)]
+    x: Option<f32>,
+    #[serde(default)]
+    y: Option<f32>,
+    #[serde(default)]
+    w: Option<f32>,
+    #[serde(default)]
+    h: Option<f32>,
+    #[serde(default)]
+    x2: Option<f32>,
+    #[serde(default)]
+    y2: Option<f32>,
+    #[serde(default)]
+    w2: Option<f32>,
+    #[serde(default)]
+    h2: Option<f32>,
+    #[serde(default)]
+    l: Option<bool>,
+    #[serde(default)]
+    n: Option<bool>,
+    #[serde(default)]
+    d: Option<bool>,
+    #[serde(default)]
+    c: Option<Color>,
+    #[serde(default)]
+    #[serde(deserialize_with = "de_nl_delimited_colors")]
+    t: Option<Vec<Option<Color>>>,
+    #[serde(default)]
+    a: Option<u8>,
+    #[serde(default)]
+    p: Option<String>,
+    #[serde(default)]
+    f: Option<u8>,
+    #[serde(default)]
+    f2: Option<u8>,
+    #[serde(default)]
+    fa: Option<Vec<u8>>,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum RawKleRowItem {
+    Object(Box<RawKleProps>),
+    String(String),
+}
+
+struct RawKleFile {
+    _props: Map<String, Value>,
+    rows: Vec<Vec<RawKleRowItem>>,
+}
 
 #[derive(Debug)]
 struct KeyProps {
@@ -118,7 +172,7 @@ impl KeyProps {
             self.f2 = f;
             self.fa = [f; LEGEND_MAP_LEN];
         }
-        if let Some(f2) = props.f {
+        if let Some(f2) = props.f2 {
             self.f2 = f2;
             self.fa = [f2; LEGEND_MAP_LEN];
             self.fa[0] = self.f;
@@ -187,9 +241,6 @@ impl KeyProps {
             KeyType::Normal
         };
 
-        // TODO implement default color similar to KLE-serial so that the default can be stored
-        // as long as "t".split("\n")[0] is empty
-
         Key::new(
             position,
             key_type,
@@ -202,28 +253,25 @@ impl KeyProps {
 }
 
 pub fn parse(json: &str) -> Result<Vec<Key>> {
-    let parsed = deserialize(json)?;
+    let parsed = serde_json::from_str::<'_, RawKleFile>(json)?;
 
     let mut props = KeyProps::default();
     let mut keys = vec![];
 
-    for item in parsed {
-        if let RawKleMetaDataOrRow::Array(row) = item {
-            for data in row {
-                match data {
-                    RawKlePropsOrLegend::Object(raw_props) => {
-                        props.update(&raw_props);
-                    }
-                    RawKlePropsOrLegend::String(legends) => {
-                        let legend_array: [String; LEGEND_MAP_LEN] = {
-                            let mut line_vec =
-                                legends.lines().map(String::from).collect::<Vec<_>>();
-                            line_vec.resize(LEGEND_MAP_LEN, String::new());
-                            line_vec.try_into().unwrap()
-                        };
-                        keys.push(props.to_key(legend_array));
-                        props.next_key();
-                    }
+    for row in parsed.rows {
+        for data in row {
+            match data {
+                RawKleRowItem::Object(raw_props) => {
+                    props.update(&raw_props);
+                }
+                RawKleRowItem::String(legends) => {
+                    let legend_array: [String; LEGEND_MAP_LEN] = {
+                        let mut line_vec = legends.lines().map(String::from).collect::<Vec<_>>();
+                        line_vec.resize(LEGEND_MAP_LEN, String::new());
+                        line_vec.try_into().unwrap()
+                    };
+                    keys.push(props.to_key(legend_array));
+                    props.next_key();
                 }
             }
         }
@@ -503,19 +551,19 @@ mod tests {
     fn test_parse_json() {
         let result = parse(
             r#"[
-            {
-                "meta": "data"
-            },
-            [
                 {
-                    "a": 4,
-                    "unknown": "key"
+                    "meta": "data"
                 },
-                "A",
-                "B",
-                "C"
-            ]
-        ]"#,
+                [
+                    {
+                        "a": 4,
+                        "unknown": "key"
+                    },
+                    "A",
+                    "B",
+                    "C"
+                ]
+            ]"#,
         )
         .unwrap();
 

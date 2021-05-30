@@ -1,7 +1,9 @@
 use std::convert::TryInto;
 use std::fmt;
+use std::result::Result as StdResult;
 
 use itertools::{Chunk, Itertools};
+use serde::{Deserialize, Deserializer};
 
 use crate::error::Result;
 
@@ -180,6 +182,19 @@ impl Color {
     }
 }
 
+impl<'de> Deserialize<'de> for Color {
+    fn deserialize<D>(deserializer: D) -> StdResult<Color, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        use serde::de::{Error, Unexpected};
+
+        let hex = String::deserialize(deserializer)?;
+        Color::from_hex(&hex)
+            .map_err(|_| D::Error::invalid_value(Unexpected::Str(&hex), &"a hex color code"))
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct InvalidColor {
     color: String,
@@ -318,5 +333,16 @@ mod tests {
         assert_approx_eq!(color2.r.0, 0.4);
         assert_approx_eq!(color2.g.0, 0.2);
         assert_approx_eq!(color2.b.0, 0.3);
+    }
+
+    #[test]
+    fn test_deserialize_color() {
+        use serde_json::Error;
+
+        let color = Color::deserialize(&mut serde_json::Deserializer::from_str(r##""#ff0000""##));
+        assert!(matches!(color, Ok(Color { .. })));
+
+        let color = Color::deserialize(&mut serde_json::Deserializer::from_str(r#""invalid""#));
+        assert!(matches!(color, Err(Error { .. })));
     }
 }
