@@ -1,7 +1,5 @@
 mod utils;
 
-use std::convert::TryInto;
-
 use itertools::Itertools;
 use serde::Deserialize;
 use serde_json::{Map, Value};
@@ -102,13 +100,13 @@ struct KeyProps {
     // Persistent properties
     c: Color, // color
     // Note: t stores the default color while ta stores the array, so slightly different from KLE
-    t: Color,                    // legend color
-    ta: [Color; LEGEND_MAP_LEN], // legend color array
-    a: u8,                       // alignment
-    p: String,                   // profile
-    f: u8,                       // font size
-    f2: u8,                      // secondary font size
-    fa: [u8; LEGEND_MAP_LEN],    // font size array
+    t: Color,       // legend color
+    ta: Vec<Color>, // legend color array
+    a: u8,          // alignment
+    p: String,      // profile
+    f: u8,          // font size
+    f2: u8,         // secondary font size
+    fa: Vec<u8>,    // font size array
 }
 
 impl KeyProps {
@@ -127,12 +125,12 @@ impl KeyProps {
             d: false,
             c: Color::new(0.8, 0.8, 0.8),
             t: Color::new(0., 0., 0.),
-            ta: [Color::new(0., 0., 0.); LEGEND_MAP_LEN],
+            ta: vec![Color::new(0., 0., 0.); LEGEND_MAP_LEN],
             a: DEFAULT_ALIGNMENT,
             p: "".to_string(),
             f: DEFAULT_FONT_SIZE,
             f2: DEFAULT_FONT_SIZE,
-            fa: [DEFAULT_FONT_SIZE; LEGEND_MAP_LEN],
+            fa: vec![DEFAULT_FONT_SIZE; LEGEND_MAP_LEN],
         }
     }
 
@@ -170,11 +168,11 @@ impl KeyProps {
         if let Some(f) = props.f {
             self.f = f;
             self.f2 = f;
-            self.fa = [f; LEGEND_MAP_LEN];
+            self.fa = vec![f; LEGEND_MAP_LEN];
         }
         if let Some(f2) = props.f2 {
             self.f2 = f2;
-            self.fa = [f2; LEGEND_MAP_LEN];
+            self.fa = vec![f2; LEGEND_MAP_LEN];
             self.fa[0] = self.f;
         }
         if let Some(fa) = &props.fa {
@@ -209,7 +207,7 @@ impl KeyProps {
         self.y += 1.;
     }
 
-    fn to_key(&self, legends: [String; LEGEND_MAP_LEN]) -> Key {
+    fn to_key(&self, legends: &[String]) -> Key {
         let position = Rect::new(self.x, self.y, self.w, self.h);
 
         let is_scooped = ["scoop", "deep", "dish"]
@@ -245,9 +243,9 @@ impl KeyProps {
             position,
             key_type,
             self.c,
-            realign(legends, self.a),
-            realign(self.fa, self.a),
-            realign(self.ta, self.a),
+            &realign(legends, self.a),
+            &realign(&self.fa, self.a),
+            &realign(&self.ta, self.a),
         )
     }
 }
@@ -265,12 +263,14 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
                     props.update(&raw_props);
                 }
                 RawKleRowItem::String(legends) => {
-                    let legend_array: [String; LEGEND_MAP_LEN] = {
-                        let mut line_vec = legends.lines().map(String::from).collect::<Vec<_>>();
-                        line_vec.resize(LEGEND_MAP_LEN, String::new());
-                        line_vec.try_into().unwrap()
-                    };
-                    keys.push(props.to_key(legend_array));
+                    let legend_array = legends
+                        .lines()
+                        .map(String::from)
+                        .chain(std::iter::repeat(String::new()))
+                        .take(LEGEND_MAP_LEN)
+                        .collect::<Vec<_>>();
+
+                    keys.push(props.to_key(&legend_array));
                     props.next_key();
                 }
             }
@@ -281,22 +281,22 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
     Ok(keys)
 }
 
-fn realign<T: std::fmt::Debug + Clone>(values: [T; LEGEND_MAP_LEN], alignment: u8) -> [T; 9] {
+fn realign<T: std::fmt::Debug + Clone>(values: &[T], alignment: u8) -> Vec<&T> {
     let alignment = if (alignment as usize) > KLE_2_ORD.len() {
         DEFAULT_ALIGNMENT // This is the default used by KLE
     } else {
         alignment
     } as usize;
 
-    Vec::from(values)
-        .into_iter()
+    assert_eq!(values.len(), LEGEND_MAP_LEN);
+
+    values
+        .iter()
         .enumerate()
         .sorted_by_key(|(i, _v)| KLE_2_ORD[alignment][*i])
         .map(|(_i, v)| v)
-        .take(9)
+        .take(9) // For now only the 9 legends on the key top are supported
         .collect::<Vec<_>>()
-        .try_into()
-        .unwrap()
 }
 
 #[cfg(test)]
@@ -497,8 +497,8 @@ mod tests {
             "K".into(),
             "L".into(),
         ];
-        let ordered = [
-            "A".into(),
+        let ordered = vec![
+            "A".to_string(),
             "I".into(),
             "C".into(),
             "G".into(),
@@ -510,40 +510,43 @@ mod tests {
         ];
 
         let mut keyprops = KeyProps::default();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(&legends);
 
         assert_eq!(key.position, Rect::new(0., 0., 1., 1.));
         assert_eq!(key.key_type, KeyType::Normal);
         assert_eq!(key.key_color, Color::new(0.8, 0.8, 0.8));
-        assert_eq!(key.legend, LegendMap::new(ordered));
-        assert_eq!(key.legend_size, LegendMap::new([3; 9]));
+        assert_eq!(
+            key.legend,
+            LegendMap::new(&ordered.iter().collect::<Vec<_>>())
+        );
+        assert_eq!(key.legend_size, LegendMap::new(&[&3; 9]));
         assert_eq!(
             key.legend_color,
-            LegendMap::new([Color::new(0., 0., 0.); 9])
+            LegendMap::new(&[&Color::new(0., 0., 0.); 9])
         );
 
         keyprops.d = true;
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(&legends);
         assert_eq!(key.key_type, KeyType::None);
 
         keyprops.n = true;
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(&legends);
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Default));
 
         keyprops.p = "space".into();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(&legends);
         assert_eq!(key.key_type, KeyType::Space);
 
         keyprops.p = "scoop".into();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(&legends);
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Scoop));
 
         keyprops.p = "bar".into();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(&legends);
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Bar));
 
         keyprops.p = "bump".into();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(&legends);
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Bump));
     }
 
@@ -572,12 +575,25 @@ mod tests {
 
     #[test]
     fn test_realign() {
-        let legends = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
-        let result = ["A", "I", "C", "G", "J", "H", "B", "K", "D"];
+        let legends = vec![
+            "A".to_string(),
+            "B".into(),
+            "C".into(),
+            "D".into(),
+            "E".into(),
+            "F".into(),
+            "G".into(),
+            "H".into(),
+            "I".into(),
+            "J".into(),
+            "K".into(),
+            "L".into(),
+        ];
+        let result = vec!["A", "I", "C", "G", "J", "H", "B", "K", "D"];
 
-        assert_eq!(realign(legends, DEFAULT_ALIGNMENT), result);
+        assert_eq!(realign(&legends, DEFAULT_ALIGNMENT), result);
 
         // Using an invalid alignment so it should fall back to the default
-        assert_eq!(realign(legends, 42), result);
+        assert_eq!(realign(&legends, 42), result);
     }
 }

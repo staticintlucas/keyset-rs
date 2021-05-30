@@ -84,9 +84,17 @@ impl Color {
             .into());
         }
 
-        let chars = hex.strip_prefix('#').unwrap_or(hex);
+        let chars = if let Some('#') = hex.chars().next() {
+            &hex[1..]
+        } else {
+            hex
+        };
 
-        let char_iter = chars.chars();
+        let char_iter = if let Some('#') = hex.chars().next() {
+            hex[1..].chars() // Note: it's safe to slice by index here since we know '#' is 1b
+        } else {
+            hex.chars()
+        };
 
         let digits = match chars.len() {
             3 => char_iter
@@ -125,9 +133,9 @@ impl Color {
         let [r, g, b]: [u8; 3] = digits[0..3].try_into().unwrap();
 
         Ok(Self {
-            r: Component::new(f32::from(r) / f32::from(u8::MAX)),
-            g: Component::new(f32::from(g) / f32::from(u8::MAX)),
-            b: Component::new(f32::from(b) / f32::from(u8::MAX)),
+            r: Component::new(f32::from(r) / f32::from(std::u8::MAX)),
+            g: Component::new(f32::from(g) / f32::from(std::u8::MAX)),
+            b: Component::new(f32::from(b) / f32::from(std::u8::MAX)),
         })
     }
 
@@ -171,7 +179,7 @@ impl Color {
         let c_min = [self.r.0, self.g.0, self.b.0]
             .iter()
             .copied()
-            .fold(f32::INFINITY, f32::min);
+            .fold(std::f32::INFINITY, f32::min);
         let lum = (c_max + c_min) / 2.;
 
         if lum > 0.5 {

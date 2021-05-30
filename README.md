@@ -5,8 +5,7 @@ Eventually this aims to become the backend for pykeyset using a Python wrapper a
 
 ## Minimum supported Rust version
 
-Current MSRV is 1.48.0.
-In future there will be work to reduce this constraint, but for now this version is required.
+Current MSRV is 1.41.0, although this is subject to change as development continues.
 
 ## Contributing
 
