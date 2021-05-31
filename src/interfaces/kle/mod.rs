@@ -134,7 +134,9 @@ impl KeyProps {
         }
     }
 
-    fn update(&mut self, props: &RawKleProps) {
+    // We want to consume RawKleProps here, even though we don't strictly need to
+    #[allow(clippy::needless_pass_by_value)]
+    fn update(&mut self, props: RawKleProps) {
         self.x = props.x.unwrap_or(self.x);
         self.y = props.y.unwrap_or(self.y);
         self.w = props.w.unwrap_or(1.);
@@ -207,7 +209,7 @@ impl KeyProps {
         self.y += 1.;
     }
 
-    fn to_key(&self, legends: &[String]) -> Key {
+    fn to_key(&self, legends: Vec<String>) -> Key {
         let position = Rect::new(self.x, self.y, self.w, self.h);
 
         let is_scooped = ["scoop", "deep", "dish"]
@@ -243,9 +245,9 @@ impl KeyProps {
             position,
             key_type,
             self.c,
-            &realign(legends, self.a),
-            &realign(&self.fa, self.a),
-            &realign(&self.ta, self.a),
+            realign(legends, self.a),
+            realign(self.fa.clone(), self.a),
+            realign(self.ta.clone(), self.a),
         )
     }
 }
@@ -260,7 +262,7 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
         for data in row {
             match data {
                 RawKleRowItem::Object(raw_props) => {
-                    props.update(&raw_props);
+                    props.update(*raw_props);
                 }
                 RawKleRowItem::String(legends) => {
                     let legend_array = legends
@@ -270,7 +272,7 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
                         .take(LEGEND_MAP_LEN)
                         .collect::<Vec<_>>();
 
-                    keys.push(props.to_key(&legend_array));
+                    keys.push(props.to_key(legend_array));
                     props.next_key();
                 }
             }
@@ -281,7 +283,7 @@ pub fn parse(json: &str) -> Result<Vec<Key>> {
     Ok(keys)
 }
 
-fn realign<T: std::fmt::Debug + Clone>(values: &[T], alignment: u8) -> Vec<&T> {
+fn realign<T: std::fmt::Debug + Clone>(values: Vec<T>, alignment: u8) -> Vec<T> {
     let alignment = if (alignment as usize) > KLE_2_ORD.len() {
         DEFAULT_ALIGNMENT // This is the default used by KLE
     } else {
@@ -291,12 +293,12 @@ fn realign<T: std::fmt::Debug + Clone>(values: &[T], alignment: u8) -> Vec<&T> {
     assert_eq!(values.len(), LEGEND_MAP_LEN);
 
     values
-        .iter()
-        .enumerate()
-        .sorted_by_key(|(i, _v)| KLE_2_ORD[alignment][*i])
-        .map(|(_i, v)| v)
-        .take(9) // For now only the 9 legends on the key top are supported
-        .collect::<Vec<_>>()
+        .into_iter()
+        .zip(KLE_2_ORD[alignment].iter())
+        .sorted_by_key(|(_v, &i)| i)
+        .map(|(v, _i)| v)
+        .take(9)
+        .collect()
 }
 
 #[cfg(test)]
@@ -354,7 +356,7 @@ mod tests {
             f2: None,
             fa: None,
         };
-        keyprops.update(&rawprops);
+        keyprops.update(rawprops);
 
         assert_approx_eq!(keyprops.x, 0.);
         assert_approx_eq!(keyprops.y, 0.);
@@ -400,7 +402,7 @@ mod tests {
             f2: Some(4),
             fa: Some(vec![4, 4, 4]),
         };
-        keyprops.update(&rawprops);
+        keyprops.update(rawprops);
 
         assert_approx_eq!(keyprops.x, 1.);
         assert_approx_eq!(keyprops.y, 1.);
@@ -483,7 +485,7 @@ mod tests {
 
     #[test]
     fn test_keyprops_to_key() {
-        let legends = [
+        let legends = vec![
             "A".into(),
             "B".into(),
             "C".into(),
@@ -510,43 +512,40 @@ mod tests {
         ];
 
         let mut keyprops = KeyProps::default();
-        let key = keyprops.to_key(&legends);
+        let key = keyprops.to_key(legends.clone());
 
         assert_eq!(key.position, Rect::new(0., 0., 1., 1.));
         assert_eq!(key.key_type, KeyType::Normal);
         assert_eq!(key.key_color, Color::new(0.8, 0.8, 0.8));
-        assert_eq!(
-            key.legend,
-            LegendMap::new(&ordered.iter().collect::<Vec<_>>())
-        );
-        assert_eq!(key.legend_size, LegendMap::new(&[&3; 9]));
+        assert_eq!(key.legend, LegendMap::new(ordered));
+        assert_eq!(key.legend_size, LegendMap::new(vec![3; 9]));
         assert_eq!(
             key.legend_color,
-            LegendMap::new(&[&Color::new(0., 0., 0.); 9])
+            LegendMap::new(vec![Color::new(0., 0., 0.); 9])
         );
 
         keyprops.d = true;
-        let key = keyprops.to_key(&legends);
+        let key = keyprops.to_key(legends.clone());
         assert_eq!(key.key_type, KeyType::None);
 
         keyprops.n = true;
-        let key = keyprops.to_key(&legends);
+        let key = keyprops.to_key(legends.clone());
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Default));
 
         keyprops.p = "space".into();
-        let key = keyprops.to_key(&legends);
+        let key = keyprops.to_key(legends.clone());
         assert_eq!(key.key_type, KeyType::Space);
 
         keyprops.p = "scoop".into();
-        let key = keyprops.to_key(&legends);
+        let key = keyprops.to_key(legends.clone());
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Scoop));
 
         keyprops.p = "bar".into();
-        let key = keyprops.to_key(&legends);
+        let key = keyprops.to_key(legends.clone());
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Bar));
 
         keyprops.p = "bump".into();
-        let key = keyprops.to_key(&legends);
+        let key = keyprops.to_key(legends.clone());
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Bump));
     }
 
@@ -591,9 +590,9 @@ mod tests {
         ];
         let result = vec!["A", "I", "C", "G", "J", "H", "B", "K", "D"];
 
-        assert_eq!(realign(&legends, DEFAULT_ALIGNMENT), result);
+        assert_eq!(realign(legends.clone(), DEFAULT_ALIGNMENT), result);
 
         // Using an invalid alignment so it should fall back to the default
-        assert_eq!(realign(&legends, 42), result);
+        assert_eq!(realign(legends, 42), result);
     }
 }
