@@ -1,15 +1,34 @@
-# `keyset-rs`
+# keyset.rs
 
-A (WIP) reimplementation of pykeyset in Rust for improved performance.
+[![Test status](https://img.shields.io/github/workflow/status/staticintlucas/keyset-rs/Test?label=tests&style=flat-square)][tests]
+[![Code coverage](https://img.shields.io/codecov/c/gh/staticintlucas/keyset-rs?style=flat-square)][coverage]
+[![Rust version](https://img.shields.io/badge/rust-1.42%2B-informational?style=flat-square)][rust version]
+
+A (WIP) reimplementation of [pykeyset] in Rust for improved performance.
 Eventually this aims to become the backend for pykeyset using a Python wrapper around this project.
 
-## Minimum supported Rust version
+Current minimum supported Rust version is 1.42.0, although this is subject to change as development continues.
 
-Current MSRV is 1.42.0, although this is subject to change as development continues.
+[tests]: https://github.com/staticintlucas/keyset-rs/actions
+[coverage]: https://codecov.io/gh/staticintlucas/keyset-rs
+[rust version]: #readme
+[pykeyset]: https://github.com/staticintlucas/pykeyset
+
+## Installation
+
+Coming soon
+
+## Usage
+
+Coming soon
 
 ## Contributing
 
-If you want to contribute to this project you can install the [pre-commit] hook by running:
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
+
+You can install the [pre-commit] hook (which checks formatting, etc) by running:
 
     pip install -U pre-commit
     pre-commit install
