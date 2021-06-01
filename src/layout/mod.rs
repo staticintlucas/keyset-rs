@@ -96,16 +96,16 @@ pub enum KeyType {
 
 #[derive(Debug)]
 pub struct Key {
-    pub(super) position: Rect,
-    pub(super) key_type: KeyType,
-    pub(super) key_color: Color,
-    pub(super) legend: LegendMap<String>,
-    pub(super) legend_size: LegendMap<u8>,
-    pub(super) legend_color: LegendMap<Color>,
+    pub position: Rect,
+    pub key_type: KeyType,
+    pub key_color: Color,
+    pub(crate) legend: LegendMap<String>,
+    pub(crate) legend_size: LegendMap<u8>,
+    pub(crate) legend_color: LegendMap<Color>,
 }
 
 impl Key {
-    pub(crate) fn new(
+    pub fn new(
         position: Rect,
         key_type: KeyType,
         key_color: Color,

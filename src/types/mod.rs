@@ -195,17 +195,145 @@ macro_rules! vector_type {
     };
 }
 
+macro_rules! rect_type {
+    ($name:ident, $(($x:ident, $y:ident)),+) => {
+        #[derive(Debug, Clone, Copy)]
+        pub struct $name {
+            $(pub $x: f32, pub $y: f32, )+
+        }
+
+        impl $name {
+            #[inline]
+            pub const fn position(&self) -> Point {
+                Point::new(self.x, self.y)
+            }
+
+            #[inline]
+            pub const fn size(&self) -> Size {
+                Size::new(self.w, self.h)
+            }
+
+            #[inline]
+            pub fn center(&self) -> Point {
+                Point::new(self.x + self.w / 2., self.y + self.h / 2.)
+            }
+        }
+
+        impl PartialEq for $name {
+            fn eq(&self, other: &Self) -> bool {
+                $(self.$x == other.$x && self.$y == other.$y &&)+
+                true
+            }
+        }
+
+        impl<T: Copy> Mul<T> for $name
+        where
+            f32: Mul<T, Output = f32>,
+        {
+            type Output = Self;
+
+            #[inline]
+            fn mul(self, scale: T) -> Self::Output {
+                // The call to new will ensure that scale < 0 is handled correctly
+                Self::Output::new(
+                    $(self.$x * scale, self.$y * scale, )+
+                )
+            }
+        }
+
+        impl<T: Copy> MulAssign<T> for $name
+        where
+            f32: MulAssign<T>,
+        {
+            #[inline]
+            fn mul_assign(&mut self, scale: T) {
+                $(self.$x *= scale; self.$y *= scale;)+
+
+                // The call to new will ensure that scale < 0 is handled correctly
+                *self = Self::new(
+                    $(self.$x, self.$y, )+
+                )
+            }
+        }
+
+        impl Mul<Scale> for $name {
+            type Output = Self;
+
+            #[inline]
+            fn mul(self, scale: Scale) -> Self::Output {
+                // The call to new will ensure that scale < 0 is handled correctly
+                Self::Output::new(
+                    $(self.$x * scale.x, self.$y * scale.y, )+
+                )
+            }
+        }
+
+        impl MulAssign<Scale> for $name {
+            #[inline]
+            fn mul_assign(&mut self, scale: Scale) {
+                // Use Mul so that it will ensure that scale < 0 is handled correctly
+                *self = *self * scale;
+            }
+        }
+
+        impl<T: Copy> Div<T> for $name
+        where
+            f32: Div<T, Output = f32>,
+        {
+            type Output = Self;
+
+            #[inline]
+            fn div(self, scale: T) -> Self::Output {
+                // The call to new will ensure that scale < 0 is handled correctly
+                Self::Output::new(
+                    $(self.$x / scale, self.$y / scale, )+
+                )
+            }
+        }
+
+        impl<T: Copy> DivAssign<T> for $name
+        where
+            f32: DivAssign<T>,
+        {
+            #[inline]
+            fn div_assign(&mut self, scale: T) {
+                $(self.$x /= scale; self.$y /= scale;)+
+
+                // The call to new will ensure that scale < 0 is handled correctly
+                *self = Self::new(
+                    $(self.$x, self.$y, )+
+                )
+            }
+        }
+
+        impl Div<Scale> for $name {
+            type Output = Self;
+
+            #[inline]
+            fn div(self, scale: Scale) -> Self::Output {
+                // The call to new will ensure that scale < 0 is handled correctly
+                Self::Output::new(
+                    $(self.$x / scale.x, self.$y / scale.y, )+
+                )
+            }
+        }
+
+        impl DivAssign<Scale> for $name {
+            #[inline]
+            fn div_assign(&mut self, scale: Scale) {
+                // Use Mul so that it will ensure that scale < 0 is handled correctly
+                *self = *self / scale;
+            }
+        }
+    }
+}
+
 vector_type!(Point, x, y, diff = (Size, w, h));
 vector_type!(Size, w, h, diff = Self);
 vector_type!(Scale, x, y);
 
-#[derive(Debug, Clone, Copy)]
-pub struct Rect {
-    pub x: f32,
-    pub y: f32,
-    pub w: f32,
-    pub h: f32,
-}
+rect_type!(Rect, (x, y), (w, h));
+rect_type!(RoundRect, (x, y), (w, h), (rx, ry));
 
 impl Rect {
     #[inline]
@@ -226,27 +354,6 @@ impl Rect {
         let (w, h) = (point2 - point1).into();
         Self::new(point1.x, point1.y, w, h)
     }
-
-    #[inline]
-    pub const fn position(&self) -> Point {
-        Point::new(self.x, self.y)
-    }
-
-    #[inline]
-    pub const fn size(&self) -> Size {
-        Size::new(self.w, self.h)
-    }
-
-    #[inline]
-    pub fn center(&self) -> Point {
-        Point::new(self.x + self.w / 2., self.y + self.h / 2.)
-    }
-}
-
-impl PartialEq for Rect {
-    fn eq(&self, other: &Self) -> bool {
-        self.x == other.x && self.y == other.y && self.w == other.w && self.h == other.h
-    }
 }
 
 impl From<Rect> for (f32, f32, f32, f32) {
@@ -261,117 +368,37 @@ impl From<(f32, f32, f32, f32)> for Rect {
     }
 }
 
-impl<T: Copy> Mul<T> for Rect
-where
-    f32: Mul<T, Output = f32>,
-{
-    type Output = Self;
+impl RoundRect {
+    #[inline]
+    pub fn new(x: f32, y: f32, w: f32, h: f32, rx: f32, ry: f32) -> Self {
+        let (x, w) = if w < 0. { (x + w, -w) } else { (x, w) };
+        let (y, h) = if h < 0. { (y + h, -h) } else { (y, h) };
+        let (rx, ry) = (rx.abs().min(w / 2.), ry.abs().min(h / 2.));
+
+        Self { x, y, w, h, rx, ry }
+    }
 
     #[inline]
-    fn mul(self, scale: T) -> Self::Output {
-        // The call to new will ensure that scale < 0 is handled correctly
-        Self::Output::new(
-            self.x * scale,
-            self.y * scale,
-            self.w * scale,
-            self.h * scale,
-        )
+    pub fn from_point_and_size(point: Point, size: Size, radius: Size) -> Self {
+        Self::new(point.x, point.y, size.w, size.h, radius.w, radius.h)
+    }
+
+    #[inline]
+    pub fn from_points(point1: Point, point2: Point, radius: Size) -> Self {
+        let (w, h) = (point2 - point1).into();
+        Self::new(point1.x, point1.y, w, h, radius.w, radius.h)
     }
 }
 
-impl<T: Copy> MulAssign<T> for Rect
-where
-    f32: MulAssign<T>,
-{
-    #[inline]
-    fn mul_assign(&mut self, scale: T) {
-        self.x *= scale;
-        self.y *= scale;
-        self.w *= scale;
-        self.h *= scale;
-
-        // The call to new will ensure that scale < 0 is handled correctly
-        *self = Self::new(self.x, self.y, self.w, self.h)
+impl From<RoundRect> for (f32, f32, f32, f32, f32, f32) {
+    fn from(rect: RoundRect) -> (f32, f32, f32, f32, f32, f32) {
+        (rect.x, rect.y, rect.w, rect.h, rect.rx, rect.ry)
     }
 }
 
-impl Mul<Scale> for Rect {
-    type Output = Self;
-
-    #[inline]
-    fn mul(self, scale: Scale) -> Self::Output {
-        // The call to new will ensure that scale < 0 is handled correctly
-        Self::Output::new(
-            self.x * scale.x,
-            self.y * scale.y,
-            self.w * scale.x,
-            self.h * scale.y,
-        )
-    }
-}
-
-impl MulAssign<Scale> for Rect {
-    #[inline]
-    fn mul_assign(&mut self, scale: Scale) {
-        // Use Mul so that it will ensure that scale < 0 is handled correctly
-        *self = *self * scale;
-    }
-}
-
-impl<T: Copy> Div<T> for Rect
-where
-    f32: Div<T, Output = f32>,
-{
-    type Output = Self;
-
-    #[inline]
-    fn div(self, scale: T) -> Self::Output {
-        // The call to new will ensure that scale < 0 is handled correctly
-        Self::Output::new(
-            self.x / scale,
-            self.y / scale,
-            self.w / scale,
-            self.h / scale,
-        )
-    }
-}
-
-impl<T: Copy> DivAssign<T> for Rect
-where
-    f32: DivAssign<T>,
-{
-    #[inline]
-    fn div_assign(&mut self, scale: T) {
-        self.x /= scale;
-        self.y /= scale;
-        self.w /= scale;
-        self.h /= scale;
-
-        // The call to new will ensure that scale < 0 is handled correctly
-        *self = Self::new(self.x, self.y, self.w, self.h)
-    }
-}
-
-impl Div<Scale> for Rect {
-    type Output = Self;
-
-    #[inline]
-    fn div(self, scale: Scale) -> Self::Output {
-        // The call to new will ensure that scale < 0 is handled correctly
-        Self::Output::new(
-            self.x / scale.x,
-            self.y / scale.y,
-            self.w / scale.x,
-            self.h / scale.y,
-        )
-    }
-}
-
-impl DivAssign<Scale> for Rect {
-    #[inline]
-    fn div_assign(&mut self, scale: Scale) {
-        // Use Mul so that it will ensure that scale < 0 is handled correctly
-        *self = *self / scale;
+impl From<(f32, f32, f32, f32, f32, f32)> for RoundRect {
+    fn from(tuple: (f32, f32, f32, f32, f32, f32)) -> Self {
+        Self::new(tuple.0, tuple.1, tuple.2, tuple.3, tuple.4, tuple.5)
     }
 }
 
@@ -396,6 +423,24 @@ mod tests {
             Size::new(
                 ((self.x - other.x).powi(2) + (self.w - other.w).powi(2)).sqrt(),
                 ((self.y - other.y).powi(2) + (self.h - other.h).powi(2)).sqrt(),
+            )
+        }
+    }
+
+    // this is required for assert_approx_eq to work
+    impl Sub<RoundRect> for RoundRect {
+        type Output = Size;
+
+        fn sub(self, other: Self) -> Size {
+            Size::new(
+                ((self.x - other.x).powi(2)
+                    + (self.w - other.w).powi(2)
+                    + (self.rx - other.rx).powi(2))
+                .sqrt(),
+                ((self.y - other.y).powi(2)
+                    + (self.h - other.h).powi(2)
+                    + (self.ry - other.ry).powi(2))
+                .sqrt(),
             )
         }
     }
@@ -568,7 +613,7 @@ mod tests {
     #[test]
     fn test_rect_new() {
         let rect1 = Rect::new(1., 2., 3., 4.);
-        let rect2 = Rect::new(1., 2., -2., -3.);
+        let rect2 = RoundRect::new(1., 2., -2., -3., 0.1, 1.6);
 
         assert_approx_eq!(rect1.x, 1.);
         assert_approx_eq!(rect1.y, 2.);
@@ -579,26 +624,34 @@ mod tests {
         assert_approx_eq!(rect2.y, -1.);
         assert_approx_eq!(rect2.w, 2.);
         assert_approx_eq!(rect2.h, 3.);
+        assert_approx_eq!(rect2.rx, 0.1);
+        assert_approx_eq!(rect2.ry, 1.5);
     }
 
     #[test]
     pub fn test_rect_from_point_and_size() {
         let point = Point::new(1., 2.);
         let size = Size::new(3., 4.);
+        let radius = Size::new(2., 0.5);
 
         let rect = Rect::from_point_and_size(point, size);
-
         assert_approx_eq!(rect, Rect::new(1., 2., 3., 4.));
+
+        let rect = RoundRect::from_point_and_size(point, size, radius);
+        assert_approx_eq!(rect, RoundRect::new(1., 2., 3., 4., 1.5, 0.5));
     }
 
     #[test]
     pub fn test_rect_from_points() {
         let point1 = Point::new(1., 2.);
         let point2 = Point::new(3., 4.);
+        let radius = Size::new(2., 0.5);
 
         let rect = Rect::from_points(point1, point2);
-
         assert_approx_eq!(rect, Rect::new(1., 2., 2., 2.));
+
+        let rect = RoundRect::from_points(point1, point2, radius);
+        assert_approx_eq!(rect, RoundRect::new(1., 2., 2., 2., 1., 0.5));
     }
 
     #[test]
@@ -625,15 +678,19 @@ mod tests {
     #[test]
     fn test_rect_into() {
         let rect: (f32, f32, f32, f32) = Rect::new(1., 2., 3., 4.).into();
-
         assert_eq!(rect, (1., 2., 3., 4.));
+
+        let rect: (f32, f32, f32, f32, f32, f32) = RoundRect::new(1., 2., 3., 4., 1., 0.5).into();
+        assert_eq!(rect, (1., 2., 3., 4., 1., 0.5));
     }
 
     #[test]
     fn test_rect_from() {
         let rect: Rect = (1., 2., 3., 4.).into();
-
         assert_eq!(rect, Rect::new(1., 2., 3., 4.));
+
+        let rect: RoundRect = (1., 2., 3., 4., 1., 0.5).into();
+        assert_eq!(rect, RoundRect::new(1., 2., 3., 4., 1., 0.5));
     }
 
     #[test]
