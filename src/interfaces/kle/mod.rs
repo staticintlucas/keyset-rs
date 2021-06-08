@@ -1,11 +1,10 @@
 mod utils;
 
 use itertools::Itertools;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde_json::{Map, Value};
 
 use self::utils::de_nl_delimited_colors;
-use crate::error::Result;
 use crate::layout::{HomingType, Key, KeyType};
 use crate::types::{Color, Rect};
 
@@ -252,35 +251,44 @@ impl KeyProps {
     }
 }
 
-pub fn parse(json: &str) -> Result<Vec<Key>> {
-    let parsed = serde_json::from_str::<'_, RawKleFile>(json)?;
+pub struct Layout {
+    pub keys: Vec<Key>,
+}
 
-    let mut props = KeyProps::default();
-    let mut keys = vec![];
+impl<'de> Deserialize<'de> for Layout {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw_kle_file = RawKleFile::deserialize(deserializer)?;
 
-    for row in parsed.rows {
-        for data in row {
-            match data {
-                RawKleRowItem::Object(raw_props) => {
-                    props.update(*raw_props);
-                }
-                RawKleRowItem::String(legends) => {
-                    let legend_array = legends
-                        .lines()
-                        .map(String::from)
-                        .chain(std::iter::repeat(String::new()))
-                        .take(LEGEND_MAP_LEN)
-                        .collect::<Vec<_>>();
+        let mut props = KeyProps::default();
+        let mut keys = vec![];
 
-                    keys.push(props.to_key(legend_array));
-                    props.next_key();
+        for row in raw_kle_file.rows {
+            for data in row {
+                match data {
+                    RawKleRowItem::Object(raw_props) => {
+                        props.update(*raw_props);
+                    }
+                    RawKleRowItem::String(legends) => {
+                        let legend_array = legends
+                            .lines()
+                            .map(String::from)
+                            .chain(std::iter::repeat(String::new()))
+                            .take(LEGEND_MAP_LEN)
+                            .collect::<Vec<_>>();
+
+                        keys.push(props.to_key(legend_array));
+                        props.next_key();
+                    }
                 }
             }
+            props.next_line();
         }
-        props.next_line();
-    }
 
-    Ok(keys)
+        Ok(Layout { keys })
+    }
 }
 
 fn realign<T: std::fmt::Debug + Clone>(values: Vec<T>, alignment: u8) -> Vec<T> {
@@ -550,8 +558,8 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_json() {
-        let result = parse(
+    fn test_deserialize() {
+        let result = serde_json::from_str::<'_, Layout>(
             r#"[
                 {
                     "meta": "data"
@@ -569,7 +577,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(result.len(), 3);
+        assert_eq!(result.keys.len(), 3);
     }
 
     #[test]
