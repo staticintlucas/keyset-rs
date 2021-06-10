@@ -677,5 +677,8 @@ mod tests {
         let result = vec!["A", "I", "C", "G", "J", "H", "B", "K", "D"];
 
         assert_eq!(realign(legends.clone(), LegendAlignment::default()), result);
+
+        // Using an invalid alignment so it should fall back to the default
+        assert_eq!(realign(legends, LegendAlignment(42)), result);
     }
 }
