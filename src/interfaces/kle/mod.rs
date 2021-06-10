@@ -1,6 +1,9 @@
 mod utils;
 
+use std::fmt;
+
 use itertools::Itertools;
+use serde::de::{value, Error, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use serde_json::{Map, Value};
 
@@ -8,11 +11,13 @@ use self::utils::de_nl_delimited_colors;
 use crate::layout::{HomingType, Key, KeyType};
 use crate::types::{Color, Rect};
 
-const LEGEND_MAP_LEN: usize = 12;
+// The number of legends on a key adn number of alignment settings from KLE
+const NUM_LEGENDS: u8 = 12;
+const NUM_ALIGNMENTS: u8 = 8;
 
 // This map is stolen straight from the kle-serial source code. Note the blanks are also filled in,
 // so keyset-rs is slightly more permissive than KLE with not-strictly-valid KLE input.
-const KLE_2_ORD: [[usize; LEGEND_MAP_LEN]; 8] = [
+const KLE_2_ORD: [[usize; NUM_LEGENDS as usize]; NUM_ALIGNMENTS as usize] = [
     [0, 6, 2, 8, 9, 11, 3, 5, 1, 4, 7, 10], // 0 = no centering
     [1, 7, 0, 2, 9, 11, 4, 3, 5, 6, 8, 10], // 1 = center x
     [3, 0, 5, 1, 9, 11, 2, 6, 4, 7, 8, 10], // 2 = center y
@@ -22,12 +27,6 @@ const KLE_2_ORD: [[usize; LEGEND_MAP_LEN]; 8] = [
     [3, 0, 5, 1, 10, 2, 6, 7, 4, 8, 9, 11], // 6 = center front & y
     [4, 0, 1, 2, 10, 3, 5, 6, 7, 8, 9, 11], // 7 = center front & x & y
 ];
-
-// The default alignment when none is specified in the KLE data (index in KLE_2_ORD)
-const DEFAULT_ALIGNMENT: u8 = 4;
-
-// The default font size
-const DEFAULT_FONT_SIZE: u8 = 3;
 
 #[derive(Deserialize)]
 struct RawKleProps {
@@ -82,6 +81,50 @@ struct RawKleFile {
     rows: Vec<Vec<RawKleRowItem>>,
 }
 
+impl<'de> Deserialize<'de> for RawKleFile {
+    fn deserialize<D>(deserializer: D) -> Result<RawKleFile, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct RawKleFileVisitor;
+
+        impl<'de> Visitor<'de> for RawKleFileVisitor {
+            type Value = RawKleFile;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a sequence")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let p = seq
+                    .next_element()?
+                    .ok_or_else(|| Error::invalid_length(0, &self))?;
+                let r = Vec::<_>::deserialize(value::SeqAccessDeserializer::new(seq))?;
+                Ok(RawKleFile { _props: p, rows: r })
+            }
+        }
+
+        deserializer.deserialize_seq(RawKleFileVisitor {})
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+struct LegendAlignment(u8);
+
+impl LegendAlignment {
+    fn new(alignment: u8) -> Self {
+        Self(alignment.max(0).min(NUM_ALIGNMENTS - 1))
+    }
+
+    fn default() -> Self {
+        // The default alignment when none is specified in the KLE data
+        Self(4)
+    }
+}
+
 #[derive(Debug)]
 struct KeyProps {
     // Per-key properties
@@ -99,17 +142,20 @@ struct KeyProps {
     // Persistent properties
     c: Color, // color
     // Note: t stores the default color while ta stores the array, so slightly different from KLE
-    t: Color,       // legend color
-    ta: Vec<Color>, // legend color array
-    a: u8,          // alignment
-    p: String,      // profile
-    f: u8,          // font size
-    f2: u8,         // secondary font size
-    fa: Vec<u8>,    // font size array
+    t: Color,           // legend color
+    ta: Vec<Color>,     // legend color array
+    a: LegendAlignment, // alignment
+    p: String,          // profile
+    f: u8,              // font size
+    f2: u8,             // secondary font size
+    fa: Vec<u8>,        // font size array
 }
 
 impl KeyProps {
     fn default() -> Self {
+        // The default font size
+        const DEFAULT_FONT_SIZE: u8 = 3;
+
         Self {
             x: 0.,
             y: 0.,
@@ -124,18 +170,16 @@ impl KeyProps {
             d: false,
             c: Color::new(0.8, 0.8, 0.8),
             t: Color::new(0., 0., 0.),
-            ta: vec![Color::new(0., 0., 0.); LEGEND_MAP_LEN],
-            a: DEFAULT_ALIGNMENT,
+            ta: vec![Color::new(0., 0., 0.); NUM_LEGENDS as usize],
+            a: LegendAlignment::default(),
             p: "".to_string(),
             f: DEFAULT_FONT_SIZE,
             f2: DEFAULT_FONT_SIZE,
-            fa: vec![DEFAULT_FONT_SIZE; LEGEND_MAP_LEN],
+            fa: vec![DEFAULT_FONT_SIZE; NUM_LEGENDS as usize],
         }
     }
 
-    // We want to consume RawKleProps here, even though we don't strictly need to
-    #[allow(clippy::needless_pass_by_value)]
-    fn update(&mut self, props: RawKleProps) {
+    fn update(&mut self, props: &RawKleProps) {
         self.x = props.x.unwrap_or(self.x);
         self.y = props.y.unwrap_or(self.y);
         self.w = props.w.unwrap_or(1.);
@@ -161,7 +205,7 @@ impl KeyProps {
             _ => (),
         }
 
-        self.a = props.a.unwrap_or(self.a);
+        self.a = props.a.map_or(self.a, LegendAlignment::new);
 
         if let Some(p) = &props.p {
             self.p = p.clone()
@@ -169,11 +213,11 @@ impl KeyProps {
         if let Some(f) = props.f {
             self.f = f;
             self.f2 = f;
-            self.fa = vec![f; LEGEND_MAP_LEN];
+            self.fa = vec![f; NUM_LEGENDS as usize];
         }
         if let Some(f2) = props.f2 {
             self.f2 = f2;
-            self.fa = vec![f2; LEGEND_MAP_LEN];
+            self.fa = vec![f2; NUM_LEGENDS as usize];
             self.fa[0] = self.f;
         }
         if let Some(fa) = &props.fa {
@@ -269,14 +313,14 @@ impl<'de> Deserialize<'de> for Layout {
             for data in row {
                 match data {
                     RawKleRowItem::Object(raw_props) => {
-                        props.update(*raw_props);
+                        props.update(&*raw_props);
                     }
                     RawKleRowItem::String(legends) => {
                         let legend_array = legends
                             .lines()
                             .map(String::from)
                             .chain(std::iter::repeat(String::new()))
-                            .take(LEGEND_MAP_LEN)
+                            .take(NUM_LEGENDS as usize)
                             .collect::<Vec<_>>();
 
                         keys.push(props.to_key(legend_array));
@@ -291,18 +335,18 @@ impl<'de> Deserialize<'de> for Layout {
     }
 }
 
-fn realign<T: std::fmt::Debug + Clone>(values: Vec<T>, alignment: u8) -> Vec<T> {
-    let alignment = if (alignment as usize) > KLE_2_ORD.len() {
-        DEFAULT_ALIGNMENT // This is the default used by KLE
+fn realign<T: std::fmt::Debug + Clone>(values: Vec<T>, alignment: LegendAlignment) -> Vec<T> {
+    let alignment = if alignment.0 as usize > KLE_2_ORD.len() {
+        LegendAlignment::default() // This is the default used by KLE
     } else {
         alignment
-    } as usize;
+    };
 
-    assert_eq!(values.len(), LEGEND_MAP_LEN);
+    assert_eq!(values.len(), NUM_LEGENDS as usize);
 
     values
         .into_iter()
-        .zip(KLE_2_ORD[alignment].iter())
+        .zip(KLE_2_ORD[alignment.0 as usize].iter())
         .sorted_by_key(|(_v, &i)| i)
         .map(|(v, _i)| v)
         .take(9)
@@ -314,6 +358,40 @@ mod tests {
     use super::*;
     use crate::{layout::LegendMap, types::Rect};
     use assert_approx_eq::assert_approx_eq;
+
+    #[test]
+    fn test_deserialize_raw_kle_file() {
+        let result: RawKleFile = serde_json::from_str(
+            r#"[
+                {
+                    "meta": "data"
+                },
+                [
+                    {
+                        "a": 4,
+                        "unknown": "key"
+                    },
+                    "A",
+                    "B",
+                    "C"
+                ],
+                [
+                    "D"
+                ]
+            ]"#,
+        )
+        .unwrap();
+
+        assert_eq!(result._props.len(), 1);
+        assert_eq!(result._props["meta"], "data");
+
+        assert_eq!(result.rows.len(), 2);
+        assert_eq!(result.rows[0].len(), 4);
+        assert!(matches!(result.rows[0][0], RawKleRowItem::Object(_)));
+        assert!(matches!(result.rows[0][1], RawKleRowItem::String(_)));
+
+        assert!(matches!(serde_json::from_str::<RawKleFile>("null"), Err(_)))
+    }
 
     #[test]
     fn test_keyprops_default() {
@@ -332,12 +410,12 @@ mod tests {
         assert_eq!(keyprops.d, false);
         assert_eq!(keyprops.c, Color::new(0.8, 0.8, 0.8));
         assert_eq!(keyprops.t, Color::new(0., 0., 0.));
-        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); LEGEND_MAP_LEN]);
-        assert_eq!(keyprops.a, 4);
+        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); NUM_LEGENDS as usize]);
+        assert_eq!(keyprops.a, LegendAlignment::default());
         assert_eq!(keyprops.p, "".to_string());
         assert_eq!(keyprops.f, 3);
         assert_eq!(keyprops.f2, 3);
-        assert_eq!(keyprops.fa, [3; LEGEND_MAP_LEN]);
+        assert_eq!(keyprops.fa, [3; NUM_LEGENDS as usize]);
     }
 
     #[test]
@@ -364,7 +442,7 @@ mod tests {
             f2: None,
             fa: None,
         };
-        keyprops.update(rawprops);
+        keyprops.update(&rawprops);
 
         assert_approx_eq!(keyprops.x, 0.);
         assert_approx_eq!(keyprops.y, 0.);
@@ -379,12 +457,12 @@ mod tests {
         assert_eq!(keyprops.d, false);
         assert_eq!(keyprops.c, Color::new(0.8, 0.8, 0.8));
         assert_eq!(keyprops.t, Color::new(0., 0., 0.));
-        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); LEGEND_MAP_LEN]);
-        assert_eq!(keyprops.a, 4);
+        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); NUM_LEGENDS as usize]);
+        assert_eq!(keyprops.a, LegendAlignment::default());
         assert_eq!(keyprops.p, "".to_string());
         assert_eq!(keyprops.f, 3);
         assert_eq!(keyprops.f2, 3);
-        assert_eq!(keyprops.fa, [3; LEGEND_MAP_LEN]);
+        assert_eq!(keyprops.fa, [3; NUM_LEGENDS as usize]);
 
         let rawprops = RawKleProps {
             x: Some(1.),
@@ -410,7 +488,7 @@ mod tests {
             f2: Some(4),
             fa: Some(vec![4, 4, 4]),
         };
-        keyprops.update(rawprops);
+        keyprops.update(&rawprops);
 
         assert_approx_eq!(keyprops.x, 1.);
         assert_approx_eq!(keyprops.y, 1.);
@@ -442,11 +520,11 @@ mod tests {
                 Color::new(0.1, 0.1, 0.1)
             ]
         );
-        assert_eq!(keyprops.a, 5);
+        assert_eq!(keyprops.a, LegendAlignment::new(5));
         assert_eq!(keyprops.p, "space".to_string());
         assert_eq!(keyprops.f, 4);
         assert_eq!(keyprops.f2, 4);
-        assert_eq!(keyprops.fa, [4; LEGEND_MAP_LEN]);
+        assert_eq!(keyprops.fa, [4; NUM_LEGENDS as usize]);
     }
 
     #[test]
@@ -598,9 +676,6 @@ mod tests {
         ];
         let result = vec!["A", "I", "C", "G", "J", "H", "B", "K", "D"];
 
-        assert_eq!(realign(legends.clone(), DEFAULT_ALIGNMENT), result);
-
-        // Using an invalid alignment so it should fall back to the default
-        assert_eq!(realign(legends, 42), result);
+        assert_eq!(realign(legends.clone(), LegendAlignment::default()), result);
     }
 }

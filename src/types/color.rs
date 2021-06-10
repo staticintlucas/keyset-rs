@@ -151,7 +151,6 @@ impl Color {
     }
 
     #[inline]
-    #[allow(dead_code)] // TODO remove this when it's used
     pub(crate) fn lighter(&self, val: f32) -> Self {
         let val = val.max(0.).min(1.);
         Self {
@@ -162,7 +161,6 @@ impl Color {
     }
 
     #[inline]
-    #[allow(dead_code)] // TODO remove this when it's used
     pub(crate) fn darker(&self, val: f32) -> Self {
         let val = val.max(0.).min(1.);
         Self {
@@ -173,7 +171,6 @@ impl Color {
     }
 
     #[inline]
-    #[allow(dead_code)] // TODO remove this when it's used
     pub(crate) fn highlight(&self, val: f32) -> Self {
         let c_max = [self.r.0, self.g.0, self.b.0]
             .iter()

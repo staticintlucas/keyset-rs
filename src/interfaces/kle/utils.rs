@@ -1,9 +1,6 @@
-use std::fmt;
-
-use serde::de::{value, Error, SeqAccess, Unexpected, Visitor};
+use serde::de::{Error, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use super::RawKleFile;
 use crate::Color;
 
 pub(super) fn de_nl_delimited_colors<'de, D>(
@@ -34,40 +31,9 @@ where
     }
 }
 
-impl<'de> Deserialize<'de> for RawKleFile {
-    fn deserialize<D>(deserializer: D) -> Result<RawKleFile, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct RawKleFileVisitor;
-
-        impl<'de> Visitor<'de> for RawKleFileVisitor {
-            type Value = RawKleFile;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a sequence")
-            }
-
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
-            {
-                let p = seq
-                    .next_element()?
-                    .ok_or_else(|| Error::invalid_length(0, &self))?;
-                let r = Vec::<_>::deserialize(value::SeqAccessDeserializer::new(seq))?;
-                Ok(RawKleFile { _props: p, rows: r })
-            }
-        }
-
-        deserializer.deserialize_seq(RawKleFileVisitor {})
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::interfaces::kle::RawKleRowItem;
 
     use serde_json::{Deserializer, Error};
 
@@ -81,39 +47,5 @@ mod tests {
 
         let colors = de_nl_delimited_colors(&mut Deserializer::from_str("null"));
         assert!(matches!(colors, Ok(None)));
-    }
-
-    #[test]
-    fn test_deserialize_raw_kle_file() {
-        let result: RawKleFile = serde_json::from_str(
-            r#"[
-                {
-                    "meta": "data"
-                },
-                [
-                    {
-                        "a": 4,
-                        "unknown": "key"
-                    },
-                    "A",
-                    "B",
-                    "C"
-                ],
-                [
-                    "D"
-                ]
-            ]"#,
-        )
-        .unwrap();
-
-        assert_eq!(result._props.len(), 1);
-        assert_eq!(result._props["meta"], "data");
-
-        assert_eq!(result.rows.len(), 2);
-        assert_eq!(result.rows[0].len(), 4);
-        assert!(matches!(result.rows[0][0], RawKleRowItem::Object(_)));
-        assert!(matches!(result.rows[0][1], RawKleRowItem::String(_)));
-
-        assert!(matches!(serde_json::from_str::<RawKleFile>("null"), Err(_)))
     }
 }
