@@ -12,6 +12,7 @@
 mod error;
 mod interfaces;
 mod layout;
+mod profile;
 mod types;
 
 pub use error::{Error, Result};
