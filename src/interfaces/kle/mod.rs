@@ -410,15 +410,12 @@ mod tests {
         assert_eq!(keyprops.d, false);
         assert_eq!(keyprops.c, Color::new(0.8, 0.8, 0.8));
         assert_eq!(keyprops.t, Color::new(0., 0., 0.));
-        assert_eq!(
-            keyprops.ta,
-            [Color::new(0., 0., 0.); usize::from(NUM_LEGENDS)]
-        );
+        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); NUM_LEGENDS as usize]);
         assert_eq!(keyprops.a, LegendAlignment::default());
         assert_eq!(keyprops.p, "".to_string());
         assert_eq!(keyprops.f, 3);
         assert_eq!(keyprops.f2, 3);
-        assert_eq!(keyprops.fa, [3; usize::from(NUM_LEGENDS)]);
+        assert_eq!(keyprops.fa, [3; NUM_LEGENDS as usize]);
     }
 
     #[test]
@@ -460,15 +457,12 @@ mod tests {
         assert_eq!(keyprops.d, false);
         assert_eq!(keyprops.c, Color::new(0.8, 0.8, 0.8));
         assert_eq!(keyprops.t, Color::new(0., 0., 0.));
-        assert_eq!(
-            keyprops.ta,
-            [Color::new(0., 0., 0.); usize::from(NUM_LEGENDS)]
-        );
+        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); NUM_LEGENDS as usize]);
         assert_eq!(keyprops.a, LegendAlignment::default());
         assert_eq!(keyprops.p, "".to_string());
         assert_eq!(keyprops.f, 3);
         assert_eq!(keyprops.f2, 3);
-        assert_eq!(keyprops.fa, [3; usize::from(NUM_LEGENDS)]);
+        assert_eq!(keyprops.fa, [3; NUM_LEGENDS as usize]);
 
         let rawprops = RawKleProps {
             x: Some(1.),
