@@ -170,12 +170,12 @@ impl KeyProps {
             d: false,
             c: Color::new(0.8, 0.8, 0.8),
             t: Color::new(0., 0., 0.),
-            ta: vec![Color::new(0., 0., 0.); NUM_LEGENDS as usize],
+            ta: vec![Color::new(0., 0., 0.); usize::from(NUM_LEGENDS)],
             a: LegendAlignment::default(),
             p: "".to_string(),
             f: DEFAULT_FONT_SIZE,
             f2: DEFAULT_FONT_SIZE,
-            fa: vec![DEFAULT_FONT_SIZE; NUM_LEGENDS as usize],
+            fa: vec![DEFAULT_FONT_SIZE; usize::from(NUM_LEGENDS)],
         }
     }
 
@@ -213,11 +213,11 @@ impl KeyProps {
         if let Some(f) = props.f {
             self.f = f;
             self.f2 = f;
-            self.fa = vec![f; NUM_LEGENDS as usize];
+            self.fa = vec![f; usize::from(NUM_LEGENDS)];
         }
         if let Some(f2) = props.f2 {
             self.f2 = f2;
-            self.fa = vec![f2; NUM_LEGENDS as usize];
+            self.fa = vec![f2; usize::from(NUM_LEGENDS)];
             self.fa[0] = self.f;
         }
         if let Some(fa) = &props.fa {
@@ -320,7 +320,7 @@ impl<'de> Deserialize<'de> for Layout {
                             .lines()
                             .map(String::from)
                             .chain(std::iter::repeat(String::new()))
-                            .take(NUM_LEGENDS as usize)
+                            .take(usize::from(NUM_LEGENDS))
                             .collect::<Vec<_>>();
 
                         keys.push(props.to_key(legend_array));
@@ -336,17 +336,17 @@ impl<'de> Deserialize<'de> for Layout {
 }
 
 fn realign<T: std::fmt::Debug + Clone>(values: Vec<T>, alignment: LegendAlignment) -> Vec<T> {
-    let alignment = if alignment.0 as usize > KLE_2_ORD.len() {
+    let alignment = if usize::from(alignment.0) > KLE_2_ORD.len() {
         LegendAlignment::default() // This is the default used by KLE
     } else {
         alignment
     };
 
-    assert_eq!(values.len(), NUM_LEGENDS as usize);
+    assert_eq!(values.len(), usize::from(NUM_LEGENDS));
 
     values
         .into_iter()
-        .zip(KLE_2_ORD[alignment.0 as usize].iter())
+        .zip(KLE_2_ORD[usize::from(alignment.0)].iter())
         .sorted_by_key(|(_v, &i)| i)
         .map(|(v, _i)| v)
         .take(9)
@@ -410,12 +410,15 @@ mod tests {
         assert_eq!(keyprops.d, false);
         assert_eq!(keyprops.c, Color::new(0.8, 0.8, 0.8));
         assert_eq!(keyprops.t, Color::new(0., 0., 0.));
-        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); NUM_LEGENDS as usize]);
+        assert_eq!(
+            keyprops.ta,
+            [Color::new(0., 0., 0.); usize::from(NUM_LEGENDS)]
+        );
         assert_eq!(keyprops.a, LegendAlignment::default());
         assert_eq!(keyprops.p, "".to_string());
         assert_eq!(keyprops.f, 3);
         assert_eq!(keyprops.f2, 3);
-        assert_eq!(keyprops.fa, [3; NUM_LEGENDS as usize]);
+        assert_eq!(keyprops.fa, [3; usize::from(NUM_LEGENDS)]);
     }
 
     #[test]
@@ -457,12 +460,15 @@ mod tests {
         assert_eq!(keyprops.d, false);
         assert_eq!(keyprops.c, Color::new(0.8, 0.8, 0.8));
         assert_eq!(keyprops.t, Color::new(0., 0., 0.));
-        assert_eq!(keyprops.ta, [Color::new(0., 0., 0.); NUM_LEGENDS as usize]);
+        assert_eq!(
+            keyprops.ta,
+            [Color::new(0., 0., 0.); usize::from(NUM_LEGENDS)]
+        );
         assert_eq!(keyprops.a, LegendAlignment::default());
         assert_eq!(keyprops.p, "".to_string());
         assert_eq!(keyprops.f, 3);
         assert_eq!(keyprops.f2, 3);
-        assert_eq!(keyprops.fa, [3; NUM_LEGENDS as usize]);
+        assert_eq!(keyprops.fa, [3; usize::from(NUM_LEGENDS)]);
 
         let rawprops = RawKleProps {
             x: Some(1.),
