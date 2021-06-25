@@ -32,7 +32,7 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &*self.inner {
             ErrorImpl::JsonParseError(error) => Some(error),
-            _ => None,
+            ErrorImpl::InvalidColor(_) => None,
         }
     }
 }

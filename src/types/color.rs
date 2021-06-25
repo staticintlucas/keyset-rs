@@ -141,7 +141,7 @@ impl Color {
 
     #[inline]
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    pub fn to_hex(&self) -> String {
+    pub fn to_hex(self) -> String {
         format!(
             "#{:02x}{:02x}{:02x}",
             (self.r.0 * 255.).round() as u8,
