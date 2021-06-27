@@ -1,5 +1,8 @@
+mod de;
+
 use itertools::Itertools;
 
+pub use self::de::*;
 use crate::types::{Color, Rect};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -122,6 +125,10 @@ impl Key {
             legend_color: LegendMap::new(legend_color),
         }
     }
+}
+
+pub struct Layout {
+    pub keys: Vec<Key>,
 }
 
 #[cfg(test)]

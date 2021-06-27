@@ -1,7 +1,7 @@
 use serde::de::{Error, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use crate::Color;
+use crate::types::Color;
 
 pub(super) fn de_nl_delimited_colors<'de, D>(
     deserializer: D,

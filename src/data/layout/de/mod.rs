@@ -8,7 +8,7 @@ use serde::{Deserialize, Deserializer};
 use serde_json::{Map, Value};
 
 use self::utils::de_nl_delimited_colors;
-use crate::layout::{HomingType, Key, KeyType};
+use super::{HomingType, Key, KeyType, Layout};
 use crate::types::{Color, Rect};
 
 // The number of legends on a key adn number of alignment settings from KLE
@@ -295,10 +295,6 @@ impl KeyProps {
     }
 }
 
-pub struct Layout {
-    pub keys: Vec<Key>,
-}
-
 impl<'de> Deserialize<'de> for Layout {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
@@ -355,8 +351,9 @@ fn realign<T: std::fmt::Debug + Clone>(values: Vec<T>, alignment: LegendAlignmen
 
 #[cfg(test)]
 mod tests {
+    use super::super::LegendMap;
     use super::*;
-    use crate::{layout::LegendMap, types::Rect};
+    use crate::types::Rect;
     use assert_approx_eq::assert_approx_eq;
 
     #[test]

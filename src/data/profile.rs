@@ -27,12 +27,12 @@ pub enum HomingType {
     Bump,
 }
 
-impl From<HomingType> for crate::layout::HomingType {
+impl From<HomingType> for super::layout::HomingType {
     fn from(r#type: HomingType) -> Self {
         match r#type {
-            HomingType::Scoop => crate::layout::HomingType::Scoop,
-            HomingType::Bar => crate::layout::HomingType::Bar,
-            HomingType::Bump => crate::layout::HomingType::Bump,
+            HomingType::Scoop => super::layout::HomingType::Scoop,
+            HomingType::Bar => super::layout::HomingType::Bar,
+            HomingType::Bump => super::layout::HomingType::Bump,
         }
     }
 }
@@ -381,7 +381,7 @@ mod tests {
 
     #[test]
     fn test_homing_type_from() {
-        use crate::layout::HomingType as LayoutHomingType;
+        use super::super::layout::HomingType as LayoutHomingType;
 
         assert_eq!(
             LayoutHomingType::from(HomingType::Scoop),
