@@ -3,7 +3,7 @@ mod de;
 use itertools::Itertools;
 
 pub use self::de::*;
-use crate::types::{Color, Rect};
+use crate::utils::{Color, Rect};
 
 #[derive(Debug, Clone, PartialEq)]
 struct HorizontalAlign<T> {

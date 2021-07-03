@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::types::InvalidColor;
+use crate::utils::InvalidColor;
 
 #[derive(Debug)]
 pub struct Error {
@@ -57,7 +57,7 @@ impl From<InvalidColor> for Error {
 mod tests {
     use std::error::Error;
 
-    use crate::types::Color;
+    use crate::utils::Color;
 
     fn json_parse_error() -> super::Error {
         let json = serde_json::from_str::<serde_json::Value>("invalid");

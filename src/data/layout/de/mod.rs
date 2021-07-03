@@ -9,7 +9,7 @@ use serde_json::{Map, Value};
 
 use self::utils::de_nl_delimited_colors;
 use super::{HomingType, Key, KeyType, Layout};
-use crate::types::{Color, Rect};
+use crate::utils::{Color, Rect};
 
 // The number of legends on a key adn number of alignment settings from KLE
 const NUM_LEGENDS: u8 = 12;
@@ -353,7 +353,7 @@ fn realign<T: std::fmt::Debug + Clone>(values: Vec<T>, alignment: LegendAlignmen
 mod tests {
     use super::super::LegendMap;
     use super::*;
-    use crate::types::Rect;
+    use crate::utils::Rect;
     use assert_approx_eq::assert_approx_eq;
 
     #[test]

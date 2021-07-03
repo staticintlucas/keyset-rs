@@ -5,7 +5,7 @@ use itertools::{process_results, Itertools};
 use serde::de::{Error, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use crate::types::{Rect, RoundRect};
+use crate::utils::{Rect, RoundRect};
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Deserialize)]
