@@ -10,5 +10,6 @@
 )]
 
 mod data;
+mod drawing;
 mod error;
 mod utils;
