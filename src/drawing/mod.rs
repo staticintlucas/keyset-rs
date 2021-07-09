@@ -40,3 +40,25 @@ impl SvgDrawing {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_svg_drawing_new() {
+        let drawing1 = SvgDrawing::new(10., 10., None);
+        assert_eq!(
+            drawing1.root.to_string(),
+            r#"<svg height="0.96000" viewBox="0 0 10.00000 10.00000" width="0.96000" xmlns="http://www.w3.org/2000/svg"/>"#
+        );
+
+        let drawing2 = SvgDrawing::new(10., 10., Some(Color::new(0., 0., 0.)));
+        assert_eq!(
+            drawing2.root.to_string(),
+            r##"<svg height="0.96000" viewBox="0 0 10.00000 10.00000" width="0.96000" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#000000" height="10.00000" width="10.00000" x="0" y="0"/>
+</svg>"##
+        )
+    }
+}

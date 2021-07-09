@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::{self, Debug, Display};
+use std::fmt::Debug;
 
 use maplit::hashmap;
 use svg::node::element::{Definitions as Defs, LinearGradient, RadialGradient, Stop};
@@ -19,30 +19,22 @@ enum GradientType {
     Radial,
 }
 
-impl Display for GradientType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(&self, f)
-    }
-}
-
+#[derive(Debug, Clone)]
 enum SvgGradient {
     Linear(LinearGradient),
     Radial(RadialGradient),
 }
 
-struct SvgGradients {
-    gradients: HashMap<String, SvgGradient>,
-}
+#[derive(Debug, Clone)]
+struct SvgGradients(HashMap<String, SvgGradient>);
 
 impl SvgGradients {
     fn new() -> Self {
-        Self {
-            gradients: hashmap! {},
-        }
+        Self(hashmap! {})
     }
 
     fn add(self, id: String, color: Color, depth: f32, gradient_type: GradientType) -> Self {
-        if self.gradients.contains_key(&id) {
+        if self.0.contains_key(&id) {
             self
         } else {
             // Generate the gradient type
@@ -99,21 +91,119 @@ impl SvgGradients {
 
             // And add the gradient to the map and return a new Self
             let gradients = self
-                .gradients
+                .0
                 .into_iter()
                 .chain(std::iter::once((id, gradient)))
                 .collect();
 
-            Self { gradients } // { gradients, ..self }
+            Self(gradients)
         }
     }
 
     fn into_defs(self) -> Defs {
-        self.gradients
+        self.0
             .into_iter()
             .fold(Defs::new(), |defs, (_id, gradient)| match gradient {
                 SvgGradient::Linear(grad) => defs.add(grad),
                 SvgGradient::Radial(grad) => defs.add(grad),
             })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_svg_gradient_new() {
+        let gradients = SvgGradients::new();
+        assert_eq!(gradients.0.len(), 0);
+    }
+
+    #[test]
+    fn test_svg_gradient_add() {
+        let gradients = SvgGradients::new()
+            .add(
+                "test1".into(),
+                Color::new(0.8, 0., 0.),
+                52.5,
+                GradientType::HorizontalLinear,
+            )
+            .add(
+                "test2".into(),
+                Color::new(0.8, 0., 0.),
+                52.5,
+                GradientType::VerticalLinear,
+            )
+            .add(
+                "test3".into(),
+                Color::new(0.8, 0., 0.),
+                52.5,
+                GradientType::Radial,
+            );
+
+        assert_eq!(gradients.0.len(), 3);
+        assert!(matches!(
+            gradients.0["test1".into()],
+            SvgGradient::Linear(_)
+        ));
+        assert!(matches!(
+            gradients.0["test2".into()],
+            SvgGradient::Linear(_)
+        ));
+        assert!(matches!(
+            gradients.0["test3".into()],
+            SvgGradient::Radial(_)
+        ));
+
+        let gradients = gradients.add(
+            "test1".into(),
+            Color::new(0.8, 0., 0.),
+            0.5,
+            GradientType::Radial,
+        );
+        assert_eq!(gradients.0.len(), 3);
+    }
+
+    #[test]
+    fn test_svg_gradient_into_defs() {
+        let linear = SvgGradients::new().add(
+            "test".into(),
+            Color::new(0.8, 0., 0.),
+            52.5,
+            GradientType::HorizontalLinear,
+        );
+        let radial = SvgGradients::new().add(
+            "test".into(),
+            Color::new(0.8, 0., 0.),
+            52.5,
+            GradientType::Radial,
+        );
+
+        assert_eq!(
+            svg::Document::new().add(linear.into_defs()).to_string(),
+            r##"<svg xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="test" x1="100%" x2="0%" y1="0%" y2="0%">
+<stop color="#d11a1a" offset="0%"/>
+<stop color="#cc0000" offset="50%"/>
+<stop color="#b80000" offset="100%"/>
+</linearGradient>
+</defs>
+</svg>"##
+        );
+
+        assert_eq!(
+            svg::Document::new().add(radial.into_defs()).to_string(),
+            r##"<svg xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialGradient cx="100%" cy="100%" fr="0%" fx="100%" fy="100%" id="test" r="141%">
+<stop color="#d11a1a" offset="0%"/>
+<stop color="#cc0000" offset="50%"/>
+<stop color="#b80000" offset="100%"/>
+</radialGradient>
+</defs>
+</svg>"##
+        );
     }
 }
