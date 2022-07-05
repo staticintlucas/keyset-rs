@@ -16,8 +16,8 @@ where
                 if hex.is_empty() {
                     Ok(None)
                 } else {
-                    Color::from_hex(&hex).map(Some).map_err(|_| {
-                        D::Error::invalid_value(Unexpected::Str(&hex), &"a hex color code")
+                    Color::from_hex(hex).map(Some).map_err(|_| {
+                        D::Error::invalid_value(Unexpected::Str(hex), &"a hex color code")
                     })
                 }
             })

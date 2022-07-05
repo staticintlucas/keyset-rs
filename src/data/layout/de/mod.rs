@@ -208,8 +208,8 @@ impl KeyProps {
         self.a = props.a.map_or(self.a, LegendAlignment::new);
 
         if let Some(p) = &props.p {
-            self.p = p.clone()
-        };
+            self.p = p.clone();
+        }
         if let Some(f) = props.f {
             self.f = f;
             self.f2 = f;
