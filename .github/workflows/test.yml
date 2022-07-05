@@ -66,11 +66,6 @@ jobs:
           toolchain: stable
           components: llvm-tools-preview
           override: true
-      - name: Setup grcov
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: grcov
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
@@ -80,7 +75,7 @@ jobs:
           RUSTFLAGS: -Cinstrument-coverage
           LLVM_PROFILE_FILE: keyset-rs-%p-%m.profraw
       - name: Run grcov
-        run: grcov . -s . -b ./target/debug/ -t lcov --branch --llvm --ignore-not-existing -o ./lcov.info --ignore '/*' --excl-line '^\s*(#\[derive\([\w, ]*\)\]|unreachable!\(\);?)$'
+        uses: rraval/actions-rs-grcov@e96292b
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1
         with:
