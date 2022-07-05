@@ -20,6 +20,8 @@ jobs:
         uses: pre-commit/action@v2.0.2
         with:
           extra_args: --all-files
+      - name: Run cargo-deny
+        uses: EmbarkStudios/cargo-deny-action@v1
 
   test:
     name: Build & Test
@@ -49,8 +51,6 @@ jobs:
         with:
           command: test
           args: --all
-        env:
-          RUSTFLAGS: -D warnings
 
   coverage:
     name: Test coverage
