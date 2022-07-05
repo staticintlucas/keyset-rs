@@ -63,20 +63,21 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: stable
           components: llvm-tools-preview
           override: true
       - name: Setup grcov
-        run: |
-          wget https://github.com/mozilla/grcov/releases/download/v0.8.0/grcov-linux-x86_64.tar.bz2 -qO- | tar -xjvf -
-          mv grcov ~/.cargo/bin
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: grcov
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all
         env:
-          RUSTFLAGS: -Zinstrument-coverage -Clink-dead-code
+          RUSTFLAGS: -Cinstrument-coverage
           LLVM_PROFILE_FILE: keyset-rs-%p-%m.profraw
       - name: Run grcov
         run: grcov . -s . -b ./target/debug/ -t lcov --branch --llvm --ignore-not-existing -o ./lcov.info --ignore '/*' --excl-line '^\s*(#\[derive\([\w, ]*\)\]|unreachable!\(\);?)$'
