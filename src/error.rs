@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::data::layout::InvalidKeySize;
 use crate::utils::InvalidColor;
 
 #[derive(Debug)]
@@ -12,18 +13,16 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug)]
 pub(crate) enum ErrorImpl {
     JsonParseError(serde_json::Error),
+    InvalidKeySize(InvalidKeySize),
     InvalidColor(InvalidColor),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self.inner {
-            ErrorImpl::JsonParseError(error) => {
-                write!(f, "error parsing JSON: {}", error)
-            }
-            ErrorImpl::InvalidColor(error) => {
-                write!(f, "error parsing color: {}", error)
-            }
+            ErrorImpl::JsonParseError(error) => write!(f, "error parsing JSON: {}", error),
+            ErrorImpl::InvalidKeySize(error) => write!(f, "error parsing KLE layout: {}", error),
+            ErrorImpl::InvalidColor(error) => write!(f, "error parsing color: {}", error),
         }
     }
 }
@@ -32,7 +31,7 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &*self.inner {
             ErrorImpl::JsonParseError(error) => Some(error),
-            ErrorImpl::InvalidColor(_) => None,
+            _ => None,
         }
     }
 }
@@ -41,6 +40,14 @@ impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
         Self {
             inner: Box::new(ErrorImpl::JsonParseError(error)),
+        }
+    }
+}
+
+impl From<InvalidKeySize> for Error {
+    fn from(error: InvalidKeySize) -> Self {
+        Self {
+            inner: Box::new(ErrorImpl::InvalidKeySize(error)),
         }
     }
 }

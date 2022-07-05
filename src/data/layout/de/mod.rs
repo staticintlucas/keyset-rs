@@ -1,6 +1,7 @@
 mod utils;
 
 use std::fmt;
+use std::result::Result as StdResult;
 
 use itertools::Itertools;
 use serde::de::{value, Error, SeqAccess, Visitor};
@@ -8,8 +9,9 @@ use serde::{Deserialize, Deserializer};
 use serde_json::{Map, Value};
 
 use self::utils::de_nl_delimited_colors;
-use super::{HomingType, Key, KeyType, Layout};
-use crate::utils::{Color, Rect};
+use super::{HomingType, Key, KeySize, KeyType, Layout};
+use crate::error::Result;
+use crate::utils::{Color, Point};
 
 // The number of legends on a key adn number of alignment settings from KLE
 const NUM_LEGENDS: u8 = 12;
@@ -82,7 +84,7 @@ struct RawKleFile {
 }
 
 impl<'de> Deserialize<'de> for RawKleFile {
-    fn deserialize<D>(deserializer: D) -> Result<RawKleFile, D::Error>
+    fn deserialize<D>(deserializer: D) -> StdResult<RawKleFile, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -95,7 +97,7 @@ impl<'de> Deserialize<'de> for RawKleFile {
                 formatter.write_str("a sequence")
             }
 
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            fn visit_seq<A>(self, mut seq: A) -> StdResult<Self::Value, A::Error>
             where
                 A: SeqAccess<'de>,
             {
@@ -252,8 +254,9 @@ impl KeyProps {
         self.y += 1.;
     }
 
-    fn to_key(&self, legends: Vec<String>) -> Key {
-        let position = Rect::new(self.x, self.y, self.w, self.h);
+    fn to_key(&self, legends: Vec<String>) -> Result<Key> {
+        let position = Point::new(self.x, self.y);
+        let size = KeySize::new(self.w, self.h, self.x2, self.y2, self.w2, self.h2)?;
 
         let is_scooped = ["scoop", "deep", "dish"]
             .iter()
@@ -284,14 +287,15 @@ impl KeyProps {
             KeyType::Normal
         };
 
-        Key::new(
+        Ok(Key::new(
             position,
+            size,
             key_type,
             self.c,
             realign(legends, self.a),
             realign(self.fa.clone(), self.a),
             realign(self.ta.clone(), self.a),
-        )
+        ))
     }
 }
 
@@ -319,7 +323,7 @@ impl<'de> Deserialize<'de> for Layout {
                             .take(usize::from(NUM_LEGENDS))
                             .collect::<Vec<_>>();
 
-                        keys.push(props.to_key(legend_array));
+                        keys.push(props.to_key(legend_array).map_err(Error::custom)?);
                         props.next_key();
                     }
                 }
@@ -353,7 +357,6 @@ fn realign<T: std::fmt::Debug + Clone>(values: Vec<T>, alignment: LegendAlignmen
 mod tests {
     use super::super::LegendMap;
     use super::*;
-    use crate::utils::Rect;
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
@@ -595,9 +598,10 @@ mod tests {
         ];
 
         let mut keyprops = KeyProps::default();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(legends.clone()).unwrap();
 
-        assert_eq!(key.position, Rect::new(0., 0., 1., 1.));
+        assert_eq!(key.position, Point::new(0., 0.));
+        assert_eq!(key.size, KeySize::Normal { w: 1., h: 1. });
         assert_eq!(key.key_type, KeyType::Normal);
         assert_eq!(key.key_color, Color::new(0.8, 0.8, 0.8));
         assert_eq!(key.legend, LegendMap::new(ordered));
@@ -608,27 +612,27 @@ mod tests {
         );
 
         keyprops.d = true;
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(legends.clone()).unwrap();
         assert_eq!(key.key_type, KeyType::None);
 
         keyprops.n = true;
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(legends.clone()).unwrap();
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Default));
 
         keyprops.p = "space".into();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(legends.clone()).unwrap();
         assert_eq!(key.key_type, KeyType::Space);
 
         keyprops.p = "scoop".into();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(legends.clone()).unwrap();
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Scoop));
 
         keyprops.p = "bar".into();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(legends.clone()).unwrap();
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Bar));
 
         keyprops.p = "bump".into();
-        let key = keyprops.to_key(legends.clone());
+        let key = keyprops.to_key(legends.clone()).unwrap();
         assert_eq!(key.key_type, KeyType::Homing(HomingType::Bump));
     }
 
