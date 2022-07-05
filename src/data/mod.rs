@@ -1,2 +1,2 @@
-mod layout;
-mod profile;
+pub(crate) mod layout;
+pub(crate) mod profile;

@@ -13,7 +13,7 @@ use crate::utils::Color;
 const DEPTH_CONSTANT: f32 = 525.;
 
 #[derive(Debug, Clone, Copy)]
-enum GradientType {
+pub(super) enum GradientType {
     HorizontalLinear,
     VerticalLinear,
     Radial,
@@ -26,14 +26,14 @@ enum SvgGradient {
 }
 
 #[derive(Debug, Clone)]
-struct SvgGradients(HashMap<String, SvgGradient>);
+pub(super) struct SvgGradients(HashMap<String, SvgGradient>);
 
 impl SvgGradients {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self(hashmap! {})
     }
 
-    fn add(self, id: String, color: Color, depth: f32, gradient_type: GradientType) -> Self {
+    pub fn add(self, id: String, color: Color, depth: f32, gradient_type: GradientType) -> Self {
         if self.0.contains_key(&id) {
             self
         } else {
@@ -100,7 +100,7 @@ impl SvgGradients {
         }
     }
 
-    fn into_defs(self) -> Defs {
+    pub fn into_defs(self) -> Defs {
         self.0
             .into_iter()
             .fold(Defs::new(), |defs, (_id, gradient)| match gradient {
