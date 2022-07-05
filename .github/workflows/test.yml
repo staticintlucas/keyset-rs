@@ -67,10 +67,10 @@ jobs:
           components: llvm-tools-preview
           override: true
       - name: Setup grcov
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/install@v0.1
         with:
-          command: install
-          args: grcov
+          crate: grcov
+          use-tool-cache: true
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
