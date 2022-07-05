@@ -73,7 +73,6 @@ jobs:
           args: --all
         env:
           RUSTFLAGS: -Cinstrument-coverage
-          LLVM_PROFILE_FILE: keyset-rs-%p-%m.profraw
       - name: Run grcov
         uses: rraval/actions-rs-grcov@e96292badb0d33512d16654efb0ee3032a9a3cff
       - name: Upload to codecov.io
