@@ -1,188 +1,53 @@
-use std::convert::TryInto;
 use std::fmt;
 use std::result::Result as StdResult;
+use std::str::FromStr;
 
-use itertools::{Chunk, Itertools};
 use serde::{Deserialize, Deserializer};
+
+use palette::{Clamp, Hsl, LinSrgb, Srgb};
+use palette::{FromColor, Shade};
 
 use crate::error::Result;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-struct Component(f32);
-
-impl Component {
-    #[inline]
-    fn new(val: f32) -> Self {
-        Component(val.max(0.).min(1.))
-    }
-}
-
-impl std::ops::Add<Self> for Component {
-    type Output = Self;
-
-    #[inline]
-    fn add(self, rhs: Component) -> Self {
-        // We call new here for bounds checks
-        Component::new(self.0 + rhs.0)
-    }
-}
-
-impl std::ops::Sub<Self> for Component {
-    type Output = Self;
-
-    #[inline]
-    fn sub(self, rhs: Self) -> Self {
-        // We call new here for bounds checks
-        Component::new(self.0 - rhs.0)
-    }
-}
-
-impl std::ops::Mul<f32> for Component {
-    type Output = Self;
-
-    #[inline]
-    fn mul(self, rhs: f32) -> Self {
-        // We call new here for bounds checks
-        Component::new(self.0 * rhs)
-    }
-}
-
-impl std::ops::Div<f32> for Component {
-    type Output = Self;
-
-    #[inline]
-    fn div(self, rhs: f32) -> Self {
-        // We call new here since we still need bounds checks here, if other < 1 we could overflow.
-        Component::new(self.0 / rhs)
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Color {
-    r: Component,
-    g: Component,
-    b: Component,
-}
+pub struct Color(LinSrgb);
 
 impl Color {
     #[inline]
     pub fn new(r: f32, g: f32, b: f32) -> Self {
-        Self {
-            r: Component::new(r),
-            g: Component::new(g),
-            b: Component::new(b),
-        }
-    }
-
-    pub fn from_hex(hex: &str) -> Result<Self> {
-        // Return quickly for any non-ASCII characters since they are invalid anyway and it makes
-        // the rest of the implementation a lot easier
-        if !hex.is_ascii() {
-            return Err(InvalidColor {
-                color: hex.to_string(),
-            }
-            .into());
-        }
-
-        let chars = if let Some('#') = hex.chars().next() {
-            &hex[1..]
-        } else {
-            hex
-        };
-
-        let char_iter = if let Some('#') = hex.chars().next() {
-            hex[1..].chars() // Note: it's safe to slice by index here since we know '#' is 1b
-        } else {
-            hex.chars()
-        };
-
-        let digits = match chars.len() {
-            3 => char_iter
-                .map(|x| {
-                    u8::from_str_radix(&x.to_string(), 16)
-                        .map(|v| v * 17)
-                        .map_err(|_| {
-                            InvalidColor {
-                                color: hex.to_string(),
-                            }
-                            .into()
-                        })
-                })
-                .collect::<Result<Vec<u8>>>(),
-            6 => char_iter
-                .chunks(2)
-                .into_iter()
-                .map(Chunk::collect::<String>)
-                .map(|x| {
-                    u8::from_str_radix(&x, 16).map_err(|_| {
-                        InvalidColor {
-                            color: hex.to_string(),
-                        }
-                        .into()
-                    })
-                })
-                .collect::<Result<Vec<u8>>>(),
-            _ => Err(InvalidColor {
-                color: hex.to_string(),
-            }
-            .into()),
-        }?;
-
-        // Note this unwrap will never panic since the iterator explicitly has the right number of
-        // elements
-        let [r, g, b]: [u8; 3] = digits[0..3].try_into().unwrap();
-
-        Ok(Self {
-            r: Component::new(f32::from(r) / f32::from(std::u8::MAX)),
-            g: Component::new(f32::from(g) / f32::from(std::u8::MAX)),
-            b: Component::new(f32::from(b) / f32::from(std::u8::MAX)),
-        })
+        Self(Srgb::from_components((r, g, b)).clamp().into_linear())
     }
 
     #[inline]
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    pub fn from_hex(hex: &str) -> Result<Self> {
+        Srgb::from_str(hex)
+            .map(|c| Self(c.into_format().into_linear()))
+            .map_err(|_| {
+                InvalidColor {
+                    color: hex.to_string(),
+                }
+                .into()
+            })
+    }
+
+    #[inline]
     pub fn to_hex(self) -> String {
-        format!(
-            "#{:02x}{:02x}{:02x}",
-            (self.r.0 * 255.).round() as u8,
-            (self.g.0 * 255.).round() as u8,
-            (self.b.0 * 255.).round() as u8,
-        )
+        format!("#{:02x}", Srgb::from_linear(self.0).into_format::<u8>())
     }
 
     #[inline]
     pub(crate) fn lighter(&self, val: f32) -> Self {
-        let val = val.max(0.).min(1.);
-        Self {
-            r: (Component::new(1.) * val) + (self.r * (1. - val)),
-            g: (Component::new(1.) * val) + (self.g * (1. - val)),
-            b: (Component::new(1.) * val) + (self.b * (1. - val)),
-        }
+        Self(self.0.lighten(val))
     }
 
     #[inline]
     pub(crate) fn darker(&self, val: f32) -> Self {
-        let val = val.max(0.).min(1.);
-        Self {
-            r: (Component::new(0.) * val) + (self.r * (1. - val)),
-            g: (Component::new(0.) * val) + (self.g * (1. - val)),
-            b: (Component::new(0.) * val) + (self.b * (1. - val)),
-        }
+        Self(self.0.darken(val))
     }
 
     #[inline]
     pub(crate) fn highlight(&self, val: f32) -> Self {
-        let c_max = [self.r.0, self.g.0, self.b.0]
-            .iter()
-            .copied()
-            .fold(0., f32::max);
-        let c_min = [self.r.0, self.g.0, self.b.0]
-            .iter()
-            .copied()
-            .fold(std::f32::INFINITY, f32::min);
-        let lum = (c_max + c_min) / 2.;
-
-        if lum > 0.5 {
+        if Hsl::from_color(self.0).lightness > 0.25 {
             self.darker(val)
         } else {
             self.lighter(val)
@@ -223,73 +88,29 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
-    fn test_component_new() {
-        let component0 = Component::new(0.4);
-        assert_eq!(component0.0, 0.4);
-        let component1 = Component::new(-256.0);
-        assert_eq!(component1.0, 0.);
-        let component2 = Component::new(std::f32::INFINITY);
-        assert_eq!(component2.0, 1.);
-    }
-
-    #[test]
-    fn test_component_add() {
-        let component0 = Component::new(0.4);
-        let component1 = Component::new(0.2);
-        assert_approx_eq!((component0 + component1).0, 0.6);
-
-        let component2 = Component::new(0.8);
-        assert_eq!((component0 + component2).0, 1.);
-    }
-
-    #[test]
-    fn test_component_sub() {
-        let component0 = Component::new(0.4);
-        let component1 = Component::new(0.2);
-        assert_approx_eq!((component0 - component1).0, 0.2);
-
-        let component2 = Component::new(0.8);
-        assert_eq!((component0 - component2).0, 0.);
-    }
-
-    #[test]
-    fn test_component_mul() {
-        let component0 = Component::new(0.8);
-        assert_approx_eq!((component0 * 0.5).0, 0.4);
-        assert_eq!((component0 * 1.5).0, 1.);
-    }
-
-    #[test]
-    fn test_component_div() {
-        let component0 = Component::new(0.8);
-        assert_approx_eq!((component0 / 2.).0, 0.4);
-        assert_eq!((component0 / 0.5).0, 1.);
-    }
-
-    #[test]
     fn test_color_new() {
-        let color0 = Color::new(0.2, 0.5, 0.8);
-        assert_eq!(color0.r.0, 0.2);
-        assert_eq!(color0.g.0, 0.5);
-        assert_eq!(color0.b.0, 0.8);
+        let color0 = Srgb::from_linear(Color::new(0.2, 0.5, 0.8).0);
+        assert_approx_eq!(color0.red, 0.2);
+        assert_approx_eq!(color0.green, 0.5);
+        assert_approx_eq!(color0.blue, 0.8);
 
-        let color1 = Color::new(-0.8, 42.0, std::f32::NEG_INFINITY);
-        assert_eq!(color1.r.0, 0.);
-        assert_eq!(color1.g.0, 1.);
-        assert_eq!(color1.b.0, 0.);
+        let color1 = Srgb::from_linear(Color::new(-0.8, 42.0, std::f32::NEG_INFINITY).0);
+        assert_approx_eq!(color1.red, 0.);
+        assert_approx_eq!(color1.green, 1.);
+        assert_approx_eq!(color1.blue, 0.);
     }
 
     #[test]
     fn test_color_from_hex() {
-        let color0 = Color::from_hex("#ccff33").unwrap();
-        assert_approx_eq!(color0.r.0, 0.8);
-        assert_approx_eq!(color0.g.0, 1.0);
-        assert_approx_eq!(color0.b.0, 0.2);
+        let color0 = Srgb::from_linear(Color::from_hex("#ccff33").unwrap().0);
+        assert_approx_eq!(color0.red, 0.8);
+        assert_approx_eq!(color0.green, 1.0);
+        assert_approx_eq!(color0.blue, 0.2);
 
-        let color1 = Color::from_hex("069").unwrap();
-        assert_approx_eq!(color1.r.0, 0.0);
-        assert_approx_eq!(color1.g.0, 0.4);
-        assert_approx_eq!(color1.b.0, 0.6);
+        let color1 = Srgb::from_linear(Color::from_hex("069").unwrap().0);
+        assert_approx_eq!(color1.red, 0.0);
+        assert_approx_eq!(color1.green, 0.4);
+        assert_approx_eq!(color1.blue, 0.6);
     }
 
     #[test]
@@ -317,30 +138,30 @@ mod tests {
     #[test]
     fn test_color_lighter() {
         let color = Color::new(0.4, 0.2, 0.6).lighter(0.5);
-        assert_approx_eq!(color.r.0, 0.7);
-        assert_approx_eq!(color.g.0, 0.6);
-        assert_approx_eq!(color.b.0, 0.8);
+        assert_approx_eq!(color.0.red, 0.566434);
+        assert_approx_eq!(color.0.green, 0.516552);
+        assert_approx_eq!(color.0.blue, 0.659273);
     }
 
     #[test]
     fn test_color_darker() {
-        let color = Color::new(0.4, 0.2, 0.6).darker(0.5);
-        assert_approx_eq!(color.r.0, 0.2);
-        assert_approx_eq!(color.g.0, 0.1);
-        assert_approx_eq!(color.b.0, 0.3);
+        let color = Srgb::from_linear(Color::new(0.4, 0.2, 0.6).darker(0.5).0);
+        assert_approx_eq!(color.red, 0.285865);
+        assert_approx_eq!(color.green, 0.136034);
+        assert_approx_eq!(color.blue, 0.435695);
     }
 
     #[test]
     fn test_color_highlight() {
-        let color1 = Color::new(0.4, 0.2, 0.6).highlight(0.5);
-        assert_approx_eq!(color1.r.0, 0.7);
-        assert_approx_eq!(color1.g.0, 0.6);
-        assert_approx_eq!(color1.b.0, 0.8);
+        let color1 = Srgb::from_linear(Color::new(0.4, 0.2, 0.6).highlight(0.5).0);
+        assert_approx_eq!(color1.red, 0.777526);
+        assert_approx_eq!(color1.green, 0.746155);
+        assert_approx_eq!(color1.blue, 0.831876);
 
-        let color2 = Color::new(0.8, 0.4, 0.6).highlight(0.5);
-        assert_approx_eq!(color2.r.0, 0.4);
-        assert_approx_eq!(color2.g.0, 0.2);
-        assert_approx_eq!(color2.b.0, 0.3);
+        let color2 = Srgb::from_linear(Color::new(0.8, 0.4, 0.6).highlight(0.5).0);
+        assert_approx_eq!(color2.red, 0.585526);
+        assert_approx_eq!(color2.green, 0.285865);
+        assert_approx_eq!(color2.blue, 0.435696);
     }
 
     #[test]

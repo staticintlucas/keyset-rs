@@ -185,9 +185,9 @@ mod tests {
             r##"<svg xmlns="http://www.w3.org/2000/svg">
 <defs>
 <linearGradient id="test" x1="100%" x2="0%" y1="0%" y2="0%">
-<stop color="#d11a1a" offset="0%"/>
+<stop color="#d25959" offset="0%"/>
 <stop color="#cc0000" offset="50%"/>
-<stop color="#b80000" offset="100%"/>
+<stop color="#c30000" offset="100%"/>
 </linearGradient>
 </defs>
 </svg>"##
@@ -198,9 +198,9 @@ mod tests {
             r##"<svg xmlns="http://www.w3.org/2000/svg">
 <defs>
 <radialGradient cx="100%" cy="100%" fr="0%" fx="100%" fy="100%" id="test" r="141%">
-<stop color="#d11a1a" offset="0%"/>
+<stop color="#d25959" offset="0%"/>
 <stop color="#cc0000" offset="50%"/>
-<stop color="#b80000" offset="100%"/>
+<stop color="#c30000" offset="100%"/>
 </radialGradient>
 </defs>
 </svg>"##
