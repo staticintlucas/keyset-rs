@@ -5,10 +5,8 @@ use itertools::Itertools;
 use std::fmt;
 
 pub use self::de::*;
-use crate::{
-    error::Result,
-    utils::{Color, Point},
-};
+use crate::error::Result;
+use crate::utils::{Color, Point};
 
 #[derive(Debug, Clone, PartialEq)]
 struct HorizontalAlign<T> {

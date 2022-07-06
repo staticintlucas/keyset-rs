@@ -11,7 +11,8 @@ use serde_json::{Map, Value};
 use self::utils::de_nl_delimited_colors;
 use super::{HomingType, Key, KeySize, KeyType, Layout};
 use crate::error::Result;
-use crate::utils::{Color, Point};
+use crate::utils::Color;
+use crate::utils::Point;
 
 // The number of legends on a key adn number of alignment settings from KLE
 const NUM_LEGENDS: u8 = 12;

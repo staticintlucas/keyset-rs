@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::data::layout::InvalidKeySize;
+use crate::layout::InvalidKeySize;
 use crate::utils::InvalidColor;
 
 #[derive(Debug)]
