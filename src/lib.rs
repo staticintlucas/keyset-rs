@@ -11,6 +11,7 @@
 
 mod drawing;
 mod error;
+mod kle;
 mod layout;
 mod profile;
 mod utils;

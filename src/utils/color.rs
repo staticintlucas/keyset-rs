@@ -31,6 +31,16 @@ impl Color {
     }
 
     #[inline]
+    pub fn default_key() -> Self {
+        Self(Srgb::from_components((0.8, 0.8, 0.8)).into_linear())
+    }
+
+    #[inline]
+    pub fn default_legend() -> Self {
+        Self(Srgb::from_components((0., 0., 0.)).into_linear())
+    }
+
+    #[inline]
     pub fn to_hex(self) -> String {
         format!("#{:02x}", Srgb::from_linear(self.0).into_format::<u8>())
     }
@@ -124,6 +134,22 @@ mod tests {
                 format!("error parsing color: invalid hex code {}", invalid),
             )
         }
+    }
+
+    #[test]
+    fn test_color_default_key() {
+        let expected = Color::from_hex("#cccccc").unwrap();
+        assert_approx_eq!(Color::default_key().0.red, expected.0.red);
+        assert_approx_eq!(Color::default_key().0.green, expected.0.green);
+        assert_approx_eq!(Color::default_key().0.blue, expected.0.blue);
+    }
+
+    #[test]
+    fn test_color_default_legend() {
+        let expected = Color::from_hex("#000000").unwrap();
+        assert_approx_eq!(Color::default_legend().0.red, expected.0.red);
+        assert_approx_eq!(Color::default_legend().0.green, expected.0.green);
+        assert_approx_eq!(Color::default_legend().0.blue, expected.0.blue);
     }
 
     #[test]

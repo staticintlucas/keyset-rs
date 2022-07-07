@@ -1,10 +1,10 @@
-mod de;
+// mod de;
 
 use itertools::Itertools;
 
 use std::fmt;
 
-pub use self::de::*;
+// pub use self::de::*;
 use crate::error::Result;
 use crate::utils::{Color, Point};
 
@@ -109,7 +109,7 @@ pub enum KeySize {
 }
 
 impl KeySize {
-    fn new(w: f32, h: f32, x2: f32, y2: f32, w2: f32, h2: f32) -> Result<Self> {
+    pub fn new(w: f32, h: f32, x2: f32, y2: f32, w2: f32, h2: f32) -> Result<Self> {
         #[inline]
         fn is_stepped_caps(w: f32, h: f32, x2: f32, y2: f32, w2: f32, h2: f32) -> bool {
             [w, h, x2, y2, w2, h2]
