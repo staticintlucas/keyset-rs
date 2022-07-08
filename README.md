@@ -7,7 +7,7 @@
 A (WIP) reimplementation of [pykeyset] in Rust for improved performance.
 Eventually this aims to become the backend for pykeyset using a Python wrapper around this project.
 
-Current minimum supported Rust version is 1.42.0, although this is subject to change as development continues.
+Current minimum supported Rust version is 1.56.0, although this is subject to change as development continues.
 
 [tests]: https://github.com/staticintlucas/keyset-rs/actions
 [coverage]: https://codecov.io/gh/staticintlucas/keyset-rs
