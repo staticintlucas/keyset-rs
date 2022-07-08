@@ -8,8 +8,7 @@ use serde_json::{Map, Value};
 
 use crate::error::Result;
 use crate::layout::{HomingType, Key, KeySize, KeyType, Layout};
-use crate::utils::Color;
-use crate::utils::Point;
+use crate::utils::{Color, Point, Size};
 
 // The number of legends on a key and number of alignment settings from KLE
 const NUM_LEGENDS: u8 = 12;
@@ -355,6 +354,7 @@ impl FromKle for Layout {
 
         let mut props = KeyProps::default();
         let mut keys = vec![];
+        let mut size = Size::new(0., 0.);
 
         for row in raw.rows {
             for data in row {
@@ -370,7 +370,11 @@ impl FromKle for Layout {
                             .take(NUM_LEGENDS as usize)
                             .collect::<Vec<_>>();
 
-                        keys.push(props.to_key(legend_array)?);
+                        let key = props.to_key(legend_array)?;
+
+                        // Need to subtract 0,0 to keeps types consistent (point - point = size)
+                        size = size.max((key.position - Point::new(0., 0.)) + key.size.size());
+                        keys.push(key);
                         props = props.next_key();
                     }
                 }
@@ -378,7 +382,7 @@ impl FromKle for Layout {
             props = props.next_line();
         }
 
-        Ok(Layout { keys })
+        Ok(Layout { size, keys })
     }
 }
 
@@ -689,7 +693,7 @@ mod tests {
         let key1 = keyprops1.to_key(legends.clone()).unwrap();
 
         assert_eq!(key1.position, Point::new(0., 0.));
-        assert_eq!(key1.size, KeySize::Normal { w: 1., h: 1. });
+        assert_eq!(key1.size, KeySize::Normal(Size::new(1., 1.)));
         assert_eq!(key1.key_type, KeyType::Normal);
         assert_eq!(key1.key_color, Color::default_key());
         assert_eq!(key1.legend, LegendMap::new(ordered));
@@ -766,6 +770,7 @@ mod tests {
         )
         .unwrap();
 
+        assert_eq!(result1.size, Size::new(2.5, 1.25));
         assert_eq!(result1.keys.len(), 3);
         assert_approx_eq!(result1.keys[0].position.x, 0.0);
         assert_approx_eq!(result1.keys[1].position.x, 1.0);
@@ -780,6 +785,7 @@ mod tests {
         )
         .unwrap();
 
+        assert_eq!(result2.size, Size::new(1., 1.));
         assert_eq!(result2.keys.len(), 1);
     }
 

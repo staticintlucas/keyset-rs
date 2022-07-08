@@ -6,7 +6,7 @@ use std::fmt;
 
 // pub use self::de::*;
 use crate::error::Result;
-use crate::utils::{Color, Point};
+use crate::utils::{Color, Point, Size};
 
 #[derive(Debug, Clone, PartialEq)]
 struct HorizontalAlign<T> {
@@ -102,7 +102,7 @@ pub enum KeyType {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum KeySize {
-    Normal { w: f32, h: f32 },
+    Normal(Size),
     SteppedCaps,
     IsoVertical,
     IsoHorizontal,
@@ -146,7 +146,7 @@ impl KeySize {
         } else if is_iso_horizontal(w, h, x2, y2, w2, h2) {
             Ok(Self::IsoHorizontal)
         } else if is_normal_key(w, h, x2, y2, w2, h2) {
-            Ok(Self::Normal { w, h })
+            Ok(Self::Normal(Size::new(w, h)))
         } else {
             Err(InvalidKeySize {
                 message: format!(
@@ -162,6 +162,14 @@ impl KeySize {
                 ),
             }
             .into())
+        }
+    }
+
+    pub fn size(&self) -> Size {
+        match self {
+            Self::Normal(s) => *s,
+            Self::IsoHorizontal | Self::IsoVertical => Size::new(1.5, 2.0),
+            Self::SteppedCaps => Size::new(1.75, 1.0),
         }
     }
 }
@@ -213,6 +221,7 @@ impl Key {
 }
 
 pub struct Layout {
+    pub size: Size,
     pub keys: Vec<Key>,
 }
 
@@ -262,10 +271,23 @@ mod tests {
         let iso_vert = KeySize::new(1.25, 2., -0.25, 0., 1.5, 1.).unwrap();
         let step_caps = KeySize::new(1.25, 1., 0., 0., 1.75, 1.).unwrap();
 
-        assert_eq!(regular_key, KeySize::Normal { w: 2.25, h: 1. });
+        assert_eq!(regular_key, KeySize::Normal(Size::new(2.25, 1.)));
         assert_eq!(iso_horiz, KeySize::IsoHorizontal);
         assert_eq!(iso_vert, KeySize::IsoVertical);
         assert_eq!(step_caps, KeySize::SteppedCaps);
+    }
+
+    #[test]
+    fn test_key_size_size() {
+        let regular_key = KeySize::new(2.25, 1., 0., 0., 2.25, 1.).unwrap();
+        let iso_horiz = KeySize::new(1.5, 1., 0.25, 0., 1.25, 2.).unwrap();
+        let iso_vert = KeySize::new(1.25, 2., -0.25, 0., 1.5, 1.).unwrap();
+        let step_caps = KeySize::new(1.25, 1., 0., 0., 1.75, 1.).unwrap();
+
+        assert_eq!(regular_key.size(), Size::new(2.25, 1.));
+        assert_eq!(iso_horiz.size(), Size::new(1.5, 2.0));
+        assert_eq!(iso_vert.size(), Size::new(1.5, 2.0));
+        assert_eq!(step_caps.size(), Size::new(1.75, 1.0));
     }
 
     #[test]
