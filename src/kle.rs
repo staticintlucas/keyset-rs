@@ -272,7 +272,7 @@ impl KeyProps {
     fn next_key(self) -> Self {
         Self {
             // Increment x
-            x: self.x + self.w,
+            x: self.x + self.w.max(self.x2 + self.w2),
             // Reset per-key properties
             w: 1.,
             h: 1.,
