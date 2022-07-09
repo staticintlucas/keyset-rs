@@ -75,7 +75,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all
+          args: --lib
         env:
           RUSTFLAGS: -Cinstrument-coverage
           LLVM_PROFILE_FILE: keyset-rs-%p-%m.profraw
