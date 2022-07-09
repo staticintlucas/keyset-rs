@@ -253,8 +253,8 @@ impl KeyProps {
             h: props.h.unwrap_or(1.),
             x2: props.x2.unwrap_or(0.),
             y2: props.y2.unwrap_or(0.),
-            w2: props.w2.unwrap_or(self.w),
-            h2: props.h2.unwrap_or(self.h),
+            w2: props.w2.or(props.w).unwrap_or(1.),
+            h2: props.h2.or(props.h).unwrap_or(1.),
             l: props.l.unwrap_or(false),
             n: props.n.unwrap_or(false),
             d: props.d.unwrap_or(false),
@@ -297,7 +297,9 @@ impl KeyProps {
     }
 
     fn to_key(&self, legends: Vec<String>) -> Result<Key> {
-        let position = Point::new(self.x, self.y);
+        // Use (x + x2) if (x2 < 0). Needed because we always measure position to the top left
+        // corner of the key rather than just the primary rectangle
+        let position = Point::new(self.x + self.x2.min(0.), self.y + self.y2.min(0.));
         let size = KeySize::new(self.w, self.h, self.x2, self.y2, self.w2, self.h2)?;
 
         let is_scooped = ["scoop", "deep", "dish"]

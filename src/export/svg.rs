@@ -3,7 +3,8 @@ use svg::Document;
 use crate::layout::Layout;
 use crate::utils::Size;
 
-trait ToSvg {
+#[allow(clippy::module_name_repetitions)]
+pub trait ToSvg {
     fn to_svg(&self) -> String;
 }
 
