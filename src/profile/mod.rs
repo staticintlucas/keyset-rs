@@ -1,10 +1,13 @@
+mod de;
+
 use std::collections::HashMap;
+use std::iter;
 
 use interp::interp_slice;
-use itertools::{process_results, Itertools};
-use serde::de::{Error, Unexpected};
-use serde::{Deserialize, Deserializer};
+use itertools::Itertools;
+use serde::Deserialize;
 
+use crate::layout::HomingType as LayoutHomingType;
 use crate::utils::{Rect, RoundRect};
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -26,78 +29,32 @@ pub enum HomingType {
     Bump,
 }
 
-impl From<HomingType> for super::layout::HomingType {
+impl From<HomingType> for LayoutHomingType {
     fn from(r#type: HomingType) -> Self {
         match r#type {
-            HomingType::Scoop => super::layout::HomingType::Scoop,
-            HomingType::Bar => super::layout::HomingType::Bar,
-            HomingType::Bump => super::layout::HomingType::Bump,
+            HomingType::Scoop => LayoutHomingType::Scoop,
+            HomingType::Bar => LayoutHomingType::Bar,
+            HomingType::Bump => LayoutHomingType::Bump,
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
-pub struct ScoopProps {
+struct ScoopProps {
     depth: f32,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct BarProps {
+struct BarProps {
     width: f32,
     height: f32,
     y_offset: f32,
 }
 
-impl<'de> Deserialize<'de> for BarProps {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        #[serde(rename_all = "kebab-case")]
-        struct RawBarProps {
-            width: f32,
-            height: f32,
-            y_offset: f32,
-        }
-
-        RawBarProps::deserialize(deserializer).map(|props| {
-            // Convert mm to milli units
-            BarProps {
-                width: props.width * (1000. / 19.05),
-                height: props.height * (1000. / 19.05),
-                y_offset: props.y_offset * (1000. / 19.05),
-            }
-        })
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
-pub struct BumpProps {
+struct BumpProps {
     radius: f32,
     y_offset: f32,
-}
-
-impl<'de> Deserialize<'de> for BumpProps {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        #[serde(rename_all = "kebab-case")]
-        struct RawBumpProps {
-            radius: f32,
-            y_offset: f32,
-        }
-
-        RawBumpProps::deserialize(deserializer).map(|props| {
-            // Convert mm to milli units
-            BumpProps {
-                radius: props.radius * (1000. / 19.05),
-                y_offset: props.y_offset * (1000. / 19.05),
-            }
-        })
-    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -123,15 +80,15 @@ impl TextHeight {
                     .collect(),
             )
         } else {
-            let (index, height) = {
-                let mut tmp: (Vec<_>, Vec<_>) = heights
-                    .iter()
-                    .sorted_by_key(|(&i, _)| i)
-                    .map(|(&i, &h)| (f32::from(i), h))
-                    .unzip();
-                tmp.0.insert(0, 0.);
-                tmp.1.insert(0, 0.);
-                tmp
+            let (index, height): (Vec<_>, Vec<_>) = {
+                iter::once((0., 0.))
+                    .chain(
+                        heights
+                            .iter()
+                            .sorted_by_key(|(&i, _)| i)
+                            .map(|(&i, &h)| (f32::from(i), h)),
+                    )
+                    .unzip()
             };
             let all_indexes: Vec<_> = (0..Self::NUM_HEIGHTS).map(f32::from).collect();
 
@@ -206,110 +163,6 @@ impl TextRect {
     }
 }
 
-fn deserialize_rect<'de, D>(deserializer: D) -> Result<Rect, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    struct RawRect {
-        width: f32,
-        height: f32,
-    }
-
-    RawRect::deserialize(deserializer).map(|rect| {
-        // Convert mm to milli units
-        let w = rect.width * (1000. / 19.05);
-        let h = rect.height * (1000. / 19.05);
-
-        let x = 0.5 * (1000. - w);
-        let y = 0.5 * (1000. - h);
-
-        Rect::new(x, y, w, h)
-    })
-}
-
-fn deserialize_round_rect<'de, D>(deserializer: D) -> Result<RoundRect, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    struct RawRect {
-        width: f32,
-        height: f32,
-        radius: f32,
-    }
-
-    RawRect::deserialize(deserializer).map(|rect| {
-        // Convert mm to milli units
-        let w = rect.width * (1000. / 19.05);
-        let h = rect.height * (1000. / 19.05);
-
-        let rx = rect.radius * (1000. / 19.05);
-        let ry = rx;
-
-        let x = 0.5 * (1000. - w);
-        let y = 0.5 * (1000. - h);
-
-        RoundRect::new(x, y, w, h, rx, ry)
-    })
-}
-
-fn deserialize_offset_rect<'de, D>(deserializer: D) -> Result<Rect, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    #[serde(rename_all = "kebab-case")]
-    struct RawOffsetRect {
-        width: f32,
-        height: f32,
-        #[serde(default)]
-        y_offset: f32,
-    }
-
-    RawOffsetRect::deserialize(deserializer).map(|rect| {
-        // Convert mm to milli units
-        let w = rect.width * (1000. / 19.05);
-        let h = rect.height * (1000. / 19.05);
-        let offset = rect.y_offset * (1000. / 19.05);
-
-        let x = 0.5 * (1000. - w);
-        let y = 0.5 * (1000. - h) + offset;
-
-        Rect::new(x, y, w, h)
-    })
-}
-
-fn deserialize_offset_round_rect<'de, D>(deserializer: D) -> Result<RoundRect, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    #[serde(rename_all = "kebab-case")]
-    struct RawOffsetRoundRect {
-        width: f32,
-        height: f32,
-        radius: f32,
-        #[serde(default)]
-        y_offset: f32,
-    }
-
-    RawOffsetRoundRect::deserialize(deserializer).map(|rect| {
-        // Convert mm to milli units
-        let w = rect.width * (1000. / 19.05);
-        let h = rect.height * (1000. / 19.05);
-        let offset = rect.y_offset * (1000. / 19.05);
-
-        let rx = rect.radius * (1000. / 19.05);
-        let ry = rx;
-
-        let x = 0.5 * (1000. - w);
-        let y = 0.5 * (1000. - h) + offset;
-
-        RoundRect::new(x, y, w, h, rx, ry)
-    })
-}
-
 #[derive(Debug, Clone)]
 pub struct Profile {
     pub profile_type: ProfileType,
@@ -318,58 +171,6 @@ pub struct Profile {
     text_margin: TextRect,
     text_height: TextHeight,
     homing: HomingProps,
-}
-
-impl<'de> Deserialize<'de> for Profile {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        #[derive(Debug, Clone, Copy, Deserialize)]
-        struct RawLegendProps {
-            size: f32,
-            #[serde(flatten, deserialize_with = "deserialize_offset_rect")]
-            rect: Rect,
-        }
-
-        #[derive(Debug, Clone, Deserialize)]
-        struct RawProfileData {
-            #[serde(flatten)]
-            profile_type: ProfileType,
-            #[serde(deserialize_with = "deserialize_round_rect")]
-            bottom: RoundRect,
-            #[serde(deserialize_with = "deserialize_offset_round_rect")]
-            top: RoundRect,
-            legend: HashMap<String, RawLegendProps>,
-            homing: HomingProps,
-        }
-
-        let raw_data: RawProfileData = RawProfileData::deserialize(deserializer)?;
-
-        // Need to allow this as it's a compilation error otherwise
-        #[allow(clippy::redundant_closure_for_method_calls)]
-        let (heights, rects) = process_results(
-            raw_data.legend.iter().map(|(s, p)| {
-                let i = s
-                    .parse::<u8>()
-                    .map_err(|_| D::Error::invalid_value(Unexpected::Str(s), &"an integer"))?;
-
-                // Note: deserializing a rect already scales to milliunits, but the size still needs
-                // to be scaled here
-                Ok(((i, p.size * (1000. / 19.05)), (i, p.rect)))
-            }),
-            |i| i.unzip(),
-        )?;
-
-        Ok(Self {
-            profile_type: raw_data.profile_type,
-            bottom_rect: raw_data.bottom,
-            top_rect: raw_data.top,
-            text_margin: TextRect::new(&rects),
-            text_height: TextHeight::new(&heights),
-            homing: raw_data.homing,
-        })
-    }
 }
 
 #[cfg(test)]
@@ -381,7 +182,7 @@ mod tests {
 
     #[test]
     fn test_homing_type_from() {
-        use super::super::layout::HomingType as LayoutHomingType;
+        use crate::layout::HomingType as LayoutHomingType;
 
         assert_eq!(
             LayoutHomingType::from(HomingType::Scoop),
@@ -511,183 +312,5 @@ mod tests {
         assert_approx_eq!(r.y, 0.);
         assert_approx_eq!(r.w, 1e3);
         assert_approx_eq!(r.h, 1e3);
-    }
-
-    #[test]
-    fn test_deserialize_rect() {
-        use toml::Deserializer;
-
-        let rect = deserialize_rect(&mut Deserializer::new(
-            r"
-            width = 15.24
-            height = 15.24
-        ",
-        ))
-        .unwrap();
-
-        assert_approx_eq!(rect.x, 100.);
-        assert_approx_eq!(rect.y, 100.);
-        assert_approx_eq!(rect.w, 800.);
-        assert_approx_eq!(rect.h, 800.);
-    }
-
-    #[test]
-    fn test_deserialize_round_rect() {
-        use toml::Deserializer;
-
-        let rect = deserialize_round_rect(&mut Deserializer::new(
-            r"
-            width = 15.24
-            height = 15.24
-            radius = 1.905
-        ",
-        ))
-        .unwrap();
-
-        assert_approx_eq!(rect.x, 100.);
-        assert_approx_eq!(rect.y, 100.);
-        assert_approx_eq!(rect.w, 800.);
-        assert_approx_eq!(rect.h, 800.);
-        assert_approx_eq!(rect.rx, 100.);
-        assert_approx_eq!(rect.ry, 100.);
-    }
-
-    #[test]
-    fn test_deserialize_offset_rect() {
-        use toml::Deserializer;
-
-        let rect = deserialize_offset_rect(&mut Deserializer::new(
-            r"
-            width = 15.24
-            height = 15.24
-            y-offset = 0.9525
-        ",
-        ))
-        .unwrap();
-
-        assert_approx_eq!(rect.x, 100.);
-        assert_approx_eq!(rect.y, 150.);
-        assert_approx_eq!(rect.w, 800.);
-        assert_approx_eq!(rect.h, 800.);
-    }
-
-    #[test]
-    fn test_deserialize_offset_round_rect() {
-        use toml::Deserializer;
-
-        let rect = deserialize_offset_round_rect(&mut Deserializer::new(
-            r"
-            width = 15.24
-            height = 15.24
-            radius = 1.905
-            y-offset = 0.9525
-        ",
-        ))
-        .unwrap();
-
-        assert_approx_eq!(rect.x, 100.);
-        assert_approx_eq!(rect.y, 150.);
-        assert_approx_eq!(rect.w, 800.);
-        assert_approx_eq!(rect.h, 800.);
-        assert_approx_eq!(rect.rx, 100.);
-        assert_approx_eq!(rect.ry, 100.);
-    }
-
-    #[test]
-    fn test_deserialize_profile() {
-        let profile: Profile = toml::from_str(
-            r#"
-            type = 'cylindrical'
-            depth = 0.5
-
-            [bottom]
-            width = 18.29
-            height = 18.29
-            radius = 0.38
-
-            [top]
-            width = 11.81
-            height = 13.91
-            radius = 1.52
-            y-offset = -1.62
-
-            [legend.5]
-            size = 4.84
-            width = 9.45
-            height = 11.54
-            y-offset = 0
-
-            [legend.4]
-            size = 3.18
-            width = 9.53
-            height = 9.56
-            y-offset = 0.40
-
-            [legend.3]
-            size = 2.28
-            width = 9.45
-            height = 11.30
-            y-offset = -0.12
-
-            [homing]
-            default = 'scoop'
-            scoop = { depth = 1.5 }
-            bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
-            bump = { radius = 0.2, y-offset = -0.2 }
-        "#,
-        )
-        .unwrap();
-
-        assert!(
-            matches!(profile.profile_type, ProfileType::Cylindrical { depth } if f32::abs(depth - 0.5) < 1e-6)
-        );
-
-        assert_approx_eq!(profile.bottom_rect.x, 20., 0.5);
-        assert_approx_eq!(profile.bottom_rect.y, 20., 0.5);
-        assert_approx_eq!(profile.bottom_rect.w, 960., 0.5);
-        assert_approx_eq!(profile.bottom_rect.h, 960., 0.5);
-        assert_approx_eq!(profile.bottom_rect.rx, 20., 0.5);
-        assert_approx_eq!(profile.bottom_rect.ry, 20., 0.5);
-
-        assert_approx_eq!(profile.top_rect.x, 190., 0.5);
-        assert_approx_eq!(profile.top_rect.y, 50., 0.5);
-        assert_approx_eq!(profile.top_rect.w, 620., 0.5);
-        assert_approx_eq!(profile.top_rect.h, 730., 0.5);
-        assert_approx_eq!(profile.top_rect.rx, 80., 0.5);
-        assert_approx_eq!(profile.top_rect.ry, 80., 0.5);
-
-        assert_eq!(profile.text_height.0.len(), 10);
-        let expected = vec![0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
-        for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
-            assert_approx_eq!(e, r, 0.5);
-        }
-
-        assert_eq!(profile.text_margin.0.len(), 10);
-        let expected = vec![
-            Rect::new(252., 197., 496., 593.),
-            Rect::new(252., 197., 496., 593.),
-            Rect::new(252., 197., 496., 593.),
-            Rect::new(252., 197., 496., 593.),
-            Rect::new(250., 270., 500., 502.),
-            Rect::new(252., 197., 496., 606.),
-            Rect::new(252., 197., 496., 606.),
-            Rect::new(252., 197., 496., 606.),
-            Rect::new(252., 197., 496., 606.),
-            Rect::new(252., 197., 496., 606.),
-        ];
-        for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.x, r.x, 0.5);
-            assert_approx_eq!(e.y, r.y, 0.5);
-            assert_approx_eq!(e.w, r.w, 0.5);
-            assert_approx_eq!(e.h, r.h, 0.5);
-        }
-
-        assert_eq!(profile.homing.default, HomingType::Scoop);
-        assert_approx_eq!(profile.homing.scoop.depth, 1.5);
-        assert_approx_eq!(profile.homing.bar.width, 202., 0.5);
-        assert_approx_eq!(profile.homing.bar.height, 21., 0.5);
-        assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);
-        assert_approx_eq!(profile.homing.bump.radius, 10., 0.5);
-        assert_approx_eq!(profile.homing.bump.y_offset, -10., 0.5);
     }
 }
