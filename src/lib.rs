@@ -8,14 +8,14 @@
     dead_code
 )]
 
+mod drawing;
 mod error;
-mod export;
 mod kle;
 mod layout;
 mod profile;
 mod utils;
 
-pub use export::ToSvg;
+pub use drawing::Drawing;
 pub use kle::FromKle;
 pub use layout::Layout;
 pub use profile::Profile;

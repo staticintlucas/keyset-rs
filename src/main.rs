@@ -14,8 +14,9 @@ fn main() {
     ]"#;
 
     let layout = Layout::from_kle(json).unwrap();
+    let drawing = Drawing::new(layout);
 
     let mut file = File::create(Path::new("test.svg")).unwrap();
 
-    file.write_all(layout.to_svg().as_bytes()).unwrap();
+    file.write_all(drawing.to_svg().as_bytes()).unwrap();
 }

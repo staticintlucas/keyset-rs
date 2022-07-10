@@ -1,51 +1,24 @@
-use svg::node::element::{Group, Rectangle};
-use svg::Document;
+mod layout;
 
-use crate::layout::{Key, Layout};
+use svg::node::element::{Group, Rectangle};
+
+use crate::drawing::Drawing;
+use crate::layout::Key;
 use crate::utils::{Point, Size};
 
-pub trait ToSvg {
-    fn to_svg(&self) -> String;
+pub trait ToSvg<T> {
+    fn to_svg(&self) -> T;
 }
 
-impl ToSvg for Layout {
-    fn to_svg(&self) -> String {
-        self.to_svg_elem().to_string()
+impl Drawing {
+    #[must_use]
+    pub fn to_svg(&self) -> String {
+        self.layout.to_svg().to_string()
     }
 }
 
-trait ToSvgElem<T> {
-    fn to_svg_elem(&self) -> T;
-}
-
-impl ToSvgElem<Document> for Layout {
-    fn to_svg_elem(&self) -> Document {
-        let Size { w, h } = self.size;
-
-        let document = Document::new()
-            .set(
-                "width",
-                format!("{:.5}", w * 72.)
-                    .trim_end_matches('0')
-                    .trim_end_matches('.'),
-            )
-            .set(
-                "height",
-                format!("{:.5}", h * 72.)
-                    .trim_end_matches('0')
-                    .trim_end_matches('.'),
-            )
-            .set("viewBox", format!("0 0 {:.0} {:.0}", w * 1e3, h * 1e3));
-
-        self.keys
-            .iter()
-            .map(Key::to_svg_elem)
-            .fold(document, Document::add)
-    }
-}
-
-impl ToSvgElem<Group> for Key {
-    fn to_svg_elem(&self) -> Group {
+impl ToSvg<Group> for Key {
+    fn to_svg(&self) -> Group {
         let Point { x, y } = self.position;
         let Size { w, h } = self.size.size();
 
@@ -68,7 +41,7 @@ impl ToSvgElem<Group> for Key {
 
 #[cfg(test)]
 mod tests {
-    use crate::layout::{KeySize, KeyType};
+    use crate::layout::{KeySize, KeyType, Layout};
     use crate::utils::Color;
 
     use super::*;
@@ -79,26 +52,16 @@ mod tests {
             size: Size::new(1., 1.),
             keys: vec![],
         };
+        let drawing = Drawing {
+            layout,
+            // profile,
+            dpi: 96.,
+        };
 
         assert_eq!(
-            layout.to_svg(),
+            drawing.to_svg(),
             r#"<svg height="72" viewBox="0 0 1000 1000" width="72" xmlns="http://www.w3.org/2000/svg"/>"#
         );
-    }
-
-    #[test]
-    fn test_layout_to_svg_elem() {
-        let layout = Layout {
-            size: Size::new(1., 1.),
-            keys: vec![],
-        };
-        let elem = layout.to_svg_elem();
-        let attr = elem.get_inner().get_attributes();
-
-        assert_eq!(&*attr["width"], "72");
-        assert_eq!(&*attr["height"], "72");
-        assert_eq!(&*attr["viewBox"], "0 0 1000 1000");
-        assert_eq!(&*attr["xmlns"], "http://www.w3.org/2000/svg");
     }
 
     #[test]
@@ -112,7 +75,7 @@ mod tests {
             vec![4; 9],
             vec![Color::default_legend(); 9],
         );
-        let elem = key.to_svg_elem();
+        let elem = key.to_svg();
         let attr = elem.get_inner().get_attributes();
         assert_eq!(&*attr["transform"], "translate(2000, 1000)");
 
