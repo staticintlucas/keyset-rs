@@ -1,6 +1,5 @@
-#![allow(unknown_lints)]
 #![warn(clippy::all, clippy::pedantic, clippy::cargo)]
-#![allow(clippy::must_use_candidate)]
+#![allow(clippy::module_name_repetitions)]
 // TODO add docs and don't allow these
 #![allow(
     missing_docs,

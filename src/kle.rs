@@ -343,7 +343,6 @@ impl KeyProps {
     }
 }
 
-#[allow(clippy::module_name_repetitions)]
 pub trait FromKle {
     fn from_kle(kle: &str) -> Result<Self>
     where

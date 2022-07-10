@@ -7,7 +7,6 @@ use serde::{Deserialize, Deserializer};
 
 use crate::utils::{Rect, RoundRect};
 
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum ProfileType {
@@ -347,6 +346,7 @@ impl<'de> Deserialize<'de> for Profile {
 
         let raw_data: RawProfileData = RawProfileData::deserialize(deserializer)?;
 
+        // Need to allow this as it's a compilation error otherwise
         #[allow(clippy::redundant_closure_for_method_calls)]
         let (heights, rects) = process_results(
             raw_data.legend.iter().map(|(s, p)| {

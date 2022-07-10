@@ -4,7 +4,6 @@ use svg::Document;
 use crate::layout::{Key, Layout};
 use crate::utils::{Point, Size};
 
-#[allow(clippy::module_name_repetitions)]
 pub trait ToSvg {
     fn to_svg(&self) -> String;
 }
