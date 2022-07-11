@@ -1,63 +1,116 @@
 use std::fmt;
 use std::result::Result as StdResult;
-use std::str::FromStr;
 
+use rgb::RGB16;
 use serde::{Deserialize, Deserializer};
-
-use palette::{Clamp, Hsl, LinSrgb, Srgb};
-use palette::{FromColor, Shade};
 
 use crate::error::Result;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Color(LinSrgb);
+pub struct Color(RGB16);
 
 impl Color {
+    const U8_SCALE: u16 = (u16::MAX / (u8::MAX as u16));
+    const U4_SCALE: u16 = (u16::MAX / 15);
+
     #[inline]
-    pub fn new(r: f32, g: f32, b: f32) -> Self {
-        Self(Srgb::from_components((r, g, b)).clamp().into_linear())
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        Self(RGB16::new(u16::from(r), u16::from(g), u16::from(b)) * Self::U8_SCALE)
+    }
+
+    #[inline]
+    pub fn new_rgb16(r: u16, g: u16, b: u16) -> Self {
+        Self(RGB16::new(r, g, b))
     }
 
     #[inline]
     pub fn from_hex(hex: &str) -> Result<Self> {
-        Srgb::from_str(hex)
-            .map(|c| Self(c.into_format().into_linear()))
-            .map_err(|_| {
-                InvalidColor {
-                    color: hex.to_string(),
-                }
-                .into()
-            })
+        fn digit(digits: &str, scale: u16, orig: &str) -> Result<u16> {
+            u16::from_str_radix(digits, 16)
+                .map(|c| c * scale)
+                .map_err(|_| InvalidColor { color: orig.into() }.into())
+        }
+
+        let digits = hex.strip_prefix('#').unwrap_or(hex);
+
+        let (r, g, b) = match digits.len() {
+            3 => (
+                digit(&digits[0..1], Self::U4_SCALE, hex)?,
+                digit(&digits[1..2], Self::U4_SCALE, hex)?,
+                digit(&digits[2..3], Self::U4_SCALE, hex)?,
+            ),
+            6 => (
+                digit(&digits[0..2], Self::U8_SCALE, hex)?,
+                digit(&digits[2..4], Self::U8_SCALE, hex)?,
+                digit(&digits[4..6], Self::U8_SCALE, hex)?,
+            ),
+            _ => Err(InvalidColor { color: hex.into() })?,
+        };
+
+        Ok(Self::new_rgb16(r, g, b))
+    }
+
+    #[inline]
+    pub fn to_rgb(self) -> (u8, u8, u8) {
+        let (r, g, b) = (self.0 / (Self::U8_SCALE - 1)).into();
+        // For sure won't truncate due to the division
+        #[allow(clippy::cast_possible_truncation)]
+        (r as u8, g as u8, b as u8)
+    }
+
+    #[inline]
+    pub fn to_rgb16(self) -> (u16, u16, u16) {
+        self.0.into()
     }
 
     #[inline]
     pub fn default_key() -> Self {
-        Self(Srgb::from_components((0.8, 0.8, 0.8)).into_linear())
+        Self(RGB16::new(0xCCCC, 0xCCCC, 0xCCCC))
     }
 
     #[inline]
     pub fn default_legend() -> Self {
-        Self(Srgb::from_components((0., 0., 0.)).into_linear())
+        Self(RGB16::new(0x0000, 0x0000, 0x0000))
     }
 
     #[inline]
     pub fn to_hex(self) -> String {
-        format!("#{:02x}", Srgb::from_linear(self.0).into_format::<u8>())
+        let (r, g, b) = self.to_rgb();
+        format!("#{:02x}{:02x}{:02x}", r, g, b)
     }
 
     #[inline]
-    pub(crate) fn lighter(&self, val: f32) -> Self {
-        Self(self.0.lighten(val))
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    // TODO implement this with val: u16
+    pub(crate) fn lighter(self, val: f32) -> Self {
+        let (r, g, b) = self.0.into();
+        Self(RGB16::new(
+            r + (f32::from(u16::MAX - r) * val) as u16,
+            g + (f32::from(u16::MAX - g) * val) as u16,
+            b + (f32::from(u16::MAX - b) * val) as u16,
+        ))
     }
 
     #[inline]
-    pub(crate) fn darker(&self, val: f32) -> Self {
-        Self(self.0.darken(val))
+    // TODO implement this with val: u16
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    pub(crate) fn darker(self, val: f32) -> Self {
+        let (r, g, b) = self.0.into();
+        Self(RGB16::new(
+            (f32::from(r) * (1.0 - val)) as u16,
+            (f32::from(g) * (1.0 - val)) as u16,
+            (f32::from(b) * (1.0 - val)) as u16,
+        ))
     }
 
     #[inline]
-    pub(crate) fn highlight(&self, val: f32) -> Self {
-        if Hsl::from_color(self.0).lightness > 0.25 {
+    pub(crate) fn highlight(self, val: f32) -> Self {
+        let c_max = self.0.iter().max().unwrap();
+        let c_min = self.0.iter().min().unwrap();
+        let lum_x2 = u32::from(c_max) + u32::from(c_min);
+
+        // If (lum * 2) > (u16::MAX / 2 * 2)
+        if lum_x2 > u32::from(u16::MAX) {
             self.darker(val)
         } else {
             self.lighter(val)
@@ -95,32 +148,25 @@ impl std::error::Error for InvalidColor {}
 mod tests {
     use super::*;
 
-    use assert_approx_eq::assert_approx_eq;
-
     #[test]
     fn test_color_new() {
-        let color0 = Srgb::from_linear(Color::new(0.2, 0.5, 0.8).0);
-        assert_approx_eq!(color0.red, 0.2);
-        assert_approx_eq!(color0.green, 0.5);
-        assert_approx_eq!(color0.blue, 0.8);
-
-        let color1 = Srgb::from_linear(Color::new(-0.8, 42.0, std::f32::NEG_INFINITY).0);
-        assert_approx_eq!(color1.red, 0.);
-        assert_approx_eq!(color1.green, 1.);
-        assert_approx_eq!(color1.blue, 0.);
+        let color = Color::new(51, 127, 204).to_rgb();
+        assert_eq!(color.0, 0x33);
+        assert_eq!(color.1, 0x7f);
+        assert_eq!(color.2, 0xcc);
     }
 
     #[test]
     fn test_color_from_hex() {
-        let color0 = Srgb::from_linear(Color::from_hex("#ccff33").unwrap().0);
-        assert_approx_eq!(color0.red, 0.8);
-        assert_approx_eq!(color0.green, 1.0);
-        assert_approx_eq!(color0.blue, 0.2);
+        let color0 = Color::from_hex("#ccff33").unwrap().to_rgb();
+        assert_eq!(color0.0, 204);
+        assert_eq!(color0.1, 255);
+        assert_eq!(color0.2, 51);
 
-        let color1 = Srgb::from_linear(Color::from_hex("069").unwrap().0);
-        assert_approx_eq!(color1.red, 0.0);
-        assert_approx_eq!(color1.green, 0.4);
-        assert_approx_eq!(color1.blue, 0.6);
+        let color1 = Color::from_hex("069").unwrap().to_rgb();
+        assert_eq!(color1.0, 0);
+        assert_eq!(color1.1, 102);
+        assert_eq!(color1.2, 153);
     }
 
     #[test]
@@ -138,56 +184,58 @@ mod tests {
 
     #[test]
     fn test_color_default_key() {
-        let expected = Color::from_hex("#cccccc").unwrap();
-        assert_approx_eq!(Color::default_key().0.red, expected.0.red);
-        assert_approx_eq!(Color::default_key().0.green, expected.0.green);
-        assert_approx_eq!(Color::default_key().0.blue, expected.0.blue);
+        let expected = Color::from_hex("#cccccc").unwrap().to_rgb();
+        let default_key = Color::default_key().to_rgb();
+        assert_eq!(default_key.0, expected.0);
+        assert_eq!(default_key.1, expected.1);
+        assert_eq!(default_key.2, expected.2);
     }
 
     #[test]
     fn test_color_default_legend() {
-        let expected = Color::from_hex("#000000").unwrap();
-        assert_approx_eq!(Color::default_legend().0.red, expected.0.red);
-        assert_approx_eq!(Color::default_legend().0.green, expected.0.green);
-        assert_approx_eq!(Color::default_legend().0.blue, expected.0.blue);
+        let expected = Color::from_hex("#000000").unwrap().to_rgb();
+        let default_legend = Color::default_legend().to_rgb();
+        assert_eq!(default_legend.0, expected.0);
+        assert_eq!(default_legend.1, expected.1);
+        assert_eq!(default_legend.2, expected.2);
     }
 
     #[test]
     fn test_color_to_hex() {
-        let hex = Color::new(0.2, 0.4, 0.6).to_hex();
+        let hex = Color::new(51, 102, 153).to_hex();
         assert_eq!(hex, "#336699");
 
-        let hex = Color::new(0.8, 1.0, 0.0).to_hex();
+        let hex = Color::new(204, 255, 0).to_hex();
         assert_eq!(hex, "#ccff00");
     }
 
     #[test]
     fn test_color_lighter() {
-        let color = Color::new(0.4, 0.2, 0.6).lighter(0.5);
-        assert_approx_eq!(color.0.red, 0.566434);
-        assert_approx_eq!(color.0.green, 0.516552);
-        assert_approx_eq!(color.0.blue, 0.659273);
+        let color = Color::new(102, 51, 153).lighter(0.5).to_rgb();
+        assert_eq!(color.0, 179);
+        assert_eq!(color.1, 153);
+        assert_eq!(color.2, 204);
     }
 
     #[test]
     fn test_color_darker() {
-        let color = Srgb::from_linear(Color::new(0.4, 0.2, 0.6).darker(0.5).0);
-        assert_approx_eq!(color.red, 0.285865);
-        assert_approx_eq!(color.green, 0.136034);
-        assert_approx_eq!(color.blue, 0.435695);
+        let color = Color::new(102, 51, 153).darker(0.5).to_rgb();
+        assert_eq!(color.0, 51);
+        assert_eq!(color.1, 25);
+        assert_eq!(color.2, 76);
     }
 
     #[test]
     fn test_color_highlight() {
-        let color1 = Srgb::from_linear(Color::new(0.4, 0.2, 0.6).highlight(0.5).0);
-        assert_approx_eq!(color1.red, 0.777526);
-        assert_approx_eq!(color1.green, 0.746155);
-        assert_approx_eq!(color1.blue, 0.831876);
+        let color1 = Color::new(102, 51, 153).highlight(0.5).to_rgb();
+        assert_eq!(color1.0, 179);
+        assert_eq!(color1.1, 153);
+        assert_eq!(color1.2, 204);
 
-        let color2 = Srgb::from_linear(Color::new(0.8, 0.4, 0.6).highlight(0.5).0);
-        assert_approx_eq!(color2.red, 0.585526);
-        assert_approx_eq!(color2.green, 0.285865);
-        assert_approx_eq!(color2.blue, 0.435696);
+        let color2 = Color::new(204, 102, 153).highlight(0.5).to_rgb();
+        assert_eq!(color2.0, 102);
+        assert_eq!(color2.1, 51);
+        assert_eq!(color2.2, 76);
     }
 
     #[test]

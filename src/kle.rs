@@ -553,11 +553,11 @@ mod tests {
             l: Some(true),
             n: Some(true),
             d: Some(true),
-            c: Some(Color::new(0.5, 0.2, 0.3)),
+            c: Some(Color::new(127, 51, 76)),
             t: Some(vec![
-                Some(Color::new(0.1, 0.1, 0.1)),
+                Some(Color::new(25, 25, 25)),
                 None,
-                Some(Color::new(0.3, 0.15, 0.2)),
+                Some(Color::new(76, 38, 51)),
             ]),
             a: Some(5),
             p: Some("space".to_string()),
@@ -578,23 +578,23 @@ mod tests {
         assert_eq!(keyprops2.l, true);
         assert_eq!(keyprops2.n, true);
         assert_eq!(keyprops2.d, true);
-        assert_eq!(keyprops2.c, Color::new(0.5, 0.2, 0.3));
-        assert_eq!(keyprops2.t, Color::new(0.1, 0.1, 0.1));
+        assert_eq!(keyprops2.c, Color::new(127, 51, 76));
+        assert_eq!(keyprops2.t, Color::new(25, 25, 25));
         assert_eq!(
             keyprops2.ta,
             [
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.3, 0.15, 0.2),
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.1, 0.1, 0.1),
-                Color::new(0.1, 0.1, 0.1)
+                Color::new(25, 25, 25),
+                Color::new(25, 25, 25),
+                Color::new(76, 38, 51),
+                Color::new(25, 25, 25),
+                Color::new(25, 25, 25),
+                Color::new(25, 25, 25),
+                Color::new(25, 25, 25),
+                Color::new(25, 25, 25),
+                Color::new(25, 25, 25),
+                Color::new(25, 25, 25),
+                Color::new(25, 25, 25),
+                Color::new(25, 25, 25)
             ]
         );
         assert_eq!(keyprops2.a, LegendAlignment::new(5));

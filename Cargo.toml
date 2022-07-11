@@ -21,7 +21,7 @@ interp = "0.1"
 toml = "0.5"
 maplit = "1.0"
 svg = "0.10"
-palette = "0.6"
+rgb = "0.8"
 # ttf-parser = "0.12"
 
 [dev-dependencies]

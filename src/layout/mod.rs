@@ -310,7 +310,7 @@ mod tests {
         let position = Point::new(1.0, 2.0);
         let size = KeySize::new(1.25, 2.0, -0.25, 0., 1.5, 1.).unwrap();
         let key_type = KeyType::Normal;
-        let key_color = Color::new(0.8, 0.4, 0.2);
+        let key_color = Color::new(204, 102, 51);
         let legend = vec![
             "A".into(),
             "B".into(),
@@ -324,15 +324,15 @@ mod tests {
         ];
         let legend_size = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
         let legend_color = vec![
-            Color::new(0.1, 0.1, 0.1),
-            Color::new(0.2, 0.2, 0.2),
-            Color::new(0.3, 0.3, 0.3),
-            Color::new(0.4, 0.4, 0.4),
-            Color::new(0.5, 0.5, 0.5),
-            Color::new(0.6, 0.6, 0.6),
-            Color::new(0.7, 0.7, 0.7),
-            Color::new(0.8, 0.8, 0.8),
-            Color::new(0.9, 0.9, 0.9),
+            Color::new(25, 25, 25),
+            Color::new(51, 51, 51),
+            Color::new(76, 76, 76),
+            Color::new(102, 102, 102),
+            Color::new(127, 127, 127),
+            Color::new(153, 153, 153),
+            Color::new(178, 178, 178),
+            Color::new(204, 204, 204),
+            Color::new(229, 229, 229),
         ];
 
         let key = Key::new(
