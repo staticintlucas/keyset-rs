@@ -1,6 +1,7 @@
 use std::fmt;
 use std::result::Result as StdResult;
 
+use itertools::Itertools;
 use rgb::RGB16;
 use serde::{Deserialize, Deserializer};
 
@@ -10,12 +11,15 @@ use crate::error::Result;
 pub struct Color(RGB16);
 
 impl Color {
-    const U8_SCALE: u16 = (u16::MAX / (u8::MAX as u16));
-    const U4_SCALE: u16 = (u16::MAX / 15);
-
     #[inline]
     pub fn new(r: u8, g: u8, b: u8) -> Self {
-        Self(RGB16::new(u16::from(r), u16::from(g), u16::from(b)) * Self::U8_SCALE)
+        Color(
+            [r, g, b]
+                .into_iter()
+                .map(u16::from)
+                .map(|c| c << 8 | c)
+                .collect(),
+        )
     }
 
     #[inline]
@@ -23,39 +27,43 @@ impl Color {
         Self(RGB16::new(r, g, b))
     }
 
-    #[inline]
     pub fn from_hex(hex: &str) -> Result<Self> {
-        fn digit(digits: &str, scale: u16, orig: &str) -> Result<u16> {
-            u16::from_str_radix(digits, 16)
-                .map(|c| c * scale)
-                .map_err(|_| InvalidColor { color: orig.into() }.into())
+        #[inline]
+        fn parse_hex(hex: &[u8]) -> Option<[u32; 3]> {
+            match hex.len() {
+                3 => Some([
+                    (hex[0] as char).to_digit(16).map(|c| c << 4 | c)?,
+                    (hex[1] as char).to_digit(16).map(|c| c << 4 | c)?,
+                    (hex[2] as char).to_digit(16).map(|c| c << 4 | c)?,
+                ]),
+                6 => Some([
+                    (hex[0] as char).to_digit(16)? << 4 | (hex[1] as char).to_digit(16)?,
+                    (hex[2] as char).to_digit(16)? << 4 | (hex[3] as char).to_digit(16)?,
+                    (hex[4] as char).to_digit(16)? << 4 | (hex[5] as char).to_digit(16)?,
+                ]),
+                _ => None,
+            }
         }
 
-        let digits = hex.strip_prefix('#').unwrap_or(hex);
+        let digits = hex.strip_prefix('#').unwrap_or(hex).as_bytes();
+        let rgb = parse_hex(digits).ok_or(InvalidColor { color: hex.into() })?;
 
-        let (r, g, b) = match digits.len() {
-            3 => (
-                digit(&digits[0..1], Self::U4_SCALE, hex)?,
-                digit(&digits[1..2], Self::U4_SCALE, hex)?,
-                digit(&digits[2..3], Self::U4_SCALE, hex)?,
-            ),
-            6 => (
-                digit(&digits[0..2], Self::U8_SCALE, hex)?,
-                digit(&digits[2..4], Self::U8_SCALE, hex)?,
-                digit(&digits[4..6], Self::U8_SCALE, hex)?,
-            ),
-            _ => Err(InvalidColor { color: hex.into() })?,
-        };
-
-        Ok(Self::new_rgb16(r, g, b))
+        #[allow(clippy::cast_possible_truncation)]
+        // Can't truncate here since the values are in range 0..=255
+        Ok(Color(
+            rgb.into_iter()
+                .map(|c| (c as u16) << 8 | (c as u16))
+                .collect(),
+        ))
     }
 
     #[inline]
     pub fn to_rgb(self) -> (u8, u8, u8) {
-        let (r, g, b) = (self.0 / (Self::U8_SCALE - 1)).into();
-        // For sure won't truncate due to the division
-        #[allow(clippy::cast_possible_truncation)]
-        (r as u8, g as u8, b as u8)
+        self.0
+            .iter()
+            .map(|c| (c >> 8) as u8)
+            .collect_tuple()
+            .unwrap()
     }
 
     #[inline]
@@ -65,12 +73,12 @@ impl Color {
 
     #[inline]
     pub fn default_key() -> Self {
-        Self(RGB16::new(0xCCCC, 0xCCCC, 0xCCCC))
+        Self([0xCCCC; 3].into())
     }
 
     #[inline]
     pub fn default_legend() -> Self {
-        Self(RGB16::new(0x0000, 0x0000, 0x0000))
+        Self([0x0000; 3].into())
     }
 
     #[inline]
@@ -104,6 +112,7 @@ impl Color {
     }
 
     #[inline]
+    // TODO implement this with val: u16
     pub(crate) fn highlight(self, val: f32) -> Self {
         let c_max = self.0.iter().max().unwrap();
         let c_min = self.0.iter().min().unwrap();
@@ -154,6 +163,14 @@ mod tests {
         assert_eq!(color.0, 0x33);
         assert_eq!(color.1, 0x7f);
         assert_eq!(color.2, 0xcc);
+    }
+
+    #[test]
+    fn test_color_new_rgb16() {
+        let color = Color::new_rgb16(13107, 32767, 52428).to_rgb16();
+        assert_eq!(color.0, 0x3333);
+        assert_eq!(color.1, 0x7fff);
+        assert_eq!(color.2, 0xcccc);
     }
 
     #[test]
