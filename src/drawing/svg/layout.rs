@@ -35,7 +35,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_layout_to_svg_elem() {
+    fn test_to_svg() {
         let layout = Layout {
             size: Size::new(1., 1.),
             keys: vec![],
