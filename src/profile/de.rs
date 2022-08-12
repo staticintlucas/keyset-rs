@@ -243,24 +243,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_homing_type_from() {
-        use crate::layout::HomingType as LayoutHomingType;
-
-        assert_eq!(
-            LayoutHomingType::from(HomingType::Scoop),
-            LayoutHomingType::Scoop
-        );
-        assert_eq!(
-            LayoutHomingType::from(HomingType::Bar),
-            LayoutHomingType::Bar
-        );
-        assert_eq!(
-            LayoutHomingType::from(HomingType::Bump),
-            LayoutHomingType::Bump
-        );
-    }
-
-    #[test]
     fn test_text_height_new() {
         let expected = vec![0., 2., 4., 6., 8., 10., 12., 14., 16., 18.];
         let result = TextHeight::new(&hashmap! {}).0;

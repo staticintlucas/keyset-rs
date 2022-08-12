@@ -6,6 +6,7 @@ use std::fmt;
 
 // pub use self::de::*;
 use crate::error::Result;
+use crate::profile::HomingType;
 use crate::utils::{Color, Point, Size};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -85,18 +86,10 @@ impl<T> From<LegendMap<T>> for Vec<T> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum HomingType {
-    Default, // The default for this profile
-    Scoop,   // Homing scoop a.k.a. deep dish
-    Bar,     // Homing bar a.k.a. line
-    Bump,    // Homing bump a.k.a. nub, dot, or nipple
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyType {
     None,   // i.e. decal in KLE
     Normal, // Just a regular ol' key
-    Homing(HomingType),
+    Homing(Option<HomingType>),
     Space,
 }
 

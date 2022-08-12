@@ -7,7 +7,6 @@ use interp::interp_slice;
 use itertools::Itertools;
 use serde::Deserialize;
 
-use crate::layout::HomingType as LayoutHomingType;
 use crate::utils::{Rect, RoundRect};
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -27,16 +26,6 @@ pub enum HomingType {
     Bar,
     #[serde(alias = "nub", alias = "dot", alias = "nipple")]
     Bump,
-}
-
-impl From<HomingType> for LayoutHomingType {
-    fn from(r#type: HomingType) -> Self {
-        match r#type {
-            HomingType::Scoop => LayoutHomingType::Scoop,
-            HomingType::Bar => LayoutHomingType::Bar,
-            HomingType::Bump => LayoutHomingType::Bump,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -179,24 +168,6 @@ mod tests {
     use maplit::hashmap;
 
     use super::*;
-
-    #[test]
-    fn test_homing_type_from() {
-        use crate::layout::HomingType as LayoutHomingType;
-
-        assert_eq!(
-            LayoutHomingType::from(HomingType::Scoop),
-            LayoutHomingType::Scoop
-        );
-        assert_eq!(
-            LayoutHomingType::from(HomingType::Bar),
-            LayoutHomingType::Bar
-        );
-        assert_eq!(
-            LayoutHomingType::from(HomingType::Bump),
-            LayoutHomingType::Bump
-        );
-    }
 
     #[test]
     fn test_text_height_new() {

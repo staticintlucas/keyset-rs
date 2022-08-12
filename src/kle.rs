@@ -7,7 +7,8 @@ use serde::{Deserialize, Deserializer};
 use serde_json::{Map, Value};
 
 use crate::error::Result;
-use crate::layout::{HomingType, Key, KeySize, KeyType, Layout};
+use crate::layout::{Key, KeySize, KeyType, Layout};
+use crate::profile::HomingType;
 use crate::utils::{Color, Point, Size};
 
 // The number of legends on a key and number of alignment settings from KLE
@@ -316,15 +317,15 @@ impl KeyProps {
             .any(|b| b);
 
         let key_type = if is_scooped {
-            KeyType::Homing(HomingType::Scoop)
+            KeyType::Homing(Some(HomingType::Scoop))
         } else if is_barred {
-            KeyType::Homing(HomingType::Bar)
+            KeyType::Homing(Some(HomingType::Bar))
         } else if is_bumped {
-            KeyType::Homing(HomingType::Bump)
+            KeyType::Homing(Some(HomingType::Bump))
         } else if self.p.contains("space") {
             KeyType::Space
         } else if self.n {
-            KeyType::Homing(HomingType::Default)
+            KeyType::Homing(None)
         } else if self.d {
             KeyType::None
         } else {
@@ -716,7 +717,7 @@ mod tests {
             ..keyprops2
         };
         let key3 = keyprops3.to_key(legends.clone()).unwrap();
-        assert_eq!(key3.key_type, KeyType::Homing(HomingType::Default));
+        assert_eq!(key3.key_type, KeyType::Homing(None));
 
         let keyprops4 = KeyProps {
             p: "space".into(),
@@ -730,21 +731,21 @@ mod tests {
             ..keyprops4
         };
         let key5 = keyprops5.to_key(legends.clone()).unwrap();
-        assert_eq!(key5.key_type, KeyType::Homing(HomingType::Scoop));
+        assert_eq!(key5.key_type, KeyType::Homing(Some(HomingType::Scoop)));
 
         let keyprops6 = KeyProps {
             p: "bar".into(),
             ..keyprops5
         };
         let key6 = keyprops6.to_key(legends.clone()).unwrap();
-        assert_eq!(key6.key_type, KeyType::Homing(HomingType::Bar));
+        assert_eq!(key6.key_type, KeyType::Homing(Some(HomingType::Bar)));
 
         let keyprops7 = KeyProps {
             p: "bump".into(),
             ..keyprops6
         };
         let key7 = keyprops7.to_key(legends.clone()).unwrap();
-        assert_eq!(key7.key_type, KeyType::Homing(HomingType::Bump));
+        assert_eq!(key7.key_type, KeyType::Homing(Some(HomingType::Bump)));
     }
 
     #[test]
