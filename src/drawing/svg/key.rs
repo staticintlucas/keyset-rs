@@ -81,6 +81,6 @@ mod tests {
         assert_eq!(&*attr["transform"], "translate(2000, 1000)");
 
         let children = elem.get_inner().get_children();
-        assert_eq!(children.len(), 1);
+        assert_eq!(children.len(), 2);
     }
 }
