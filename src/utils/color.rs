@@ -84,7 +84,7 @@ impl Color {
     #[inline]
     pub fn to_hex(self) -> String {
         let (r, g, b) = self.to_rgb();
-        format!("#{:02x}{:02x}{:02x}", r, g, b)
+        format!("#{r:02x}{g:02x}{b:02x}")
     }
 
     #[inline]

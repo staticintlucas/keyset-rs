@@ -20,9 +20,9 @@ pub(crate) enum ErrorImpl {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self.inner {
-            ErrorImpl::JsonParseError(error) => write!(f, "error parsing JSON: {}", error),
-            ErrorImpl::InvalidKeySize(error) => write!(f, "error parsing KLE layout: {}", error),
-            ErrorImpl::InvalidColor(error) => write!(f, "error parsing color: {}", error),
+            ErrorImpl::JsonParseError(error) => write!(f, "error parsing JSON: {error}"),
+            ErrorImpl::InvalidKeySize(error) => write!(f, "error parsing KLE layout: {error}"),
+            ErrorImpl::InvalidColor(error) => write!(f, "error parsing color: {error}"),
         }
     }
 }
