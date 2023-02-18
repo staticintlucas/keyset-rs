@@ -427,7 +427,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_profile() {
-        let profile: Profile = toml::from_str(
+        let profile: Profile = Profile::from_toml(
             r#"
             type = 'cylindrical'
             depth = 0.5
@@ -521,5 +521,19 @@ mod tests {
         assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);
         assert_approx_eq!(profile.homing.bump.diameter, 21., 0.5);
         assert_approx_eq!(profile.homing.bump.y_offset, -10., 0.5);
+
+        let result = Profile::from_toml("null");
+        assert!(result.is_err());
+        assert_eq!(
+            format!("{}", result.unwrap_err()),
+            format!(
+                r#"error parsing TOML: TOML parse error at line 1, column 5
+  |
+1 | null
+  |     ^
+expected `.`, `=`
+"#
+            ),
+        )
     }
 }
