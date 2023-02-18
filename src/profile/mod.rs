@@ -7,6 +7,7 @@ use interp::interp_slice;
 use itertools::Itertools;
 use serde::Deserialize;
 
+use crate::error::Result;
 use crate::utils::{Rect, RoundRect};
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -17,11 +18,19 @@ pub enum ProfileType {
     Flat,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+impl Default for ProfileType {
+    fn default() -> Self {
+        // 1.0mm is approx the depth of OEM profile
+        Self::Cylindrical { depth: 1.0 }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum HomingType {
     #[serde(alias = "deep-dish")]
     Scoop,
+    #[default]
     #[serde(alias = "line")]
     Bar,
     #[serde(alias = "nub", alias = "dot", alias = "nipple")]
@@ -33,6 +42,14 @@ struct ScoopProps {
     depth: f32,
 }
 
+impl Default for ScoopProps {
+    fn default() -> Self {
+        // I haven't come across a scooped OEM profile key, but I'd guess it
+        // would be around 2x the regular depth
+        Self { depth: 2.0 }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 struct BarProps {
     width: f32,
@@ -40,13 +57,32 @@ struct BarProps {
     y_offset: f32,
 }
 
+impl Default for BarProps {
+    fn default() -> Self {
+        Self {
+            width: 3.81,    // = 0.15in
+            height: 0.51,   // = 0.02in
+            y_offset: 6.35, // = 0.25in
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 struct BumpProps {
-    radius: f32,
+    diameter: f32,
     y_offset: f32,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+impl Default for BumpProps {
+    fn default() -> Self {
+        Self {
+            diameter: 0.51, // = 0.02in
+            y_offset: 0.,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Default)]
 pub struct HomingProps {
     default: HomingType,
     scoop: ScoopProps,
@@ -59,15 +95,10 @@ struct TextHeight(Vec<f32>);
 
 impl TextHeight {
     const NUM_HEIGHTS: u8 = 10;
-    const DEFAULT_MAX: f32 = 18.;
 
     fn new(heights: &HashMap<u8, f32>) -> Self {
         if heights.is_empty() {
-            Self(
-                (0..Self::NUM_HEIGHTS)
-                    .map(|i| f32::from(i) * Self::DEFAULT_MAX / f32::from(Self::NUM_HEIGHTS - 1))
-                    .collect(),
-            )
+            Self::default()
         } else {
             let (index, height): (Vec<_>, Vec<_>) = {
                 iter::once((0., 0.))
@@ -87,18 +118,29 @@ impl TextHeight {
 
     fn get(&self, kle_font_size: u8) -> f32 {
         let font_usize = usize::from(kle_font_size);
-        if self.0.is_empty() {
-            // TODO make this case impossible?
-            if font_usize < usize::from(Self::NUM_HEIGHTS) {
-                Self::DEFAULT_MAX * f32::from(kle_font_size) / f32::from(Self::NUM_HEIGHTS - 1)
-            } else {
-                Self::DEFAULT_MAX
-            }
-        } else if font_usize < self.0.len() {
-            self.0[font_usize]
+        // TODO make empty case impossible
+        let default = Self::default();
+        let sizes = if self.0.is_empty() {
+            &default.0
         } else {
-            self.0[self.0.len() - 1]
+            &self.0
+        };
+        if font_usize < sizes.len() {
+            sizes[font_usize]
+        } else {
+            sizes[sizes.len() - 1]
         }
+    }
+}
+
+impl Default for TextHeight {
+    fn default() -> Self {
+        const DEFAULT_MAX: f32 = 18.;
+        Self(
+            (0..Self::NUM_HEIGHTS)
+                .map(|i| f32::from(i) * DEFAULT_MAX / f32::from(Self::NUM_HEIGHTS - 1))
+                .collect(),
+        )
     }
 }
 
@@ -107,16 +149,10 @@ struct TextRect(Vec<Rect>);
 
 impl TextRect {
     const NUM_RECTS: u8 = 10;
-    const DEFAULT_RECT: Rect = Rect {
-        x: 0.,
-        y: 0.,
-        w: 1000.,
-        h: 1000.,
-    };
 
     fn new(rects: &HashMap<u8, Rect>) -> Self {
         if rects.is_empty() {
-            Self(vec![Self::DEFAULT_RECT; usize::from(Self::NUM_RECTS)])
+            Self::default()
         } else {
             // Note this unwrap will not panic because we know rects is not empty at this stage
             let max_rect = rects[rects.keys().max().unwrap()];
@@ -142,13 +178,25 @@ impl TextRect {
     }
 
     fn get(&self, kle_font_size: u8) -> Rect {
-        if self.0.len() > usize::from(kle_font_size) {
-            self.0[usize::from(kle_font_size)]
-        } else if self.0.is_empty() {
-            Self::DEFAULT_RECT
+        // TODO make empty case impossible
+        let default = Self::default();
+        let rects = if self.0.is_empty() {
+            &default.0
         } else {
-            self.0[self.0.len() - 1]
+            &self.0
+        };
+        if usize::from(kle_font_size) < rects.len() {
+            rects[usize::from(kle_font_size)]
+        } else {
+            rects[rects.len() - 1]
         }
+    }
+}
+
+impl Default for TextRect {
+    fn default() -> Self {
+        let rect = Rect::new(0., 0., 1000., 1000.);
+        Self(vec![rect; usize::from(Self::NUM_RECTS)])
     }
 }
 
@@ -160,6 +208,25 @@ pub struct Profile {
     text_margin: TextRect,
     text_height: TextHeight,
     homing: HomingProps,
+}
+
+impl Profile {
+    pub fn from_toml(s: &str) -> Result<Self> {
+        Ok(toml::from_str(s)?)
+    }
+}
+
+impl Default for Profile {
+    fn default() -> Self {
+        Self {
+            profile_type: ProfileType::default(),
+            bottom_rect: RoundRect::new(0.5, 0.5, 18.05, 18.05, 1.2, 1.2),
+            top_rect: RoundRect::new(3.2, 1.0, 12.7, 13.95, 1.2, 1.2),
+            text_margin: TextRect::default(),
+            text_height: TextHeight::default(),
+            homing: HomingProps::default(),
+        }
+    }
 }
 
 #[cfg(test)]

@@ -13,6 +13,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug)]
 pub(crate) enum ErrorImpl {
     JsonParseError(serde_json::Error),
+    TomlParseError(toml::de::Error),
     InvalidKeySize(InvalidKeySize),
     InvalidColor(InvalidColor),
 }
@@ -21,6 +22,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self.inner {
             ErrorImpl::JsonParseError(error) => write!(f, "error parsing JSON: {error}"),
+            ErrorImpl::TomlParseError(error) => write!(f, "error parsing TOML: {error}"),
             ErrorImpl::InvalidKeySize(error) => write!(f, "error parsing KLE layout: {error}"),
             ErrorImpl::InvalidColor(error) => write!(f, "error parsing color: {error}"),
         }
@@ -40,6 +42,14 @@ impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
         Self {
             inner: Box::new(ErrorImpl::JsonParseError(error)),
+        }
+    }
+}
+
+impl From<toml::de::Error> for Error {
+    fn from(error: toml::de::Error) -> Self {
+        Self {
+            inner: Box::new(ErrorImpl::TomlParseError(error)),
         }
     }
 }

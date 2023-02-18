@@ -40,14 +40,14 @@ impl<'de> Deserialize<'de> for BumpProps {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawBumpProps {
-            radius: f32,
+            diameter: f32,
             y_offset: f32,
         }
 
         RawBumpProps::deserialize(deserializer).map(|props| {
             // Convert mm to milli units
             BumpProps {
-                radius: props.radius * (1000. / 19.05),
+                diameter: props.diameter * (1000. / 19.05),
                 y_offset: props.y_offset * (1000. / 19.05),
             }
         })
@@ -208,19 +208,6 @@ impl<'de> Deserialize<'de> for Profile {
             .iter()
             .map(|(i, (s, r))| ((i, s), (i, r)))
             .unzip();
-
-        // let (heights, rects) = process_results(
-        //     raw_data.legend.iter().map(|(s, p)| {
-        //         let i = s
-        //             .parse::<u8>()
-        //             .map_err(|_| D::Error::invalid_value(Unexpected::Str(s), &"an integer"))?;
-
-        //         // Note: deserializing a rect already scales to milliunits, but the size still needs
-        //         // to be scaled here
-        //         Ok(((i, p.size * (1000. / 19.05)), (i, p.rect)))
-        //     }),
-        //     |i| i.unzip(),
-        // )?;
 
         Ok(Self {
             profile_type: raw_data.profile_type,
@@ -478,7 +465,7 @@ mod tests {
             default = 'scoop'
             scoop = { depth = 1.5 }
             bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
-            bump = { radius = 0.2, y-offset = -0.2 }
+            bump = { diameter = 0.4, y-offset = -0.2 }
         "#,
         )
         .unwrap();
@@ -532,7 +519,7 @@ mod tests {
         assert_approx_eq!(profile.homing.bar.width, 202., 0.5);
         assert_approx_eq!(profile.homing.bar.height, 21., 0.5);
         assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);
-        assert_approx_eq!(profile.homing.bump.radius, 10., 0.5);
+        assert_approx_eq!(profile.homing.bump.diameter, 21., 0.5);
         assert_approx_eq!(profile.homing.bump.y_offset, -10., 0.5);
     }
 }

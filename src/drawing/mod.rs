@@ -1,21 +1,21 @@
 mod svg;
 
 use crate::layout::Layout;
-// use crate::profile::Profile;
+use crate::profile::Profile;
 
 pub struct Drawing {
     layout: Layout,
-    // profile: Profile,
+    profile: Profile,
     dpi: f32,
 }
 
 impl Drawing {
     #[inline]
     #[must_use]
-    pub fn new(layout: Layout /* profile: Profile */) -> Self {
+    pub fn new(layout: Layout, profile: Profile) -> Self {
         Self {
             layout,
-            // profile,
+            profile,
             dpi: 96.,
         }
     }
@@ -34,7 +34,8 @@ impl Drawing {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::Size;
+    use crate::profile::*;
+    use crate::utils::*;
     use assert_approx_eq::assert_approx_eq;
 
     use super::*;
@@ -45,7 +46,8 @@ mod tests {
             size: Size::new(1., 1.),
             keys: vec![],
         };
-        let drawing = Drawing::new(layout);
+        let profile = Profile::default();
+        let drawing = Drawing::new(layout, profile);
 
         assert_approx_eq!(drawing.dpi, 96.);
         assert_eq!(drawing.layout.keys.len(), 0);
@@ -57,7 +59,8 @@ mod tests {
             size: Size::new(1., 1.),
             keys: vec![],
         };
-        let drawing = Drawing::new(layout);
+        let profile = Profile::default();
+        let drawing = Drawing::new(layout, profile);
 
         assert_approx_eq!(drawing.dpi, 96.);
         assert_approx_eq!(drawing.with_dpi(144.).dpi, 144.);
@@ -69,7 +72,8 @@ mod tests {
             size: Size::new(1., 1.),
             keys: vec![],
         };
-        let mut drawing = Drawing::new(layout);
+        let profile = Profile::default();
+        let mut drawing = Drawing::new(layout, profile);
         drawing.set_dpi(192.);
 
         assert_approx_eq!(drawing.dpi, 192.);

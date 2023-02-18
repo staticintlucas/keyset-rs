@@ -17,6 +17,7 @@ impl Drawing {
 #[cfg(test)]
 mod tests {
     use crate::layout::Layout;
+    use crate::profile::Profile;
     use crate::utils::Size;
 
     use super::*;
@@ -27,9 +28,10 @@ mod tests {
             size: Size::new(1., 1.),
             keys: vec![],
         };
+        let profile = Profile::default();
         let drawing = Drawing {
             layout,
-            // profile,
+            profile,
             dpi: 96.,
         };
 
