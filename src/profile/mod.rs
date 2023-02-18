@@ -25,16 +25,21 @@ impl Default for ProfileType {
     }
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum HomingType {
     #[serde(alias = "deep-dish")]
     Scoop,
-    #[default]
     #[serde(alias = "line")]
     Bar,
     #[serde(alias = "nub", alias = "dot", alias = "nipple")]
     Bump,
+}
+
+impl Default for HomingType {
+    fn default() -> Self {
+        Self::Bar
+    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
