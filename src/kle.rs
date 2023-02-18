@@ -212,7 +212,7 @@ impl KeyProps {
             t: Color::default_legend(),
             ta: vec![Color::default_legend(); NUM_LEGENDS as usize],
             a: LegendAlignment::default(),
-            p: "".to_string(),
+            p: String::new(),
             f: DEFAULT_FONT_SIZE,
             fa: vec![DEFAULT_FONT_SIZE; NUM_LEGENDS as usize],
         }
