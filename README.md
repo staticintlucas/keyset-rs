@@ -1,6 +1,6 @@
 # keyset.rs
 
-[![Test status](https://img.shields.io/github/workflow/status/staticintlucas/keyset-rs/Test?label=tests&style=flat-square)][tests]
+[![Test status](https://img.shields.io/github/actions/workflow/status/staticintlucas/keyset-rs/test.yml?branch=main&label=tests&style=flat-square)][tests]
 [![Code coverage](https://img.shields.io/codecov/c/gh/staticintlucas/keyset-rs?style=flat-square)][coverage]
 [![Rust version](https://img.shields.io/badge/rust-1.42%2B-informational?style=flat-square)][rust version]
 
