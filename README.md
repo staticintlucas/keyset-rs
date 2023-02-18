@@ -2,12 +2,12 @@
 
 [![Test status](https://img.shields.io/github/actions/workflow/status/staticintlucas/keyset-rs/test.yml?branch=main&label=tests&style=flat-square)][tests]
 [![Code coverage](https://img.shields.io/codecov/c/gh/staticintlucas/keyset-rs?style=flat-square)][coverage]
-[![Rust version](https://img.shields.io/badge/rust-1.42%2B-informational?style=flat-square)][rust version]
+[![Rust version](https://img.shields.io/badge/rust-1.60%2B-informational?style=flat-square)][rust version]
 
 A (WIP) reimplementation of [pykeyset] in Rust for improved performance.
 Eventually this aims to become the backend for pykeyset using a Python wrapper around this project.
 
-Current minimum supported Rust version is 1.56.0, although this is subject to change as development continues.
+Current minimum supported Rust version is 1.60.0, although this is subject to change as development continues.
 
 [tests]: https://github.com/staticintlucas/keyset-rs/actions
 [coverage]: https://codecov.io/gh/staticintlucas/keyset-rs
