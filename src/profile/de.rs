@@ -362,7 +362,7 @@ mod tests {
     fn test_deserialize_rect() {
         use toml::Deserializer;
 
-        let rect = deserialize_rect(&mut Deserializer::new(
+        let rect = deserialize_rect(Deserializer::new(
             r"
             width = 15.24
             height = 15.24
@@ -380,7 +380,7 @@ mod tests {
     fn test_deserialize_round_rect() {
         use toml::Deserializer;
 
-        let rect = deserialize_round_rect(&mut Deserializer::new(
+        let rect = deserialize_round_rect(Deserializer::new(
             r"
             width = 15.24
             height = 15.24
@@ -401,7 +401,7 @@ mod tests {
     fn test_deserialize_offset_rect() {
         use toml::Deserializer;
 
-        let rect = deserialize_offset_rect(&mut Deserializer::new(
+        let rect = deserialize_offset_rect(Deserializer::new(
             r"
             width = 15.24
             height = 15.24
@@ -420,7 +420,7 @@ mod tests {
     fn test_deserialize_offset_round_rect() {
         use toml::Deserializer;
 
-        let rect = deserialize_offset_round_rect(&mut Deserializer::new(
+        let rect = deserialize_offset_round_rect(Deserializer::new(
             r"
             width = 15.24
             height = 15.24

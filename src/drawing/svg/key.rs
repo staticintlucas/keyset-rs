@@ -77,10 +77,10 @@ mod tests {
             vec![Color::default_legend(); 9],
         );
         let elem = key.to_svg();
-        let attr = elem.get_inner().get_attributes();
+        let attr = elem.get_attributes();
         assert_eq!(&*attr["transform"], "translate(2000, 1000)");
 
-        let children = elem.get_inner().get_children();
+        let children = elem.get_children();
         assert_eq!(children.len(), 2);
     }
 }

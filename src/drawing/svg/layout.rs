@@ -41,7 +41,7 @@ mod tests {
             keys: vec![],
         };
         let elem = layout.to_svg();
-        let attr = elem.get_inner().get_attributes();
+        let attr = elem.get_attributes();
 
         assert_eq!(&*attr["width"], "72");
         assert_eq!(&*attr["height"], "72");
