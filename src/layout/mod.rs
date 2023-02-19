@@ -1,5 +1,3 @@
-// mod de;
-
 use itertools::Itertools;
 
 use std::fmt;
@@ -180,7 +178,7 @@ impl fmt::Display for InvalidKeySize {
 
 impl std::error::Error for InvalidKeySize {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Key {
     pub position: Point,
     pub size: KeySize,
@@ -219,8 +217,31 @@ pub struct Layout {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
+
+    // Not an actual test, returns a test key for use in other tests
+    pub fn test_key() -> Key {
+        Key::new(
+            Point::new(0., 0.),
+            KeySize::Normal(Size::new(1., 1.)),
+            KeyType::Normal,
+            Color::default_key(),
+            vec![
+                "!".into(),
+                "".into(),
+                "¹".into(),
+                "".into(),
+                "".into(),
+                "".into(),
+                "1".into(),
+                "".into(),
+                "¡".into(),
+            ],
+            vec![4; 9],
+            vec![Color::default_legend(); 9],
+        )
+    }
 
     #[test]
     fn test_legend_map_new() {

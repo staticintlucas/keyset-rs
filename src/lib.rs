@@ -16,6 +16,7 @@ mod profile;
 mod utils;
 
 pub use drawing::Drawing;
+pub use drawing::ToSvg;
 pub use kle::FromKle;
 pub use layout::Layout;
 pub use profile::Profile;

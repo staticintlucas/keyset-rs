@@ -18,6 +18,15 @@ pub enum ProfileType {
     Flat,
 }
 
+impl ProfileType {
+    pub(crate) fn depth(self) -> f32 {
+        match self {
+            Self::Cylindrical { depth } | Self::Spherical { depth } => depth,
+            Self::Flat => 0.,
+        }
+    }
+}
+
 impl Default for ProfileType {
     fn default() -> Self {
         // 1.0mm is approx the depth of OEM profile
@@ -43,8 +52,8 @@ impl Default for HomingType {
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
-struct ScoopProps {
-    depth: f32,
+pub struct ScoopProps {
+    pub depth: f32,
 }
 
 impl Default for ScoopProps {
@@ -56,10 +65,10 @@ impl Default for ScoopProps {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct BarProps {
-    width: f32,
-    height: f32,
-    y_offset: f32,
+pub struct BarProps {
+    pub width: f32,
+    pub height: f32,
+    pub y_offset: f32,
 }
 
 impl Default for BarProps {
@@ -73,9 +82,9 @@ impl Default for BarProps {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct BumpProps {
-    diameter: f32,
-    y_offset: f32,
+pub struct BumpProps {
+    pub diameter: f32,
+    pub y_offset: f32,
 }
 
 impl Default for BumpProps {
@@ -89,14 +98,14 @@ impl Default for BumpProps {
 
 #[derive(Debug, Clone, Copy, Deserialize, Default)]
 pub struct HomingProps {
-    default: HomingType,
-    scoop: ScoopProps,
-    bar: BarProps,
-    bump: BumpProps,
+    pub default: HomingType,
+    pub scoop: ScoopProps,
+    pub bar: BarProps,
+    pub bump: BumpProps,
 }
 
 #[derive(Debug, Clone)]
-struct TextHeight(Vec<f32>);
+pub struct TextHeight(Vec<f32>);
 
 impl TextHeight {
     const NUM_HEIGHTS: u8 = 10;
@@ -150,7 +159,7 @@ impl Default for TextHeight {
 }
 
 #[derive(Debug, Clone)]
-struct TextRect(Vec<Rect>);
+pub struct TextRect(Vec<Rect>);
 
 impl TextRect {
     const NUM_RECTS: u8 = 10;
@@ -208,11 +217,11 @@ impl Default for TextRect {
 #[derive(Debug, Clone)]
 pub struct Profile {
     pub profile_type: ProfileType,
-    bottom_rect: RoundRect,
-    top_rect: RoundRect,
-    text_margin: TextRect,
-    text_height: TextHeight,
-    homing: HomingProps,
+    pub bottom_rect: RoundRect,
+    pub top_rect: RoundRect,
+    pub text_margin: TextRect,
+    pub text_height: TextHeight,
+    pub homing: HomingProps,
 }
 
 impl Profile {
@@ -240,6 +249,13 @@ mod tests {
     use maplit::hashmap;
 
     use super::*;
+
+    #[test]
+    fn test_profile_type_depth() {
+        assert_eq!(ProfileType::Cylindrical { depth: 1. }.depth(), 1.);
+        assert_eq!(ProfileType::Spherical { depth: 0.5 }.depth(), 0.5);
+        assert_eq!(ProfileType::Flat.depth(), 0.);
+    }
 
     #[test]
     fn test_text_height_new() {

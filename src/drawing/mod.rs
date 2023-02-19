@@ -1,5 +1,7 @@
 mod svg;
 
+pub use self::svg::ToSvg;
+
 use crate::layout::Layout;
 use crate::profile::Profile;
 

@@ -624,7 +624,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_rect_from_point_and_size() {
+    fn test_rect_from_point_and_size() {
         let point = Point::new(1., 2.);
         let size = Size::new(3., 4.);
         let radius = Size::new(2., 0.5);
@@ -637,7 +637,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_rect_from_points() {
+    fn test_rect_from_points() {
         let point1 = Point::new(1., 2.);
         let point2 = Point::new(3., 4.);
         let radius = Size::new(2., 0.5);
@@ -650,21 +650,21 @@ mod tests {
     }
 
     #[test]
-    pub fn test_rect_position() {
+    fn test_rect_position() {
         let rect = Rect::new(1., 2., 3., 4.);
 
         assert_approx_eq!(rect.position(), Point::new(1., 2.));
     }
 
     #[test]
-    pub fn test_rect_size() {
+    fn test_rect_size() {
         let rect = Rect::new(1., 2., 3., 4.);
 
         assert_approx_eq!(rect.size(), Size::new(3., 4.));
     }
 
     #[test]
-    pub fn test_rect_center() {
+    fn test_rect_center() {
         let rect = Rect::new(1., 2., 3., 4.);
 
         assert_approx_eq!(rect.center(), Point::new(2.5, 4.));
