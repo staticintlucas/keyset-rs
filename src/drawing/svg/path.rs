@@ -181,56 +181,48 @@ impl PathData {
 
 #[cfg(test)]
 mod tests {
+    use assert_matches::assert_matches;
     use maplit::hashmap;
 
     use super::*;
 
     #[test]
     fn test_move_to() {
-        assert!(matches!(
-            move_to(1., 1.),
-            Command::Move(Position::Absolute, ..)
-        ));
+        assert_matches!(move_to(1., 1.), Command::Move(Position::Absolute, ..));
     }
 
     #[test]
     fn test_h_line() {
-        assert!(matches!(
-            h_line(1.),
-            Command::HorizontalLine(Position::Relative, ..)
-        ));
+        assert_matches!(h_line(1.), Command::HorizontalLine(Position::Relative, ..));
     }
 
     #[test]
     fn test_v_line() {
-        assert!(matches!(
-            v_line(1.),
-            Command::VerticalLine(Position::Relative, ..)
-        ));
+        assert_matches!(v_line(1.), Command::VerticalLine(Position::Relative, ..));
     }
 
     #[test]
     fn test_arc() {
-        assert!(matches!(
+        assert_matches!(
             arc(1., 1., 1., 1.),
             Command::EllipticalArc(Position::Relative, ..)
-        ));
+        );
     }
 
     #[test]
     fn test_inset_arc() {
-        assert!(matches!(
+        assert_matches!(
             inset_arc(1., 1., 1., 1.),
             Command::EllipticalArc(Position::Relative, ..)
-        ));
+        );
     }
 
     #[test]
     fn test_corner() {
-        assert!(matches!(
+        assert_matches!(
             corner(1., 1.),
             Command::EllipticalArc(Position::Relative, ..)
-        ));
+        );
     }
 
     #[test]

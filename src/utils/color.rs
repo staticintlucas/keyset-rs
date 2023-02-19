@@ -257,12 +257,13 @@ mod tests {
 
     #[test]
     fn test_deserialize_color() {
+        use assert_matches::assert_matches;
         use serde_json::Error;
 
         let color = Color::deserialize(&mut serde_json::Deserializer::from_str(r##""#ff0000""##));
-        assert!(matches!(color, Ok(Color { .. })));
+        assert_matches!(color, Ok(Color { .. }));
 
         let color = Color::deserialize(&mut serde_json::Deserializer::from_str(r#""invalid""#));
-        assert!(matches!(color, Err(Error { .. })));
+        assert_matches!(color, Err(Error { .. }));
     }
 }

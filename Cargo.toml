@@ -26,3 +26,4 @@ rgb = "0.8"
 
 [dev-dependencies]
 assert_approx_eq = "1.1"
+assert_matches = "1.5"

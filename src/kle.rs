@@ -411,19 +411,20 @@ mod tests {
     use super::*;
     use crate::layout::LegendMap;
     use assert_approx_eq::assert_approx_eq;
+    use assert_matches::assert_matches;
 
     use serde_json::{Deserializer, Error};
 
     #[test]
     fn test_de_nl_delimited_colors() {
         let colors = de_nl_delimited_colors(&mut Deserializer::from_str(r##""#f00\n\n#ba9""##));
-        assert!(matches!(colors, Ok(Some(v)) if v.len() == 3 && v[1].is_none()));
+        assert_matches!(colors, Ok(Some(v)) if v.len() == 3 && v[1].is_none());
 
         let colors = de_nl_delimited_colors(&mut Deserializer::from_str(r##""#abc\\n#bad""##));
-        assert!(matches!(colors, Err(Error { .. })));
+        assert_matches!(colors, Err(Error { .. }));
 
         let colors = de_nl_delimited_colors(&mut Deserializer::from_str("null"));
-        assert!(matches!(colors, Ok(None)));
+        assert_matches!(colors, Ok(None));
     }
 
     #[test]
@@ -454,8 +455,8 @@ mod tests {
 
         assert_eq!(result1.rows.len(), 2);
         assert_eq!(result1.rows[0].len(), 4);
-        assert!(matches!(result1.rows[0][0], RawKleRowItem::Object(_)));
-        assert!(matches!(result1.rows[0][1], RawKleRowItem::String(_)));
+        assert_matches!(result1.rows[0][0], RawKleRowItem::Object(_));
+        assert_matches!(result1.rows[0][1], RawKleRowItem::String(_));
 
         let result2: RawKleFile = serde_json::from_str(r#"[["A"]]"#).unwrap();
         assert_eq!(result2.props.len(), 0);
@@ -469,7 +470,7 @@ mod tests {
         assert_eq!(result4.props.len(), 0);
         assert_eq!(result4.rows.len(), 0);
 
-        assert!(matches!(serde_json::from_str::<RawKleFile>("null"), Err(_)))
+        assert_matches!(serde_json::from_str::<RawKleFile>("null"), Err(_));
     }
 
     #[test]
