@@ -158,7 +158,7 @@ where
     })
 }
 
-fn deserialize_legend_map<'de, D>(deserializer: D) -> Result<HashMap<u8, (f32, Rect)>, D::Error>
+fn deserialize_legend_map<'de, D>(deserializer: D) -> Result<HashMap<usize, (f32, Rect)>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -197,7 +197,7 @@ impl<'de> Deserialize<'de> for Profile {
             #[serde(deserialize_with = "deserialize_offset_round_rect")]
             top: RoundRect,
             #[serde(deserialize_with = "deserialize_legend_map")]
-            legend: HashMap<u8, (f32, Rect)>,
+            legend: HashMap<usize, (f32, Rect)>,
             homing: HomingProps,
         }
 
@@ -268,10 +268,6 @@ mod tests {
         });
         assert_approx_eq!(heights.get(5), 10.5);
         assert_approx_eq!(heights.get(23), 19.);
-
-        let heights = TextHeight(vec![]);
-        assert_approx_eq!(heights.get(5), 10.);
-        assert_approx_eq!(heights.get(200), 18.);
     }
 
     #[test]
@@ -336,13 +332,6 @@ mod tests {
         assert_approx_eq!(r.y, 300.);
         assert_approx_eq!(r.w, 400.);
         assert_approx_eq!(r.h, 400.);
-
-        let rects = TextRect(vec![]);
-        let r = rects.get(2);
-        assert_approx_eq!(r.x, 0.);
-        assert_approx_eq!(r.y, 0.);
-        assert_approx_eq!(r.w, 1e3);
-        assert_approx_eq!(r.h, 1e3);
     }
 
     #[test]

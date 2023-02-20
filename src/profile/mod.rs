@@ -3,7 +3,8 @@ mod de;
 use std::collections::HashMap;
 use std::iter;
 
-use interp::interp_slice;
+use array_init::array_init;
+use interp::interp_array;
 use itertools::Itertools;
 use serde::Deserialize;
 
@@ -105,12 +106,12 @@ pub struct HomingProps {
 }
 
 #[derive(Debug, Clone)]
-pub struct TextHeight(Vec<f32>);
+pub struct TextHeight([f32; Self::NUM_HEIGHTS]);
 
 impl TextHeight {
-    const NUM_HEIGHTS: u8 = 10;
+    const NUM_HEIGHTS: usize = 10;
 
-    fn new(heights: &HashMap<u8, f32>) -> Self {
+    fn new(heights: &HashMap<usize, f32>) -> Self {
         if heights.is_empty() {
             Self::default()
         } else {
@@ -120,29 +121,21 @@ impl TextHeight {
                         heights
                             .iter()
                             .sorted_by_key(|(&i, _)| i)
-                            .map(|(&i, &h)| (f32::from(i), h)),
+                            .map(|(&i, &h)| (i as f32, h)),
                     )
                     .unzip()
             };
-            let all_indexes: Vec<_> = (0..Self::NUM_HEIGHTS).map(f32::from).collect();
-
-            Self(interp_slice(&index, &height, &all_indexes))
+            let all_indeces = array_init(|i| i as f32);
+            Self(interp_array(&index, &height, &all_indeces))
         }
     }
 
     fn get(&self, kle_font_size: u8) -> f32 {
         let font_usize = usize::from(kle_font_size);
-        // TODO make empty case impossible
-        let default = Self::default();
-        let sizes = if self.0.is_empty() {
-            &default.0
+        if font_usize < self.0.len() {
+            self.0[font_usize]
         } else {
-            &self.0
-        };
-        if font_usize < sizes.len() {
-            sizes[font_usize]
-        } else {
-            sizes[sizes.len() - 1]
+            self.0[self.0.len() - 1]
         }
     }
 }
@@ -150,31 +143,30 @@ impl TextHeight {
 impl Default for TextHeight {
     fn default() -> Self {
         const DEFAULT_MAX: f32 = 18.;
-        Self(
-            (0..Self::NUM_HEIGHTS)
-                .map(|i| f32::from(i) * DEFAULT_MAX / f32::from(Self::NUM_HEIGHTS - 1))
-                .collect(),
-        )
+        Self(array_init(|i| {
+            (i as f32) * DEFAULT_MAX / (Self::NUM_HEIGHTS as f32 - 1.)
+        }))
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct TextRect(Vec<Rect>);
+pub struct TextRect([Rect; Self::NUM_RECTS]);
 
 impl TextRect {
-    const NUM_RECTS: u8 = 10;
+    const NUM_RECTS: usize = 10;
 
-    fn new(rects: &HashMap<u8, Rect>) -> Self {
+    fn new(rects: &HashMap<usize, Rect>) -> Self {
         if rects.is_empty() {
             Self::default()
         } else {
             // Note this unwrap will not panic because we know rects is not empty at this stage
             let max_rect = rects[rects.keys().max().unwrap()];
 
+            // TODO clean up this logic
             // For each font size where the alignment rectangle isn't set, the rectangle of the
             // next largest rect is used, so we need to scan in reverse to carry the back the next
             // largest rect.
-            let rects = {
+            let rects: Vec<_> = {
                 let tmp = (0..Self::NUM_RECTS)
                     .rev()
                     .scan(max_rect, |prev, i| {
@@ -187,22 +179,15 @@ impl TextRect {
                 tmp.into_iter().rev().collect()
             };
 
-            Self(rects)
+            Self(rects.try_into().unwrap())
         }
     }
 
     fn get(&self, kle_font_size: u8) -> Rect {
-        // TODO make empty case impossible
-        let default = Self::default();
-        let rects = if self.0.is_empty() {
-            &default.0
+        if usize::from(kle_font_size) < self.0.len() {
+            self.0[usize::from(kle_font_size)]
         } else {
-            &self.0
-        };
-        if usize::from(kle_font_size) < rects.len() {
-            rects[usize::from(kle_font_size)]
-        } else {
-            rects[rects.len() - 1]
+            self.0[self.0.len() - 1]
         }
     }
 }
@@ -210,7 +195,7 @@ impl TextRect {
 impl Default for TextRect {
     fn default() -> Self {
         let rect = Rect::new(0., 0., 1000., 1000.);
-        Self(vec![rect; usize::from(Self::NUM_RECTS)])
+        Self([rect; Self::NUM_RECTS])
     }
 }
 
@@ -296,10 +281,6 @@ mod tests {
         });
         assert_approx_eq!(heights.get(5), 10.5);
         assert_approx_eq!(heights.get(23), 19.);
-
-        let heights = TextHeight(vec![]);
-        assert_approx_eq!(heights.get(5), 10.);
-        assert_approx_eq!(heights.get(200), 18.);
     }
 
     #[test]
@@ -364,12 +345,5 @@ mod tests {
         assert_approx_eq!(r.y, 300.);
         assert_approx_eq!(r.w, 400.);
         assert_approx_eq!(r.h, 400.);
-
-        let rects = TextRect(vec![]);
-        let r = rects.get(2);
-        assert_approx_eq!(r.x, 0.);
-        assert_approx_eq!(r.y, 0.);
-        assert_approx_eq!(r.w, 1e3);
-        assert_approx_eq!(r.h, 1e3);
     }
 }

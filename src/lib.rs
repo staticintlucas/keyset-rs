@@ -5,7 +5,8 @@
     missing_docs,
     clippy::missing_panics_doc,
     clippy::missing_errors_doc,
-    dead_code
+    dead_code,
+    clippy::cast_precision_loss
 )]
 
 mod drawing;
