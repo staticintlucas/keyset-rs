@@ -184,45 +184,39 @@ mod tests {
     use assert_matches::assert_matches;
     use maplit::hashmap;
 
+    use Command::*;
+    use Position::*;
+
     use super::*;
 
     #[test]
     fn test_move_to() {
-        assert_matches!(move_to(1., 1.), Command::Move(Position::Absolute, ..));
+        assert_matches!(move_to(1., 1.), Move(Absolute, ..));
     }
 
     #[test]
     fn test_h_line() {
-        assert_matches!(h_line(1.), Command::HorizontalLine(Position::Relative, ..));
+        assert_matches!(h_line(1.), HorizontalLine(Relative, ..));
     }
 
     #[test]
     fn test_v_line() {
-        assert_matches!(v_line(1.), Command::VerticalLine(Position::Relative, ..));
+        assert_matches!(v_line(1.), VerticalLine(Relative, ..));
     }
 
     #[test]
     fn test_arc() {
-        assert_matches!(
-            arc(1., 1., 1., 1.),
-            Command::EllipticalArc(Position::Relative, ..)
-        );
+        assert_matches!(arc(1., 1., 1., 1.), EllipticalArc(Relative, ..));
     }
 
     #[test]
     fn test_inset_arc() {
-        assert_matches!(
-            inset_arc(1., 1., 1., 1.),
-            Command::EllipticalArc(Position::Relative, ..)
-        );
+        assert_matches!(inset_arc(1., 1., 1., 1.), EllipticalArc(Relative, ..));
     }
 
     #[test]
     fn test_corner() {
-        assert_matches!(
-            corner(1., 1.),
-            Command::EllipticalArc(Position::Relative, ..)
-        );
+        assert_matches!(corner(1., 1.), EllipticalArc(Relative, ..));
     }
 
     #[test]
