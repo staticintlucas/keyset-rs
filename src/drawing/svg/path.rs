@@ -65,7 +65,12 @@ impl PathData {
         self.0.append(command);
     }
 
-    pub fn new(rect: RoundRect) -> Self {
+    pub fn new(x: f32, y: f32) -> Self {
+        let slf = Self(Data::new());
+        slf.add(move_to(x, y))
+    }
+
+    pub fn start(rect: RoundRect) -> Self {
         let (x, y) = (rect.position() + Size::new(0., rect.ry)).into();
         let slf = Self(Data::new());
         slf.add(move_to(x, y))
@@ -283,8 +288,7 @@ mod tests {
 
     #[test]
     fn test_simples() {
-        let rect = RoundRect::new(200., 100., 600., 600., 50., 50.);
-        let path_data = PathData::new(rect)
+        let path_data = PathData::new(1., 1.)
             .line(1., 1.)
             .h_line(1.)
             .v_line(1.)
@@ -305,7 +309,7 @@ mod tests {
     #[test]
     fn test_corners() {
         let rect = RoundRect::new(200., 100., 600., 600., 50., 50.);
-        let path_data = PathData::new(rect);
+        let path_data = PathData::start(rect);
 
         let corner_funcs: Vec<fn(PathData, RoundRect) -> PathData> = vec![
             PathData::corner_top_left,
@@ -326,7 +330,7 @@ mod tests {
         let rect = RoundRect::new(200., 100., 600., 600., 50., 50.);
         let size = Size::new(2e3, 2e3);
         let curve = 20.;
-        let path_data = PathData::new(rect);
+        let path_data = PathData::start(rect);
 
         let edge_funcs: Vec<fn(PathData, RoundRect, Size, EdgeType, f32) -> PathData> = vec![
             PathData::edge_top,

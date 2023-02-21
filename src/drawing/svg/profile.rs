@@ -18,11 +18,12 @@ impl DrawKey for Profile {
             return vec![];
         }
 
-        let is_scooped = matches!(
-            key.key_type,
-            KeyType::Homing(homing) if homing.unwrap_or(self.homing.default) == HomingType::Scoop
-        );
-        let depth = if is_scooped {
+        let homing = if let KeyType::Homing(homing) = key.key_type {
+            homing.or(Some(self.homing.default))
+        } else {
+            None
+        };
+        let depth = if let Some(HomingType::Scoop) = homing {
             self.homing.scoop.depth
         } else {
             self.profile_type.depth()
@@ -30,7 +31,7 @@ impl DrawKey for Profile {
         let typ = key.key_type;
         let color = key.key_color;
 
-        match key.size {
+        let mut paths = match key.size {
             KeySize::Normal(size) => {
                 vec![
                     self.draw_key_bottom(size * 1e3, color),
@@ -50,7 +51,19 @@ impl DrawKey for Profile {
                     self.draw_iso_top(typ, color, depth),
                 ]
             }
+        };
+
+        match homing {
+            Some(HomingType::Bar) => {
+                paths.push(self.draw_homing_bar(key.size.size() * 1e3, color));
+            }
+            Some(HomingType::Bump) => {
+                paths.push(self.draw_homing_bump(key.size.size() * 1e3, color));
+            }
+            Some(HomingType::Scoop) | None => {}
         }
+
+        paths
     }
 }
 
@@ -86,7 +99,7 @@ impl Profile {
             ),
         };
 
-        let data: Data = PathData::new(rect)
+        let data: Data = PathData::start(rect)
             .corner_top_left(rect)
             .edge_top(rect, size, edge_t, curve)
             .corner_top_right(rect)
@@ -107,7 +120,7 @@ impl Profile {
     fn draw_key_bottom(&self, size: Size, color: Color) -> Path {
         let rect = self.bottom_rect;
 
-        let data: Data = PathData::new(rect)
+        let data: Data = PathData::start(rect)
             .corner_top_left(rect)
             .edge_top(rect, size, EdgeType::Line, 0.)
             .corner_top_right(rect)
@@ -138,7 +151,7 @@ impl Profile {
         // Just set 1u as the size, with the dimensions above it will all line up properly
         let size = Size::new(1000., 1000.);
 
-        let data: Data = PathData::new(rect)
+        let data: Data = PathData::start(rect)
             .corner_inset(-rect.rx, -rect.ry)
             .edge_top(rect, size, EdgeType::Line, 0.)
             .corner_top_right(rect)
@@ -189,7 +202,7 @@ impl Profile {
             ),
         };
 
-        let path_data = PathData::new(rect)
+        let path_data = PathData::start(rect)
             .corner_top_left(rect)
             .edge_top(rect, top_size, edge_t, curve)
             .corner_top_right(rect)
@@ -254,7 +267,7 @@ impl Profile {
         let top_size = Size::new(1.5e3, 1e3);
         let btm_size = Size::new(1.25e3, 2e3);
 
-        let data: Data = PathData::new(rect)
+        let data: Data = PathData::start(rect)
             .corner_top_left(rect)
             .edge_top(rect, top_size, EdgeType::Line, 0.)
             .corner_top_right(rect)
@@ -275,6 +288,51 @@ impl Profile {
             .set("stroke", color.highlight(0.15).to_hex())
             .set("stroke-width", "10")
     }
+
+    fn draw_homing_bar(&self, size: Size, color: Color) -> Path {
+        let center = self.top_rect.center() + (size - Size::new(1e3, 1e3)) / 2.;
+        let rect = RoundRect {
+            x: center.x - self.homing.bar.width / 2.,
+            y: center.y - self.homing.bar.height / 2. + self.homing.bar.y_offset,
+            w: self.homing.bar.width,
+            h: self.homing.bar.height,
+            rx: self.homing.bar.height / 2.,
+            ry: self.homing.bar.height / 2.,
+        };
+
+        let data: Data = PathData::new(rect.x, rect.y + rect.ry)
+            .corner(rect.rx, -rect.ry)
+            .h_line(rect.w - 2. * rect.rx)
+            .corner(rect.rx, rect.ry)
+            .corner(-rect.rx, rect.ry)
+            .h_line(-(rect.w - 2. * rect.rx))
+            .corner(-rect.rx, -rect.ry)
+            .into();
+
+        Path::new()
+            .set("d", data)
+            .set("fill", color.to_hex())
+            .set("stroke", color.highlight(0.25).to_hex())
+            .set("stroke-width", "10")
+    }
+
+    fn draw_homing_bump(&self, size: Size, color: Color) -> Path {
+        let center = self.top_rect.center() + (size - Size::new(1e3, 1e3)) / 2.;
+        let r = self.homing.bump.diameter / 2.;
+
+        let data: Data = PathData::new(center.x - r, center.y)
+            .corner(r, -r)
+            .corner(r, r)
+            .corner(-r, r)
+            .corner(-r, -r)
+            .into();
+
+        Path::new()
+            .set("d", data)
+            .set("fill", color.to_hex())
+            .set("stroke", color.highlight(0.25).to_hex())
+            .set("stroke-width", "10")
+    }
 }
 
 #[cfg(test)]
@@ -287,12 +345,16 @@ mod tests {
         let profile = Profile::default();
         let key = test_key();
         let homing_scoop = KeyType::Homing(Some(HomingType::Scoop));
+        let homing_bar = KeyType::Homing(Some(HomingType::Bar));
+        let homing_bump = KeyType::Homing(Some(HomingType::Bump));
         let test_config = vec![
             (KeySize::Normal(Size::new(1., 1.)), KeyType::Normal, 2),
             (KeySize::SteppedCaps, KeyType::Normal, 3),
             (KeySize::IsoHorizontal, KeyType::Normal, 2),
             (KeySize::IsoVertical, KeyType::Normal, 2),
             (KeySize::Normal(Size::new(1., 1.)), homing_scoop, 2),
+            (KeySize::Normal(Size::new(1., 1.)), homing_bar, 3),
+            (KeySize::Normal(Size::new(1., 1.)), homing_bump, 3),
             (KeySize::Normal(Size::new(1., 1.)), KeyType::None, 0),
         ];
 
@@ -402,6 +464,26 @@ mod tests {
         let profile = Profile::default();
 
         let path = profile.draw_iso_bottom(Color::default_key());
+
+        assert!(path.get_attributes().contains_key("d"));
+    }
+
+    #[test]
+    fn test_draw_homing_bar() {
+        let profile = Profile::default();
+        let size = Size::new(1., 1.);
+
+        let path = profile.draw_homing_bar(size, Color::default_key());
+
+        assert!(path.get_attributes().contains_key("d"));
+    }
+
+    #[test]
+    fn test_draw_homing_bump() {
+        let profile = Profile::default();
+        let size = Size::new(1., 1.);
+
+        let path = profile.draw_homing_bump(size, Color::default_key());
 
         assert!(path.get_attributes().contains_key("d"));
     }
