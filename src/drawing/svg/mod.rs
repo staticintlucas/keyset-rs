@@ -47,12 +47,10 @@ impl Drawing {
 
         let mut result = Group::new().set("transform", format!("translate({}, {})", pos.x, pos.y));
 
-        if let Some(btm) = self.profile.draw_key_bottom(key) {
-            result.append(btm);
-        }
-        if let Some(top) = self.profile.draw_key_top(key) {
-            result.append(top);
-        }
+        self.profile
+            .draw_key(key)
+            .into_iter()
+            .for_each(|x| result.append(x));
 
         // if show_legend_border {
         //     result.add(self.profile.draw_legend_rect(key));
