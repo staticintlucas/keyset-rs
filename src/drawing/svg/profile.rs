@@ -220,7 +220,7 @@ impl Profile {
             EdgeType::CurveLineCurve => {
                 let r = radius(curve, rect.h);
                 path_data
-                    .arc(r, r, -v_curve, rect.h / 2.)
+                    .arc(r, r, -v_curve, -rect.h / 2.)
                     .v_line(-(v_line - rect.h / 2. - h_curve))
             }
             EdgeType::CurveStretch => {
@@ -239,7 +239,7 @@ impl Profile {
             .corner_inset(-rect.rx, -rect.ry)
             .line(-(h_line - v_curve), -h_curve)
             .corner_bottom_left(rect)
-            .edge_left(rect, top_size, EdgeType::Line, 0.)
+            .edge_left(rect, top_size, edge_l, curve)
             .into();
 
         Path::new()

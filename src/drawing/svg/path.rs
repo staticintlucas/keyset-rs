@@ -127,10 +127,10 @@ impl PathData {
                 self.append(h_line(dx));
             }
             EdgeType::CurveLineCurve if size_dx > 0.01 => {
-                let r = radius(curve, dx);
-                self.append(arc(r, r, rect_dx / 2., curve));
-                self.append(h_line(size_dx));
+                let r = radius(curve, rect_dx);
                 self.append(arc(r, r, rect_dx / 2., -curve));
+                self.append(h_line(size_dx));
+                self.append(arc(r, r, rect_dx / 2., curve));
             }
             EdgeType::CurveLineCurve | EdgeType::CurveStretch => {
                 let r = radius(curve, dx);
@@ -153,10 +153,10 @@ impl PathData {
                 self.append(v_line(dy));
             }
             EdgeType::CurveLineCurve if size_dy > 0.01 => {
-                let r = radius(curve, dy);
-                self.append(arc(r, r, rect_dy / 2., curve));
+                let r = radius(curve, rect_dy);
+                self.append(arc(r, r, curve, rect_dy / 2.));
                 self.append(v_line(size_dy));
-                self.append(arc(r, r, rect_dy / 2., -curve));
+                self.append(arc(r, r, -curve, rect_dy / 2.));
             }
             EdgeType::CurveLineCurve | EdgeType::CurveStretch => {
                 let r = radius(curve, dy);
@@ -179,10 +179,10 @@ impl PathData {
                 self.append(h_line(-dx));
             }
             EdgeType::CurveLineCurve if size_dx > 0.01 => {
-                let r = radius(curve, dx);
-                self.append(arc(r, r, -rect_dx / 2., -curve));
-                self.append(h_line(-size_dx));
+                let r = radius(curve, rect_dx);
                 self.append(arc(r, r, -rect_dx / 2., curve));
+                self.append(h_line(-size_dx));
+                self.append(arc(r, r, -rect_dx / 2., -curve));
             }
             EdgeType::CurveLineCurve | EdgeType::CurveStretch => {
                 let r = radius(curve, dx);
@@ -205,10 +205,10 @@ impl PathData {
                 self.append(v_line(-dy));
             }
             EdgeType::CurveLineCurve if size_dy > 0.01 => {
-                let r = radius(curve, dy);
-                self.append(arc(r, r, -rect_dy / 2., -curve));
-                self.append(v_line(size_dy));
-                self.append(arc(r, r, -rect_dy / 2., curve));
+                let r = radius(curve, rect_dy);
+                self.append(arc(r, r, -curve, -rect_dy / 2.));
+                self.append(v_line(-size_dy));
+                self.append(arc(r, r, curve, -rect_dy / 2.));
             }
             EdgeType::CurveLineCurve | EdgeType::CurveStretch => {
                 let r = radius(curve, dy);
