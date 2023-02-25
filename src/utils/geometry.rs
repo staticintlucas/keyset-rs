@@ -23,6 +23,16 @@ macro_rules! vector_type {
             pub fn max(&self, other: Self) -> Self {
                 Self::new(self.$x.max(other.$x), self.$y.max(other.$y))
             }
+
+            #[inline]
+            pub fn abs(&self) -> f32 {
+                (self.$x * self.$x + self.$y * self.$y).sqrt()
+            }
+
+            #[inline]
+            pub fn arg(&self) -> f32 {
+                f32::atan2(self.$y, self.$x)
+            }
         }
 
         impl PartialEq for $name {
@@ -168,6 +178,15 @@ macro_rules! vector_type {
             fn div_assign(&mut self, scale: Scale) {
                 self.$x /= scale.x;
                 self.$y /= scale.y;
+            }
+        }
+
+        impl Div<$name> for $name {
+            type Output = Scale;
+
+            #[inline]
+            fn div(self, rhs: Self) -> Self::Output {
+                Self::Output::new(self.$x / rhs.$x, self.$y / rhs.$y)
             }
         }
     };
@@ -402,13 +421,6 @@ mod tests {
     use super::*;
 
     use assert_approx_eq::assert_approx_eq;
-
-    // this is required for assert_approx_eq to work
-    impl Size {
-        fn abs(&self) -> f32 {
-            (self.w * self.w + self.h * self.h).sqrt()
-        }
-    }
 
     // this is required for assert_approx_eq to work
     impl Sub<Rect> for Rect {
