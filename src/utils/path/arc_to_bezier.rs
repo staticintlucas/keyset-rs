@@ -4,7 +4,7 @@ use crate::utils::{Scale, Size};
 
 const TOL: f32 = 1e-6;
 
-fn arc_to_bezier(r: Size, xar: f32, laf: bool, sf: bool, d: Size) -> Vec<(Size, Size, Size)> {
+pub fn arc_to_bezier(r: Size, xar: f32, laf: bool, sf: bool, d: Size) -> Vec<(Size, Size, Size)> {
     if d.abs() < TOL {
         return vec![];
     }

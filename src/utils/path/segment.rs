@@ -1,7 +1,7 @@
 use crate::utils::{Point, Scale, Size};
 
 #[derive(Debug, Clone)]
-enum PathSegment {
+pub enum PathSegment {
     Move(Point),
     Line(Point),
     CubicBezier(Point, Point, Point),
@@ -10,31 +10,7 @@ enum PathSegment {
 }
 
 impl PathSegment {
-    fn r#move(point: Point) -> Self {
-        Self::Move(point)
-    }
-
-    fn move_(point: Point) -> Self {
-        Self::r#move(point)
-    }
-
-    fn line(point: Point) -> Self {
-        Self::Line(point)
-    }
-
-    fn cubic_bezier(ctrl1: Point, ctrl2: Point, point: Point) -> Self {
-        Self::CubicBezier(ctrl1, ctrl2, point)
-    }
-
-    fn quadratic_bezier(ctrl1: Point, point: Point) -> Self {
-        Self::QuadraticBezier(ctrl1, point)
-    }
-
-    fn close() -> Self {
-        Self::Close
-    }
-
-    fn scale(self, scale: Scale) -> Self {
+    pub fn scale(self, scale: Scale) -> Self {
         match self {
             Self::Move(point) => Self::Move(point * scale),
             Self::Line(point) => Self::Line(point * scale),
@@ -48,7 +24,7 @@ impl PathSegment {
         }
     }
 
-    fn translate(self, dist: Size) -> Self {
+    pub fn translate(self, dist: Size) -> Self {
         match self {
             Self::Move(point) => Self::Move(point + dist),
             Self::Line(point) => Self::Line(point + dist),
@@ -62,36 +38,23 @@ impl PathSegment {
         }
     }
 
-    fn rotate(self, angle: f32) -> Self {
-        let (sin, cos) = angle.sin_cos();
+    pub fn rotate(self, angle: f32) -> Self {
         match self {
-            Self::Move(point) => Self::Move(Point {
-                x: point.x * cos - point.y * sin,
-                y: point.x * sin + point.y * cos,
-            }),
-            Self::Line(point) => Self::Line(Point {
-                x: point.x * cos - point.y * sin,
-                y: point.x * sin + point.y * cos,
-            }),
+            Self::Move(point) => Self::Move(point.rotate(angle)),
+            Self::Line(point) => Self::Line(point.rotate(angle)),
             Self::CubicBezier(c1, c2, p) => {
-                let [c1, c2, p] = [c1, c2, p].map(|p| Point {
-                    x: p.x * cos - p.y * sin,
-                    y: p.x * sin + p.y * cos,
-                });
+                let [c1, c2, p] = [c1, c2, p].map(|p| p.rotate(angle));
                 Self::CubicBezier(c1, c2, p)
             }
             Self::QuadraticBezier(c1, p) => {
-                let [c1, p] = [c1, p].map(|p| Point {
-                    x: p.x * cos - p.y * sin,
-                    y: p.x * sin + p.y * cos,
-                });
+                let [c1, p] = [c1, p].map(|p| p.rotate(angle));
                 Self::QuadraticBezier(c1, p)
             }
             Self::Close => Self::Close,
         }
     }
 
-    fn skew_x(self, angle: f32) -> Self {
+    pub fn skew_x(self, angle: f32) -> Self {
         let tan = angle.tan();
         match self {
             Self::Move(point) => Self::Move(Point {
@@ -120,7 +83,7 @@ impl PathSegment {
         }
     }
 
-    fn skew_y(self, angle: f32) -> Self {
+    pub fn skew_y(self, angle: f32) -> Self {
         let tan = angle.tan();
         match self {
             Self::Move(point) => Self::Move(Point {
@@ -186,31 +149,6 @@ mod tests {
 
     // Needed to implement assert_approx_eq!()
     impl Copy for PathSegment {}
-
-    #[test]
-    fn test_constructors() {
-        let funcs = vec![
-            PathSegment::r#move(Point::new(1., 1.)),
-            PathSegment::move_(Point::new(1., 1.)),
-            PathSegment::line(Point::new(1., 1.)),
-            PathSegment::cubic_bezier(Point::new(0., 0.5), Point::new(0.5, 1.), Point::new(1., 1.)),
-            PathSegment::quadratic_bezier(Point::new(0., 1.), Point::new(1., 1.)),
-            PathSegment::close(),
-        ];
-        let expected = vec![
-            PathSegment::Move(Point::new(1., 1.)),
-            PathSegment::Move(Point::new(1., 1.)),
-            PathSegment::Line(Point::new(1., 1.)),
-            PathSegment::CubicBezier(Point::new(0., 0.5), Point::new(0.5, 1.), Point::new(1., 1.)),
-            PathSegment::QuadraticBezier(Point::new(0., 1.), Point::new(1., 1.)),
-            PathSegment::Close,
-        ];
-
-        assert_eq!(funcs.len(), expected.len());
-        for (fun, exp) in funcs.into_iter().zip(expected) {
-            assert_approx_eq!(fun, exp);
-        }
-    }
 
     #[test]
     fn test_scale() {

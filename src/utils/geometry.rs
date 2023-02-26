@@ -33,6 +33,11 @@ macro_rules! vector_type {
             pub fn arg(&self) -> f32 {
                 f32::atan2(self.$y, self.$x)
             }
+
+            pub fn rotate(self, angle: f32) -> Self {
+                let (sin, cos) = angle.sin_cos();
+                Self::new(self.$x * cos - self.$y * sin, self.$x * sin + self.$y * cos)
+            }
         }
 
         impl PartialEq for $name {
