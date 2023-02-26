@@ -1,114 +1,110 @@
 use crate::utils::{Point, Scale, Size};
 
+use PathSegment::{Close, CubicBezier, Line, Move, QuadraticBezier};
+
 #[derive(Debug, Clone)]
 pub enum PathSegment {
     Move(Point),
-    Line(Point),
-    CubicBezier(Point, Point, Point),
-    QuadraticBezier(Point, Point),
+    Line(Size),
+    CubicBezier(Size, Size, Size),
+    QuadraticBezier(Size, Size),
     Close,
 }
 
 impl PathSegment {
     pub fn scale(self, scale: Scale) -> Self {
         match self {
-            Self::Move(point) => Self::Move(point * scale),
-            Self::Line(point) => Self::Line(point * scale),
-            Self::CubicBezier(ctrl1, ctrl2, point) => {
-                Self::CubicBezier(ctrl1 * scale, ctrl2 * scale, point * scale)
+            Move(point) => Move(point * scale),
+            Line(dist) => Line(dist * scale),
+            CubicBezier(ctrl1, ctrl2, dist) => {
+                CubicBezier(ctrl1 * scale, ctrl2 * scale, dist * scale)
             }
-            Self::QuadraticBezier(ctrl1, point) => {
-                Self::QuadraticBezier(ctrl1 * scale, point * scale)
-            }
-            Self::Close => Self::Close,
+            QuadraticBezier(ctrl1, dist) => QuadraticBezier(ctrl1 * scale, dist * scale),
+            Close => Close,
         }
     }
 
     pub fn translate(self, dist: Size) -> Self {
         match self {
-            Self::Move(point) => Self::Move(point + dist),
-            Self::Line(point) => Self::Line(point + dist),
-            Self::CubicBezier(ctrl1, ctrl2, point) => {
-                Self::CubicBezier(ctrl1 + dist, ctrl2 + dist, point + dist)
-            }
-            Self::QuadraticBezier(ctrl1, point) => {
-                Self::QuadraticBezier(ctrl1 + dist, point + dist)
-            }
-            Self::Close => Self::Close,
+            Move(point) => Move(point + dist),
+            Line(dist) => Line(dist + dist),
+            CubicBezier(ctrl1, ctrl2, dist) => CubicBezier(ctrl1 + dist, ctrl2 + dist, dist + dist),
+            QuadraticBezier(ctrl1, dist) => QuadraticBezier(ctrl1 + dist, dist + dist),
+            Close => Close,
         }
     }
 
     pub fn rotate(self, angle: f32) -> Self {
         match self {
-            Self::Move(point) => Self::Move(point.rotate(angle)),
-            Self::Line(point) => Self::Line(point.rotate(angle)),
-            Self::CubicBezier(c1, c2, p) => {
-                let [c1, c2, p] = [c1, c2, p].map(|p| p.rotate(angle));
-                Self::CubicBezier(c1, c2, p)
+            Move(point) => Move(point.rotate(angle)),
+            Line(dist) => Line(dist.rotate(angle)),
+            CubicBezier(c1, c2, d) => {
+                let [c1, c2, d] = [c1, c2, d].map(|d| d.rotate(angle));
+                CubicBezier(c1, c2, d)
             }
-            Self::QuadraticBezier(c1, p) => {
-                let [c1, p] = [c1, p].map(|p| p.rotate(angle));
-                Self::QuadraticBezier(c1, p)
+            QuadraticBezier(c1, d) => {
+                let [c1, d] = [c1, d].map(|d| d.rotate(angle));
+                QuadraticBezier(c1, d)
             }
-            Self::Close => Self::Close,
+            Close => Close,
         }
     }
 
     pub fn skew_x(self, angle: f32) -> Self {
         let tan = angle.tan();
         match self {
-            Self::Move(point) => Self::Move(Point {
+            Move(point) => Move(Point {
                 x: point.x - point.y * tan,
                 y: point.y,
             }),
-            Self::Line(point) => Self::Line(Point {
-                x: point.x - point.y * tan,
-                y: point.y,
+            Line(dist) => Line(Size {
+                w: dist.w - dist.h * tan,
+                h: dist.h,
             }),
-            Self::CubicBezier(c1, c2, p) => {
-                let [c1, c2, p] = [c1, c2, p].map(|p| Point {
-                    x: p.x - p.y * tan,
-                    y: p.y,
+            CubicBezier(c1, c2, d) => {
+                let [c1, c2, d] = [c1, c2, d].map(|d| Size {
+                    w: d.w - d.h * tan,
+                    h: d.h,
                 });
-                Self::CubicBezier(c1, c2, p)
+                CubicBezier(c1, c2, d)
             }
-            Self::QuadraticBezier(c1, p) => {
-                let [c1, p] = [c1, p].map(|p| Point {
-                    x: p.x - p.y * tan,
-                    y: p.y,
+            QuadraticBezier(c1, d) => {
+                let [c1, d] = [c1, d].map(|d| Size {
+                    w: d.w - d.h * tan,
+                    h: d.h,
                 });
-                Self::QuadraticBezier(c1, p)
+                QuadraticBezier(c1, d)
             }
-            Self::Close => Self::Close,
+            Close => Close,
         }
     }
 
     pub fn skew_y(self, angle: f32) -> Self {
         let tan = angle.tan();
         match self {
-            Self::Move(point) => Self::Move(Point {
+            Move(point) => Move(Point {
                 x: point.x,
                 y: point.y + point.x * tan,
             }),
-            Self::Line(point) => Self::Line(Point {
-                x: point.x,
-                y: point.y + point.x * tan,
+            Line(dist) => Line(Size {
+                w: dist.w,
+                h: dist.h + dist.w * tan,
             }),
-            Self::CubicBezier(c1, c2, p) => {
-                let [c1, c2, p] = [c1, c2, p].map(|p| Point {
-                    x: p.x,
-                    y: p.y + p.x * tan,
+            CubicBezier(c1, c2, d) => {
+                let [c1, c2, d] = [c1, c2, d].map(|d| Size {
+                    w: d.w,
+                    h: d.h + d.w * tan,
                 });
-                Self::CubicBezier(c1, c2, p)
+                CubicBezier(c1, c2, d)
             }
-            Self::QuadraticBezier(c1, p) => {
-                let [c1, p] = [c1, p].map(|p| Point {
-                    x: p.x,
-                    y: p.y + p.x * tan,
+            QuadraticBezier(c1, d) => {
+                let [c1, d] = [c1, d].map(|d| Size {
+                    w: d.w,
+                    h: d.h + d.w * tan,
                 });
-                Self::QuadraticBezier(c1, p)
+                QuadraticBezier(c1, d)
             }
-            Self::Close => Self::Close,
+            Close => Close,
         }
     }
 }
@@ -127,21 +123,21 @@ mod tests {
         type Output = f32;
         fn sub(self, rhs: PathSegment) -> Self::Output {
             match (self, rhs) {
-                (Self::Move(p1), Self::Move(p2)) => (p2 - p1).abs(),
-                (Self::Line(p1), Self::Line(p2)) => (p2 - p1).abs(),
-                (Self::CubicBezier(c11, c21, p1), Self::CubicBezier(c12, c22, p2)) => {
-                    [(c12 - c11).abs(), (c22 - c21).abs(), (p2 - p1).abs()]
+                (Move(p1), Move(p2)) => (p2 - p1).abs(),
+                (Line(d1), Line(d2)) => (d2 - d1).abs(),
+                (CubicBezier(c11, c21, d1), CubicBezier(c12, c22, d2)) => {
+                    [(c12 - c11).abs(), (c22 - c21).abs(), (d2 - d1).abs()]
                         .into_iter()
                         .map(|x| x * x)
                         .sum()
                 }
-                (Self::QuadraticBezier(c1, p1), Self::QuadraticBezier(c2, p2)) => {
-                    [(c2 - c1).abs(), (p2 - p1).abs()]
+                (QuadraticBezier(c1, d1), QuadraticBezier(c2, d2)) => {
+                    [(c2 - c1).abs(), (d2 - d1).abs()]
                         .into_iter()
                         .map(|x| x * x)
                         .sum()
                 }
-                (Self::Close, Self::Close) => 0.,
+                (Close, Close) => 0.,
                 (_, _) => unreachable!(), // Different variants
             }
         }
@@ -153,18 +149,18 @@ mod tests {
     #[test]
     fn test_scale() {
         let input = vec![
-            PathSegment::Move(Point::new(1., 1.)),
-            PathSegment::Line(Point::new(1., 1.)),
-            PathSegment::CubicBezier(Point::new(0., 0.5), Point::new(0.5, 1.), Point::new(1., 1.)),
-            PathSegment::QuadraticBezier(Point::new(0., 1.), Point::new(1., 1.)),
-            PathSegment::Close,
+            Move(Point::new(1., 1.)),
+            Line(Size::new(1., 1.)),
+            CubicBezier(Size::new(0., 0.5), Size::new(0.5, 1.), Size::new(1., 1.)),
+            QuadraticBezier(Size::new(0., 1.), Size::new(1., 1.)),
+            Close,
         ];
         let expected = vec![
-            PathSegment::Move(Point::new(2., 2.)),
-            PathSegment::Line(Point::new(2., 2.)),
-            PathSegment::CubicBezier(Point::new(0., 1.), Point::new(1., 2.), Point::new(2., 2.)),
-            PathSegment::QuadraticBezier(Point::new(0., 2.), Point::new(2., 2.)),
-            PathSegment::Close,
+            Move(Point::new(2., 2.)),
+            Line(Size::new(2., 2.)),
+            CubicBezier(Size::new(0., 1.), Size::new(1., 2.), Size::new(2., 2.)),
+            QuadraticBezier(Size::new(0., 2.), Size::new(2., 2.)),
+            Close,
         ];
 
         assert_eq!(input.len(), expected.len());
@@ -177,18 +173,18 @@ mod tests {
     #[test]
     fn test_translate() {
         let input = vec![
-            PathSegment::Move(Point::new(1., 1.)),
-            PathSegment::Line(Point::new(1., 1.)),
-            PathSegment::CubicBezier(Point::new(0., 0.5), Point::new(0.5, 1.), Point::new(1., 1.)),
-            PathSegment::QuadraticBezier(Point::new(0., 1.), Point::new(1., 1.)),
-            PathSegment::Close,
+            Move(Point::new(1., 1.)),
+            Line(Size::new(1., 1.)),
+            CubicBezier(Size::new(0., 0.5), Size::new(0.5, 1.), Size::new(1., 1.)),
+            QuadraticBezier(Size::new(0., 1.), Size::new(1., 1.)),
+            Close,
         ];
         let expected = vec![
-            PathSegment::Move(Point::new(2., 2.)),
-            PathSegment::Line(Point::new(2., 2.)),
-            PathSegment::CubicBezier(Point::new(1., 1.5), Point::new(1.5, 2.), Point::new(2., 2.)),
-            PathSegment::QuadraticBezier(Point::new(1., 2.), Point::new(2., 2.)),
-            PathSegment::Close,
+            Move(Point::new(2., 2.)),
+            Line(Size::new(2., 2.)),
+            CubicBezier(Size::new(1., 1.5), Size::new(1.5, 2.), Size::new(2., 2.)),
+            QuadraticBezier(Size::new(1., 2.), Size::new(2., 2.)),
+            Close,
         ];
 
         assert_eq!(input.len(), expected.len());
@@ -201,22 +197,18 @@ mod tests {
     #[test]
     fn test_rotate() {
         let input = vec![
-            PathSegment::Move(Point::new(1., 1.)),
-            PathSegment::Line(Point::new(1., 1.)),
-            PathSegment::CubicBezier(Point::new(0., 0.5), Point::new(0.5, 1.), Point::new(1., 1.)),
-            PathSegment::QuadraticBezier(Point::new(0., 1.), Point::new(1., 1.)),
-            PathSegment::Close,
+            Move(Point::new(1., 1.)),
+            Line(Size::new(1., 1.)),
+            CubicBezier(Size::new(0., 0.5), Size::new(0.5, 1.), Size::new(1., 1.)),
+            QuadraticBezier(Size::new(0., 1.), Size::new(1., 1.)),
+            Close,
         ];
         let expected = vec![
-            PathSegment::Move(Point::new(-1., 1.)),
-            PathSegment::Line(Point::new(-1., 1.)),
-            PathSegment::CubicBezier(
-                Point::new(-0.5, 0.),
-                Point::new(-1., 0.5),
-                Point::new(-1., 1.),
-            ),
-            PathSegment::QuadraticBezier(Point::new(-1., 0.), Point::new(-1., 1.)),
-            PathSegment::Close,
+            Move(Point::new(-1., 1.)),
+            Line(Size::new(-1., 1.)),
+            CubicBezier(Size::new(-0.5, 0.), Size::new(-1., 0.5), Size::new(-1., 1.)),
+            QuadraticBezier(Size::new(-1., 0.), Size::new(-1., 1.)),
+            Close,
         ];
 
         assert_eq!(input.len(), expected.len());
@@ -229,22 +221,18 @@ mod tests {
     #[test]
     fn test_skew_x() {
         let input = vec![
-            PathSegment::Move(Point::new(1., 1.)),
-            PathSegment::Line(Point::new(1., 1.)),
-            PathSegment::CubicBezier(Point::new(0., 0.5), Point::new(0.5, 1.), Point::new(1., 1.)),
-            PathSegment::QuadraticBezier(Point::new(0., 1.), Point::new(1., 1.)),
-            PathSegment::Close,
+            Move(Point::new(1., 1.)),
+            Line(Size::new(1., 1.)),
+            CubicBezier(Size::new(0., 0.5), Size::new(0.5, 1.), Size::new(1., 1.)),
+            QuadraticBezier(Size::new(0., 1.), Size::new(1., 1.)),
+            Close,
         ];
         let expected = vec![
-            PathSegment::Move(Point::new(0., 1.)),
-            PathSegment::Line(Point::new(0., 1.)),
-            PathSegment::CubicBezier(
-                Point::new(-0.5, 0.5),
-                Point::new(-0.5, 1.),
-                Point::new(0., 1.),
-            ),
-            PathSegment::QuadraticBezier(Point::new(-1., 1.), Point::new(0., 1.)),
-            PathSegment::Close,
+            Move(Point::new(0., 1.)),
+            Line(Size::new(0., 1.)),
+            CubicBezier(Size::new(-0.5, 0.5), Size::new(-0.5, 1.), Size::new(0., 1.)),
+            QuadraticBezier(Size::new(-1., 1.), Size::new(0., 1.)),
+            Close,
         ];
 
         assert_eq!(input.len(), expected.len());
@@ -257,22 +245,18 @@ mod tests {
     #[test]
     fn test_skew_y() {
         let input = vec![
-            PathSegment::Move(Point::new(1., 1.)),
-            PathSegment::Line(Point::new(1., 1.)),
-            PathSegment::CubicBezier(Point::new(0., 0.5), Point::new(0.5, 1.), Point::new(1., 1.)),
-            PathSegment::QuadraticBezier(Point::new(0., 1.), Point::new(1., 1.)),
-            PathSegment::Close,
+            Move(Point::new(1., 1.)),
+            Line(Size::new(1., 1.)),
+            CubicBezier(Size::new(0., 0.5), Size::new(0.5, 1.), Size::new(1., 1.)),
+            QuadraticBezier(Size::new(0., 1.), Size::new(1., 1.)),
+            Close,
         ];
         let expected = vec![
-            PathSegment::Move(Point::new(1., 2.)),
-            PathSegment::Line(Point::new(1., 2.)),
-            PathSegment::CubicBezier(
-                Point::new(0., 0.5),
-                Point::new(0.5, 1.5),
-                Point::new(1., 2.),
-            ),
-            PathSegment::QuadraticBezier(Point::new(0., 1.), Point::new(1., 2.)),
-            PathSegment::Close,
+            Move(Point::new(1., 2.)),
+            Line(Size::new(1., 2.)),
+            CubicBezier(Size::new(0., 0.5), Size::new(0.5, 1.5), Size::new(1., 2.)),
+            QuadraticBezier(Size::new(0., 1.), Size::new(1., 2.)),
+            Close,
         ];
 
         assert_eq!(input.len(), expected.len());

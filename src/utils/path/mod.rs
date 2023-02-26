@@ -66,9 +66,11 @@ impl Path {
         self.abs_move(point + d)
     }
 
-    pub fn rel_line(self, d: Size) -> Self {
-        let point = self.point;
-        self.abs_line(point + d)
+    pub fn rel_line(mut self, d: Size) -> Self {
+        self.data.push(PathSegment::Line(d));
+        self.point += d;
+        self.bounds = Self::update_bounds(self.bounds, self.point);
+        self
     }
 
     pub fn rel_horiz_line(self, dx: f32) -> Self {
@@ -81,33 +83,49 @@ impl Path {
         self.abs_vert_line(point.y + dy)
     }
 
-    pub fn rel_cubic_bezier(self, d1: Size, d2: Size, d: Size) -> Self {
-        let point = self.point;
-        self.abs_cubic_bezier(point + d1, point + d2, point + d)
+    pub fn rel_cubic_bezier(mut self, d1: Size, d2: Size, d: Size) -> Self {
+        self.data.push(PathSegment::CubicBezier(d1, d2, d));
+        self.point += d;
+        self.bounds = Self::update_bounds(self.bounds, self.point);
+        self
     }
 
     pub fn rel_smooth_cubic_bezier(self, d2: Size, d: Size) -> Self {
-        let point = self.point;
-        self.abs_smooth_cubic_bezier(point + d2, point + d)
+        let d1 = match self.data.last() {
+            Some(&PathSegment::CubicBezier(_, prev_d2, prev_d)) => prev_d - prev_d2,
+            _ => Size::new(0., 0.),
+        };
+        self.rel_cubic_bezier(d1, d2, d)
     }
 
-    pub fn rel_quadratic_bezier(self, d1: Size, d: Size) -> Self {
-        let point = self.point;
-        self.abs_quadratic_bezier(point + d1, point + d)
+    pub fn rel_quadratic_bezier(mut self, d1: Size, d: Size) -> Self {
+        self.data.push(PathSegment::QuadraticBezier(d1, d));
+        self.point += d;
+        self.bounds = Self::update_bounds(self.bounds, self.point);
+        self
     }
 
     pub fn rel_smooth_quadratic_bezier(self, d: Size) -> Self {
-        let point = self.point;
-        self.abs_smooth_quadratic_bezier(point + d)
+        let d1 = match self.data.last() {
+            Some(&PathSegment::QuadraticBezier(prev_d2, prev_d)) => prev_d - prev_d2,
+            _ => Size::new(0., 0.),
+        };
+        self.rel_quadratic_bezier(d1, d)
     }
 
-    pub fn rel_arc(self, r: Size, xar: f32, laf: bool, sf: bool, d: Size) -> Self {
-        let point = self.point;
-        self.abs_arc(r, xar, laf, sf, point + d)
+    pub fn rel_arc(mut self, r: Size, xar: f32, laf: bool, sf: bool, d: Size) -> Self {
+        for (d1, d2, d) in arc_to_bezier(r, xar, laf, sf, d) {
+            self.data.push(PathSegment::CubicBezier(d1, d2, d));
+            self.point += d;
+            self.bounds = Self::update_bounds(self.bounds, self.point);
+        }
+        self
     }
 
-    pub fn rel_close(self) -> Self {
-        self.abs_close()
+    pub fn close(mut self) -> Self {
+        self.data.push(PathSegment::Close);
+        self.point = self.start;
+        self
     }
 
     pub fn abs_move(mut self, p: Point) -> Self {
@@ -122,11 +140,9 @@ impl Path {
         self
     }
 
-    pub fn abs_line(mut self, p: Point) -> Self {
-        self.data.push(PathSegment::Line(p));
-        self.point = p;
-        self.bounds = Self::update_bounds(self.bounds, p);
-        self
+    pub fn abs_line(self, p: Point) -> Self {
+        let point = self.point;
+        self.rel_line(p - point)
     }
 
     pub fn abs_horiz_line(self, x: f32) -> Self {
@@ -139,54 +155,29 @@ impl Path {
         self.abs_line(point)
     }
 
-    pub fn abs_cubic_bezier(mut self, p1: Point, p2: Point, p: Point) -> Self {
-        self.data.push(PathSegment::CubicBezier(p1, p2, p));
-        self.point = p;
-        self.bounds = Self::update_bounds(self.bounds, p);
-        self
+    pub fn abs_cubic_bezier(self, p1: Point, p2: Point, p: Point) -> Self {
+        let point = self.point;
+        self.rel_cubic_bezier(p1 - point, p2 - point, p - point)
     }
 
     pub fn abs_smooth_cubic_bezier(self, p2: Point, p: Point) -> Self {
-        match self.data.last() {
-            Some(
-                &PathSegment::QuadraticBezier(prev_ctrl, prev_point)
-                | &PathSegment::CubicBezier(_, prev_ctrl, prev_point),
-            ) => self.abs_cubic_bezier(prev_point + (prev_point - prev_ctrl), p2, p),
-            _ => self.abs_line(p),
-        }
+        let point = self.point;
+        self.rel_smooth_cubic_bezier(p2 - point, p - point)
     }
 
-    pub fn abs_quadratic_bezier(mut self, p1: Point, p: Point) -> Self {
-        self.data.push(PathSegment::QuadraticBezier(p1, p));
-        self.point = p;
-        self.bounds = Self::update_bounds(self.bounds, p);
-        self
+    pub fn abs_quadratic_bezier(self, p1: Point, p: Point) -> Self {
+        let point = self.point;
+        self.rel_quadratic_bezier(p1 - point, p - point)
     }
 
     pub fn abs_smooth_quadratic_bezier(self, p: Point) -> Self {
-        match self.data.last() {
-            Some(
-                &PathSegment::QuadraticBezier(prev_ctrl, prev_point)
-                | &PathSegment::CubicBezier(_, prev_ctrl, prev_point),
-            ) => self.abs_quadratic_bezier(prev_point + (prev_point - prev_ctrl), p),
-            _ => self.abs_line(p),
-        }
+        let point = self.point;
+        self.rel_smooth_quadratic_bezier(p - point)
     }
 
-    pub fn abs_arc(mut self, r: Size, xar: f32, laf: bool, sf: bool, p: Point) -> Self {
-        for (d1, d2, d) in arc_to_bezier(r, xar, laf, sf, p - self.point) {
-            let [p1, p2, p] = [d1, d2, d].map(|d| self.point + d);
-            self.data.push(PathSegment::CubicBezier(p1, p2, p));
-            self.bounds = Self::update_bounds(self.bounds, p);
-        }
-        self.point = p;
-        self
-    }
-
-    pub fn abs_close(mut self) -> Self {
-        self.data.push(PathSegment::Close);
-        self.point = self.start;
-        self
+    pub fn abs_arc(self, r: Size, xar: f32, laf: bool, sf: bool, p: Point) -> Self {
+        let point = self.point;
+        self.rel_arc(r, xar, laf, sf, p - point)
     }
 
     pub fn scale(self, scale: Scale) -> Self {
@@ -243,26 +234,29 @@ impl Path {
     }
 
     fn recalculate_bounds(data: &Vec<PathSegment>) -> Rect {
+        use PathSegment::{Close, CubicBezier, Line, Move, QuadraticBezier};
+
         if data.is_empty() {
             Rect::new(0., 0., 0., 0.)
         } else {
-            let mov = if let PathSegment::Move(_) = data[0] {
+            let mov = if let Move(_) = data[0] {
                 None
             } else {
                 // Add leading move to 0,0 if we don't already start with a move
-                Some(PathSegment::Move(Point::new(0., 0.)))
+                Some(Move(Point::new(0., 0.)))
             };
             // We need a reference here since we don't want to consume self.data
             let (min, max) = mov
                 .iter()
                 .chain(data.iter())
-                .filter_map(|seg| match *seg {
-                    PathSegment::Move(p)
-                    | PathSegment::Line(p)
-                    | PathSegment::CubicBezier(_, _, p)
-                    | PathSegment::QuadraticBezier(_, p) => Some(p),
-                    // A close's point is already handled as the previous move's point
-                    PathSegment::Close => None,
+                .filter(|seg| !matches!(seg, Close))
+                .scan(Point::new(0., 0.), |point, seg| {
+                    *point = match *seg {
+                        Move(p) => p,
+                        Line(d) | CubicBezier(_, _, d) | QuadraticBezier(_, d) => *point + d,
+                        Close => unreachable!(),
+                    };
+                    Some(*point)
                 })
                 .fold(
                     (
@@ -348,13 +342,13 @@ mod tests {
             Path::new()
                 .abs_move(Point::new(0., 0.))
                 .rel_move(Size::new(2., 2.))
-                .abs_close(),
+                .close(),
             Path::new()
                 .abs_line(Point::new(1., 1.))
                 .rel_line(Size::new(1., 1.))
-                .rel_close(),
-            Path::new().abs_vert_line(2.).rel_horiz_line(2.).abs_close(),
-            Path::new().abs_horiz_line(2.).rel_vert_line(2.).rel_close(),
+                .close(),
+            Path::new().abs_vert_line(2.).rel_horiz_line(2.).close(),
+            Path::new().abs_horiz_line(2.).rel_vert_line(2.).close(),
             Path::new()
                 .abs_cubic_bezier(Point::new(0., 0.5), Point::new(0.5, 1.), Point::new(1., 1.))
                 .rel_smooth_quadratic_bezier(Size::new(1., 1.)),
@@ -364,11 +358,11 @@ mod tests {
             Path::new()
                 .rel_cubic_bezier(Size::new(0., 0.5), Size::new(0.5, 1.), Size::new(1., 1.))
                 .abs_smooth_cubic_bezier(Point::new(2., 1.5), Point::new(2., 2.))
-                .abs_close(),
+                .close(),
             Path::new()
                 .rel_quadratic_bezier(Size::new(0., 1.), Size::new(1., 1.))
                 .abs_smooth_quadratic_bezier(Point::new(2., 2.))
-                .rel_close(),
+                .close(),
             Path::new().abs_smooth_cubic_bezier(Point::new(0., 2.), Point::new(2., 2.)),
             Path::new().abs_smooth_quadratic_bezier(Point::new(2., 2.)),
             Path::new()
@@ -388,7 +382,7 @@ mod tests {
             .rel_line(Size::new(1., 1.))
             .rel_cubic_bezier(Size::new(0.5, 0.5), Size::new(1.5, 0.5), Size::new(2., 0.))
             .rel_quadratic_bezier(Size::new(0.5, -0.5), Size::new(1., 0.))
-            .rel_close();
+            .close();
 
         assert_approx_eq!(path.bounds, Rect::new(0., 0., 4., 1.));
         assert_approx_eq!(
@@ -408,7 +402,7 @@ mod tests {
             .rel_line(Size::new(1., 1.))
             .rel_cubic_bezier(Size::new(0.5, 0.5), Size::new(1.5, 0.5), Size::new(2., 0.))
             .rel_quadratic_bezier(Size::new(0.5, -0.5), Size::new(1., 0.))
-            .rel_close();
+            .close();
 
         assert_approx_eq!(path.bounds, Rect::new(0., 0., 4., 1.));
         assert_approx_eq!(
@@ -424,7 +418,7 @@ mod tests {
             .rel_line(Size::new(1., 1.))
             .rel_cubic_bezier(Size::new(0.5, 0.5), Size::new(1.5, 0.5), Size::new(2., 0.))
             .rel_quadratic_bezier(Size::new(0.5, -0.5), Size::new(1., 0.))
-            .rel_close();
+            .close();
 
         assert_approx_eq!(path.bounds, Rect::new(0., 0., 4., 1.));
         assert_approx_eq!(path.rotate(FRAC_PI_2).bounds, Rect::new(-1., 0., 1., 4.));
@@ -437,7 +431,7 @@ mod tests {
             .rel_line(Size::new(1., 1.))
             .rel_cubic_bezier(Size::new(0.5, 0.5), Size::new(1.5, 0.5), Size::new(2., 0.))
             .rel_quadratic_bezier(Size::new(0.5, -0.5), Size::new(1., 0.))
-            .rel_close();
+            .close();
 
         assert_approx_eq!(path.bounds, Rect::new(0., 0., 4., 1.));
         assert_approx_eq!(path.skew_x(-FRAC_PI_4).bounds, Rect::new(0., 0., 5., 1.));
@@ -450,7 +444,7 @@ mod tests {
             .rel_line(Size::new(1., 1.))
             .rel_cubic_bezier(Size::new(0.5, 0.5), Size::new(1.5, 0.5), Size::new(2., 0.))
             .rel_quadratic_bezier(Size::new(0.5, -0.5), Size::new(1., 0.))
-            .rel_close();
+            .close();
 
         assert_approx_eq!(path.bounds, Rect::new(0., 0., 4., 1.));
         assert_approx_eq!(path.skew_y(FRAC_PI_4).bounds, Rect::new(0., 0., 4., 5.));
@@ -458,7 +452,7 @@ mod tests {
 
     #[test]
     fn test_recalculate_bounds() {
-        let path1 = Path::new().abs_line(Point::new(1., 1.)).abs_close();
+        let path1 = Path::new().abs_line(Point::new(1., 1.)).close();
         let path2 = Path::new()
             .abs_move(Point::new(0., 0.))
             .abs_line(Point::new(1., -1.));
