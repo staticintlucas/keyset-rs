@@ -6,6 +6,7 @@ use std::fmt::Display;
 
 pub(crate) use color::{Color, InvalidColor};
 pub(crate) use geometry::{Point, Rect, RoundRect, Scale, Size};
+pub(crate) use path::{Path, PathSegment};
 
 // Utility wrapper used to format floats with minimal number of characters
 pub struct Trim(pub f32);

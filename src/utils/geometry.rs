@@ -407,6 +407,11 @@ impl RoundRect {
         let (w, h) = (point2 - point1).into();
         Self::new(point1.x, point1.y, w, h, radius.w, radius.h)
     }
+
+    #[inline]
+    pub const fn radius(&self) -> Size {
+        Size::new(self.rx, self.ry)
+    }
 }
 
 impl From<RoundRect> for (f32, f32, f32, f32, f32, f32) {

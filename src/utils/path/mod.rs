@@ -2,16 +2,16 @@ mod arc_to_bezier;
 mod segment;
 
 use arc_to_bezier::arc_to_bezier;
-use segment::PathSegment;
+pub use segment::PathSegment;
 
 use super::{Point, Rect, Scale, Size};
 
 #[derive(Debug, Clone)]
-struct Path {
-    data: Vec<PathSegment>,
+pub struct Path {
+    pub data: Vec<PathSegment>,
     start: Point,
     point: Point,
-    bounds: Rect,
+    pub bounds: Rect,
 }
 
 impl Path {
@@ -284,6 +284,12 @@ impl Path {
     }
 }
 
+impl Default for Path {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -294,12 +300,14 @@ mod tests {
 
     #[test]
     fn test_path_new() {
-        let path = Path::new();
+        let paths = vec![Path::new(), Path::default()];
 
-        assert!(path.data.is_empty());
-        assert_approx_eq!(path.start, Point::new(0., 0.));
-        assert_approx_eq!(path.point, Point::new(0., 0.));
-        assert_approx_eq!(path.bounds, Rect::new(0., 0., 0., 0.));
+        for path in paths {
+            assert!(path.data.is_empty());
+            assert_approx_eq!(path.start, Point::new(0., 0.));
+            assert_approx_eq!(path.point, Point::new(0., 0.));
+            assert_approx_eq!(path.bounds, Rect::new(0., 0., 0., 0.));
+        }
     }
 
     #[test]
