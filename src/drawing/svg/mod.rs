@@ -80,11 +80,7 @@ mod tests {
         };
         let profile = Profile::default();
         let options = DrawingOptions::default();
-        let drawing = Drawing {
-            layout,
-            profile,
-            options,
-        };
+        let drawing = Drawing::new(layout, profile, options);
 
         assert_eq!(
             drawing.to_svg(),
@@ -101,11 +97,7 @@ mod tests {
         };
         let profile = Profile::default();
         let options = DrawingOptions::default();
-        let drawing = Drawing {
-            layout,
-            profile,
-            options,
-        };
+        let drawing = Drawing::new(layout, profile, options);
         let group = drawing.draw_key(&key);
 
         assert_eq!(group.get_children().len(), 2);
