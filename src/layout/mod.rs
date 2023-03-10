@@ -211,6 +211,7 @@ impl Key {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Layout {
     pub size: Size,
     pub keys: Vec<Key>,

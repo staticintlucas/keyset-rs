@@ -2,13 +2,13 @@ mod path;
 mod profile;
 
 use svg::node::element::Group;
-use svg::{Document, Node};
+use svg::Document;
 
 use crate::drawing::Drawing;
 use crate::layout::Key;
 use crate::utils::{Scale, Size, Trim};
 
-use profile::DrawKey;
+use profile::Draw;
 
 pub trait ToSvg {
     fn to_svg(&self) -> String;
@@ -45,20 +45,32 @@ impl Drawing {
         let scale = Scale::new(1e3, 1e3);
         let pos = key.position * scale;
 
-        let mut result = Group::new().set("transform", format!("translate({}, {})", pos.x, pos.y));
+        let result = Group::new().set("transform", format!("translate({}, {})", pos.x, pos.y));
 
-        self.profile
-            .draw_key(key)
-            .into_iter()
-            .for_each(|x| result.append(x));
+        let result = if self.options.show_keys {
+            self.profile
+                .draw_key(key)
+                .into_iter()
+                .fold(result, Group::add)
+        } else {
+            result
+        };
+
+        // let result =
+        if self.options.show_margin {
+            self.profile
+                .draw_margin(key)
+                .into_iter()
+                .fold(result, Group::add)
+        } else {
+            result
+        }
 
         // if show_legend_border {
         //     result.add(self.profile.draw_legend_rect(key));
         // }
         //
         // let result = result.add(self.font.draw_legends(key))
-
-        result
     }
 }
 
@@ -95,11 +107,32 @@ mod tests {
             size: Size::new(1., 1.),
             keys: vec![],
         };
-        let profile = Profile::default();
-        let options = DrawingOptions::default();
-        let drawing = Drawing::new(layout, profile, options);
-        let group = drawing.draw_key(&key);
 
-        assert_eq!(group.get_children().len(), 2);
+        let test_config = vec![
+            (DrawingOptions::default(), 2),
+            (
+                DrawingOptions {
+                    show_keys: false,
+                    ..DrawingOptions::default()
+                },
+                0,
+            ),
+            (
+                DrawingOptions {
+                    show_margin: true,
+                    ..DrawingOptions::default()
+                },
+                3,
+            ),
+        ];
+
+        let profile = Profile::default();
+
+        for (options, len) in test_config {
+            let drawing = Drawing::new(layout.clone(), profile.clone(), options);
+            let group = drawing.draw_key(&key);
+
+            assert_eq!(group.get_children().len(), len);
+        }
     }
 }

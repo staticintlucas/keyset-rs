@@ -1,16 +1,18 @@
+use itertools::Itertools;
 use svg::node::element::Path as SvgPath;
 
 use crate::layout::{Key, KeySize, KeyType};
 use crate::profile::{HomingType, Profile, ProfileType};
-use crate::utils::{Color, Path, RoundRect, Size};
+use crate::utils::{Color, Path, Rect, RoundRect, Size};
 
 use super::path::{EdgeType, KeyHelpers};
 
-pub trait DrawKey {
+pub trait Draw {
     fn draw_key(&self, key: &Key) -> Vec<SvgPath>;
+    fn draw_margin(&self, key: &Key) -> Vec<SvgPath>;
 }
 
-impl DrawKey for Profile {
+impl Draw for Profile {
     fn draw_key(&self, key: &Key) -> Vec<SvgPath> {
         if key.key_type == KeyType::None {
             // Nothing to draw
@@ -63,6 +65,47 @@ impl DrawKey for Profile {
         }
 
         paths
+    }
+
+    fn draw_margin(&self, key: &Key) -> Vec<SvgPath> {
+        let sizes: Vec<_> = key.legend_size.clone().into();
+        let rects = sizes.into_iter().unique().map(|s| self.text_margin.get(s));
+
+        let (pos_off, size_off) = match key.size {
+            KeySize::IsoHorizontal => (Size::new(0., 0.), Size::new(500., 0.)),
+            KeySize::IsoVertical => (Size::new(250., 0.), Size::new(250., 1000.)),
+            KeySize::SteppedCaps => (Size::new(0., 0.), Size::new(250., 0.)),
+            KeySize::Normal(size) => (Size::new(0., 0.), size * 1e3 - Size::new(1000., 1000.)),
+        };
+
+        let (pos_off, size_off) = if key.key_type == KeyType::None {
+            (
+                pos_off + (self.bottom_rect.position() - self.top_rect.position()),
+                size_off + (self.bottom_rect.size() - self.top_rect.size()),
+            )
+        } else {
+            (pos_off, size_off)
+        };
+
+        rects
+            .map(|r| Rect::from_point_and_size(r.position() + pos_off, r.size() + size_off))
+            .map(|r| {
+                SvgPath::new()
+                    .set(
+                        "d",
+                        Path::new()
+                            .abs_move(r.position())
+                            .rel_horiz_line(r.w)
+                            .rel_vert_line(r.h)
+                            .rel_horiz_line(-r.w)
+                            .rel_vert_line(-r.h)
+                            .close(),
+                    )
+                    .set("fill", "none")
+                    .set("stroke", Color::new(255, 0, 0).to_hex())
+                    .set("stroke-width", "5")
+            })
+            .collect()
     }
 }
 
@@ -367,6 +410,31 @@ mod tests {
             assert_eq!(path.len(), len);
             path.into_iter()
                 .for_each(|p| assert!(p.get_attributes().contains_key("d")));
+        }
+    }
+
+    #[test]
+    fn test_draw_margin() {
+        let profile = Profile::default();
+        let key = test_key();
+        let test_config = vec![
+            (KeySize::Normal(Size::new(1., 1.)), KeyType::Normal),
+            (KeySize::SteppedCaps, KeyType::Normal),
+            (KeySize::IsoHorizontal, KeyType::Normal),
+            (KeySize::IsoVertical, KeyType::Normal),
+            (KeySize::Normal(Size::new(1., 1.)), KeyType::None),
+        ];
+
+        for (size, key_type) in test_config {
+            let key = Key {
+                size,
+                key_type,
+                ..key.clone()
+            };
+            let path = profile.draw_margin(&key);
+
+            assert_eq!(path.len(), 1);
+            assert!(path[0].get_attributes().contains_key("d"));
         }
     }
 

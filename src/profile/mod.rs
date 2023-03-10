@@ -183,7 +183,7 @@ impl TextRect {
         }
     }
 
-    fn get(&self, kle_font_size: u8) -> Rect {
+    pub fn get(&self, kle_font_size: u8) -> Rect {
         if usize::from(kle_font_size) < self.0.len() {
             self.0[usize::from(kle_font_size)]
         } else {
