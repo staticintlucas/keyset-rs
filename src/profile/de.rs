@@ -203,10 +203,17 @@ impl<'de> Deserialize<'de> for Profile {
 
         let raw_data: RawProfileData = RawProfileData::deserialize(deserializer)?;
 
-        let (heights, rects) = raw_data
+        let top_offset = raw_data.top.center().y - 500.;
+        let (heights, rects): (HashMap<_, _>, HashMap<_, _>) = raw_data
             .legend
-            .iter()
-            .map(|(i, (s, r))| ((i, s), (i, r)))
+            .into_iter()
+            .map(|(i, (s, r))| {
+                let r = Rect {
+                    y: r.y + top_offset,
+                    ..r
+                };
+                ((i, s), (i, r))
+            })
             .unzip();
 
         Ok(Self {
@@ -485,16 +492,16 @@ mod tests {
 
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = vec![
-            Rect::new(252., 197., 496., 593.),
-            Rect::new(252., 197., 496., 593.),
-            Rect::new(252., 197., 496., 593.),
-            Rect::new(252., 197., 496., 593.),
-            Rect::new(250., 270., 500., 502.),
-            Rect::new(252., 197., 496., 606.),
-            Rect::new(252., 197., 496., 606.),
-            Rect::new(252., 197., 496., 606.),
-            Rect::new(252., 197., 496., 606.),
-            Rect::new(252., 197., 496., 606.),
+            Rect::new(252., 112., 496., 593.),
+            Rect::new(252., 112., 496., 593.),
+            Rect::new(252., 112., 496., 593.),
+            Rect::new(252., 112., 496., 593.),
+            Rect::new(250., 185., 500., 502.),
+            Rect::new(252., 112., 496., 606.),
+            Rect::new(252., 112., 496., 606.),
+            Rect::new(252., 112., 496., 606.),
+            Rect::new(252., 112., 496., 606.),
+            Rect::new(252., 112., 496., 606.),
         ];
         for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
             assert_approx_eq!(e.x, r.x, 0.5);
