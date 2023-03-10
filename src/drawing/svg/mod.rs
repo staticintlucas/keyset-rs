@@ -22,7 +22,7 @@ impl ToSvg for Drawing {
         let size = self.layout.size * scale;
 
         // w and h are in dpi units, the 0.75 is keyboard units per inch
-        let Size { w, h } = self.layout.size * self.dpi * 0.75;
+        let Size { w, h } = self.layout.size * self.options.dpi * 0.75;
 
         let document = Document::new()
             .set("width", format!("{}", Trim(w)))
@@ -64,6 +64,7 @@ impl Drawing {
 
 #[cfg(test)]
 mod tests {
+    use crate::drawing::DrawingOptions;
     use crate::layout::tests::test_key;
     use crate::layout::Layout;
     use crate::profile::Profile;
@@ -78,10 +79,11 @@ mod tests {
             keys: vec![],
         };
         let profile = Profile::default();
+        let options = DrawingOptions::default();
         let drawing = Drawing {
             layout,
             profile,
-            dpi: 96.,
+            options,
         };
 
         assert_eq!(
@@ -98,10 +100,11 @@ mod tests {
             keys: vec![],
         };
         let profile = Profile::default();
+        let options = DrawingOptions::default();
         let drawing = Drawing {
             layout,
             profile,
-            dpi: 96.,
+            options,
         };
         let group = drawing.draw_key(&key);
 

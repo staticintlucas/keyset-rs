@@ -5,32 +5,37 @@ pub use self::svg::ToSvg;
 use crate::layout::Layout;
 use crate::profile::Profile;
 
+pub struct DrawingOptions {
+    pub dpi: f32,
+    pub show_keys: bool,
+    pub show_margin: bool,
+}
+
+impl Default for DrawingOptions {
+    fn default() -> Self {
+        Self {
+            dpi: 96.,
+            show_keys: true,
+            show_margin: false,
+        }
+    }
+}
+
 pub struct Drawing {
     layout: Layout,
     profile: Profile,
-    dpi: f32,
+    options: DrawingOptions,
 }
 
 impl Drawing {
     #[inline]
     #[must_use]
-    pub fn new(layout: Layout, profile: Profile) -> Self {
+    pub fn new(layout: Layout, profile: Profile, options: DrawingOptions) -> Self {
         Self {
             layout,
             profile,
-            dpi: 96.,
+            options,
         }
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn with_dpi(self, dpi: f32) -> Self {
-        Self { dpi, ..self }
-    }
-
-    #[inline]
-    pub fn set_dpi(&mut self, dpi: f32) {
-        self.dpi = dpi;
     }
 }
 
@@ -49,35 +54,10 @@ mod tests {
             keys: vec![],
         };
         let profile = Profile::default();
-        let drawing = Drawing::new(layout, profile);
+        let options = DrawingOptions::default();
+        let drawing = Drawing::new(layout, profile, options);
 
-        assert_approx_eq!(drawing.dpi, 96.);
+        assert_approx_eq!(drawing.options.dpi, 96.);
         assert_eq!(drawing.layout.keys.len(), 0);
-    }
-
-    #[test]
-    fn test_drawing_with_dpi() {
-        let layout = Layout {
-            size: Size::new(1., 1.),
-            keys: vec![],
-        };
-        let profile = Profile::default();
-        let drawing = Drawing::new(layout, profile);
-
-        assert_approx_eq!(drawing.dpi, 96.);
-        assert_approx_eq!(drawing.with_dpi(144.).dpi, 144.);
-    }
-
-    #[test]
-    fn test_drawing_set_dpi() {
-        let layout = Layout {
-            size: Size::new(1., 1.),
-            keys: vec![],
-        };
-        let profile = Profile::default();
-        let mut drawing = Drawing::new(layout, profile);
-        drawing.set_dpi(192.);
-
-        assert_approx_eq!(drawing.dpi, 192.);
     }
 }
