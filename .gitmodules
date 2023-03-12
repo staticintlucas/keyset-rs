@@ -1,0 +1,3 @@
+[submodule "open-cherry"]
+	path = open-cherry
+	url = https://github.com/dakotafelder/open-cherry
