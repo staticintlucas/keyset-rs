@@ -23,7 +23,7 @@ maplit = "1.0"
 svg = "0.13"
 rgb = "0.8"
 array-init = "2.0"
-# ttf-parser = "0.12"
+ttf-parser = "0.18"
 
 [dev-dependencies]
 assert_approx_eq = "1.1"

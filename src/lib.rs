@@ -11,12 +11,14 @@
 
 mod drawing;
 mod error;
+mod font;
 mod kle;
 mod layout;
 mod profile;
 mod utils;
 
 pub use drawing::{Drawing, DrawingOptions, ToSvg};
+pub use font::Font;
 pub use kle::FromKle;
 pub use layout::Layout;
 pub use profile::Profile;

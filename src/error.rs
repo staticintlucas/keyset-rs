@@ -14,6 +14,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub(crate) enum ErrorImpl {
     JsonParseError(serde_json::Error),
     TomlParseError(toml::de::Error),
+    FontParseError(ttf_parser::FaceParsingError),
     InvalidKeySize(InvalidKeySize),
     InvalidColor(InvalidColor),
 }
@@ -23,6 +24,7 @@ impl fmt::Display for Error {
         match &*self.inner {
             ErrorImpl::JsonParseError(error) => write!(f, "error parsing JSON: {error}"),
             ErrorImpl::TomlParseError(error) => write!(f, "error parsing TOML: {error}"),
+            ErrorImpl::FontParseError(error) => write!(f, "error parsing font: {error}"),
             ErrorImpl::InvalidKeySize(error) => write!(f, "error parsing KLE layout: {error}"),
             ErrorImpl::InvalidColor(error) => write!(f, "error parsing color: {error}"),
         }
@@ -33,7 +35,9 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &*self.inner {
             ErrorImpl::JsonParseError(error) => Some(error),
-            _ => None,
+            ErrorImpl::TomlParseError(error) => Some(error),
+            ErrorImpl::FontParseError(error) => Some(error),
+            ErrorImpl::InvalidKeySize(_) | ErrorImpl::InvalidColor(_) => None,
         }
     }
 }
@@ -50,6 +54,14 @@ impl From<toml::de::Error> for Error {
     fn from(error: toml::de::Error) -> Self {
         Self {
             inner: Box::new(ErrorImpl::TomlParseError(error)),
+        }
+    }
+}
+
+impl From<ttf_parser::FaceParsingError> for Error {
+    fn from(error: ttf_parser::FaceParsingError) -> Self {
+        Self {
+            inner: Box::new(ErrorImpl::FontParseError(error)),
         }
     }
 }
