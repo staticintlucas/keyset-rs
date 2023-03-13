@@ -90,17 +90,16 @@ impl Draw for Profile {
         rects
             .map(|r| Rect::from_point_and_size(r.position() + pos_off, r.size() + size_off))
             .map(|r| {
+                let mut path = Path::new();
+                path.abs_move(r.position());
+                path.rel_horiz_line(r.w);
+                path.rel_vert_line(r.h);
+                path.rel_horiz_line(-r.w);
+                path.rel_vert_line(-r.h);
+                path.close();
+
                 SvgPath::new()
-                    .set(
-                        "d",
-                        Path::new()
-                            .abs_move(r.position())
-                            .rel_horiz_line(r.w)
-                            .rel_vert_line(r.h)
-                            .rel_horiz_line(-r.w)
-                            .rel_vert_line(-r.h)
-                            .close(),
-                    )
+                    .set("d", path)
                     .set("fill", "none")
                     .set("stroke", Color::new(255, 0, 0).to_hex())
                     .set("stroke-width", "5")
@@ -141,16 +140,16 @@ impl Profile {
             ),
         };
 
-        let path = Path::start(rect)
-            .corner_top_left(rect)
-            .edge_top(rect, size, edge_t, curve)
-            .corner_top_right(rect)
-            .edge_right(rect, size, edge_r, curve)
-            .corner_bottom_right(rect)
-            .edge_bottom(rect, size, edge_b, curve)
-            .corner_bottom_left(rect)
-            .edge_left(rect, size, edge_l, curve)
-            .close();
+        let mut path = Path::start(rect);
+        path.corner_top_left(rect);
+        path.edge_top(rect, size, edge_t, curve);
+        path.corner_top_right(rect);
+        path.edge_right(rect, size, edge_r, curve);
+        path.corner_bottom_right(rect);
+        path.edge_bottom(rect, size, edge_b, curve);
+        path.corner_bottom_left(rect);
+        path.edge_left(rect, size, edge_l, curve);
+        path.close();
 
         SvgPath::new()
             .set("d", path)
@@ -162,16 +161,16 @@ impl Profile {
     fn draw_key_bottom(&self, size: Size, color: Color) -> SvgPath {
         let rect = self.bottom_rect;
 
-        let path = Path::start(rect)
-            .corner_top_left(rect)
-            .edge_top(rect, size, EdgeType::Line, 0.)
-            .corner_top_right(rect)
-            .edge_right(rect, size, EdgeType::Line, 0.)
-            .corner_bottom_right(rect)
-            .edge_bottom(rect, size, EdgeType::Line, 0.)
-            .corner_bottom_left(rect)
-            .edge_left(rect, size, EdgeType::Line, 0.)
-            .close();
+        let mut path = Path::start(rect);
+        path.corner_top_left(rect);
+        path.edge_top(rect, size, EdgeType::Line, 0.);
+        path.corner_top_right(rect);
+        path.edge_right(rect, size, EdgeType::Line, 0.);
+        path.corner_bottom_right(rect);
+        path.edge_bottom(rect, size, EdgeType::Line, 0.);
+        path.corner_bottom_left(rect);
+        path.edge_left(rect, size, EdgeType::Line, 0.);
+        path.close();
 
         SvgPath::new()
             .set("d", path)
@@ -194,19 +193,19 @@ impl Profile {
         let size = Size::new(1000., 1000.);
 
         let radius = rect.radius();
-        let data = Path::start(rect)
-            .rel_arc(radius, 0., false, false, Size::new(-rect.rx, -rect.ry))
-            .edge_top(rect, size, EdgeType::Line, 0.)
-            .corner_top_right(rect)
-            .edge_right(rect, size, EdgeType::Line, 0.)
-            .corner_bottom_right(rect)
-            .edge_bottom(rect, size, EdgeType::Line, 0.)
-            .rel_arc(radius, 0., false, false, Size::new(rect.rx, -rect.ry))
-            .edge_left(rect, size, EdgeType::Line, 0.)
-            .close();
+        let mut path = Path::start(rect);
+        path.rel_arc(radius, 0., false, false, Size::new(-rect.rx, -rect.ry));
+        path.edge_top(rect, size, EdgeType::Line, 0.);
+        path.corner_top_right(rect);
+        path.edge_right(rect, size, EdgeType::Line, 0.);
+        path.corner_bottom_right(rect);
+        path.edge_bottom(rect, size, EdgeType::Line, 0.);
+        path.rel_arc(radius, 0., false, false, Size::new(rect.rx, -rect.ry));
+        path.edge_left(rect, size, EdgeType::Line, 0.);
+        path.close();
 
         SvgPath::new()
-            .set("d", data)
+            .set("d", path)
             .set("fill", color.to_hex())
             .set("stroke", color.highlight(0.15).to_hex())
             .set("stroke-width", "10")
@@ -245,14 +244,14 @@ impl Profile {
             ),
         };
 
-        let path = Path::start(rect)
-            .corner_top_left(rect)
-            .edge_top(rect, top_size, edge_t, curve)
-            .corner_top_right(rect)
-            .edge_right(rect, btm_size, edge_r, curve)
-            .corner_bottom_right(rect)
-            .edge_bottom(rect, btm_size, edge_b, curve)
-            .corner_bottom_left(rect);
+        let mut path = Path::start(rect);
+        path.corner_top_left(rect);
+        path.edge_top(rect, top_size, edge_t, curve);
+        path.corner_top_right(rect);
+        path.edge_right(rect, btm_size, edge_r, curve);
+        path.corner_bottom_right(rect);
+        path.edge_bottom(rect, btm_size, edge_b, curve);
+        path.corner_bottom_left(rect);
 
         let h_line = 0.25e3 - 2. * rect.rx;
         let v_line = 1e3 - 2. * rect.ry;
@@ -271,12 +270,12 @@ impl Profile {
             EdgeType::InsetCurve => -curve,
         };
 
-        let path = match edge_l {
+        match edge_l {
             EdgeType::Line => path.rel_vert_line(-(v_line - h_curve)),
             EdgeType::CurveLineCurve => {
                 let radius = Path::radius(curve, rect.h);
-                path.rel_arc(radius, 0., false, true, Size::new(-v_curve, -rect.h / 2.))
-                    .rel_vert_line(-(v_line - rect.h / 2. - h_curve))
+                path.rel_arc(radius, 0., false, true, Size::new(-v_curve, -rect.h / 2.));
+                path.rel_vert_line(-(v_line - rect.h / 2. - h_curve));
             }
             EdgeType::CurveStretch => {
                 // let radius = Path::radius(curve, 2. * v_line);
@@ -285,17 +284,16 @@ impl Profile {
             }
             EdgeType::InsetCurve => {
                 let radius = Path::radius(curve, 2. * v_line);
-                path.rel_arc(radius, 0., false, false, Size::new(-v_curve, v_line))
+                path.rel_arc(radius, 0., false, false, Size::new(-v_curve, v_line));
             }
         };
 
         let radius = rect.radius();
-        let path = path
-            .rel_arc(radius, 0., false, false, Size::new(-rect.rx, -rect.ry))
-            .rel_line(Size::new(-(h_line - v_curve), -h_curve))
-            .corner_bottom_left(rect)
-            .edge_left(rect, top_size, edge_l, curve)
-            .close();
+        path.rel_arc(radius, 0., false, false, Size::new(-rect.rx, -rect.ry));
+        path.rel_line(Size::new(-(h_line - v_curve), -h_curve));
+        path.corner_bottom_left(rect);
+        path.edge_left(rect, top_size, edge_l, curve);
+        path.close();
 
         SvgPath::new()
             .set("d", path)
@@ -310,20 +308,20 @@ impl Profile {
         let btm_size = Size::new(1.25e3, 2e3);
 
         let radius = rect.radius();
-        let path = Path::start(rect)
-            .corner_top_left(rect)
-            .edge_top(rect, top_size, EdgeType::Line, 0.)
-            .corner_top_right(rect)
-            .edge_right(rect, btm_size, EdgeType::Line, 0.)
-            .corner_bottom_right(rect)
-            .edge_bottom(rect, btm_size, EdgeType::Line, 0.)
-            .corner_bottom_left(rect)
-            .rel_vert_line(-(1e3 - 2. * rect.ry))
-            .rel_arc(radius, 0., false, false, Size::new(-rect.rx, -rect.ry))
-            .rel_horiz_line(-(0.25e3 - 2. * rect.rx))
-            .corner_bottom_left(rect)
-            .edge_left(rect, top_size, EdgeType::Line, 0.)
-            .close();
+        let mut path = Path::start(rect);
+        path.corner_top_left(rect);
+        path.edge_top(rect, top_size, EdgeType::Line, 0.);
+        path.corner_top_right(rect);
+        path.edge_right(rect, btm_size, EdgeType::Line, 0.);
+        path.corner_bottom_right(rect);
+        path.edge_bottom(rect, btm_size, EdgeType::Line, 0.);
+        path.corner_bottom_left(rect);
+        path.rel_vert_line(-(1e3 - 2. * rect.ry));
+        path.rel_arc(radius, 0., false, false, Size::new(-rect.rx, -rect.ry));
+        path.rel_horiz_line(-(0.25e3 - 2. * rect.rx));
+        path.corner_bottom_left(rect);
+        path.edge_left(rect, top_size, EdgeType::Line, 0.);
+        path.close();
 
         SvgPath::new()
             .set("d", path)
@@ -343,13 +341,13 @@ impl Profile {
             ry: self.homing.bar.height / 2.,
         };
 
-        let path = Path::new()
-            .abs_move(rect.position() + Size::new(rect.rx, 0.))
-            .rel_horiz_line(rect.w - 2. * rect.rx)
-            .rel_arc(rect.radius(), 0., false, true, Size::new(0., 2. * rect.ry))
-            .rel_horiz_line(-(rect.w - 2. * rect.rx))
-            .rel_arc(rect.radius(), 0., false, true, Size::new(0., -2. * rect.ry))
-            .close();
+        let mut path = Path::new();
+        path.abs_move(rect.position() + Size::new(rect.rx, 0.));
+        path.rel_horiz_line(rect.w - 2. * rect.rx);
+        path.rel_arc(rect.radius(), 0., false, true, Size::new(0., 2. * rect.ry));
+        path.rel_horiz_line(-(rect.w - 2. * rect.rx));
+        path.rel_arc(rect.radius(), 0., false, true, Size::new(0., -2. * rect.ry));
+        path.close();
 
         SvgPath::new()
             .set("d", path)
@@ -362,14 +360,14 @@ impl Profile {
         let center = self.top_rect.center() + (size - Size::new(1e3, 1e3)) / 2.;
         let r = self.homing.bump.diameter / 2.;
 
-        let data = Path::new()
-            .abs_move(center + Size::new(0., -r))
-            .rel_arc(Size::new(r, r), 0., false, true, Size::new(0., 2. * r))
-            .rel_arc(Size::new(r, r), 0., false, true, Size::new(0., -2. * r))
-            .close();
+        let mut path = Path::new();
+        path.abs_move(center + Size::new(0., -r));
+        path.rel_arc(Size::new(r, r), 0., false, true, Size::new(0., 2. * r));
+        path.rel_arc(Size::new(r, r), 0., false, true, Size::new(0., -2. * r));
+        path.close();
 
         SvgPath::new()
-            .set("d", data)
+            .set("d", path)
             .set("fill", color.to_hex())
             .set("stroke", color.highlight(0.25).to_hex())
             .set("stroke-width", "10")

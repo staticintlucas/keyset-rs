@@ -12,99 +12,90 @@ pub enum PathSegment {
 }
 
 impl PathSegment {
-    pub fn scale(self, scale: Scale) -> Self {
+    pub fn scale(&mut self, scale: Scale) {
         match self {
-            Move(point) => Move(point * scale),
-            Line(dist) => Line(dist * scale),
+            Move(point) => *point *= scale,
+            Line(dist) => *dist *= scale,
             CubicBezier(ctrl1, ctrl2, dist) => {
-                CubicBezier(ctrl1 * scale, ctrl2 * scale, dist * scale)
+                *ctrl1 *= scale;
+                *ctrl2 *= scale;
+                *dist *= scale;
             }
-            QuadraticBezier(ctrl1, dist) => QuadraticBezier(ctrl1 * scale, dist * scale),
-            Close => Close,
+            QuadraticBezier(ctrl1, dist) => {
+                *ctrl1 *= scale;
+                *dist *= scale;
+            }
+            Close => (),
         }
     }
 
-    pub fn translate(self, dist: Size) -> Self {
+    pub fn translate(&mut self, dist: Size) {
         match self {
-            Move(point) => Move(point + dist),
-            Line(dist) => Line(dist + dist),
-            CubicBezier(ctrl1, ctrl2, dist) => CubicBezier(ctrl1 + dist, ctrl2 + dist, dist + dist),
-            QuadraticBezier(ctrl1, dist) => QuadraticBezier(ctrl1 + dist, dist + dist),
-            Close => Close,
+            Move(point) => *point += dist,
+            Line(line_dist) => *line_dist += dist,
+            CubicBezier(ctrl1, ctrl2, curve_dist) => {
+                *ctrl1 += dist;
+                *ctrl2 += dist;
+                *curve_dist += dist;
+            }
+            QuadraticBezier(ctrl1, curve_dist) => {
+                *ctrl1 += dist;
+                *curve_dist += dist;
+            }
+            Close => (),
         }
     }
 
-    pub fn rotate(self, angle: f32) -> Self {
+    pub fn rotate(&mut self, angle: f32) {
         match self {
-            Move(point) => Move(point.rotate(angle)),
-            Line(dist) => Line(dist.rotate(angle)),
+            Move(point) => *point = point.rotate(angle),
+            Line(dist) => *dist = dist.rotate(angle),
             CubicBezier(c1, c2, d) => {
-                let [c1, c2, d] = [c1, c2, d].map(|d| d.rotate(angle));
-                CubicBezier(c1, c2, d)
+                *c1 = c1.rotate(angle);
+                *c2 = c2.rotate(angle);
+                *d = d.rotate(angle);
             }
             QuadraticBezier(c1, d) => {
-                let [c1, d] = [c1, d].map(|d| d.rotate(angle));
-                QuadraticBezier(c1, d)
+                *c1 = c1.rotate(angle);
+                *d = d.rotate(angle);
             }
-            Close => Close,
+            Close => (),
         }
     }
 
-    pub fn skew_x(self, angle: f32) -> Self {
+    pub fn skew_x(&mut self, angle: f32) {
         let tan = angle.tan();
         match self {
-            Move(point) => Move(Point {
-                x: point.x - point.y * tan,
-                y: point.y,
-            }),
-            Line(dist) => Line(Size {
-                w: dist.w - dist.h * tan,
-                h: dist.h,
-            }),
+            Move(point) => point.x -= point.y * tan,
+            Line(dist) => dist.w -= dist.h * tan,
             CubicBezier(c1, c2, d) => {
-                let [c1, c2, d] = [c1, c2, d].map(|d| Size {
-                    w: d.w - d.h * tan,
-                    h: d.h,
-                });
-                CubicBezier(c1, c2, d)
+                c1.w -= c1.h * tan;
+                c2.w -= c2.h * tan;
+                d.w -= d.h * tan;
             }
             QuadraticBezier(c1, d) => {
-                let [c1, d] = [c1, d].map(|d| Size {
-                    w: d.w - d.h * tan,
-                    h: d.h,
-                });
-                QuadraticBezier(c1, d)
+                c1.w -= c1.h * tan;
+                d.w -= d.h * tan;
             }
-            Close => Close,
+            Close => (),
         }
     }
 
-    pub fn skew_y(self, angle: f32) -> Self {
+    pub fn skew_y(&mut self, angle: f32) {
         let tan = angle.tan();
         match self {
-            Move(point) => Move(Point {
-                x: point.x,
-                y: point.y + point.x * tan,
-            }),
-            Line(dist) => Line(Size {
-                w: dist.w,
-                h: dist.h + dist.w * tan,
-            }),
+            Move(point) => point.y += point.x * tan,
+            Line(dist) => dist.h += dist.w * tan,
             CubicBezier(c1, c2, d) => {
-                let [c1, c2, d] = [c1, c2, d].map(|d| Size {
-                    w: d.w,
-                    h: d.h + d.w * tan,
-                });
-                CubicBezier(c1, c2, d)
+                c1.h += c1.w * tan;
+                c2.h += c2.w * tan;
+                d.h += d.w * tan;
             }
             QuadraticBezier(c1, d) => {
-                let [c1, d] = [c1, d].map(|d| Size {
-                    w: d.w,
-                    h: d.h + d.w * tan,
-                });
-                QuadraticBezier(c1, d)
+                c1.h += c1.w * tan;
+                d.h += d.w * tan;
             }
-            Close => Close,
+            Close => (),
         }
     }
 }
@@ -165,7 +156,8 @@ mod tests {
 
         assert_eq!(input.len(), expected.len());
         for (inp, exp) in input.into_iter().zip(expected) {
-            let res = inp.scale(Scale::new(2., 2.));
+            let mut res = inp;
+            res.scale(Scale::new(2., 2.));
             assert_approx_eq!(res, exp);
         }
     }
@@ -189,7 +181,8 @@ mod tests {
 
         assert_eq!(input.len(), expected.len());
         for (inp, exp) in input.into_iter().zip(expected) {
-            let res = inp.translate(Size::new(1., 1.));
+            let mut res = inp;
+            res.translate(Size::new(1., 1.));
             assert_approx_eq!(res, exp);
         }
     }
@@ -213,7 +206,8 @@ mod tests {
 
         assert_eq!(input.len(), expected.len());
         for (inp, exp) in input.into_iter().zip(expected) {
-            let res = inp.rotate(FRAC_PI_2);
+            let mut res = inp;
+            res.rotate(FRAC_PI_2);
             assert_approx_eq!(res, exp);
         }
     }
@@ -237,7 +231,8 @@ mod tests {
 
         assert_eq!(input.len(), expected.len());
         for (inp, exp) in input.into_iter().zip(expected) {
-            let res = inp.skew_x(FRAC_PI_4);
+            let mut res = inp;
+            res.skew_x(FRAC_PI_4);
             assert_approx_eq!(res, exp);
         }
     }
@@ -261,7 +256,8 @@ mod tests {
 
         assert_eq!(input.len(), expected.len());
         for (inp, exp) in input.into_iter().zip(expected) {
-            let res = inp.skew_y(FRAC_PI_4);
+            let mut res = inp;
+            res.skew_y(FRAC_PI_4);
             assert_approx_eq!(res, exp);
         }
     }
