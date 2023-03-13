@@ -84,36 +84,67 @@ impl From<InvalidColor> for Error {
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error;
+    use super::*;
 
+    use crate::layout::KeySize;
     use crate::utils::Color;
 
-    fn json_parse_error() -> super::Error {
-        let json = serde_json::from_str::<serde_json::Value>("invalid");
-        json.unwrap_err().into()
+    fn json_parse_error() -> Error {
+        serde_json::from_str::<serde_json::Value>("invalid")
+            .unwrap_err()
+            .into()
+    }
+
+    fn toml_parse_error() -> Error {
+        toml::from_str::<toml::Value>("invalid").unwrap_err().into()
+    }
+
+    fn font_parse_error() -> Error {
+        ttf_parser::Face::parse(b"invalid", 0).unwrap_err().into()
+    }
+
+    fn invalid_key_size() -> Error {
+        KeySize::new(1., 1., 1., 1., 1., 1.).unwrap_err().into()
+    }
+
+    fn invalid_color() -> Error {
+        Color::from_hex("invalid").unwrap_err().into()
     }
 
     #[test]
     fn test_display_error() {
-        let json_parse_error = json_parse_error();
-        assert_eq!(
-            format!("{}", json_parse_error),
-            "error parsing JSON: expected value at line 1 column 1"
-        );
+        let config = vec![
+            (json_parse_error(), "error parsing JSON: expected value at line 1 column 1"),
+            (toml_parse_error(), r#"error parsing TOML: TOML parse error at line 1, column 8
+  |
+1 | invalid
+  |        ^
+expected `.`, `=`
+"#),
+            (font_parse_error(), "error parsing font: unknown magic"),
+            (invalid_key_size(), "error parsing KLE layout: Unsupported non-standard key size (w: 1.00, h: 1.00, x2: 1.00, y2: 1.00, w2: 1.00, h2: 1.00) Note ISO enter and stepped caps are supported as special cases"),
+            (invalid_color(), "error parsing color: invalid hex code invalid"),
+        ];
 
-        let invalid_color = Color::from_hex("invalid").unwrap_err();
-        assert_eq!(
-            format!("{}", invalid_color),
-            "error parsing color: invalid hex code invalid"
-        );
+        for (err, fmt) in config {
+            assert_eq!(format!("{err}"), fmt);
+        }
     }
 
     #[test]
     fn test_error_source() {
-        let json_parse_error = json_parse_error();
-        assert!(json_parse_error.source().is_some());
+        use std::error::Error;
 
-        let invalid_color = Color::from_hex("invalid").unwrap_err();
-        assert!(invalid_color.source().is_none());
+        let config = vec![
+            (json_parse_error(), true),
+            (toml_parse_error(), true),
+            (font_parse_error(), true),
+            (invalid_key_size(), false),
+            (invalid_color(), false),
+        ];
+
+        for (err, has_source) in config {
+            assert_eq!(err.source().is_some(), has_source);
+        }
     }
 }
