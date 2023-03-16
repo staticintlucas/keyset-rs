@@ -54,7 +54,7 @@ fn main() {
 
     let layout = Layout::from_kle(kle).unwrap();
     let profile = Profile::from_toml(profile).unwrap();
-    let font = Font::from_ttf(&std::fs::read("open-cherry/OpenCherry-Regular.otf").unwrap());
+    let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap());
     eprintln!("{font:?}");
     let options = DrawingOptions::default();
     let drawing = Drawing::new(layout, profile, options);

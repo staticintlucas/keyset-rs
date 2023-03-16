@@ -54,14 +54,14 @@ mod tests {
 
     #[test]
     fn test_from_ttf() {
-        let data = std::fs::read("open-cherry/OpenCherry-Regular.otf").unwrap();
+        let data = std::fs::read("tests/fonts/demo.ttf").unwrap();
         let font = Font::from_ttf(&data).unwrap();
 
-        assert_eq!(font.name, "Open Cherry");
+        assert_eq!(font.name, "unknown"); // TODO demo font has no name table
         assert_approx_eq!(font.em_size, 1e3);
-        assert_approx_eq!(font.cap_height, 700.);
-        assert_approx_eq!(font.x_height, 500.);
-        assert_approx_eq!(font.line_height, 1200.);
+        assert_approx_eq!(font.cap_height, 0.); // TODO demo font has no caps height
+        assert_approx_eq!(font.x_height, 0.); // TODO demo font has no x-height
+        assert_approx_eq!(font.line_height, 1424.);
         assert_approx_eq!(font.slope, 0.);
     }
 }
