@@ -64,6 +64,59 @@
     <maxComponentDepth value="0"/>
   </maxp>
 
+  <OS_2>
+    <version value="4"/>
+    <xAvgCharWidth value="540"/>
+    <usWeightClass value="400"/>
+    <usWidthClass value="5"/>
+    <fsType value="00000000 00000000"/>
+    <ySubscriptXSize value="600"/>
+    <ySubscriptYSize value="600"/>
+    <ySubscriptXOffset value="0"/>
+    <ySubscriptYOffset value="150"/>
+    <ySuperscriptXSize value="600"/>
+    <ySuperscriptYSize value="600"/>
+    <ySuperscriptXOffset value="0"/>
+    <ySuperscriptYOffset value="510"/>
+    <yStrikeoutSize value="60"/>
+    <yStrikeoutPosition value="260"/>
+    <sFamilyClass value="0"/>
+    <panose>
+      <bFamilyType value="0"/>
+      <bSerifStyle value="0"/>
+      <bWeight value="0"/>
+      <bProportion value="0"/>
+      <bContrast value="0"/>
+      <bStrokeVariation value="0"/>
+      <bArmStyle value="0"/>
+      <bLetterForm value="0"/>
+      <bMidline value="0"/>
+      <bXHeight value="0"/>
+    </panose>
+    <ulUnicodeRange1 value="00000000 00000000 00000000 00000001"/>
+    <ulUnicodeRange2 value="00000000 00000000 00000000 00000000"/>
+    <ulUnicodeRange3 value="00000000 00000000 00000000 00000000"/>
+    <ulUnicodeRange4 value="00000000 00000000 00000000 00000000"/>
+    <achVendID value="font"/>
+    <fsSelection value="00000000 11000000"/>
+    <usFirstCharIndex value="65"/>
+    <usLastCharIndex value="65"/>
+    <sTypoAscender value="1024"/>
+    <sTypoDescender value="-400"/>
+    <sTypoLineGap value="0"/>
+    <usWinAscent value="1024"/>
+    <usWinDescent value="400"/>
+    <ulCodePageRange1 value="00000000 00000000 00000000 00000001"/>
+    <ulCodePageRange2 value="00000000 00000000 00000000 00000000"/>
+    <sxHeight value="450"/>
+    <sCapHeight value="650"/>
+    <usDefaultChar value="0"/>
+    <usBreakChar value="32"/>
+    <usMaxContext value="1"/>
+    <usLowerOpticalPointSize value="0"/>
+    <usUpperOpticalPointSize value="65535"/>
+  </OS_2>
+
   <hmtx>
     <mtx name=".notdef" width="600" lsb="100"/>
     <mtx name="A" width="540" lsb="6"/>
@@ -115,5 +168,14 @@
       <instructions/>
     </TTGlyph>
   </glyf>
+
+  <name>
+    <namerecord nameID="1" platformID="1" platEncID="0" langID="0x0" unicode="True">
+      demo
+    </namerecord>
+    <namerecord nameID="1" platformID="3" platEncID="1" langID="0x409">
+      demo
+    </namerecord>
+  </name>
 
 </ttFont>
