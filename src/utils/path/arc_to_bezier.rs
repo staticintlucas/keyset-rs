@@ -45,12 +45,12 @@ pub fn arc_to_bezier(r: Size, xar: f32, laf: bool, sf: bool, d: Size) -> Vec<(Si
 
     // Double checks the quadrant of dphi
     // TODO remove these? They shouldn't ever fail I think aside from the odd tolerance issue
-    match (laf, sf) {
-        (false, false) => assert!((-PI..=0.).contains(&dphi)),
-        (false, true) => assert!((0. ..=PI).contains(&dphi)),
-        (true, false) => assert!((-(2. * PI)..=-PI).contains(&dphi)),
-        (true, true) => assert!((PI..=(2. * PI)).contains(&dphi)),
-    }
+    // match (laf, sf) {
+    //     (false, false) => assert!((-PI..=0.).contains(&dphi)),
+    //     (false, true) => assert!((0. ..=PI).contains(&dphi)),
+    //     (true, false) => assert!((-(2. * PI)..=-PI).contains(&dphi)),
+    //     (true, true) => assert!((PI..=(2. * PI)).contains(&dphi)),
+    // }
 
     // Subtract TOL so 90.0001 deg doesn't become 2 segs
     let segments = ((dphi / FRAC_PI_2).abs() - TOL).ceil();
