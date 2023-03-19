@@ -1,5 +1,4 @@
 mod glyph;
-mod notdef;
 
 use std::collections::HashMap;
 
@@ -79,7 +78,7 @@ impl Font {
             glyph
         } else {
             warn!("no valid outline for glyph .notdef in font {name:?}");
-            self::notdef::path(cap_height, slope)
+            Glyph::notdef(cap_height, slope)
         };
 
         Ok(Self {
@@ -140,7 +139,7 @@ mod tests {
         assert_eq!(font.glyphs.len(), 1);
         assert_ne!(
             font.notdef.advance,
-            notdef::path(font.cap_height, font.slope).advance
+            Glyph::notdef(font.cap_height, font.slope).advance
         );
 
         let data = std::fs::read("tests/fonts/null.ttf").unwrap();
@@ -155,7 +154,7 @@ mod tests {
         assert_eq!(null.glyphs.len(), 0);
         assert_eq!(
             null.notdef.advance,
-            notdef::path(null.cap_height, null.slope).advance
+            Glyph::notdef(null.cap_height, null.slope).advance
         );
     }
 
