@@ -1,14 +1,17 @@
 mod glyph;
+mod kerning;
 
 use std::collections::HashMap;
 
 use crate::error::Result;
 use crate::utils::{Path, Point};
 
+use itertools::Itertools;
 use log::warn;
-use ttf_parser::{cmap, Face, GlyphId, OutlineBuilder};
+use ttf_parser::{cmap, name_id, Face, GlyphId, OutlineBuilder};
 
 use self::glyph::Glyph;
+use self::kerning::Kerning;
 
 #[derive(Clone, Debug)]
 pub struct Font {
@@ -22,6 +25,7 @@ pub struct Font {
     slope: f32,
     glyphs: HashMap<char, Glyph>,
     notdef: Glyph,
+    kerning: Kerning,
 }
 
 impl Font {
@@ -31,7 +35,7 @@ impl Font {
         let name = if let Some(name) = face
             .names()
             .into_iter()
-            .filter(|n| n.name_id == 1)
+            .filter(|n| n.name_id == name_id::FAMILY)
             .find_map(|n| n.to_string())
         {
             name
@@ -69,8 +73,8 @@ impl Font {
         }
 
         let glyphs: HashMap<_, _> = codepoints
-            .into_iter()
-            .filter_map(|cp| Some((cp, face.glyph_index(cp)?)))
+            .iter()
+            .filter_map(|&cp| Some((cp, face.glyph_index(cp)?)))
             .filter_map(|(cp, gid)| Some((cp, Glyph::new(&face, gid)?)))
             .collect();
 
@@ -79,6 +83,27 @@ impl Font {
         } else {
             warn!("no valid outline for glyph .notdef in font {name:?}");
             Glyph::notdef(cap_height, slope)
+        };
+
+        let kerning = if let Some(kern) = face.tables().kern {
+            let mut kerning = Kerning::new();
+            // TODO this is slow AF
+            codepoints
+                .iter()
+                .copied()
+                .cartesian_product(codepoints.iter().copied())
+                .filter_map(|(l, r)| Some(((l, r), (face.glyph_index(l)?, face.glyph_index(r)?))))
+                .for_each(|((l, r), (gid_l, gid_r))| {
+                    let kern = kern
+                        .subtables
+                        .into_iter()
+                        .find_map(|st| st.glyphs_kerning(gid_l, gid_r))
+                        .unwrap_or(0);
+                    kerning.set(l, r, f32::from(kern));
+                });
+            kerning
+        } else {
+            Kerning::new()
         };
 
         Ok(Self {
@@ -92,6 +117,7 @@ impl Font {
             slope,
             glyphs,
             notdef,
+            kerning,
         })
     }
 }
@@ -136,11 +162,12 @@ mod tests {
         assert_approx_eq!(font.x_height, 450.);
         assert_approx_eq!(font.line_height, 1424.);
         assert_approx_eq!(font.slope, 0.);
-        assert_eq!(font.glyphs.len(), 1);
+        assert_eq!(font.glyphs.len(), 2);
         assert_ne!(
             font.notdef.advance,
             Glyph::notdef(font.cap_height, font.slope).advance
         );
+        assert_eq!(font.kerning.len(), 1);
 
         let data = std::fs::read("tests/fonts/null.ttf").unwrap();
         let null = Font::from_ttf(&data).unwrap();
@@ -156,6 +183,7 @@ mod tests {
             null.notdef.advance,
             Glyph::notdef(null.cap_height, null.slope).advance
         );
+        assert_eq!(null.kerning.len(), 0);
     }
 
     #[test]

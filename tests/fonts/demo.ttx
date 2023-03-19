@@ -4,6 +4,7 @@
   <GlyphOrder>
     <GlyphID id="0" name=".notdef"/>
     <GlyphID id="1" name="A"/>
+    <GlyphID id="2" name="V"/>
   </GlyphOrder>
 
   <head>
@@ -100,7 +101,7 @@
     <achVendID value="font"/>
     <fsSelection value="00000000 11000000"/>
     <usFirstCharIndex value="65"/>
-    <usLastCharIndex value="65"/>
+    <usLastCharIndex value="86"/>
     <sTypoAscender value="1024"/>
     <sTypoDescender value="-400"/>
     <sTypoLineGap value="0"/>
@@ -120,12 +121,14 @@
   <hmtx>
     <mtx name=".notdef" width="600" lsb="100"/>
     <mtx name="A" width="540" lsb="6"/>
+    <mtx name="V" width="540" lsb="6"/>
   </hmtx>
 
   <cmap>
     <tableVersion version="0"/>
     <cmap_format_4 platformID="0" platEncID="3" language="0">
       <map code="0x41" name="A"/>
+      <map code="0x56" name="V"/>
     </cmap_format_4>
   </cmap>
 
@@ -167,7 +170,27 @@
       </contour>
       <instructions/>
     </TTGlyph>
+
+    <TTGlyph name="V">
+      <contour>
+        <pt x="6" y="656" on="1"/>
+        <pt x="85" y="656" on="1"/>
+        <pt x="270" y="69" on="1"/>
+        <pt x="452" y="656" on="1"/>
+        <pt x="541" y="656" on="1"/>
+        <pt x="320" y="0" on="1"/>
+        <pt x="224" y="0" on="1"/>
+      </contour>
+      <instructions/>
+    </TTGlyph>
   </glyf>
+
+  <kern>
+    <version value="1.0"/>
+    <kernsubtable coverage="0" format="0" tupleIndex="0">
+      <pair l="A" r="V" v="-70"/>
+    </kernsubtable>
+  </kern>
 
   <name>
     <namerecord nameID="1" platformID="1" platEncID="0" langID="0x0" unicode="True">
