@@ -68,8 +68,12 @@ impl Draw for Profile {
     }
 
     fn draw_margin(&self, key: &Key) -> Vec<SvgPath> {
-        let sizes: Vec<_> = key.legend_size.clone().into();
-        let rects = sizes.into_iter().unique().map(|s| self.text_margin.get(s));
+        let rects = key
+            .legend_size
+            .into_iter()
+            .flat_map(IntoIterator::into_iter)
+            .unique()
+            .map(|s| self.text_margin.get(s));
 
         let (pos_off, size_off) = match key.size {
             KeySize::IsoHorizontal => (Size::new(0., 0.), Size::new(500., 0.)),

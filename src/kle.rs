@@ -12,20 +12,20 @@ use crate::profile::HomingType;
 use crate::utils::{Color, Point, Size};
 
 // The number of legends on a key and number of alignment settings from KLE
-const NUM_LEGENDS: u8 = 12;
-const NUM_ALIGNMENTS: u8 = 8;
+const NUM_LEGENDS: usize = 12;
+const NUM_ALIGNMENTS: usize = 8;
 
-// This map is stolen straight from the kle-serial source code. Note the blanks are also filled in,
-// so keyset-rs is slightly more permissive than KLE with not-strictly-valid KLE input.
-const KLE_2_ORD: [[u8; NUM_LEGENDS as usize]; NUM_ALIGNMENTS as usize] = [
-    [0, 6, 2, 8, 9, 11, 3, 5, 1, 4, 7, 10], // 0 = no centering
-    [1, 7, 0, 2, 9, 11, 4, 3, 5, 6, 8, 10], // 1 = center x
-    [3, 0, 5, 1, 9, 11, 2, 6, 4, 7, 8, 10], // 2 = center y
-    [4, 0, 1, 2, 9, 11, 3, 5, 6, 7, 8, 10], // 3 = center x & y
-    [0, 6, 2, 8, 10, 9, 3, 5, 1, 4, 7, 11], // 4 = center front (default)
-    [1, 7, 0, 2, 10, 3, 4, 5, 6, 8, 9, 11], // 5 = center front & x
-    [3, 0, 5, 1, 10, 2, 6, 7, 4, 8, 9, 11], // 6 = center front & y
-    [4, 0, 1, 2, 10, 3, 5, 6, 7, 8, 9, 11], // 7 = center front & x & y
+// This map is copied from the kle-serial source code with indices and values swapped. Note the
+// blanks are also filled in, so we're slightly more permissive with not-strictly-valid KLE input.
+const KLE_2_ORD: [[u8; NUM_LEGENDS]; NUM_ALIGNMENTS] = [
+    [0, 8, 2, 6, 9, 7, 1, 10, 3, 4, 11, 5], // 0 = no centering
+    [2, 0, 3, 7, 6, 8, 9, 1, 10, 4, 11, 5], // 1 = center x
+    [1, 3, 6, 0, 8, 2, 7, 9, 10, 4, 11, 5], // 2 = center y
+    [1, 2, 3, 6, 0, 7, 8, 9, 10, 4, 11, 5], // 3 = center x & y
+    [0, 8, 2, 6, 9, 7, 1, 10, 3, 5, 4, 11], // 4 = center front (default)
+    [2, 0, 3, 5, 6, 7, 8, 1, 9, 10, 4, 11], // 5 = center front & x
+    [1, 3, 5, 0, 8, 2, 6, 7, 9, 10, 4, 11], // 6 = center front & y
+    [1, 2, 3, 5, 0, 6, 7, 8, 9, 10, 4, 11], // 7 = center front & x & y
 ];
 
 #[derive(Deserialize, Default, Debug, Clone)]
@@ -153,11 +153,11 @@ impl<'de> Deserialize<'de> for RawKleFile {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
-struct LegendAlignment(u8);
+struct LegendAlignment(usize);
 
 impl LegendAlignment {
     fn new(alignment: u8) -> Self {
-        Self(alignment.max(0).min(NUM_ALIGNMENTS - 1))
+        Self(usize::from(alignment).clamp(0, NUM_ALIGNMENTS - 1))
     }
 
     fn default() -> Self {
@@ -183,12 +183,12 @@ struct KeyProps {
     // Persistent properties
     c: Color, // color
     // Note: t stores the default color while ta stores the array, so slightly different from KLE
-    t: Color,           // legend color
-    ta: Vec<Color>,     // legend color array
-    a: LegendAlignment, // alignment
-    p: String,          // profile
-    f: u8,              // font size
-    fa: Vec<u8>,        // font size array
+    t: Color,                 // legend color
+    ta: [Color; NUM_LEGENDS], // legend color array
+    a: LegendAlignment,       // alignment
+    p: String,                // profile
+    f: u8,                    // font size
+    fa: [u8; NUM_LEGENDS],    // font size array
 }
 
 impl KeyProps {
@@ -210,40 +210,43 @@ impl KeyProps {
             d: false,
             c: Color::default_key(),
             t: Color::default_legend(),
-            ta: vec![Color::default_legend(); NUM_LEGENDS as usize],
+            ta: [Color::default_legend(); NUM_LEGENDS],
             a: LegendAlignment::default(),
             p: String::new(),
             f: DEFAULT_FONT_SIZE,
-            fa: vec![DEFAULT_FONT_SIZE; NUM_LEGENDS as usize],
+            fa: [DEFAULT_FONT_SIZE; NUM_LEGENDS],
         }
     }
 
     fn update(&self, props: RawKleProps) -> Self {
         let f = props.f.unwrap_or(self.f);
         let fa = if let Some(fa) = props.fa {
-            fa.iter()
-                .map(|&fa| if fa == 0 { f } else { fa })
-                .chain(iter::repeat(f))
-                .take(NUM_LEGENDS as usize)
-                .collect()
+            array_init::from_iter(
+                fa.into_iter()
+                    .map(|fa| if fa == 0 { f } else { fa })
+                    .chain(iter::repeat(f)),
+            )
+            .unwrap() // Can't panic due to the iter::repeat
         } else if let Some(f2) = props.f2 {
-            iter::once(f)
-                .chain(iter::repeat(f2))
-                .take(NUM_LEGENDS as usize)
-                .collect()
+            array_init::array_init(|i| if i == 0 { f } else { f2 })
         } else if let Some(f) = props.f {
-            vec![f; NUM_LEGENDS as usize]
+            [f; NUM_LEGENDS]
         } else {
-            self.fa.clone()
+            self.fa
         };
 
-        let t = props.t.as_ref().and_then(|t| t[0]).unwrap_or(self.t);
-        let ta = props.t.map_or(self.ta.clone(), |ta| {
-            ta.iter()
-                .map(|c| c.unwrap_or(t))
-                .chain(iter::repeat(t))
-                .take(NUM_LEGENDS as usize)
-                .collect()
+        let t = props
+            .t
+            .as_ref()
+            .and_then(|v| v.get(0).copied().flatten())
+            .unwrap_or(self.t);
+        let ta = props.t.map_or(self.ta, |ta| {
+            array_init::from_iter(
+                ta.into_iter()
+                    .map(|c| c.unwrap_or(t))
+                    .chain(iter::repeat(t)),
+            )
+            .unwrap() // Can't panic due to the iter::repeat
         });
 
         Self {
@@ -297,22 +300,22 @@ impl KeyProps {
         }
     }
 
-    fn to_key(&self, legends: Vec<String>) -> Result<Key> {
+    fn to_key(&self, legends: &[String; NUM_LEGENDS]) -> Result<Key> {
         // Use (x + x2) if (x2 < 0). Needed because we always measure position to the top left
         // corner of the key rather than just the primary rectangle
         let position = Point::new(self.x + self.x2.min(0.), self.y + self.y2.min(0.));
         let size = KeySize::new(self.w, self.h, self.x2, self.y2, self.w2, self.h2)?;
 
         let is_scooped = ["scoop", "deep", "dish"]
-            .iter()
+            .into_iter()
             .map(|pat| self.p.contains(pat))
             .any(|b| b);
         let is_barred = ["bar", "line"]
-            .iter()
+            .into_iter()
             .map(|pat| self.p.contains(pat))
             .any(|b| b);
         let is_bumped = ["bump", "dot", "nub", "nipple"]
-            .iter()
+            .into_iter()
             .map(|pat| self.p.contains(pat))
             .any(|b| b);
 
@@ -338,8 +341,8 @@ impl KeyProps {
             key_type,
             self.c,
             realign(legends, self.a),
-            realign(self.fa.clone(), self.a),
-            realign(self.ta.clone(), self.a),
+            realign(&self.fa, self.a),
+            realign(&self.ta, self.a),
         ))
     }
 }
@@ -365,14 +368,15 @@ impl FromKle for Layout {
                         props = props.update(*raw_props);
                     }
                     RawKleRowItem::String(legends) => {
-                        let legend_array = legends
-                            .lines()
-                            .map(String::from)
-                            .chain(std::iter::repeat(String::new()))
-                            .take(NUM_LEGENDS as usize)
-                            .collect::<Vec<_>>();
+                        let legend_array = array_init::from_iter(
+                            legends
+                                .lines()
+                                .map(String::from)
+                                .chain(std::iter::repeat(String::new())),
+                        )
+                        .unwrap(); // Can't panic due to the iter::repeat
 
-                        let key = props.to_key(legend_array)?;
+                        let key = props.to_key(&legend_array)?;
 
                         // Need to subtract 0,0 to keeps types consistent (point - point = size)
                         size = size.max((key.position - Point::new(0., 0.)) + key.size.size());
@@ -388,28 +392,29 @@ impl FromKle for Layout {
     }
 }
 
-fn realign<T: std::fmt::Debug + Clone>(values: Vec<T>, alignment: LegendAlignment) -> Vec<T> {
-    let alignment = if (alignment.0 as usize) > KLE_2_ORD.len() {
+fn realign<T: Clone>(values: &[T; NUM_LEGENDS], alignment: LegendAlignment) -> [[T; 3]; 3] {
+    let alignment = if alignment.0 > KLE_2_ORD.len() {
         LegendAlignment::default() // This is the default used by KLE
     } else {
         alignment
     };
 
-    assert_eq!(values.len(), NUM_LEGENDS as usize);
+    // Rearrange values based on the mapping
+    let values = KLE_2_ORD[alignment.0].iter().map(|&i| &values[i as usize]);
 
-    values
-        .into_iter()
-        .zip(KLE_2_ORD[alignment.0 as usize].iter())
-        .sorted_by_key(|(_v, &i)| i)
-        .map(|(v, _i)| v)
-        .take(9)
-        .collect()
+    // Reshape into [[T; 3]; 3]
+    array_init::from_iter(
+        values
+            .chunks(3)
+            .into_iter()
+            .map(|chunk| array_init::from_iter(chunk.cloned()).unwrap()),
+    )
+    .unwrap() // Guaranteed not to panic since input is longer than output
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layout::LegendMap;
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
 
@@ -490,11 +495,11 @@ mod tests {
         assert_eq!(keyprops.d, false);
         assert_eq!(keyprops.c, Color::default_key());
         assert_eq!(keyprops.t, Color::default_legend());
-        assert_eq!(keyprops.ta, [Color::default_legend(); NUM_LEGENDS as usize]);
+        assert_eq!(keyprops.ta, [Color::default_legend(); NUM_LEGENDS]);
         assert_eq!(keyprops.a, LegendAlignment::default());
         assert_eq!(keyprops.p, "".to_string());
         assert_eq!(keyprops.f, 3);
-        assert_eq!(keyprops.fa, [3; NUM_LEGENDS as usize]);
+        assert_eq!(keyprops.fa, [3; NUM_LEGENDS]);
     }
 
     #[test]
@@ -534,14 +539,11 @@ mod tests {
         assert_eq!(keyprops1.d, false);
         assert_eq!(keyprops1.c, Color::default_key());
         assert_eq!(keyprops1.t, Color::default_legend());
-        assert_eq!(
-            keyprops1.ta,
-            [Color::default_legend(); NUM_LEGENDS as usize]
-        );
+        assert_eq!(keyprops1.ta, [Color::default_legend(); NUM_LEGENDS]);
         assert_eq!(keyprops1.a, LegendAlignment::default());
         assert_eq!(keyprops1.p, "".to_string());
         assert_eq!(keyprops1.f, 3);
-        assert_eq!(keyprops1.fa, [3; NUM_LEGENDS as usize]);
+        assert_eq!(keyprops1.fa, [3; NUM_LEGENDS]);
 
         let rawprops2 = RawKleProps {
             x: Some(1.),
@@ -602,7 +604,7 @@ mod tests {
         assert_eq!(keyprops2.a, LegendAlignment::new(5));
         assert_eq!(keyprops2.p, "space".to_string());
         assert_eq!(keyprops2.f, 4);
-        assert_eq!(keyprops2.fa, [4; NUM_LEGENDS as usize]);
+        assert_eq!(keyprops2.fa, [4; NUM_LEGENDS]);
 
         let rawprops3 = RawKleProps {
             f: Some(2),
@@ -617,7 +619,7 @@ mod tests {
             ..RawKleProps::default()
         };
         let keyprops4 = keyprops3.update(rawprops4);
-        assert_eq!(keyprops4.fa, [5; NUM_LEGENDS as usize]);
+        assert_eq!(keyprops4.fa, [5; NUM_LEGENDS]);
     }
 
     #[test]
@@ -666,7 +668,7 @@ mod tests {
 
     #[test]
     fn test_keyprops_to_key() {
-        let legends = vec![
+        let legends = [
             "A".into(),
             "B".into(),
             "C".into(),
@@ -680,72 +682,63 @@ mod tests {
             "K".into(),
             "L".into(),
         ];
-        let ordered = vec![
-            "A".to_string(),
-            "I".into(),
-            "C".into(),
-            "G".into(),
-            "J".into(),
-            "H".into(),
-            "B".into(),
-            "K".into(),
-            "D".into(),
+        let ordered = [
+            ["A".to_string(), "I".into(), "C".into()],
+            ["G".into(), "J".into(), "H".into()],
+            ["B".into(), "K".into(), "D".into()],
         ];
 
         let keyprops1 = KeyProps::default();
-        let key1 = keyprops1.to_key(legends.clone()).unwrap();
+        let key1 = keyprops1.to_key(&legends).unwrap();
 
         assert_eq!(key1.position, Point::new(0., 0.));
         assert_eq!(key1.size, KeySize::Normal(Size::new(1., 1.)));
         assert_eq!(key1.key_type, KeyType::Normal);
         assert_eq!(key1.key_color, Color::default_key());
-        assert_eq!(key1.legend, LegendMap::new(ordered));
-        assert_eq!(key1.legend_size, LegendMap::new(vec![3; 9]));
-        assert_eq!(
-            key1.legend_color,
-            LegendMap::new(vec![Color::default_legend(); 9])
-        );
+        assert_eq!(key1.legend, ordered);
+        assert_eq!(key1.legend_size, [[3; 3]; 3]);
+        assert_eq!(key1.legend_color, [[Color::default_legend(); 3]; 3]);
 
         let keyprops2 = KeyProps {
             d: true,
             ..keyprops1
         };
-        let key2 = keyprops2.to_key(legends.clone()).unwrap();
+        let key2 = keyprops2.to_key(&legends).unwrap();
         assert_eq!(key2.key_type, KeyType::None);
 
         let keyprops3 = KeyProps {
             n: true,
             ..keyprops2
         };
-        let key3 = keyprops3.to_key(legends.clone()).unwrap();
+        let key3 = keyprops3.to_key(&legends).unwrap();
         assert_eq!(key3.key_type, KeyType::Homing(None));
 
         let keyprops4 = KeyProps {
             p: "space".into(),
             ..keyprops3
         };
-        let key4 = keyprops4.to_key(legends.clone()).unwrap();
+        let key4 = keyprops4.to_key(&legends).unwrap();
         assert_eq!(key4.key_type, KeyType::Space);
 
         let keyprops5 = KeyProps {
             p: "scoop".into(),
             ..keyprops4
         };
-        let key5 = keyprops5.to_key(legends.clone()).unwrap();
+        let key5 = keyprops5.to_key(&legends).unwrap();
         assert_eq!(key5.key_type, KeyType::Homing(Some(HomingType::Scoop)));
 
         let keyprops6 = KeyProps {
             p: "bar".into(),
             ..keyprops5
         };
-        let key6 = keyprops6.to_key(legends.clone()).unwrap();
+        let key6 = keyprops6.to_key(&legends).unwrap();
         assert_eq!(key6.key_type, KeyType::Homing(Some(HomingType::Bar)));
 
         let keyprops7 = KeyProps {
             p: "bump".into(),
             ..keyprops6
         };
-        let key7 = keyprops7.to_key(legends.clone()).unwrap();
+        let key7 = keyprops7.to_key(&legends).unwrap();
         assert_eq!(key7.key_type, KeyType::Homing(Some(HomingType::Bump)));
     }
 
@@ -794,7 +787,7 @@ mod tests {
 
     #[test]
     fn test_realign() {
-        let legends = vec![
+        let legends = [
             "A".to_string(),
             "B".into(),
             "C".into(),
@@ -808,11 +801,11 @@ mod tests {
             "K".into(),
             "L".into(),
         ];
-        let result = vec!["A", "I", "C", "G", "J", "H", "B", "K", "D"];
+        let result = [["A", "I", "C"], ["G", "J", "H"], ["B", "K", "D"]];
 
-        assert_eq!(realign(legends.clone(), LegendAlignment::default()), result);
+        assert_eq!(realign(&legends, LegendAlignment::default()), result);
 
         // Using an invalid alignment so it should fall back to the default
-        assert_eq!(realign(legends, LegendAlignment(42)), result);
+        assert_eq!(realign(&legends, LegendAlignment(42)), result);
     }
 }
