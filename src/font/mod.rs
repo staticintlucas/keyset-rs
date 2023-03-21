@@ -124,19 +124,23 @@ impl Font {
 
 impl OutlineBuilder for crate::utils::Path {
     fn move_to(&mut self, x: f32, y: f32) {
-        self.abs_move(Point::new(x, y));
+        // Y axis is flipped in fonts compared to SVGs
+        self.abs_move(Point::new(x, -y));
     }
 
     fn line_to(&mut self, x: f32, y: f32) {
-        self.abs_line(Point::new(x, y));
+        // Y axis is flipped in fonts compared to SVGs
+        self.abs_line(Point::new(x, -y));
     }
 
     fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
-        self.abs_quadratic_bezier(Point::new(x1, y1), Point::new(x, y));
+        // Y axis is flipped in fonts compared to SVGs
+        self.abs_quadratic_bezier(Point::new(x1, -y1), Point::new(x, -y));
     }
 
     fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
-        self.abs_cubic_bezier(Point::new(x1, y1), Point::new(x2, y2), Point::new(x, y));
+        // Y axis is flipped in fonts compared to SVGs
+        self.abs_cubic_bezier(Point::new(x1, -y1), Point::new(x2, -y2), Point::new(x, -y));
     }
 
     fn close(&mut self) {
