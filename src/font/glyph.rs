@@ -2,7 +2,6 @@ use std::f32::consts::PI;
 
 use crate::utils::{Path, Point, Scale, Size};
 
-use log::warn;
 use ttf_parser::{Face, GlyphId};
 
 #[derive(Clone, Debug)]
@@ -13,22 +12,12 @@ pub struct Glyph {
 
 impl Glyph {
     pub fn new(face: &Face, gid: GlyphId) -> Option<Self> {
-        let advance = face.glyph_hor_advance(gid).map_or_else(
-            || {
-                warn!("no horizontal advance for glyph");
-                0.
-            },
-            f32::from,
-        );
+        let advance = f32::from(face.glyph_hor_advance(gid)?);
 
         let mut path = Path::new();
-        face.outline_glyph(gid, &mut path)?;
+        let _ = face.outline_glyph(gid, &mut path);
 
-        if path.data.is_empty() {
-            None // unreachable!() - outline_glyph should already have returned None
-        } else {
-            Some(Self { advance, path })
-        }
+        Some(Self { advance, path })
     }
 
     pub fn notdef(cap_height: f32, slope: f32) -> Self {
