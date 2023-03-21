@@ -30,19 +30,9 @@ impl PathSegment {
     }
 
     pub fn translate(&mut self, dist: Size) {
-        match self {
-            Move(point) => *point += dist,
-            Line(line_dist) => *line_dist += dist,
-            CubicBezier(ctrl1, ctrl2, curve_dist) => {
-                *ctrl1 += dist;
-                *ctrl2 += dist;
-                *curve_dist += dist;
-            }
-            QuadraticBezier(ctrl1, curve_dist) => {
-                *ctrl1 += dist;
-                *curve_dist += dist;
-            }
-            Close => (),
+        // Everything else is relative distance
+        if let Move(point) = self {
+            *point += dist;
         }
     }
 
@@ -173,9 +163,9 @@ mod tests {
         ];
         let expected = vec![
             Move(Point::new(2., 2.)),
-            Line(Size::new(2., 2.)),
-            CubicBezier(Size::new(1., 1.5), Size::new(1.5, 2.), Size::new(2., 2.)),
-            QuadraticBezier(Size::new(1., 2.), Size::new(2., 2.)),
+            Line(Size::new(1., 1.)),
+            CubicBezier(Size::new(0., 0.5), Size::new(0.5, 1.), Size::new(1., 1.)),
+            QuadraticBezier(Size::new(0., 1.), Size::new(1., 1.)),
             Close,
         ];
 
