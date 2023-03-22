@@ -15,17 +15,17 @@ use self::kerning::Kerning;
 
 #[derive(Clone, Debug)]
 pub struct Font {
-    name: String,
-    em_size: f32,
-    cap_height: f32,
-    x_height: f32,
-    ascent: f32,
-    descent: f32,
-    line_height: f32,
-    slope: f32,
-    glyphs: HashMap<char, Glyph>,
-    notdef: Glyph,
-    kerning: Kerning,
+    pub name: String,
+    pub em_size: f32,
+    pub cap_height: f32,
+    pub x_height: f32,
+    pub ascent: f32,
+    pub descent: f32,
+    pub line_height: f32,
+    pub slope: f32,
+    pub glyphs: HashMap<char, Glyph>,
+    pub notdef: Glyph,
+    pub kerning: Kerning,
 }
 
 impl Font {
@@ -75,10 +75,10 @@ impl Font {
         let glyphs: HashMap<_, _> = codepoints
             .iter()
             .filter_map(|&cp| Some((cp, face.glyph_index(cp)?)))
-            .filter_map(|(cp, gid)| Some((cp, Glyph::new(&face, gid)?)))
+            .filter_map(|(cp, gid)| Some((cp, Glyph::new(&face, Some(cp), gid)?)))
             .collect();
 
-        let notdef = if let Some(glyph) = Glyph::new(&face, GlyphId(0)) {
+        let notdef = if let Some(glyph) = Glyph::new(&face, None, GlyphId(0)) {
             glyph
         } else {
             warn!("no valid outline for glyph .notdef in font {name:?}");

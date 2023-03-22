@@ -67,6 +67,52 @@ macro_rules! vector_type {
                 Self::new(tuple.0, tuple.1)
             }
         }
+
+        impl<T: Copy> Mul<T> for $name
+        where
+            f32: Mul<T, Output = f32>,
+        {
+            type Output = Self;
+
+            #[inline]
+            fn mul(self, scale: T) -> Self::Output {
+                Self::Output::new(self.$x * scale, self.$y * scale)
+            }
+        }
+
+        impl<T: Copy> MulAssign<T> for $name
+        where
+            f32: MulAssign<T>,
+        {
+            #[inline]
+            fn mul_assign(&mut self, scale: T) {
+                self.$x *= scale;
+                self.$y *= scale;
+            }
+        }
+
+        impl<T: Copy> Div<T> for $name
+        where
+            f32: Div<T, Output = f32>,
+        {
+            type Output = Self;
+
+            #[inline]
+            fn div(self, scale: T) -> Self::Output {
+                Self::Output::new(self.$x / scale, self.$y / scale)
+            }
+        }
+
+        impl<T: Copy> DivAssign<T> for $name
+        where
+            f32: DivAssign<T>,
+        {
+            #[inline]
+            fn div_assign(&mut self, scale: T) {
+                self.$x /= scale;
+                self.$y /= scale;
+            }
+        }
     };
 
     ($name:ident, $x:ident, $y:ident, diff_no_dup=($diff:ident, $dx:ident, $dy:ident)) => {
@@ -106,29 +152,6 @@ macro_rules! vector_type {
             }
         }
 
-        impl<T: Copy> Mul<T> for $name
-        where
-            f32: Mul<T, Output = f32>,
-        {
-            type Output = Self;
-
-            #[inline]
-            fn mul(self, scale: T) -> Self::Output {
-                Self::Output::new(self.$x * scale, self.$y * scale)
-            }
-        }
-
-        impl<T: Copy> MulAssign<T> for $name
-        where
-            f32: MulAssign<T>,
-        {
-            #[inline]
-            fn mul_assign(&mut self, scale: T) {
-                self.$x *= scale;
-                self.$y *= scale;
-            }
-        }
-
         impl Mul<Scale> for $name {
             type Output = Self;
 
@@ -143,29 +166,6 @@ macro_rules! vector_type {
             fn mul_assign(&mut self, scale: Scale) {
                 self.$x *= scale.x;
                 self.$y *= scale.y;
-            }
-        }
-
-        impl<T: Copy> Div<T> for $name
-        where
-            f32: Div<T, Output = f32>,
-        {
-            type Output = Self;
-
-            #[inline]
-            fn div(self, scale: T) -> Self::Output {
-                Self::Output::new(self.$x / scale, self.$y / scale)
-            }
-        }
-
-        impl<T: Copy> DivAssign<T> for $name
-        where
-            f32: DivAssign<T>,
-        {
-            #[inline]
-            fn div_assign(&mut self, scale: T) {
-                self.$x /= scale;
-                self.$y /= scale;
             }
         }
 

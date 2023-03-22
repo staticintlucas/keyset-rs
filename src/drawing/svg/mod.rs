@@ -1,3 +1,4 @@
+mod font;
 mod path;
 mod profile;
 
@@ -8,7 +9,8 @@ use crate::drawing::Drawing;
 use crate::layout::Key;
 use crate::utils::{Scale, Size, Trim};
 
-use profile::Draw;
+use font::Draw as _;
+use profile::Draw as _;
 
 pub trait ToSvg {
     fn to_svg(&self) -> String;
@@ -47,36 +49,23 @@ impl Drawing {
 
         let result = Group::new().set("transform", format!("translate({}, {})", pos.x, pos.y));
 
-        let result = if self.options.show_keys {
-            self.profile
-                .draw_key(key)
-                .into_iter()
-                .fold(result, Group::add)
-        } else {
-            result
-        };
-
-        // let result =
-        if self.options.show_margin {
-            self.profile
-                .draw_margin(key)
-                .into_iter()
-                .fold(result, Group::add)
-        } else {
-            result
+        let mut elements = vec![];
+        if self.options.show_keys {
+            elements.extend(self.profile.draw_key(key));
         }
+        if self.options.show_margin {
+            elements.extend(self.profile.draw_margin(key));
+        }
+        elements.extend(self.font.draw_legends(&self.profile, key));
 
-        // if show_legend_border {
-        //     result.add(self.profile.draw_legend_rect(key));
-        // }
-        //
-        // let result = result.add(self.font.draw_legends(key))
+        elements.into_iter().fold(result, Group::add)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::drawing::DrawingOptions;
+    use crate::font::Font;
     use crate::layout::tests::test_key;
     use crate::layout::Layout;
     use crate::profile::Profile;
@@ -91,8 +80,9 @@ mod tests {
             keys: vec![],
         };
         let profile = Profile::default();
+        let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
         let options = DrawingOptions::default();
-        let drawing = Drawing::new(layout, profile, options);
+        let drawing = Drawing::new(layout, profile, font, options);
 
         assert_eq!(
             drawing.to_svg(),
@@ -107,29 +97,29 @@ mod tests {
             size: Size::new(1., 1.),
             keys: vec![],
         };
+        let profile = Profile::default();
+        let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
 
         let test_config = vec![
-            (DrawingOptions::default(), 2),
+            (DrawingOptions::default(), 6),
             (
                 DrawingOptions {
                     show_keys: false,
                     ..DrawingOptions::default()
                 },
-                0,
+                4,
             ),
             (
                 DrawingOptions {
                     show_margin: true,
                     ..DrawingOptions::default()
                 },
-                3,
+                7,
             ),
         ];
 
-        let profile = Profile::default();
-
         for (options, len) in test_config {
-            let drawing = Drawing::new(layout.clone(), profile.clone(), options);
+            let drawing = Drawing::new(layout.clone(), profile.clone(), font.clone(), options);
             let group = drawing.draw_key(&key);
 
             assert_eq!(group.get_children().len(), len);

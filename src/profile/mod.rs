@@ -130,7 +130,7 @@ impl TextHeight {
         }
     }
 
-    fn get(&self, kle_font_size: u8) -> f32 {
+    pub fn get(&self, kle_font_size: u8) -> f32 {
         let font_usize = usize::from(kle_font_size);
         if font_usize < self.0.len() {
             self.0[font_usize]

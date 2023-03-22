@@ -6,18 +6,23 @@ use ttf_parser::{Face, GlyphId};
 
 #[derive(Clone, Debug)]
 pub struct Glyph {
+    pub codepoint: Option<char>,
     pub advance: f32,
     pub path: Path,
 }
 
 impl Glyph {
-    pub fn new(face: &Face, gid: GlyphId) -> Option<Self> {
+    pub fn new(face: &Face, codepoint: Option<char>, gid: GlyphId) -> Option<Self> {
         let advance = f32::from(face.glyph_hor_advance(gid)?);
 
         let mut path = Path::new();
         let _ = face.outline_glyph(gid, &mut path);
 
-        Some(Self { advance, path })
+        Some(Self {
+            codepoint,
+            advance,
+            path,
+        })
     }
 
     pub fn notdef(cap_height: f32, slope: f32) -> Self {
@@ -58,6 +63,7 @@ impl Glyph {
         path.skew_x(slope * PI / 180.);
 
         Self {
+            codepoint: None,
             advance: path.bounds.w,
             path,
         }
@@ -75,17 +81,17 @@ mod tests {
         let demo = std::fs::read("tests/fonts/demo.ttf").unwrap();
         let demo = Face::parse(&demo, 0).unwrap();
 
-        let a = Glyph::new(&demo, GlyphId(1)).unwrap();
+        let a = Glyph::new(&demo, Some('A'), GlyphId(1)).unwrap();
         assert_approx_eq!(a.advance, 540.);
         assert_eq!(a.path.data.len(), 15);
 
         let null = std::fs::read("tests/fonts/null.ttf").unwrap();
         let null = Face::parse(&null, 0).unwrap();
 
-        let a = Glyph::new(&null, GlyphId(1));
+        let a = Glyph::new(&null, Some('A'), GlyphId(1));
         assert!(a.is_none()); // Glyph not found
 
-        let notdef = Glyph::new(&null, GlyphId(0));
+        let notdef = Glyph::new(&null, None, GlyphId(0));
         assert!(notdef.is_none()); // Glyph has no outline
     }
 

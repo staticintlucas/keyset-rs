@@ -4,6 +4,7 @@ pub use self::svg::ToSvg;
 
 use crate::layout::Layout;
 use crate::profile::Profile;
+use crate::Font;
 
 pub struct DrawingOptions {
     pub dpi: f32,
@@ -24,16 +25,18 @@ impl Default for DrawingOptions {
 pub struct Drawing {
     layout: Layout,
     profile: Profile,
+    font: Font,
     options: DrawingOptions,
 }
 
 impl Drawing {
     #[inline]
     #[must_use]
-    pub fn new(layout: Layout, profile: Profile, options: DrawingOptions) -> Self {
+    pub fn new(layout: Layout, profile: Profile, font: Font, options: DrawingOptions) -> Self {
         Self {
             layout,
             profile,
+            font,
             options,
         }
     }
@@ -54,8 +57,9 @@ mod tests {
             keys: vec![],
         };
         let profile = Profile::default();
+        let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
         let options = DrawingOptions::default();
-        let drawing = Drawing::new(layout, profile, options);
+        let drawing = Drawing::new(layout, profile, font, options);
 
         assert_approx_eq!(drawing.options.dpi, 96.);
         assert_eq!(drawing.layout.keys.len(), 0);

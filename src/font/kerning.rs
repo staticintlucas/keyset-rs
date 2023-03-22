@@ -32,15 +32,15 @@ impl Kerning {
     }
 }
 
+impl Default for Kerning {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_new() {
-        let kerning = Kerning::new();
-        assert_eq!(kerning.pairs, hashmap! {});
-    }
 
     #[test]
     fn test_get() {
@@ -84,5 +84,11 @@ mod tests {
         kerning.set('A', 'B', 0.);
 
         assert!(!kerning.is_empty());
+    }
+
+    #[test]
+    fn test_default() {
+        let kerning = Kerning::default();
+        assert_eq!(kerning.pairs, hashmap! {});
     }
 }

@@ -30,13 +30,11 @@ impl Path {
         } else if self.data.is_empty() {
             *self = other;
         } else {
-            let mov = if let PathSegment::Move(_) = other.data[0] {
-                None
-            } else {
-                // Add leading move to 0,0 if we don't already start with a move
-                Some(PathSegment::Move(Point::new(0., 0.)))
-            };
-            self.data.extend(mov.into_iter().chain(other.data));
+            // Add leading move to 0,0 if we don't already start with a move
+            if !matches!(other.data[0], PathSegment::Move(..)) {
+                self.data.push(PathSegment::Move(Point::new(0., 0.)));
+            }
+            self.data.extend(other.data);
 
             let sp = (
                 self.bounds.position(),
