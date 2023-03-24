@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
-use keyset_rs::*;
+use keyset::*;
 
 fn main() {
     let kle = r#"[
