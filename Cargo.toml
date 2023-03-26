@@ -1,7 +1,7 @@
 [package]
 name = "keyset"
-version = "0.1.0"
-authors = ["Lucas Jansen <7199136+staticintlucas@users.noreply.github.com>"]
+version = "0.1.0-alpha0"
+authors = ["Lucas Jansen"]
 edition = "2021"
 rust-version = "1.60"
 description = "A Rust tool to create pretty keyset layout diagrams using correct fonts and icons."
@@ -9,9 +9,6 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/staticintlucas/keyset-rs"
 keywords = ["keyboard", "keycap", "keyset", "layout", "diagram"]
 categories = ["command-line-utilities", "graphics", "multimedia::images", "rendering"]
-
-[lib]
-crate-type = ["rlib"]
 
 [dependencies]
 itertools = "0.10"
