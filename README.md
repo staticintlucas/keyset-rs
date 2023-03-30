@@ -16,7 +16,9 @@ Current minimum supported Rust version is 1.60.0, although this is subject to ch
 
 ## Installation
 
-Coming soon
+```sh
+cargo install keyset
+```
 
 ## Usage
 
@@ -30,8 +32,10 @@ Please make sure to update tests as appropriate.
 
 You can install the [pre-commit] hook (which checks formatting, etc) by running:
 
-    pip install -U pre-commit
-    pre-commit install
+```sh
+pip install -U pre-commit
+pre-commit install
+```
 
 [pre-commit]: https://pre-commit.com/
 
@@ -39,8 +43,8 @@ You can install the [pre-commit] hook (which checks formatting, etc) by running:
 
 Licensed under either of
 
-* Apache License, Version 2.0 ([LICENCE-APACHE] or [http://www.apache.org/licenses/LICENSE-2.0])
-* MIT license ([LICENCE-MIT] or [http://opensource.org/licenses/MIT])
+* Apache License, Version 2.0 ([LICENCE-APACHE](LICENCE-APACHE) or [http://www.apache.org/licenses/LICENSE-2.0][apache-licence])
+* MIT license ([LICENCE-MIT](LICENCE-MIT) or [http://opensource.org/licenses/MIT][mit-licence])
 
 at your option.
 
@@ -48,7 +52,5 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 this crate by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without
 any additional terms or conditions.
 
-[LICENCE-APACHE]: LICENCE-APACHE
-[http://www.apache.org/licenses/LICENSE-2.0]: http://www.apache.org/licenses/LICENSE-2.0
-[LICENCE-MIT]: LICENCE-MIT
-[http://opensource.org/licenses/MIT]: http://opensource.org/licenses/MIT
+[apache-licence]: http://www.apache.org/licenses/LICENSE-2.0
+[mit-licence]: http://opensource.org/licenses/MIT
