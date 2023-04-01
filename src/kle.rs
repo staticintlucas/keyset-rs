@@ -9,7 +9,7 @@ use serde_json::{Map, Value};
 use crate::error::Result;
 use crate::layout::{Key, KeySize, KeyType, Layout};
 use crate::profile::HomingType;
-use crate::utils::{Color, Point, Size};
+use crate::utils::{Color, Vec2};
 
 // The number of legends on a key and number of alignment settings from KLE
 const NUM_LEGENDS: usize = 12;
@@ -303,7 +303,7 @@ impl KeyProps {
     fn to_key(&self, legends: &[String; NUM_LEGENDS]) -> Result<Key> {
         // Use (x + x2) if (x2 < 0). Needed because we always measure position to the top left
         // corner of the key rather than just the primary rectangle
-        let position = Point::new(self.x + self.x2.min(0.), self.y + self.y2.min(0.));
+        let position = Vec2::new(self.x + self.x2.min(0.), self.y + self.y2.min(0.));
         let size = KeySize::new(self.w, self.h, self.x2, self.y2, self.w2, self.h2)?;
 
         let is_scooped = ["scoop", "deep", "dish"]
@@ -359,7 +359,7 @@ impl FromKle for Layout {
 
         let mut props = KeyProps::default();
         let mut keys = vec![];
-        let mut size = Size::new(0., 0.);
+        let mut size = Vec2::ZERO;
 
         for row in raw.rows {
             for data in row {
@@ -379,7 +379,7 @@ impl FromKle for Layout {
                         let key = props.to_key(&legend_array)?;
 
                         // Need to subtract 0,0 to keeps types consistent (point - point = size)
-                        size = size.max((key.position - Point::new(0., 0.)) + key.size.size());
+                        size = size.max(key.position + key.size.size());
                         keys.push(key);
                         props = props.next_key();
                     }
@@ -691,8 +691,8 @@ mod tests {
         let keyprops1 = KeyProps::default();
         let key1 = keyprops1.to_key(&legends).unwrap();
 
-        assert_eq!(key1.position, Point::new(0., 0.));
-        assert_eq!(key1.size, KeySize::Normal(Size::new(1., 1.)));
+        assert_eq!(key1.position, Vec2::ZERO);
+        assert_eq!(key1.size, KeySize::Normal(Vec2::from(1.)));
         assert_eq!(key1.key_type, KeyType::Normal);
         assert_eq!(key1.key_color, Color::default_key());
         assert_eq!(key1.legend, ordered);
@@ -766,7 +766,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(result1.size, Size::new(2.5, 1.25));
+        assert_eq!(result1.size, Vec2::new(2.5, 1.25));
         assert_eq!(result1.keys.len(), 3);
         assert_approx_eq!(result1.keys[0].position.x, 0.0);
         assert_approx_eq!(result1.keys[1].position.x, 1.0);
@@ -781,7 +781,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(result2.size, Size::new(1., 1.));
+        assert_eq!(result2.size, Vec2::from(1.));
         assert_eq!(result2.keys.len(), 1);
     }
 

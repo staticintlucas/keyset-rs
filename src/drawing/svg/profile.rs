@@ -3,7 +3,7 @@ use svg::node::element::Path as SvgPath;
 
 use crate::layout::{Key, KeySize, KeyType};
 use crate::profile::{HomingType, Profile, ProfileType};
-use crate::utils::{Color, Path, Rect, RoundRect, Size};
+use crate::utils::{Color, Path, Rect, RoundRect, Vec2};
 
 use super::path::{EdgeType, KeyHelpers};
 
@@ -41,8 +41,8 @@ impl Draw for Profile {
             }
             KeySize::SteppedCaps => {
                 vec![
-                    self.draw_key_bottom(Size::new(1.75e3, 1e3), color),
-                    self.draw_key_top(typ, Size::new(1.25e3, 1e3), color, depth),
+                    self.draw_key_bottom(Vec2::new(1.75e3, 1e3), color),
+                    self.draw_key_top(typ, Vec2::new(1.25e3, 1e3), color, depth),
                     self.draw_step(color),
                 ]
             }
@@ -76,10 +76,10 @@ impl Draw for Profile {
             .map(|s| self.text_margin.get(s));
 
         let (pos_off, size_off) = match key.size {
-            KeySize::IsoHorizontal => (Size::new(0., 0.), Size::new(500., 0.)),
-            KeySize::IsoVertical => (Size::new(250., 0.), Size::new(250., 1000.)),
-            KeySize::SteppedCaps => (Size::new(0., 0.), Size::new(250., 0.)),
-            KeySize::Normal(size) => (Size::new(0., 0.), size * 1e3 - Size::new(1000., 1000.)),
+            KeySize::IsoHorizontal => (Vec2::ZERO, Vec2::new(500., 0.)),
+            KeySize::IsoVertical => (Vec2::new(250., 0.), Vec2::new(250., 1000.)),
+            KeySize::SteppedCaps => (Vec2::ZERO, Vec2::new(250., 0.)),
+            KeySize::Normal(size) => (Vec2::ZERO, (size - Vec2::from(1.)) * 1e3),
         };
 
         let (pos_off, size_off) = if key.key_type == KeyType::None {
@@ -92,14 +92,14 @@ impl Draw for Profile {
         };
 
         rects
-            .map(|r| Rect::from_point_and_size(r.position() + pos_off, r.size() + size_off))
+            .map(|r| Rect::new(r.position() + pos_off, r.size() + size_off))
             .map(|r| {
                 let mut path = Path::new();
                 path.abs_move(r.position());
-                path.rel_horiz_line(r.w);
-                path.rel_vert_line(r.h);
-                path.rel_horiz_line(-r.w);
-                path.rel_vert_line(-r.h);
+                path.rel_horiz_line(r.size().x);
+                path.rel_vert_line(r.size().y);
+                path.rel_horiz_line(-r.size().x);
+                path.rel_vert_line(-r.size().y);
                 path.close();
 
                 SvgPath::new()
@@ -113,7 +113,7 @@ impl Draw for Profile {
 }
 
 impl Profile {
-    fn draw_key_top(&self, key_type: KeyType, size: Size, color: Color, depth: f32) -> SvgPath {
+    fn draw_key_top(&self, key_type: KeyType, size: Vec2, color: Color, depth: f32) -> SvgPath {
         let rect = self.top_rect;
         let curve = (depth / 19.05 * 1e3) * 0.381;
 
@@ -162,7 +162,7 @@ impl Profile {
             .set("stroke-width", "10")
     }
 
-    fn draw_key_bottom(&self, size: Size, color: Color) -> SvgPath {
+    fn draw_key_bottom(&self, size: Vec2, color: Color) -> SvgPath {
         let rect = self.bottom_rect;
 
         let mut path = Path::start(rect);
@@ -185,26 +185,29 @@ impl Profile {
 
     fn draw_step(&self, color: Color) -> SvgPath {
         // Take dimensions from average of top and bottom, adjusting only x and width
-        let rect = RoundRect {
-            x: 1250. - (self.top_rect.x + self.bottom_rect.x) / 2.,
-            y: (self.top_rect.y + self.bottom_rect.y) / 2.,
-            w: 500. + (self.top_rect.rx + self.bottom_rect.rx),
-            h: (self.top_rect.h + self.bottom_rect.h) / 2.,
-            rx: (self.top_rect.rx + self.bottom_rect.rx) / 2.,
-            ry: (self.top_rect.ry + self.bottom_rect.ry) / 2.,
-        };
+        let rect = RoundRect::new(
+            Vec2::new(
+                1250. - (self.top_rect.position().x + self.bottom_rect.position().x) / 2.,
+                (self.top_rect.position().y + self.bottom_rect.position().y) / 2.,
+            ),
+            Vec2::new(
+                500. + (self.top_rect.radius().x + self.bottom_rect.radius().x),
+                (self.top_rect.size().y + self.bottom_rect.size().y) / 2.,
+            ),
+            (self.top_rect.radius() + self.bottom_rect.radius()) / 2.,
+        );
         // Just set 1u as the size, with the dimensions above it will all line up properly
-        let size = Size::new(1000., 1000.);
+        let size = Vec2::from(1e3);
 
         let radius = rect.radius();
         let mut path = Path::start(rect);
-        path.rel_arc(radius, 0., false, false, Size::new(-rect.rx, -rect.ry));
+        path.rel_arc(radius, 0., false, false, rect.radius() * -1.);
         path.edge_top(rect, size, EdgeType::Line, 0.);
         path.corner_top_right(rect);
         path.edge_right(rect, size, EdgeType::Line, 0.);
         path.corner_bottom_right(rect);
         path.edge_bottom(rect, size, EdgeType::Line, 0.);
-        path.rel_arc(radius, 0., false, false, Size::new(rect.rx, -rect.ry));
+        path.rel_arc(radius, 0., false, false, rect.radius() * Vec2::new(1., -1.));
         path.edge_left(rect, size, EdgeType::Line, 0.);
         path.close();
 
@@ -217,8 +220,8 @@ impl Profile {
 
     fn draw_iso_top(&self, key_type: KeyType, color: Color, depth: f32) -> SvgPath {
         let rect = self.top_rect;
-        let top_size = Size::new(1.5e3, 1e3);
-        let btm_size = Size::new(1.25e3, 2e3);
+        let top_size = Vec2::new(1.5e3, 1e3);
+        let btm_size = Vec2::new(1.25e3, 2e3);
         let curve = (depth / 19.05 * 1e3) * 0.381;
 
         let (edge_t, edge_r, edge_b, edge_l) = match (self.profile_type, key_type) {
@@ -257,8 +260,8 @@ impl Profile {
         path.edge_bottom(rect, btm_size, edge_b, curve);
         path.corner_bottom_left(rect);
 
-        let h_line = 0.25e3 - 2. * rect.rx;
-        let v_line = 1e3 - 2. * rect.ry;
+        let h_line = 0.25e3 - 2. * rect.radius().x;
+        let v_line = 1e3 - 2. * rect.radius().y;
         let h_curve = match edge_b {
             // Curve deflection of the horizontal line
             EdgeType::Line => 0.,
@@ -277,24 +280,30 @@ impl Profile {
         match edge_l {
             EdgeType::Line => path.rel_vert_line(-(v_line - h_curve)),
             EdgeType::CurveLineCurve => {
-                let radius = Path::radius(curve, rect.h);
-                path.rel_arc(radius, 0., false, true, Size::new(-v_curve, -rect.h / 2.));
-                path.rel_vert_line(-(v_line - rect.h / 2. - h_curve));
+                let radius = Path::radius(curve, rect.size().y);
+                path.rel_arc(
+                    radius,
+                    0.,
+                    false,
+                    true,
+                    Vec2::new(-v_curve, -rect.size().y / 2.),
+                );
+                path.rel_vert_line(-(v_line - rect.size().y / 2. - h_curve));
             }
             EdgeType::CurveStretch => {
                 // let radius = Path::radius(curve, 2. * v_line);
-                // path.rel_arc(radius, 0., false, true, Size::new(-v_curve, v_line))
+                // path.rel_arc(radius, 0., false, true, Vector::new(-v_curve, v_line))
                 unreachable!() // No vertical stretches currently possible
             }
             EdgeType::InsetCurve => {
                 let radius = Path::radius(curve, 2. * v_line);
-                path.rel_arc(radius, 0., false, false, Size::new(-v_curve, v_line));
+                path.rel_arc(radius, 0., false, false, Vec2::new(-v_curve, v_line));
             }
         };
 
         let radius = rect.radius();
-        path.rel_arc(radius, 0., false, false, Size::new(-rect.rx, -rect.ry));
-        path.rel_line(Size::new(-(h_line - v_curve), -h_curve));
+        path.rel_arc(radius, 0., false, false, rect.radius() * -1.);
+        path.rel_line(Vec2::new(-(h_line - v_curve), -h_curve));
         path.corner_bottom_left(rect);
         path.edge_left(rect, top_size, edge_l, curve);
         path.close();
@@ -308,8 +317,8 @@ impl Profile {
 
     fn draw_iso_bottom(&self, color: Color) -> SvgPath {
         let rect = self.bottom_rect;
-        let top_size = Size::new(1.5e3, 1e3);
-        let btm_size = Size::new(1.25e3, 2e3);
+        let top_size = Vec2::new(1.5e3, 1e3);
+        let btm_size = Vec2::new(1.25e3, 2e3);
 
         let radius = rect.radius();
         let mut path = Path::start(rect);
@@ -320,9 +329,9 @@ impl Profile {
         path.corner_bottom_right(rect);
         path.edge_bottom(rect, btm_size, EdgeType::Line, 0.);
         path.corner_bottom_left(rect);
-        path.rel_vert_line(-(1e3 - 2. * rect.ry));
-        path.rel_arc(radius, 0., false, false, Size::new(-rect.rx, -rect.ry));
-        path.rel_horiz_line(-(0.25e3 - 2. * rect.rx));
+        path.rel_vert_line(-(1e3 - 2. * rect.radius().y));
+        path.rel_arc(radius, 0., false, false, rect.radius() * -1.);
+        path.rel_horiz_line(-(0.25e3 - 2. * rect.radius().x));
         path.corner_bottom_left(rect);
         path.edge_left(rect, top_size, EdgeType::Line, 0.);
         path.close();
@@ -334,23 +343,32 @@ impl Profile {
             .set("stroke-width", "10")
     }
 
-    fn draw_homing_bar(&self, size: Size, color: Color) -> SvgPath {
-        let center = self.top_rect.center() + (size - Size::new(1e3, 1e3)) / 2.;
-        let rect = RoundRect {
-            x: center.x - self.homing.bar.width / 2.,
-            y: center.y - self.homing.bar.height / 2. + self.homing.bar.y_offset,
-            w: self.homing.bar.width,
-            h: self.homing.bar.height,
-            rx: self.homing.bar.height / 2.,
-            ry: self.homing.bar.height / 2.,
-        };
+    fn draw_homing_bar(&self, size: Vec2, color: Color) -> SvgPath {
+        let center = self.top_rect.center() + (size - Vec2::from(1e3)) / 2.;
+        let rect = RoundRect::new(
+            center - self.homing.bar.size / 2. + Vec2::new(0., self.homing.bar.y_offset),
+            self.homing.bar.size,
+            Vec2::from(self.homing.bar.size.y / 2.),
+        );
 
         let mut path = Path::new();
-        path.abs_move(rect.position() + Size::new(rect.rx, 0.));
-        path.rel_horiz_line(rect.w - 2. * rect.rx);
-        path.rel_arc(rect.radius(), 0., false, true, Size::new(0., 2. * rect.ry));
-        path.rel_horiz_line(-(rect.w - 2. * rect.rx));
-        path.rel_arc(rect.radius(), 0., false, true, Size::new(0., -2. * rect.ry));
+        path.abs_move(rect.position() + Vec2::new(rect.radius().x, 0.));
+        path.rel_horiz_line(rect.size().x - 2. * rect.radius().x);
+        path.rel_arc(
+            rect.radius(),
+            0.,
+            false,
+            true,
+            Vec2::new(0., 2. * rect.radius().y),
+        );
+        path.rel_horiz_line(-(rect.size().x - 2. * rect.radius().x));
+        path.rel_arc(
+            rect.radius(),
+            0.,
+            false,
+            true,
+            Vec2::new(0., -2. * rect.radius().y),
+        );
         path.close();
 
         SvgPath::new()
@@ -360,14 +378,14 @@ impl Profile {
             .set("stroke-width", "10")
     }
 
-    fn draw_homing_bump(&self, size: Size, color: Color) -> SvgPath {
-        let center = self.top_rect.center() + (size - Size::new(1e3, 1e3)) / 2.;
+    fn draw_homing_bump(&self, size: Vec2, color: Color) -> SvgPath {
+        let center = self.top_rect.center() + (size - Vec2::from(1e3)) / 2.;
         let r = self.homing.bump.diameter / 2.;
 
         let mut path = Path::new();
-        path.abs_move(center + Size::new(0., -r));
-        path.rel_arc(Size::new(r, r), 0., false, true, Size::new(0., 2. * r));
-        path.rel_arc(Size::new(r, r), 0., false, true, Size::new(0., -2. * r));
+        path.abs_move(center + Vec2::new(0., -r));
+        path.rel_arc(Vec2::from(r), 0., false, true, Vec2::new(0., 2. * r));
+        path.rel_arc(Vec2::from(r), 0., false, true, Vec2::new(0., -2. * r));
         path.close();
 
         SvgPath::new()
@@ -391,14 +409,14 @@ mod tests {
         let homing_bar = KeyType::Homing(Some(HomingType::Bar));
         let homing_bump = KeyType::Homing(Some(HomingType::Bump));
         let test_config = vec![
-            (KeySize::Normal(Size::new(1., 1.)), KeyType::Normal, 2),
+            (KeySize::Normal(Vec2::new(1., 1.)), KeyType::Normal, 2),
             (KeySize::SteppedCaps, KeyType::Normal, 3),
             (KeySize::IsoHorizontal, KeyType::Normal, 2),
             (KeySize::IsoVertical, KeyType::Normal, 2),
-            (KeySize::Normal(Size::new(1., 1.)), homing_scoop, 2),
-            (KeySize::Normal(Size::new(1., 1.)), homing_bar, 3),
-            (KeySize::Normal(Size::new(1., 1.)), homing_bump, 3),
-            (KeySize::Normal(Size::new(1., 1.)), KeyType::None, 0),
+            (KeySize::Normal(Vec2::new(1., 1.)), homing_scoop, 2),
+            (KeySize::Normal(Vec2::new(1., 1.)), homing_bar, 3),
+            (KeySize::Normal(Vec2::new(1., 1.)), homing_bump, 3),
+            (KeySize::Normal(Vec2::new(1., 1.)), KeyType::None, 0),
         ];
 
         for (size, key_type, len) in test_config {
@@ -420,11 +438,11 @@ mod tests {
         let profile = Profile::default();
         let key = test_key();
         let test_config = vec![
-            (KeySize::Normal(Size::new(1., 1.)), KeyType::Normal),
+            (KeySize::Normal(Vec2::new(1., 1.)), KeyType::Normal),
             (KeySize::SteppedCaps, KeyType::Normal),
             (KeySize::IsoHorizontal, KeyType::Normal),
             (KeySize::IsoVertical, KeyType::Normal),
-            (KeySize::Normal(Size::new(1., 1.)), KeyType::None),
+            (KeySize::Normal(Vec2::new(1., 1.)), KeyType::None),
         ];
 
         for (size, key_type) in test_config {
@@ -445,7 +463,7 @@ mod tests {
         let profile = Profile::default();
         let key = test_key();
         let homing_scoop = KeyType::Homing(Some(HomingType::Scoop));
-        let size = Size::new(1., 1.);
+        let size = Vec2::new(1., 1.);
         let profile_key_types = vec![
             (ProfileType::Cylindrical { depth: 1.0 }, KeyType::Normal),
             (ProfileType::Cylindrical { depth: 1.0 }, KeyType::Space),
@@ -478,7 +496,7 @@ mod tests {
     #[test]
     fn test_draw_key_bottom() {
         let profile = Profile::default();
-        let size = Size::new(1., 1.);
+        let size = Vec2::new(1., 1.);
 
         let path = profile.draw_key_bottom(size, Color::default_key());
 
@@ -539,7 +557,7 @@ mod tests {
     #[test]
     fn test_draw_homing_bar() {
         let profile = Profile::default();
-        let size = Size::new(1., 1.);
+        let size = Vec2::new(1., 1.);
 
         let path = profile.draw_homing_bar(size, Color::default_key());
 
@@ -549,7 +567,7 @@ mod tests {
     #[test]
     fn test_draw_homing_bump() {
         let profile = Profile::default();
-        let size = Size::new(1., 1.);
+        let size = Vec2::new(1., 1.);
 
         let path = profile.draw_homing_bump(size, Color::default_key());
 

@@ -4,7 +4,7 @@ use svg::node::element::Path as SvgPath;
 use crate::font::Font;
 use crate::layout::Key;
 use crate::profile::Profile;
-use crate::utils::{Path, Scale, Size};
+use crate::utils::{Path, Vec2};
 
 pub trait Draw {
     fn draw_legends(&self, profile: &Profile, key: &Key) -> Vec<SvgPath>;
@@ -27,9 +27,9 @@ impl Draw for Font {
                 let mut path = self.text_path(&text[i][j]);
 
                 let scale = profile.text_height.get(size[i][j]) / self.cap_height;
-                path.scale(Scale::new(scale, scale));
+                path.scale(Vec2::from(scale));
 
-                let align = Scale::new(
+                let align = Vec2::new(
                     (j as f32) / ((text.len() - 1) as f32),
                     (i as f32) / ((text[0].len() - 1) as f32),
                 );
@@ -74,7 +74,7 @@ impl Font {
             })
             .for_each(|(pos, glyph)| {
                 let mut glyph = glyph.path.clone();
-                glyph.translate(Size::new(pos, 0.));
+                glyph.translate(Vec2::new(pos, 0.));
                 path.append(glyph);
             });
         path

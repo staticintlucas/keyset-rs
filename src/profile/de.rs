@@ -4,7 +4,7 @@ use serde::de::{Error, Unexpected};
 use serde::{Deserialize, Deserializer};
 
 use crate::profile::{HomingProps, ProfileType, TextHeight, TextRect};
-use crate::utils::{Rect, RoundRect};
+use crate::utils::{Rect, RoundRect, Vec2};
 
 use super::{BarProps, BumpProps, Profile};
 
@@ -24,8 +24,7 @@ impl<'de> Deserialize<'de> for BarProps {
         RawBarProps::deserialize(deserializer).map(|props| {
             // Convert mm to milli units
             BarProps {
-                width: props.width * (1000. / 19.05),
-                height: props.height * (1000. / 19.05),
+                size: Vec2::new(props.width, props.height) * (1e3 / 19.05),
                 y_offset: props.y_offset * (1000. / 19.05),
             }
         })
@@ -66,13 +65,10 @@ where
 
     RawRect::deserialize(deserializer).map(|rect| {
         // Convert mm to milli units
-        let w = rect.width * (1000. / 19.05);
-        let h = rect.height * (1000. / 19.05);
+        let size = Vec2::new(rect.width, rect.height) * (1e3 / 19.05);
+        let position = ((Vec2::from(1e3)) - size) / 2.;
 
-        let x = 0.5 * (1000. - w);
-        let y = 0.5 * (1000. - h);
-
-        Rect::new(x, y, w, h)
+        Rect::new(position, size)
     })
 }
 
@@ -89,16 +85,11 @@ where
 
     RawRect::deserialize(deserializer).map(|rect| {
         // Convert mm to milli units
-        let w = rect.width * (1000. / 19.05);
-        let h = rect.height * (1000. / 19.05);
+        let size = Vec2::new(rect.width, rect.height) * (1e3 / 19.05);
+        let position = (Vec2::from(1e3) - size) / 2.;
+        let radius = Vec2::from(rect.radius * (1000. / 19.05));
 
-        let rx = rect.radius * (1000. / 19.05);
-        let ry = rx;
-
-        let x = 0.5 * (1000. - w);
-        let y = 0.5 * (1000. - h);
-
-        RoundRect::new(x, y, w, h, rx, ry)
+        RoundRect::new(position, size, radius)
     })
 }
 
@@ -117,14 +108,11 @@ where
 
     RawOffsetRect::deserialize(deserializer).map(|rect| {
         // Convert mm to milli units
-        let w = rect.width * (1000. / 19.05);
-        let h = rect.height * (1000. / 19.05);
-        let offset = rect.y_offset * (1000. / 19.05);
+        let size = Vec2::new(rect.width, rect.height) * (1e3 / 19.05);
+        let offset = rect.y_offset * (1e3 / 19.05);
+        let position = (Vec2::from(1e3) - size) / 2. + Vec2::new(0., offset);
 
-        let x = 0.5 * (1000. - w);
-        let y = 0.5 * (1000. - h) + offset;
-
-        Rect::new(x, y, w, h)
+        Rect::new(position, size)
     })
 }
 
@@ -144,17 +132,12 @@ where
 
     RawOffsetRoundRect::deserialize(deserializer).map(|rect| {
         // Convert mm to milli units
-        let w = rect.width * (1000. / 19.05);
-        let h = rect.height * (1000. / 19.05);
-        let offset = rect.y_offset * (1000. / 19.05);
+        let size = Vec2::new(rect.width, rect.height) * (1e3 / 19.05);
+        let offset = rect.y_offset * (1e3 / 19.05);
+        let position = (Vec2::from(1e3) - size) / 2. + Vec2::new(0., offset);
+        let radius = Vec2::from(rect.radius * (1000. / 19.05));
 
-        let rx = rect.radius * (1000. / 19.05);
-        let ry = rx;
-
-        let x = 0.5 * (1000. - w);
-        let y = 0.5 * (1000. - h) + offset;
-
-        RoundRect::new(x, y, w, h, rx, ry)
+        RoundRect::new(position, size, radius)
     })
 }
 
@@ -208,10 +191,7 @@ impl<'de> Deserialize<'de> for Profile {
             .legend
             .into_iter()
             .map(|(i, (s, r))| {
-                let r = Rect {
-                    y: r.y + top_offset,
-                    ..r
-                };
+                let r = Rect::new(r.position() + Vec2::new(0., top_offset), r.size());
                 ((i, s), (i, r))
             })
             .unzip();
@@ -279,66 +259,58 @@ mod tests {
 
     #[test]
     fn test_text_rect_new() {
-        let expected = vec![Rect::new(0., 0., 1e3, 1e3); 10];
+        let expected = vec![Rect::new(Vec2::ZERO, Vec2::from(1e3)); 10];
         let result = TextRect::new(&hashmap! {}).0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.x, r.x);
-            assert_approx_eq!(e.y, r.y);
-            assert_approx_eq!(e.w, r.w);
-            assert_approx_eq!(e.h, r.h);
+            assert_approx_eq!(e.position(), r.position());
+            assert_approx_eq!(e.size(), r.size());
         }
 
         let expected = vec![
-            Rect::new(200., 200., 600., 600.),
-            Rect::new(200., 200., 600., 600.),
-            Rect::new(200., 200., 600., 600.),
-            Rect::new(250., 250., 500., 500.),
-            Rect::new(250., 250., 500., 500.),
-            Rect::new(250., 250., 500., 500.),
-            Rect::new(300., 300., 400., 400.),
-            Rect::new(300., 300., 400., 400.),
-            Rect::new(300., 300., 400., 400.),
-            Rect::new(300., 300., 400., 400.),
+            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
         ];
         let result = TextRect::new(&hashmap! {
-            2 => Rect::new(200., 200., 600., 600.),
-            5 => Rect::new(250., 250., 500., 500.),
-            7 => Rect::new(300., 300., 400., 400.),
+            2 => Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            5 => Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            7 => Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
         })
         .0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.x, r.x);
-            assert_approx_eq!(e.y, r.y);
-            assert_approx_eq!(e.w, r.w);
-            assert_approx_eq!(e.h, r.h);
+            assert_approx_eq!(e.position(), r.position());
+            assert_approx_eq!(e.size(), r.size());
         }
     }
 
     #[test]
     fn test_text_rect_get() {
         let rects = TextRect::new(&hashmap! {
-            2 => Rect::new(200., 200., 600., 600.),
-            5 => Rect::new(250., 250., 500., 500.),
-            7 => Rect::new(300., 300., 400., 400.),
+            2 => Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            5 => Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            7 => Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
         });
 
         let r = rects.get(2);
-        assert_approx_eq!(r.x, 200.);
-        assert_approx_eq!(r.y, 200.);
-        assert_approx_eq!(r.w, 600.);
-        assert_approx_eq!(r.h, 600.);
+        assert_approx_eq!(r.position(), Vec2::from(200.));
+        assert_approx_eq!(r.size(), Vec2::from(600.));
 
         let r = rects.get(62);
-        assert_approx_eq!(r.x, 300.);
-        assert_approx_eq!(r.y, 300.);
-        assert_approx_eq!(r.w, 400.);
-        assert_approx_eq!(r.h, 400.);
+        assert_approx_eq!(r.position(), Vec2::from(300.));
+        assert_approx_eq!(r.size(), Vec2::from(400.));
     }
 
     #[test]
@@ -353,10 +325,8 @@ mod tests {
         ))
         .unwrap();
 
-        assert_approx_eq!(rect.x, 100.);
-        assert_approx_eq!(rect.y, 100.);
-        assert_approx_eq!(rect.w, 800.);
-        assert_approx_eq!(rect.h, 800.);
+        assert_approx_eq!(rect.position(), Vec2::from(100.));
+        assert_approx_eq!(rect.size(), Vec2::from(800.));
     }
 
     #[test]
@@ -372,12 +342,9 @@ mod tests {
         ))
         .unwrap();
 
-        assert_approx_eq!(rect.x, 100.);
-        assert_approx_eq!(rect.y, 100.);
-        assert_approx_eq!(rect.w, 800.);
-        assert_approx_eq!(rect.h, 800.);
-        assert_approx_eq!(rect.rx, 100.);
-        assert_approx_eq!(rect.ry, 100.);
+        assert_approx_eq!(rect.position(), Vec2::from(100.));
+        assert_approx_eq!(rect.size(), Vec2::from(800.));
+        assert_approx_eq!(rect.radius(), Vec2::from(100.));
     }
 
     #[test]
@@ -393,10 +360,8 @@ mod tests {
         ))
         .unwrap();
 
-        assert_approx_eq!(rect.x, 100.);
-        assert_approx_eq!(rect.y, 150.);
-        assert_approx_eq!(rect.w, 800.);
-        assert_approx_eq!(rect.h, 800.);
+        assert_approx_eq!(rect.position(), Vec2::new(100., 150.));
+        assert_approx_eq!(rect.size(), Vec2::from(800.));
     }
 
     #[test]
@@ -413,12 +378,9 @@ mod tests {
         ))
         .unwrap();
 
-        assert_approx_eq!(rect.x, 100.);
-        assert_approx_eq!(rect.y, 150.);
-        assert_approx_eq!(rect.w, 800.);
-        assert_approx_eq!(rect.h, 800.);
-        assert_approx_eq!(rect.rx, 100.);
-        assert_approx_eq!(rect.ry, 100.);
+        assert_approx_eq!(rect.position(), Vec2::new(100., 150.));
+        assert_approx_eq!(rect.size(), Vec2::from(800.));
+        assert_approx_eq!(rect.radius(), Vec2::from(100.));
     }
 
     #[test]
@@ -470,19 +432,13 @@ mod tests {
             matches!(profile.profile_type, ProfileType::Cylindrical { depth } if f32::abs(depth - 0.5) < 1e-6)
         );
 
-        assert_approx_eq!(profile.bottom_rect.x, 20., 0.5);
-        assert_approx_eq!(profile.bottom_rect.y, 20., 0.5);
-        assert_approx_eq!(profile.bottom_rect.w, 960., 0.5);
-        assert_approx_eq!(profile.bottom_rect.h, 960., 0.5);
-        assert_approx_eq!(profile.bottom_rect.rx, 20., 0.5);
-        assert_approx_eq!(profile.bottom_rect.ry, 20., 0.5);
+        assert_approx_eq!(profile.bottom_rect.position(), Vec2::from(20.), 0.5);
+        assert_approx_eq!(profile.bottom_rect.size(), Vec2::from(960.), 0.5);
+        assert_approx_eq!(profile.bottom_rect.radius(), Vec2::from(20.), 0.5);
 
-        assert_approx_eq!(profile.top_rect.x, 190., 0.5);
-        assert_approx_eq!(profile.top_rect.y, 50., 0.5);
-        assert_approx_eq!(profile.top_rect.w, 620., 0.5);
-        assert_approx_eq!(profile.top_rect.h, 730., 0.5);
-        assert_approx_eq!(profile.top_rect.rx, 80., 0.5);
-        assert_approx_eq!(profile.top_rect.ry, 80., 0.5);
+        assert_approx_eq!(profile.top_rect.position(), Vec2::new(190., 50.), 0.5);
+        assert_approx_eq!(profile.top_rect.size(), Vec2::new(620., 730.), 0.5);
+        assert_approx_eq!(profile.top_rect.radius(), Vec2::new(80., 80.), 0.5);
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = vec![0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
@@ -492,28 +448,25 @@ mod tests {
 
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = vec![
-            Rect::new(252., 112., 496., 593.),
-            Rect::new(252., 112., 496., 593.),
-            Rect::new(252., 112., 496., 593.),
-            Rect::new(252., 112., 496., 593.),
-            Rect::new(250., 185., 500., 502.),
-            Rect::new(252., 112., 496., 606.),
-            Rect::new(252., 112., 496., 606.),
-            Rect::new(252., 112., 496., 606.),
-            Rect::new(252., 112., 496., 606.),
-            Rect::new(252., 112., 496., 606.),
+            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
+            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
+            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
+            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
+            Rect::new(Vec2::new(250., 185.), Vec2::new(500., 502.)),
+            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
+            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
+            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
+            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
+            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
         ];
         for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.x, r.x, 0.5);
-            assert_approx_eq!(e.y, r.y, 0.5);
-            assert_approx_eq!(e.w, r.w, 0.5);
-            assert_approx_eq!(e.h, r.h, 0.5);
+            assert_approx_eq!(e.position(), r.position(), 0.5);
+            assert_approx_eq!(e.size(), r.size(), 0.5);
         }
 
         assert_eq!(profile.homing.default, HomingType::Scoop);
         assert_approx_eq!(profile.homing.scoop.depth, 1.5);
-        assert_approx_eq!(profile.homing.bar.width, 202., 0.5);
-        assert_approx_eq!(profile.homing.bar.height, 21., 0.5);
+        assert_approx_eq!(profile.homing.bar.size, Vec2::new(202., 21.), 0.5);
         assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);
         assert_approx_eq!(profile.homing.bump.diameter, 21., 0.5);
         assert_approx_eq!(profile.homing.bump.y_offset, -10., 0.5);

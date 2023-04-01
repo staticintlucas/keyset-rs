@@ -4,7 +4,7 @@ mod kerning;
 use std::collections::HashMap;
 
 use crate::error::Result;
-use crate::utils::{Path, Point};
+use crate::utils::{Path, Vec2};
 
 use itertools::Itertools;
 use log::warn;
@@ -125,22 +125,22 @@ impl Font {
 impl OutlineBuilder for crate::utils::Path {
     fn move_to(&mut self, x: f32, y: f32) {
         // Y axis is flipped in fonts compared to SVGs
-        self.abs_move(Point::new(x, -y));
+        self.abs_move(Vec2::new(x, -y));
     }
 
     fn line_to(&mut self, x: f32, y: f32) {
         // Y axis is flipped in fonts compared to SVGs
-        self.abs_line(Point::new(x, -y));
+        self.abs_line(Vec2::new(x, -y));
     }
 
     fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
         // Y axis is flipped in fonts compared to SVGs
-        self.abs_quadratic_bezier(Point::new(x1, -y1), Point::new(x, -y));
+        self.abs_quadratic_bezier(Vec2::new(x1, -y1), Vec2::new(x, -y));
     }
 
     fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
         // Y axis is flipped in fonts compared to SVGs
-        self.abs_cubic_bezier(Point::new(x1, -y1), Point::new(x2, -y2), Point::new(x, -y));
+        self.abs_cubic_bezier(Vec2::new(x1, -y1), Vec2::new(x2, -y2), Vec2::new(x, -y));
     }
 
     fn close(&mut self) {

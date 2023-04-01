@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn test_drawing_new() {
         let layout = Layout {
-            size: Size::new(1., 1.),
+            size: Vec2::new(1., 1.),
             keys: vec![],
         };
         let profile = Profile::default();

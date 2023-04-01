@@ -1,7 +1,7 @@
 use svg::node::Value;
 
 use crate::utils::{Path, Trim};
-use crate::utils::{PathSegment, RoundRect, Size};
+use crate::utils::{PathSegment, RoundRect, Vec2};
 use crate::ToSvg;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -20,132 +20,139 @@ pub trait KeyHelpers {
     fn corner_bottom_right(&mut self, rect: RoundRect);
     fn corner_bottom_left(&mut self, rect: RoundRect);
 
-    fn edge_top(&mut self, rect: RoundRect, size: Size, typ: EdgeType, curve: f32);
-    fn edge_right(&mut self, rect: RoundRect, size: Size, typ: EdgeType, curve: f32);
-    fn edge_bottom(&mut self, rect: RoundRect, size: Size, typ: EdgeType, curve: f32);
-    fn edge_left(&mut self, rect: RoundRect, size: Size, typ: EdgeType, curve: f32);
+    fn edge_top(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32);
+    fn edge_right(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32);
+    fn edge_bottom(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32);
+    fn edge_left(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32);
 
-    fn radius(curve: f32, distance: f32) -> Size {
-        let r = (curve.powf(2.) + (distance.powf(2.) / 4.)) / (2. * curve);
-        Size::new(r, r)
+    fn radius(curve: f32, distance: f32) -> Vec2 {
+        Vec2::from((curve.powf(2.) + (distance.powf(2.) / 4.)) / (2. * curve))
     }
 }
 
 impl KeyHelpers for Path {
     fn start(rect: RoundRect) -> Self {
         let mut slf = Self::new();
-        slf.abs_move(rect.position() + Size::new(0., rect.ry));
+        slf.abs_move(rect.position() + Vec2::new(0., rect.radius().y));
         slf
     }
 
     fn corner_top_left(&mut self, rect: RoundRect) {
-        let radius = Size::new(rect.rx.abs(), rect.ry.abs());
-        self.rel_arc(radius, 0., false, true, Size::new(rect.rx, -rect.ry));
+        self.rel_arc(
+            rect.radius(),
+            0.,
+            false,
+            true,
+            rect.radius() * Vec2::new(1., -1.),
+        );
     }
 
     fn corner_top_right(&mut self, rect: RoundRect) {
-        let radius = Size::new(rect.rx.abs(), rect.ry.abs());
-        self.rel_arc(radius, 0., false, true, Size::new(rect.rx, rect.ry));
+        self.rel_arc(rect.radius(), 0., false, true, rect.radius());
     }
 
     fn corner_bottom_right(&mut self, rect: RoundRect) {
-        let radius = Size::new(rect.rx.abs(), rect.ry.abs());
-        self.rel_arc(radius, 0., false, true, Size::new(-rect.rx, rect.ry));
+        self.rel_arc(
+            rect.radius(),
+            0.,
+            false,
+            true,
+            rect.radius() * Vec2::new(-1., 1.),
+        );
     }
 
     fn corner_bottom_left(&mut self, rect: RoundRect) {
-        let radius = Size::new(rect.rx.abs(), rect.ry.abs());
-        self.rel_arc(radius, 0., false, true, Size::new(-rect.rx, -rect.ry));
+        self.rel_arc(rect.radius(), 0., false, true, rect.radius() * -1.);
     }
 
-    fn edge_top(&mut self, rect: RoundRect, size: Size, typ: EdgeType, curve: f32) {
-        let rect_dx = rect.w - 2. * rect.rx;
-        let size_dx = size.w - 1e3;
+    fn edge_top(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32) {
+        let rect_dx = rect.size().x - 2. * rect.radius().x;
+        let size_dx = size.x - 1e3;
         let dx = rect_dx + size_dx;
         match typ {
             EdgeType::Line => self.rel_horiz_line(dx),
             EdgeType::CurveLineCurve if size_dx > 0.01 => {
                 let radius = Self::radius(curve, rect_dx);
-                self.rel_arc(radius, 0., false, true, Size::new(rect_dx / 2., -curve));
+                self.rel_arc(radius, 0., false, true, Vec2::new(rect_dx / 2., -curve));
                 self.rel_horiz_line(size_dx);
-                self.rel_arc(radius, 0., false, true, Size::new(rect_dx / 2., curve));
+                self.rel_arc(radius, 0., false, true, Vec2::new(rect_dx / 2., curve));
             }
             EdgeType::CurveLineCurve | EdgeType::CurveStretch => {
                 let radius = Self::radius(curve, dx);
-                self.rel_arc(radius, 0., false, true, Size::new(dx, 0.));
+                self.rel_arc(radius, 0., false, true, Vec2::new(dx, 0.));
             }
             EdgeType::InsetCurve => {
                 let radius = Self::radius(curve, dx);
-                self.rel_arc(radius, 0., false, false, Size::new(dx, 0.));
+                self.rel_arc(radius, 0., false, false, Vec2::new(dx, 0.));
             }
         }
     }
 
-    fn edge_right(&mut self, rect: RoundRect, size: Size, typ: EdgeType, curve: f32) {
-        let rect_dy = rect.h - 2. * rect.ry;
-        let size_dy = size.h - 1e3;
+    fn edge_right(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32) {
+        let rect_dy = rect.size().y - 2. * rect.radius().y;
+        let size_dy = size.y - 1e3;
         let dy = rect_dy + size_dy;
         match typ {
             EdgeType::Line => self.rel_vert_line(dy),
             EdgeType::CurveLineCurve if size_dy > 0.01 => {
                 let radius = Self::radius(curve, rect_dy);
-                self.rel_arc(radius, 0., false, true, Size::new(curve, rect_dy / 2.));
+                self.rel_arc(radius, 0., false, true, Vec2::new(curve, rect_dy / 2.));
                 self.rel_vert_line(size_dy);
-                self.rel_arc(radius, 0., false, true, Size::new(-curve, rect_dy / 2.));
+                self.rel_arc(radius, 0., false, true, Vec2::new(-curve, rect_dy / 2.));
             }
             EdgeType::CurveLineCurve | EdgeType::CurveStretch => {
                 let radius = Self::radius(curve, dy);
-                self.rel_arc(radius, 0., false, true, Size::new(0., dy));
+                self.rel_arc(radius, 0., false, true, Vec2::new(0., dy));
             }
             EdgeType::InsetCurve => {
                 let radius = Self::radius(curve, dy);
-                self.rel_arc(radius, 0., false, false, Size::new(0., dy));
+                self.rel_arc(radius, 0., false, false, Vec2::new(0., dy));
             }
         }
     }
 
-    fn edge_bottom(&mut self, rect: RoundRect, size: Size, typ: EdgeType, curve: f32) {
-        let rect_dx = rect.w - 2. * rect.rx;
-        let size_dx = size.w - 1e3;
+    fn edge_bottom(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32) {
+        let rect_dx = rect.size().x - 2. * rect.radius().x;
+        let size_dx = size.x - 1e3;
         let dx = rect_dx + size_dx;
         match typ {
             EdgeType::Line => self.rel_horiz_line(-dx),
             EdgeType::CurveLineCurve if size_dx > 0.01 => {
                 let radius = Self::radius(curve, rect_dx);
-                self.rel_arc(radius, 0., false, true, Size::new(-rect_dx / 2., curve));
+                self.rel_arc(radius, 0., false, true, Vec2::new(-rect_dx / 2., curve));
                 self.rel_horiz_line(-size_dx);
-                self.rel_arc(radius, 0., false, true, Size::new(-rect_dx / 2., -curve));
+                self.rel_arc(radius, 0., false, true, Vec2::new(-rect_dx / 2., -curve));
             }
             EdgeType::CurveLineCurve | EdgeType::CurveStretch => {
                 let radius = Self::radius(curve, dx);
-                self.rel_arc(radius, 0., false, true, Size::new(-dx, 0.));
+                self.rel_arc(radius, 0., false, true, Vec2::new(-dx, 0.));
             }
             EdgeType::InsetCurve => {
                 let radius = Self::radius(curve, dx);
-                self.rel_arc(radius, 0., false, false, Size::new(-dx, 0.));
+                self.rel_arc(radius, 0., false, false, Vec2::new(-dx, 0.));
             }
         }
     }
 
-    fn edge_left(&mut self, rect: RoundRect, size: Size, typ: EdgeType, curve: f32) {
-        let rect_dy = rect.h - 2. * rect.ry;
-        let size_dy = size.h - 1e3;
+    fn edge_left(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32) {
+        let rect_dy = rect.size().y - 2. * rect.radius().y;
+        let size_dy = size.y - 1e3;
         let dy = rect_dy + size_dy;
         match typ {
             EdgeType::Line => self.rel_vert_line(-dy),
             EdgeType::CurveLineCurve if size_dy > 0.01 => {
                 let radius = Self::radius(curve, rect_dy);
-                self.rel_arc(radius, 0., false, true, Size::new(-curve, -rect_dy / 2.));
+                self.rel_arc(radius, 0., false, true, Vec2::new(-curve, -rect_dy / 2.));
                 self.rel_vert_line(size_dy);
-                self.rel_arc(radius, 0., false, true, Size::new(curve, -rect_dy / 2.));
+                self.rel_arc(radius, 0., false, true, Vec2::new(curve, -rect_dy / 2.));
             }
             EdgeType::CurveLineCurve | EdgeType::CurveStretch => {
                 let radius = Self::radius(curve, dy);
-                self.rel_arc(radius, 0., false, true, Size::new(0., -dy));
+                self.rel_arc(radius, 0., false, true, Vec2::new(0., -dy));
             }
             EdgeType::InsetCurve => {
                 let radius = Self::radius(curve, dy);
-                self.rel_arc(radius, 0., false, false, Size::new(0., -dy));
+                self.rel_arc(radius, 0., false, false, Vec2::new(0., -dy));
             }
         }
     }
@@ -155,18 +162,18 @@ impl ToSvg for PathSegment {
     fn to_svg(&self) -> String {
         match *self {
             Self::Move(p) => format!("M{} {}", Trim(p.x), Trim(p.y)),
-            Self::Line(d) => format!("l{} {}", Trim(d.w), Trim(d.h)),
+            Self::Line(d) => format!("l{} {}", Trim(d.x), Trim(d.y)),
             Self::CubicBezier(d1, d2, d) => format!(
                 "c{} {} {} {} {} {}",
-                Trim(d1.w),
-                Trim(d1.h),
-                Trim(d2.w),
-                Trim(d2.h),
-                Trim(d.w),
-                Trim(d.h)
+                Trim(d1.x),
+                Trim(d1.y),
+                Trim(d2.x),
+                Trim(d2.y),
+                Trim(d.x),
+                Trim(d.y)
             ),
             Self::QuadraticBezier(d1, d) => {
-                format!("q{} {} {} {}", Trim(d1.w), Trim(d1.h), Trim(d.w), Trim(d.h))
+                format!("q{} {} {} {}", Trim(d1.x), Trim(d1.y), Trim(d.x), Trim(d.y))
             }
             Self::Close => "z".into(),
         }
@@ -195,18 +202,19 @@ mod tests {
     use assert_matches::assert_matches;
     use maplit::hashmap;
 
-    use crate::utils::Point;
-
     use super::*;
 
     #[test]
     fn test_radius() {
-        assert_approx_eq!(Path::radius(1. - FRAC_1_SQRT_2, SQRT_2), Size::new(1., 1.));
+        assert_approx_eq!(Path::radius(1. - FRAC_1_SQRT_2, SQRT_2), Vec2::from(1.));
     }
 
     #[test]
     fn test_corners() {
-        let rect = RoundRect::new(200., 100., 600., 600., 50., 50.);
+        let position = Vec2::new(200., 100.);
+        let size = Vec2::from(600.);
+        let radius = Vec2::from(50.);
+        let rect = RoundRect::new(position, size, radius);
         let path = Path::start(rect);
 
         let corner_funcs: Vec<fn(&mut Path, RoundRect)> = vec![
@@ -226,12 +234,15 @@ mod tests {
 
     #[test]
     fn test_edges() {
-        let rect = RoundRect::new(200., 100., 600., 600., 50., 50.);
-        let size = Size::new(2e3, 2e3);
+        let position = Vec2::new(200., 100.);
+        let size = Vec2::from(600.);
+        let radius = Vec2::from(50.);
+        let rect = RoundRect::new(position, size, radius);
+        let size = Vec2::from(2e3);
         let curve = 20.;
         let path = Path::start(rect);
 
-        let edge_funcs: Vec<fn(&mut Path, RoundRect, Size, EdgeType, f32)> = vec![
+        let edge_funcs: Vec<fn(&mut Path, RoundRect, Vec2, EdgeType, f32)> = vec![
             Path::edge_top,
             Path::edge_right,
             Path::edge_bottom,
@@ -257,10 +268,10 @@ mod tests {
     #[test]
     fn test_path_to_svg() {
         let mut path = Path::new();
-        path.abs_move(Point::new(0., 0.));
-        path.rel_line(Size::new(1., 1.));
-        path.rel_cubic_bezier(Size::new(0.5, 0.5), Size::new(1.5, 0.5), Size::new(2., 0.));
-        path.rel_quadratic_bezier(Size::new(0.5, -0.5), Size::new(1., 0.));
+        path.abs_move(Vec2::ZERO);
+        path.rel_line(Vec2::new(1., 1.));
+        path.rel_cubic_bezier(Vec2::new(0.5, 0.5), Vec2::new(1.5, 0.5), Vec2::new(2., 0.));
+        path.rel_quadratic_bezier(Vec2::new(0.5, -0.5), Vec2::new(1., 0.));
         path.close();
 
         assert_eq!(path.to_svg(), "M0 0l1 1c0.5 0.5 1.5 0.5 2 0q0.5 -0.5 1 0z");

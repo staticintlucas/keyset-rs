@@ -9,7 +9,7 @@ use itertools::Itertools;
 use serde::Deserialize;
 
 use crate::error::Result;
-use crate::utils::{Rect, RoundRect};
+use crate::utils::{Rect, RoundRect, Vec2};
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
@@ -67,17 +67,15 @@ impl Default for ScoopProps {
 
 #[derive(Debug, Clone, Copy)]
 pub struct BarProps {
-    pub width: f32,
-    pub height: f32,
+    pub size: Vec2,
     pub y_offset: f32,
 }
 
 impl Default for BarProps {
     fn default() -> Self {
         Self {
-            width: 3.81,    // = 0.15in
-            height: 0.51,   // = 0.02in
-            y_offset: 6.35, // = 0.25in
+            size: Vec2::new(3.81, 0.51), // = 0.15in, 0.02in
+            y_offset: 6.35,              // = 0.25in
         }
     }
 }
@@ -194,7 +192,7 @@ impl TextRect {
 
 impl Default for TextRect {
     fn default() -> Self {
-        let rect = Rect::new(0., 0., 1000., 1000.);
+        let rect = Rect::new(Vec2::ZERO, Vec2::from(1e3));
         Self([rect; Self::NUM_RECTS])
     }
 }
@@ -219,8 +217,16 @@ impl Default for Profile {
     fn default() -> Self {
         Self {
             profile_type: ProfileType::default(),
-            bottom_rect: RoundRect::new(0.5, 0.5, 18.05, 18.05, 1.2, 1.2),
-            top_rect: RoundRect::new(3.2, 1.0, 12.7, 13.95, 1.2, 1.2),
+            bottom_rect: RoundRect::new(
+                Vec2::new(0.5, 0.5),
+                Vec2::new(18.05, 18.05),
+                Vec2::new(1.2, 1.2),
+            ),
+            top_rect: RoundRect::new(
+                Vec2::new(3.2, 1.0),
+                Vec2::new(12.7, 13.95),
+                Vec2::new(1.2, 1.2),
+            ),
             text_margin: TextRect::default(),
             text_height: TextHeight::default(),
             homing: HomingProps::default(),
@@ -285,65 +291,57 @@ mod tests {
 
     #[test]
     fn test_text_rect_new() {
-        let expected = vec![Rect::new(0., 0., 1e3, 1e3); 10];
+        let expected = vec![Rect::new(Vec2::ZERO, Vec2::from(1e3)); 10];
         let result = TextRect::new(&hashmap! {}).0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.x, r.x);
-            assert_approx_eq!(e.y, r.y);
-            assert_approx_eq!(e.w, r.w);
-            assert_approx_eq!(e.h, r.h);
+            assert_approx_eq!(e.position(), r.position());
+            assert_approx_eq!(e.size(), r.size());
         }
 
         let expected = vec![
-            Rect::new(200., 200., 600., 600.),
-            Rect::new(200., 200., 600., 600.),
-            Rect::new(200., 200., 600., 600.),
-            Rect::new(250., 250., 500., 500.),
-            Rect::new(250., 250., 500., 500.),
-            Rect::new(250., 250., 500., 500.),
-            Rect::new(300., 300., 400., 400.),
-            Rect::new(300., 300., 400., 400.),
-            Rect::new(300., 300., 400., 400.),
-            Rect::new(300., 300., 400., 400.),
+            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
         ];
         let result = TextRect::new(&hashmap! {
-            2 => Rect::new(200., 200., 600., 600.),
-            5 => Rect::new(250., 250., 500., 500.),
-            7 => Rect::new(300., 300., 400., 400.),
+            2 => Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            5 => Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            7 => Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
         })
         .0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.x, r.x);
-            assert_approx_eq!(e.y, r.y);
-            assert_approx_eq!(e.w, r.w);
-            assert_approx_eq!(e.h, r.h);
+            assert_approx_eq!(e.position(), r.position());
+            assert_approx_eq!(e.size(), r.size());
         }
     }
 
     #[test]
     fn test_text_rect_get() {
         let rects = TextRect::new(&hashmap! {
-            2 => Rect::new(200., 200., 600., 600.),
-            5 => Rect::new(250., 250., 500., 500.),
-            7 => Rect::new(300., 300., 400., 400.),
+            2 => Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
+            5 => Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
+            7 => Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
         });
 
         let r = rects.get(2);
-        assert_approx_eq!(r.x, 200.);
-        assert_approx_eq!(r.y, 200.);
-        assert_approx_eq!(r.w, 600.);
-        assert_approx_eq!(r.h, 600.);
+        assert_approx_eq!(r.position(), Vec2::from(200.));
+        assert_approx_eq!(r.size(), Vec2::from(600.));
 
         let r = rects.get(62);
-        assert_approx_eq!(r.x, 300.);
-        assert_approx_eq!(r.y, 300.);
-        assert_approx_eq!(r.w, 400.);
-        assert_approx_eq!(r.h, 400.);
+        assert_approx_eq!(r.position(), Vec2::from(300.));
+        assert_approx_eq!(r.size(), Vec2::from(400.));
     }
 }

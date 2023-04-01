@@ -7,7 +7,7 @@ use svg::Document;
 
 use crate::drawing::Drawing;
 use crate::layout::Key;
-use crate::utils::{Scale, Size, Trim};
+use crate::utils::{Trim, Vec2};
 
 use font::Draw as _;
 use profile::Draw as _;
@@ -20,16 +20,16 @@ impl ToSvg for Drawing {
     #[must_use]
     fn to_svg(&self) -> String {
         // scale from keyboard units to drawing units (milliunits)
-        let scale = Scale::new(1e3, 1e3);
+        let scale = Vec2::from(1e3);
         let size = self.layout.size * scale;
 
         // w and h are in dpi units, the 0.75 is keyboard units per inch
-        let Size { w, h } = self.layout.size * self.options.dpi * 0.75;
+        let Vec2 { x, y } = self.layout.size * self.options.dpi * 0.75;
 
         let document = Document::new()
-            .set("width", format!("{}", Trim(w)))
-            .set("height", format!("{}", Trim(h)))
-            .set("viewBox", format!("0 0 {:.0} {:.0}", size.w, size.h));
+            .set("width", format!("{}", Trim(x)))
+            .set("height", format!("{}", Trim(y)))
+            .set("viewBox", format!("0 0 {:.0} {:.0}", size.x, size.y));
 
         let document = self
             .layout
@@ -44,7 +44,7 @@ impl ToSvg for Drawing {
 
 impl Drawing {
     fn draw_key(&self, key: &Key) -> Group {
-        let scale = Scale::new(1e3, 1e3);
+        let scale = Vec2::from(1e3);
         let pos = key.position * scale;
 
         let result = Group::new().set("transform", format!("translate({}, {})", pos.x, pos.y));
@@ -69,14 +69,14 @@ mod tests {
     use crate::layout::tests::test_key;
     use crate::layout::Layout;
     use crate::profile::Profile;
-    use crate::utils::Size;
+    use crate::utils::Vec2;
 
     use super::*;
 
     #[test]
     fn test_to_svg() {
         let layout = Layout {
-            size: Size::new(1., 1.),
+            size: Vec2::from(1.),
             keys: vec![],
         };
         let profile = Profile::default();
@@ -94,7 +94,7 @@ mod tests {
     fn test_draw_key() {
         let key = test_key();
         let layout = Layout {
-            size: Size::new(1., 1.),
+            size: Vec2::from(1.),
             keys: vec![],
         };
         let profile = Profile::default();

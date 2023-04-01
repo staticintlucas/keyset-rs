@@ -3,7 +3,7 @@ use std::fmt;
 // pub use self::de::*;
 use crate::error::Result;
 use crate::profile::HomingType;
-use crate::utils::{Color, Point, Size};
+use crate::utils::{Color, Vec2};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyType {
@@ -15,7 +15,7 @@ pub enum KeyType {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum KeySize {
-    Normal(Size),
+    Normal(Vec2),
     SteppedCaps,
     IsoVertical,
     IsoHorizontal,
@@ -59,7 +59,7 @@ impl KeySize {
         } else if is_iso_horizontal(w, h, x2, y2, w2, h2) {
             Ok(Self::IsoHorizontal)
         } else if is_normal_key(w, h, x2, y2, w2, h2) {
-            Ok(Self::Normal(Size::new(w, h)))
+            Ok(Self::Normal(Vec2::new(w, h)))
         } else {
             Err(InvalidKeySize {
                 message: format!(
@@ -78,11 +78,11 @@ impl KeySize {
         }
     }
 
-    pub fn size(&self) -> Size {
+    pub fn size(&self) -> Vec2 {
         match self {
             Self::Normal(s) => *s,
-            Self::IsoHorizontal | Self::IsoVertical => Size::new(1.5, 2.0),
-            Self::SteppedCaps => Size::new(1.75, 1.0),
+            Self::IsoHorizontal | Self::IsoVertical => Vec2::new(1.5, 2.0),
+            Self::SteppedCaps => Vec2::new(1.75, 1.0),
         }
     }
 }
@@ -102,7 +102,7 @@ impl std::error::Error for InvalidKeySize {}
 
 #[derive(Debug, Clone)]
 pub struct Key {
-    pub position: Point,
+    pub position: Vec2,
     pub size: KeySize,
     pub key_type: KeyType,
     pub key_color: Color,
@@ -113,7 +113,7 @@ pub struct Key {
 
 impl Key {
     pub fn new(
-        position: Point,
+        position: Vec2,
         size: KeySize,
         key_type: KeyType,
         key_color: Color,
@@ -135,7 +135,7 @@ impl Key {
 
 #[derive(Debug, Clone)]
 pub struct Layout {
-    pub size: Size,
+    pub size: Vec2,
     pub keys: Vec<Key>,
 }
 
@@ -146,8 +146,8 @@ pub mod tests {
     // Not an actual test, returns a test key for use in other tests
     pub fn test_key() -> Key {
         Key::new(
-            Point::new(0., 0.),
-            KeySize::Normal(Size::new(1., 1.)),
+            Vec2::ZERO,
+            KeySize::Normal(Vec2::new(1., 1.)),
             KeyType::Normal,
             Color::default_key(),
             [
@@ -167,7 +167,7 @@ pub mod tests {
         let iso_vert = KeySize::new(1.25, 2., -0.25, 0., 1.5, 1.).unwrap();
         let step_caps = KeySize::new(1.25, 1., 0., 0., 1.75, 1.).unwrap();
 
-        assert_eq!(regular_key, KeySize::Normal(Size::new(2.25, 1.)));
+        assert_eq!(regular_key, KeySize::Normal(Vec2::new(2.25, 1.)));
         assert_eq!(iso_horiz, KeySize::IsoHorizontal);
         assert_eq!(iso_vert, KeySize::IsoVertical);
         assert_eq!(step_caps, KeySize::SteppedCaps);
@@ -180,10 +180,10 @@ pub mod tests {
         let iso_vert = KeySize::new(1.25, 2., -0.25, 0., 1.5, 1.).unwrap();
         let step_caps = KeySize::new(1.25, 1., 0., 0., 1.75, 1.).unwrap();
 
-        assert_eq!(regular_key.size(), Size::new(2.25, 1.));
-        assert_eq!(iso_horiz.size(), Size::new(1.5, 2.0));
-        assert_eq!(iso_vert.size(), Size::new(1.5, 2.0));
-        assert_eq!(step_caps.size(), Size::new(1.75, 1.0));
+        assert_eq!(regular_key.size(), Vec2::new(2.25, 1.));
+        assert_eq!(iso_horiz.size(), Vec2::new(1.5, 2.0));
+        assert_eq!(iso_vert.size(), Vec2::new(1.5, 2.0));
+        assert_eq!(step_caps.size(), Vec2::new(1.75, 1.0));
     }
 
     #[test]
@@ -203,7 +203,7 @@ pub mod tests {
 
     #[test]
     fn test_key_new() {
-        let position = Point::new(1.0, 2.0);
+        let position = Vec2::new(1.0, 2.0);
         let size = KeySize::new(1.25, 2.0, -0.25, 0., 1.5, 1.).unwrap();
         let key_type = KeyType::Normal;
         let key_color = Color::new(204, 102, 51);
