@@ -45,8 +45,8 @@ impl Font {
         };
 
         let em_size = f32::from(face.units_per_em());
-        let cap_height = f32::from(face.capital_height().unwrap_or(0)); // TODO calculate default
-        let x_height = f32::from(face.x_height().unwrap_or(0)); // TODO calculate default
+        let cap_height = face.capital_height().map(f32::from);
+        let x_height = face.x_height().map(f32::from);
         let ascent = f32::from(face.ascender());
         let descent = f32::from(-face.descender());
         let line_height = ascent + descent + f32::from(face.line_gap());
@@ -77,6 +77,13 @@ impl Font {
             .filter_map(|&cp| Some((cp, face.glyph_index(cp)?)))
             .filter_map(|(cp, gid)| Some((cp, Glyph::new(&face, Some(cp), gid)?)))
             .collect();
+
+        let cap_height = cap_height
+            .or_else(|| Some(glyphs.get(&'X')?.path.bounds.size().y))
+            .unwrap_or(0.6 * line_height); // TODO is there a better default?
+        let x_height = x_height
+            .or_else(|| Some(glyphs.get(&'x')?.path.bounds.size().y))
+            .unwrap_or(0.4 * line_height); // TODO is there a better default?
 
         let notdef = if let Some(glyph) = Glyph::new(&face, None, GlyphId(0)) {
             glyph
