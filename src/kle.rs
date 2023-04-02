@@ -1,21 +1,24 @@
-use std::result::Result as StdResult;
-use std::{fmt, iter};
+use std::{fmt, iter, result::Result as StdResult};
 
 use itertools::Itertools;
-use serde::de::{value, Error, SeqAccess, Unexpected, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{
+    de::{value::SeqAccessDeserializer, Error, SeqAccess, Unexpected, Visitor},
+    Deserialize, Deserializer,
+};
 use serde_json::{Map, Value};
 
-use crate::error::Result;
-use crate::layout::{Key, KeySize, KeyType, Layout};
-use crate::profile::HomingType;
-use crate::utils::{Color, Vec2};
+use crate::{
+    error::Result,
+    layout::{Key, KeySize, KeyType, Layout},
+    profile::HomingType,
+    utils::{Color, Vec2},
+};
 
 // The number of legends on a key and number of alignment settings from KLE
 const NUM_LEGENDS: usize = 12;
 const NUM_ALIGNMENTS: usize = 8;
 
-// This map is copied from the kle-serial source code with indices and values swapped. Note the
+// This map is the same as that of kle-serial except the indices and values are swapped. Note the
 // blanks are also filled in, so we're slightly more permissive with not-strictly-valid KLE input.
 const KLE_2_ORD: [[u8; NUM_LEGENDS]; NUM_ALIGNMENTS] = [
     [0, 8, 2, 6, 9, 7, 1, 10, 3, 4, 11, 5], // 0 = no centering
@@ -59,32 +62,21 @@ fn de_nl_delimited_colors<'de, D>(
 where
     D: Deserializer<'de>,
 {
-    let result = Option::<String>::deserialize(deserializer)?.map(|string| {
-        string
-            .lines()
-            .map(|c| {
-                if c.trim().is_empty() {
-                    None
-                } else {
-                    Some(c.trim())
-                }
-            })
-            .map(|c| {
-                c.map(|c| {
-                    Color::from_hex(c).map_err(|_| {
-                        D::Error::invalid_value(Unexpected::Str(c), &"a hex color code")
-                    })
-                })
-                .transpose()
-            })
-            .collect::<StdResult<Vec<Option<Color>>, D::Error>>()
-    });
-
-    match result {
-        Some(Ok(v)) => Ok(Some(v)),
-        Some(Err(e)) => Err(e),
-        None => Ok(None),
+    fn invalid_color<'de, D: Deserializer<'de>>(c: &str) -> D::Error {
+        D::Error::invalid_value(Unexpected::Str(c), &"a hex color code")
     }
+
+    Option::<String>::deserialize(deserializer)?
+        .map(|string| {
+            string
+                .lines()
+                .map(str::trim)
+                .map(|c| (!c.is_empty()).then_some(c))
+                .map(|c| c.map(|c| Color::from_hex(c).map_err(|_| invalid_color::<D>(c))))
+                .map(Option::transpose)
+                .collect()
+        })
+        .transpose()
 }
 
 // Represents a row item, either a key or a JSON object containing properties for the next key(s)
@@ -134,13 +126,13 @@ impl<'de> Deserialize<'de> for RawKleFile {
                     },
                     Some(MapOrSeq::Props(props)) => Self::Value {
                         props,
-                        rows: Vec::<_>::deserialize(value::SeqAccessDeserializer::new(seq))?,
+                        rows: Vec::<_>::deserialize(SeqAccessDeserializer::new(seq))?,
                     },
                     Some(MapOrSeq::Row(row)) => Self::Value {
                         props: Map::new(),
                         rows: [
                             vec![row],
-                            Vec::<_>::deserialize(value::SeqAccessDeserializer::new(seq))?,
+                            Vec::<_>::deserialize(SeqAccessDeserializer::new(seq))?,
                         ]
                         .concat(),
                     },
@@ -218,7 +210,7 @@ impl KeyProps {
         }
     }
 
-    fn update(&self, props: RawKleProps) -> Self {
+    fn update(&mut self, props: RawKleProps) {
         let f = props.f.unwrap_or(self.f);
         let fa = if let Some(fa) = props.fa {
             array_init::from_iter(
@@ -249,75 +241,66 @@ impl KeyProps {
             .unwrap() // Can't panic due to the iter::repeat
         });
 
-        Self {
-            // Per-key properties
-            x: self.x + props.x.unwrap_or(0.0),
-            y: self.y + props.y.unwrap_or(0.0),
-            w: props.w.unwrap_or(1.),
-            h: props.h.unwrap_or(1.),
-            x2: props.x2.unwrap_or(0.),
-            y2: props.y2.unwrap_or(0.),
-            w2: props.w2.or(props.w).unwrap_or(1.),
-            h2: props.h2.or(props.h).unwrap_or(1.),
-            l: props.l.unwrap_or(false),
-            n: props.n.unwrap_or(false),
-            d: props.d.unwrap_or(false),
-            // Persistent properties
-            c: props.c.unwrap_or(self.c),
-            t,
-            ta,
-            a: props.a.map_or(self.a, LegendAlignment::new),
-            p: props.p.unwrap_or_else(|| self.p.clone()),
-            f,
-            fa,
-        }
-    }
-
-    fn next_key(self) -> Self {
-        Self {
-            // Increment x
-            x: self.x + self.w.max(self.x2 + self.w2),
-            // Reset per-key properties
-            w: 1.,
-            h: 1.,
-            x2: 0.,
-            y2: 0.,
-            w2: 1.,
-            h2: 1.,
-            l: false,
-            n: false,
-            d: false,
-            ..self
-        }
+        // Per-key properties
+        self.x += props.x.unwrap_or(0.0);
+        self.y += props.y.unwrap_or(0.0);
+        self.w = props.w.unwrap_or(1.);
+        self.h = props.h.unwrap_or(1.);
+        self.x2 = props.x2.unwrap_or(0.);
+        self.y2 = props.y2.unwrap_or(0.);
+        self.w2 = props.w2.or(props.w).unwrap_or(1.);
+        self.h2 = props.h2.or(props.h).unwrap_or(1.);
+        self.l = props.l.unwrap_or(false);
+        self.n = props.n.unwrap_or(false);
+        self.d = props.d.unwrap_or(false);
+        // Persistent properties
+        self.c = props.c.unwrap_or(self.c);
+        self.t = t;
+        self.ta = ta;
+        self.a = props.a.map_or(self.a, LegendAlignment::new);
+        self.p = props.p.unwrap_or(self.p.clone());
+        self.f = f;
+        self.fa = fa;
     }
 
     #[inline]
-    fn next_line(self) -> Self {
-        Self {
-            x: 0.0,
-            y: self.y + 1.0,
-            ..self.next_key()
-        }
+    fn next_key(&mut self) {
+        // Increment x
+        self.x += self.w.max(self.x2 + self.w2);
+        // Reset per-key properties
+        self.w = 1.;
+        self.h = 1.;
+        self.x2 = 0.;
+        self.y2 = 0.;
+        self.w2 = 1.;
+        self.h2 = 1.;
+        self.l = false;
+        self.n = false;
+        self.d = false;
     }
 
-    fn to_key(&self, legends: &[String; NUM_LEGENDS]) -> Result<Key> {
+    #[inline]
+    fn next_line(&mut self) {
+        self.next_key();
+        self.x = 0.;
+        self.y += 1.;
+    }
+
+    fn build_key(&self, legends: &[String; NUM_LEGENDS]) -> Result<Key> {
         // Use (x + x2) if (x2 < 0). Needed because we always measure position to the top left
         // corner of the key rather than just the primary rectangle
         let position = Vec2::new(self.x + self.x2.min(0.), self.y + self.y2.min(0.));
         let size = KeySize::new(self.w, self.h, self.x2, self.y2, self.w2, self.h2)?;
 
         let is_scooped = ["scoop", "deep", "dish"]
-            .into_iter()
             .map(|pat| self.p.contains(pat))
-            .any(|b| b);
+            .contains(&true);
         let is_barred = ["bar", "line"]
-            .into_iter()
             .map(|pat| self.p.contains(pat))
-            .any(|b| b);
+            .contains(&true);
         let is_bumped = ["bump", "dot", "nub", "nipple"]
-            .into_iter()
             .map(|pat| self.p.contains(pat))
-            .any(|b| b);
+            .contains(&true);
 
         let key_type = if is_scooped {
             KeyType::Homing(Some(HomingType::Scoop))
@@ -365,7 +348,7 @@ impl FromKle for Layout {
             for data in row {
                 match data {
                     RawKleRowItem::Object(raw_props) => {
-                        props = props.update(*raw_props);
+                        props.update(*raw_props);
                     }
                     RawKleRowItem::String(legends) => {
                         let legend_array = array_init::from_iter(
@@ -376,16 +359,15 @@ impl FromKle for Layout {
                         )
                         .unwrap(); // Can't panic due to the iter::repeat
 
-                        let key = props.to_key(&legend_array)?;
+                        let key = props.build_key(&legend_array)?;
 
-                        // Need to subtract 0,0 to keeps types consistent (point - point = size)
                         size = size.max(key.position + key.size.size());
                         keys.push(key);
-                        props = props.next_key();
+                        props.next_key();
                     }
                 }
             }
-            props = props.next_line();
+            props.next_line();
         }
 
         Ok(Layout { size, keys })
@@ -524,26 +506,27 @@ mod tests {
             f2: None,
             fa: None,
         };
-        let keyprops1 = KeyProps::default().update(rawprops1);
+        let mut keyprops = KeyProps::default();
+        keyprops.update(rawprops1);
 
-        assert_approx_eq!(keyprops1.x, 0.);
-        assert_approx_eq!(keyprops1.y, 0.);
-        assert_approx_eq!(keyprops1.w, 1.);
-        assert_approx_eq!(keyprops1.h, 1.);
-        assert_approx_eq!(keyprops1.x2, 0.);
-        assert_approx_eq!(keyprops1.y2, 0.);
-        assert_approx_eq!(keyprops1.w2, 1.);
-        assert_approx_eq!(keyprops1.h2, 1.);
-        assert_eq!(keyprops1.l, false);
-        assert_eq!(keyprops1.n, false);
-        assert_eq!(keyprops1.d, false);
-        assert_eq!(keyprops1.c, Color::default_key());
-        assert_eq!(keyprops1.t, Color::default_legend());
-        assert_eq!(keyprops1.ta, [Color::default_legend(); NUM_LEGENDS]);
-        assert_eq!(keyprops1.a, LegendAlignment::default());
-        assert_eq!(keyprops1.p, "".to_string());
-        assert_eq!(keyprops1.f, 3);
-        assert_eq!(keyprops1.fa, [3; NUM_LEGENDS]);
+        assert_approx_eq!(keyprops.x, 0.);
+        assert_approx_eq!(keyprops.y, 0.);
+        assert_approx_eq!(keyprops.w, 1.);
+        assert_approx_eq!(keyprops.h, 1.);
+        assert_approx_eq!(keyprops.x2, 0.);
+        assert_approx_eq!(keyprops.y2, 0.);
+        assert_approx_eq!(keyprops.w2, 1.);
+        assert_approx_eq!(keyprops.h2, 1.);
+        assert_eq!(keyprops.l, false);
+        assert_eq!(keyprops.n, false);
+        assert_eq!(keyprops.d, false);
+        assert_eq!(keyprops.c, Color::default_key());
+        assert_eq!(keyprops.t, Color::default_legend());
+        assert_eq!(keyprops.ta, [Color::default_legend(); NUM_LEGENDS]);
+        assert_eq!(keyprops.a, LegendAlignment::default());
+        assert_eq!(keyprops.p, "".to_string());
+        assert_eq!(keyprops.f, 3);
+        assert_eq!(keyprops.fa, [3; NUM_LEGENDS]);
 
         let rawprops2 = RawKleProps {
             x: Some(1.),
@@ -569,23 +552,23 @@ mod tests {
             f2: Some(4),
             fa: Some(vec![4, 4, 4]),
         };
-        let keyprops2 = keyprops1.update(rawprops2);
+        keyprops.update(rawprops2);
 
-        assert_approx_eq!(keyprops2.x, 1.);
-        assert_approx_eq!(keyprops2.y, 1.);
-        assert_approx_eq!(keyprops2.w, 2.);
-        assert_approx_eq!(keyprops2.h, 2.);
-        assert_approx_eq!(keyprops2.x2, 1.5);
-        assert_approx_eq!(keyprops2.y2, 1.5);
-        assert_approx_eq!(keyprops2.w2, 2.5);
-        assert_approx_eq!(keyprops2.h2, 2.5);
-        assert_eq!(keyprops2.l, true);
-        assert_eq!(keyprops2.n, true);
-        assert_eq!(keyprops2.d, true);
-        assert_eq!(keyprops2.c, Color::new(127, 51, 76));
-        assert_eq!(keyprops2.t, Color::new(25, 25, 25));
+        assert_approx_eq!(keyprops.x, 1.);
+        assert_approx_eq!(keyprops.y, 1.);
+        assert_approx_eq!(keyprops.w, 2.);
+        assert_approx_eq!(keyprops.h, 2.);
+        assert_approx_eq!(keyprops.x2, 1.5);
+        assert_approx_eq!(keyprops.y2, 1.5);
+        assert_approx_eq!(keyprops.w2, 2.5);
+        assert_approx_eq!(keyprops.h2, 2.5);
+        assert_eq!(keyprops.l, true);
+        assert_eq!(keyprops.n, true);
+        assert_eq!(keyprops.d, true);
+        assert_eq!(keyprops.c, Color::new(127, 51, 76));
+        assert_eq!(keyprops.t, Color::new(25, 25, 25));
         assert_eq!(
-            keyprops2.ta,
+            keyprops.ta,
             [
                 Color::new(25, 25, 25),
                 Color::new(25, 25, 25),
@@ -601,69 +584,69 @@ mod tests {
                 Color::new(25, 25, 25)
             ]
         );
-        assert_eq!(keyprops2.a, LegendAlignment::new(5));
-        assert_eq!(keyprops2.p, "space".to_string());
-        assert_eq!(keyprops2.f, 4);
-        assert_eq!(keyprops2.fa, [4; NUM_LEGENDS]);
+        assert_eq!(keyprops.a, LegendAlignment::new(5));
+        assert_eq!(keyprops.p, "space".to_string());
+        assert_eq!(keyprops.f, 4);
+        assert_eq!(keyprops.fa, [4; NUM_LEGENDS]);
 
         let rawprops3 = RawKleProps {
             f: Some(2),
             f2: Some(4),
             ..RawKleProps::default()
         };
-        let keyprops3 = keyprops2.update(rawprops3);
-        assert_eq!(keyprops3.fa, [2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]);
+        keyprops.update(rawprops3);
+        assert_eq!(keyprops.fa, [2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]);
 
         let rawprops4 = RawKleProps {
             f: Some(5),
             ..RawKleProps::default()
         };
-        let keyprops4 = keyprops3.update(rawprops4);
-        assert_eq!(keyprops4.fa, [5; NUM_LEGENDS]);
+        keyprops.update(rawprops4);
+        assert_eq!(keyprops.fa, [5; NUM_LEGENDS]);
     }
 
     #[test]
     fn test_keyprops_next_key() {
-        let keyprops1 = KeyProps {
+        let mut keyprops = KeyProps {
             x: 2.0,
             w: 3.0,
             h: 1.5,
             ..KeyProps::default()
         };
-        let keyprops2 = keyprops1.next_key();
+        keyprops.next_key();
 
-        assert_approx_eq!(keyprops2.x, 5.);
-        assert_approx_eq!(keyprops2.y, 0.);
-        assert_approx_eq!(keyprops2.w, 1.);
-        assert_approx_eq!(keyprops2.h, 1.);
-        assert_approx_eq!(keyprops2.x2, 0.);
-        assert_approx_eq!(keyprops2.y2, 0.);
-        assert_approx_eq!(keyprops2.w2, 1.);
-        assert_approx_eq!(keyprops2.h2, 1.);
-        assert_eq!(keyprops2.l, false);
-        assert_eq!(keyprops2.n, false);
-        assert_eq!(keyprops2.d, false);
+        assert_approx_eq!(keyprops.x, 5.);
+        assert_approx_eq!(keyprops.y, 0.);
+        assert_approx_eq!(keyprops.w, 1.);
+        assert_approx_eq!(keyprops.h, 1.);
+        assert_approx_eq!(keyprops.x2, 0.);
+        assert_approx_eq!(keyprops.y2, 0.);
+        assert_approx_eq!(keyprops.w2, 1.);
+        assert_approx_eq!(keyprops.h2, 1.);
+        assert_eq!(keyprops.l, false);
+        assert_eq!(keyprops.n, false);
+        assert_eq!(keyprops.d, false);
     }
 
     #[test]
     fn test_keyprops_next_line() {
-        let keyprops1 = KeyProps {
+        let mut keyprops = KeyProps {
             x: 2.0,
             ..KeyProps::default()
         };
-        let keyprops2 = keyprops1.next_line();
+        keyprops.next_line();
 
-        assert_approx_eq!(keyprops2.x, 0.);
-        assert_approx_eq!(keyprops2.y, 1.);
-        assert_approx_eq!(keyprops2.w, 1.);
-        assert_approx_eq!(keyprops2.h, 1.);
-        assert_approx_eq!(keyprops2.x2, 0.);
-        assert_approx_eq!(keyprops2.y2, 0.);
-        assert_approx_eq!(keyprops2.w2, 1.);
-        assert_approx_eq!(keyprops2.h2, 1.);
-        assert_eq!(keyprops2.l, false);
-        assert_eq!(keyprops2.n, false);
-        assert_eq!(keyprops2.d, false);
+        assert_approx_eq!(keyprops.x, 0.);
+        assert_approx_eq!(keyprops.y, 1.);
+        assert_approx_eq!(keyprops.w, 1.);
+        assert_approx_eq!(keyprops.h, 1.);
+        assert_approx_eq!(keyprops.x2, 0.);
+        assert_approx_eq!(keyprops.y2, 0.);
+        assert_approx_eq!(keyprops.w2, 1.);
+        assert_approx_eq!(keyprops.h2, 1.);
+        assert_eq!(keyprops.l, false);
+        assert_eq!(keyprops.n, false);
+        assert_eq!(keyprops.d, false);
     }
 
     #[test]
@@ -689,7 +672,7 @@ mod tests {
         ];
 
         let keyprops1 = KeyProps::default();
-        let key1 = keyprops1.to_key(&legends).unwrap();
+        let key1 = keyprops1.build_key(&legends).unwrap();
 
         assert_eq!(key1.position, Vec2::ZERO);
         assert_eq!(key1.size, KeySize::Normal(Vec2::from(1.)));
@@ -703,42 +686,42 @@ mod tests {
             d: true,
             ..keyprops1
         };
-        let key2 = keyprops2.to_key(&legends).unwrap();
+        let key2 = keyprops2.build_key(&legends).unwrap();
         assert_eq!(key2.key_type, KeyType::None);
 
         let keyprops3 = KeyProps {
             n: true,
             ..keyprops2
         };
-        let key3 = keyprops3.to_key(&legends).unwrap();
+        let key3 = keyprops3.build_key(&legends).unwrap();
         assert_eq!(key3.key_type, KeyType::Homing(None));
 
         let keyprops4 = KeyProps {
             p: "space".into(),
             ..keyprops3
         };
-        let key4 = keyprops4.to_key(&legends).unwrap();
+        let key4 = keyprops4.build_key(&legends).unwrap();
         assert_eq!(key4.key_type, KeyType::Space);
 
         let keyprops5 = KeyProps {
             p: "scoop".into(),
             ..keyprops4
         };
-        let key5 = keyprops5.to_key(&legends).unwrap();
+        let key5 = keyprops5.build_key(&legends).unwrap();
         assert_eq!(key5.key_type, KeyType::Homing(Some(HomingType::Scoop)));
 
         let keyprops6 = KeyProps {
             p: "bar".into(),
             ..keyprops5
         };
-        let key6 = keyprops6.to_key(&legends).unwrap();
+        let key6 = keyprops6.build_key(&legends).unwrap();
         assert_eq!(key6.key_type, KeyType::Homing(Some(HomingType::Bar)));
 
         let keyprops7 = KeyProps {
             p: "bump".into(),
             ..keyprops6
         };
-        let key7 = keyprops7.to_key(&legends).unwrap();
+        let key7 = keyprops7.build_key(&legends).unwrap();
         assert_eq!(key7.key_type, KeyType::Homing(Some(HomingType::Bump)));
     }
 
