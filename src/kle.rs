@@ -71,7 +71,7 @@ where
             string
                 .lines()
                 .map(str::trim)
-                .map(|c| (!c.is_empty()).then(|| c))
+                .map(|c| (!c.is_empty()).then_some(c))
                 .map(|c| c.map(|c| Color::from_hex(c).map_err(|_| invalid_color::<D>(c))))
                 .map(Option::transpose)
                 .collect()
