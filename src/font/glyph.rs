@@ -16,7 +16,7 @@ impl Glyph {
         let advance = f32::from(face.glyph_hor_advance(gid)?);
 
         let mut path = Path::new();
-        let _ = face.outline_glyph(gid, &mut path);
+        face.outline_glyph(gid, &mut path);
 
         Some(Self {
             codepoint,
