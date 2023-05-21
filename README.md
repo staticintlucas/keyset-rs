@@ -2,7 +2,7 @@
 
 [![Test status](https://img.shields.io/github/actions/workflow/status/staticintlucas/keyset-rs/test.yml?branch=main&label=tests&style=flat-square)][tests]
 [![Code coverage](https://img.shields.io/codecov/c/gh/staticintlucas/keyset-rs?style=flat-square)][coverage]
-[![Rust version](https://img.shields.io/badge/rust-1.60%2B-informational?style=flat-square)][rust version]
+[![Rust version](https://img.shields.io/badge/rust-1.64%2B-informational?style=flat-square)][rust version]
 
 A (WIP) reimplementation of [pykeyset] in Rust for improved performance.
 Eventually this aims to become the backend for pykeyset using a Python wrapper around this project.
