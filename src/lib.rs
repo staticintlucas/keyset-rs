@@ -6,6 +6,7 @@
 mod drawing;
 mod error;
 mod font;
+mod key;
 mod kle;
 mod layout;
 mod profile;
