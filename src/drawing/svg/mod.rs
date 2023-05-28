@@ -6,7 +6,7 @@ use svg::node::element::Group;
 use svg::Document;
 
 use crate::drawing::Drawing;
-use crate::layout::Key;
+use crate::key::Key;
 use crate::utils::{Trim, Vec2};
 
 use font::Draw as _;
@@ -19,12 +19,18 @@ pub trait ToSvg {
 impl ToSvg for Drawing {
     #[must_use]
     fn to_svg(&self) -> String {
+        let key_size = self
+            .keys
+            .iter()
+            .map(|k| k.position + k.shape.size())
+            .fold(Vec2::from(1.), Vec2::max);
+
         // scale from keyboard units to drawing units (milliunits)
         let scale = Vec2::from(1e3);
-        let size = self.layout.size * scale;
+        let size = key_size * scale;
 
         // w and h are in dpi units, the 0.75 is keyboard units per inch
-        let Vec2 { x, y } = self.layout.size * self.options.dpi * 0.75;
+        let Vec2 { x, y } = key_size * self.options.dpi * 0.75;
 
         let document = Document::new()
             .set("width", format!("{}", Trim(x)))
@@ -32,7 +38,6 @@ impl ToSvg for Drawing {
             .set("viewBox", format!("0 0 {:.0} {:.0}", size.x, size.y));
 
         let document = self
-            .layout
             .keys
             .iter()
             .map(|key| self.draw_key(key))
@@ -66,19 +71,13 @@ impl Drawing {
 mod tests {
     use crate::drawing::DrawingOptions;
     use crate::font::Font;
-    use crate::layout::tests::test_key;
-    use crate::layout::Layout;
     use crate::profile::Profile;
-    use crate::utils::Vec2;
 
     use super::*;
 
     #[test]
     fn test_to_svg() {
-        let layout = Layout {
-            size: Vec2::from(1.),
-            keys: vec![],
-        };
+        let layout = vec![];
         let profile = Profile::default();
         let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
         let options = DrawingOptions::default();
@@ -92,11 +91,8 @@ mod tests {
 
     #[test]
     fn test_draw_key() {
-        let key = test_key();
-        let layout = Layout {
-            size: Vec2::from(1.),
-            keys: vec![],
-        };
+        let key = Key::example();
+        let layout = vec![];
         let profile = Profile::default();
         let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
 

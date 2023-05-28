@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::layout::InvalidKeySize;
+use crate::kle::InvalidKleLayout;
 use crate::utils::InvalidColor;
 
 #[derive(Debug)]
@@ -15,7 +15,7 @@ pub(crate) enum ErrorImpl {
     JsonParseError(serde_json::Error),
     TomlParseError(toml::de::Error),
     FontParseError(ttf_parser::FaceParsingError),
-    InvalidKeySize(InvalidKeySize),
+    InvalidKleLayout(InvalidKleLayout),
     InvalidColor(InvalidColor),
 }
 
@@ -25,7 +25,7 @@ impl fmt::Display for Error {
             ErrorImpl::JsonParseError(error) => write!(f, "error parsing JSON: {error}"),
             ErrorImpl::TomlParseError(error) => write!(f, "error parsing TOML: {error}"),
             ErrorImpl::FontParseError(error) => write!(f, "error parsing font: {error}"),
-            ErrorImpl::InvalidKeySize(error) => write!(f, "error parsing KLE layout: {error}"),
+            ErrorImpl::InvalidKleLayout(error) => write!(f, "error parsing KLE layout: {error}"),
             ErrorImpl::InvalidColor(error) => write!(f, "error parsing color: {error}"),
         }
     }
@@ -37,7 +37,7 @@ impl std::error::Error for Error {
             ErrorImpl::JsonParseError(error) => Some(error),
             ErrorImpl::TomlParseError(error) => Some(error),
             ErrorImpl::FontParseError(error) => Some(error),
-            ErrorImpl::InvalidKeySize(_) | ErrorImpl::InvalidColor(_) => None,
+            ErrorImpl::InvalidKleLayout(_) | ErrorImpl::InvalidColor(_) => None,
         }
     }
 }
@@ -66,10 +66,10 @@ impl From<ttf_parser::FaceParsingError> for Error {
     }
 }
 
-impl From<InvalidKeySize> for Error {
-    fn from(error: InvalidKeySize) -> Self {
+impl From<InvalidKleLayout> for Error {
+    fn from(error: InvalidKleLayout) -> Self {
         Self {
-            inner: Box::new(ErrorImpl::InvalidKeySize(error)),
+            inner: Box::new(ErrorImpl::InvalidKleLayout(error)),
         }
     }
 }
@@ -86,8 +86,8 @@ impl From<InvalidColor> for Error {
 mod tests {
     use super::*;
 
-    use crate::layout::KeySize;
     use crate::utils::Color;
+    use crate::KleLayout;
 
     fn json_parse_error() -> Error {
         serde_json::from_str::<serde_json::Value>("invalid")
@@ -104,7 +104,9 @@ mod tests {
     }
 
     fn invalid_key_size() -> Error {
-        KeySize::new(1., 1., 1., 1., 1., 1.).unwrap_err().into()
+        let kle = r#"[[{"w": 1, "h": 1, "x2": 1, "y2": 1, "w2": 1, "h2": 1}, "A"]]"#;
+        let layout = KleLayout::new(kle).unwrap();
+        layout.into_keys_iter().next().unwrap().unwrap_err().into()
     }
 
     fn invalid_color() -> Error {
@@ -114,16 +116,30 @@ mod tests {
     #[test]
     fn test_display_error() {
         let config = vec![
-            (json_parse_error(), "error parsing JSON: expected value at line 1 column 1"),
-            (toml_parse_error(), r#"error parsing TOML: TOML parse error at line 1, column 8
+            (
+                json_parse_error(),
+                "error parsing JSON: expected value at line 1 column 1",
+            ),
+            (
+                toml_parse_error(),
+                r#"error parsing TOML: TOML parse error at line 1, column 8
   |
 1 | invalid
   |        ^
 expected `.`, `=`
-"#),
+"#,
+            ),
             (font_parse_error(), "error parsing font: unknown magic"),
-            (invalid_key_size(), "error parsing KLE layout: Unsupported non-standard key size (w: 1.00, h: 1.00, x2: 1.00, y2: 1.00, w2: 1.00, h2: 1.00) Note ISO enter and stepped caps are supported as special cases"),
-            (invalid_color(), "error parsing color: invalid hex code invalid"),
+            (
+                invalid_key_size(),
+                "error parsing KLE layout: Unsupported non-standard key size \
+                (w: 1.00, h: 1.00, x2: 1.00, y2: 1.00, w2: 1.00, h2: 1.00). \
+                Note ISO enter and stepped caps are supported as special cases",
+            ),
+            (
+                invalid_color(),
+                "error parsing color: invalid hex code invalid",
+            ),
         ];
 
         for (err, fmt) in config {

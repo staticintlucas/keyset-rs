@@ -2,7 +2,7 @@ use itertools::Itertools;
 use svg::node::element::Path as SvgPath;
 
 use crate::font::Font;
-use crate::layout::Key;
+use crate::key::Key;
 use crate::profile::Profile;
 use crate::utils::{Path, Vec2};
 
@@ -12,34 +12,28 @@ pub trait Draw {
 
 impl Draw for Font {
     fn draw_legends(&self, profile: &Profile, key: &Key) -> Vec<SvgPath> {
-        let text = &key.legend;
-        let size = &key.legend_size;
-        let color = &key.legend_color;
-
         let mut legends = vec![];
 
-        for i in 0..text.len() {
-            for j in 0..text[0].len() {
-                if text[i][j].is_empty() {
-                    continue;
-                }
+        for (i, row) in key.legend.iter().enumerate() {
+            for (j, legend) in row.iter().enumerate() {
+                let legend = if let Some(l) = legend { l } else { continue };
 
-                let mut path = self.text_path(&text[i][j]);
+                let mut path = self.text_path(&legend.text);
 
-                let scale = profile.text_height.get(size[i][j]) / self.cap_height;
+                let scale = profile.text_height.get(legend.size) / self.cap_height;
                 path.scale(Vec2::from(scale));
 
                 let align = Vec2::new(
-                    (j as f32) / ((text.len() - 1) as f32),
-                    (i as f32) / ((text[0].len() - 1) as f32),
+                    (j as f32) / ((key.legend.len() - 1) as f32),
+                    (i as f32) / ((key.legend[0].len() - 1) as f32),
                 );
-                let margin = profile.text_margin.get(size[i][j]);
+                let margin = profile.text_margin.get(legend.size);
                 let point = margin.position() + (margin.size() - path.bounds.size()) * align;
                 path.translate(point - path.bounds.position());
 
                 let svg_path = SvgPath::new()
                     .set("d", path)
-                    .set("fill", color[i][j].to_hex())
+                    .set("fill", legend.color.to_hex())
                     .set("stroke", "none");
 
                 legends.push(svg_path);
@@ -83,7 +77,7 @@ impl Font {
 
 #[cfg(test)]
 mod tests {
-    use crate::{layout::tests::test_key, utils::PathSegment};
+    use crate::utils::PathSegment;
 
     use super::*;
 
@@ -91,7 +85,7 @@ mod tests {
     fn test_draw_legends() {
         let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
         let profile = Profile::default();
-        let key = test_key();
+        let key = Key::example();
         let path = font.draw_legends(&profile, &key);
 
         assert_eq!(path.len(), 4);

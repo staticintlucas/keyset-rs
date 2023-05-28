@@ -40,10 +40,10 @@ impl From<Vec2> for Shape {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Legend {
     pub text: String,
-    pub size: f32,
+    pub size: usize,
     pub color: Color,
 }
 
@@ -57,8 +57,45 @@ pub struct Key {
 }
 
 impl Key {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    // Example non-blank key used in some of our tests
+    pub(crate) fn example() -> Self {
+        Self {
+            legend: [
+                [
+                    Some(Legend {
+                        text: "!".into(),
+                        size: 4,
+                        color: Color::default_legend(),
+                    }),
+                    None,
+                    Some(Legend {
+                        text: "¹".into(),
+                        size: 4,
+                        color: Color::default_legend(),
+                    }),
+                ],
+                [None, None, None],
+                [
+                    Some(Legend {
+                        text: "1".into(),
+                        size: 4,
+                        color: Color::default_legend(),
+                    }),
+                    None,
+                    Some(Legend {
+                        text: "¡".into(),
+                        size: 4,
+                        color: Color::default_legend(),
+                    }),
+                ],
+            ],
+            ..Self::default()
+        }
     }
 }
 

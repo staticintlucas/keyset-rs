@@ -212,8 +212,6 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
     use maplit::hashmap;
 
-    use crate::profile::HomingType;
-
     use super::*;
 
     #[test]
@@ -381,108 +379,5 @@ mod tests {
         assert_approx_eq!(rect.position(), Vec2::new(100., 150.));
         assert_approx_eq!(rect.size(), Vec2::from(800.));
         assert_approx_eq!(rect.radius(), Vec2::from(100.));
-    }
-
-    #[test]
-    fn test_deserialize_profile() {
-        let profile: Profile = Profile::from_toml(
-            r#"
-            type = 'cylindrical'
-            depth = 0.5
-
-            [bottom]
-            width = 18.29
-            height = 18.29
-            radius = 0.38
-
-            [top]
-            width = 11.81
-            height = 13.91
-            radius = 1.52
-            y-offset = -1.62
-
-            [legend.5]
-            size = 4.84
-            width = 9.45
-            height = 11.54
-            y-offset = 0
-
-            [legend.4]
-            size = 3.18
-            width = 9.53
-            height = 9.56
-            y-offset = 0.40
-
-            [legend.3]
-            size = 2.28
-            width = 9.45
-            height = 11.30
-            y-offset = -0.12
-
-            [homing]
-            default = 'scoop'
-            scoop = { depth = 1.5 }
-            bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
-            bump = { diameter = 0.4, y-offset = -0.2 }
-        "#,
-        )
-        .unwrap();
-
-        assert!(
-            matches!(profile.profile_type, ProfileType::Cylindrical { depth } if f32::abs(depth - 0.5) < 1e-6)
-        );
-
-        assert_approx_eq!(profile.bottom_rect.position(), Vec2::from(20.), 0.5);
-        assert_approx_eq!(profile.bottom_rect.size(), Vec2::from(960.), 0.5);
-        assert_approx_eq!(profile.bottom_rect.radius(), Vec2::from(20.), 0.5);
-
-        assert_approx_eq!(profile.top_rect.position(), Vec2::new(190., 50.), 0.5);
-        assert_approx_eq!(profile.top_rect.size(), Vec2::new(620., 730.), 0.5);
-        assert_approx_eq!(profile.top_rect.radius(), Vec2::new(80., 80.), 0.5);
-
-        assert_eq!(profile.text_height.0.len(), 10);
-        let expected = vec![0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
-        for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
-            assert_approx_eq!(e, r, 0.5);
-        }
-
-        assert_eq!(profile.text_margin.0.len(), 10);
-        let expected = vec![
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
-            Rect::new(Vec2::new(250., 185.), Vec2::new(500., 502.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
-        ];
-        for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.position(), r.position(), 0.5);
-            assert_approx_eq!(e.size(), r.size(), 0.5);
-        }
-
-        assert_eq!(profile.homing.default, HomingType::Scoop);
-        assert_approx_eq!(profile.homing.scoop.depth, 1.5);
-        assert_approx_eq!(profile.homing.bar.size, Vec2::new(202., 21.), 0.5);
-        assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);
-        assert_approx_eq!(profile.homing.bump.diameter, 21., 0.5);
-        assert_approx_eq!(profile.homing.bump.y_offset, -10., 0.5);
-
-        let result = Profile::from_toml("null");
-        assert!(result.is_err());
-        assert_eq!(
-            format!("{}", result.unwrap_err()),
-            format!(
-                r#"error parsing TOML: TOML parse error at line 1, column 5
-  |
-1 | null
-  |     ^
-expected `.`, `=`
-"#
-            ),
-        )
     }
 }

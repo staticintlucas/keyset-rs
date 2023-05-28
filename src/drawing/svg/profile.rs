@@ -1,8 +1,8 @@
 use itertools::Itertools;
 use svg::node::element::Path as SvgPath;
 
-use crate::layout::{Key, KeySize, KeyType};
-use crate::profile::{HomingType, Profile, ProfileType};
+use crate::key::{self, Key};
+use crate::profile::{Profile, ProfileType};
 use crate::utils::{Color, Path, Rect, RoundRect, Vec2};
 
 use super::path::{EdgeType, KeyHelpers};
@@ -14,39 +14,39 @@ pub trait Draw {
 
 impl Draw for Profile {
     fn draw_key(&self, key: &Key) -> Vec<SvgPath> {
-        if key.key_type == KeyType::None {
+        if key.typ == key::Type::None {
             // Nothing to draw
             return vec![];
         }
 
-        let homing = if let KeyType::Homing(homing) = key.key_type {
+        let homing = if let key::Type::Homing(homing) = key.typ {
             homing.or(Some(self.homing.default))
         } else {
             None
         };
-        let depth = if let Some(HomingType::Scoop) = homing {
+        let depth = if let Some(key::Homing::Scoop) = homing {
             self.homing.scoop.depth
         } else {
             self.profile_type.depth()
         };
-        let typ = key.key_type;
-        let color = key.key_color;
+        let typ = key.typ;
+        let color = key.color;
 
-        let mut paths = match key.size {
-            KeySize::Normal(size) => {
+        let mut paths = match key.shape {
+            key::Shape::Normal(size) => {
                 vec![
                     self.draw_key_bottom(size * 1e3, color),
                     self.draw_key_top(typ, size * 1e3, color, depth),
                 ]
             }
-            KeySize::SteppedCaps => {
+            key::Shape::SteppedCaps => {
                 vec![
                     self.draw_key_bottom(Vec2::new(1.75e3, 1e3), color),
                     self.draw_key_top(typ, Vec2::new(1.25e3, 1e3), color, depth),
                     self.draw_step(color),
                 ]
             }
-            KeySize::IsoHorizontal | KeySize::IsoVertical => {
+            key::Shape::IsoHorizontal | key::Shape::IsoVertical => {
                 vec![
                     self.draw_iso_bottom(color),
                     self.draw_iso_top(typ, color, depth),
@@ -55,13 +55,13 @@ impl Draw for Profile {
         };
 
         match homing {
-            Some(HomingType::Bar) => {
-                paths.push(self.draw_homing_bar(key.size.size() * 1e3, color));
+            Some(key::Homing::Bar) => {
+                paths.push(self.draw_homing_bar(key.shape.size() * 1e3, color));
             }
-            Some(HomingType::Bump) => {
-                paths.push(self.draw_homing_bump(key.size.size() * 1e3, color));
+            Some(key::Homing::Bump) => {
+                paths.push(self.draw_homing_bump(key.shape.size() * 1e3, color));
             }
-            Some(HomingType::Scoop) | None => {}
+            Some(key::Homing::Scoop) | None => {}
         }
 
         paths
@@ -69,20 +69,21 @@ impl Draw for Profile {
 
     fn draw_margin(&self, key: &Key) -> Vec<SvgPath> {
         let rects = key
-            .legend_size
-            .into_iter()
-            .flat_map(IntoIterator::into_iter)
+            .legend
+            .iter()
+            .flat_map(|s| s.iter())
+            .filter_map(|l| l.as_ref().map(|l| l.size))
             .unique()
             .map(|s| self.text_margin.get(s));
 
-        let (pos_off, size_off) = match key.size {
-            KeySize::IsoHorizontal => (Vec2::ZERO, Vec2::new(500., 0.)),
-            KeySize::IsoVertical => (Vec2::new(250., 0.), Vec2::new(250., 1000.)),
-            KeySize::SteppedCaps => (Vec2::ZERO, Vec2::new(250., 0.)),
-            KeySize::Normal(size) => (Vec2::ZERO, (size - Vec2::from(1.)) * 1e3),
+        let (pos_off, size_off) = match key.shape {
+            key::Shape::IsoHorizontal => (Vec2::ZERO, Vec2::new(500., 0.)),
+            key::Shape::IsoVertical => (Vec2::new(250., 0.), Vec2::new(250., 1000.)),
+            key::Shape::SteppedCaps => (Vec2::ZERO, Vec2::new(250., 0.)),
+            key::Shape::Normal(size) => (Vec2::ZERO, (size - Vec2::from(1.)) * 1e3),
         };
 
-        let (pos_off, size_off) = if key.key_type == KeyType::None {
+        let (pos_off, size_off) = if key.typ == key::Type::None {
             (
                 pos_off + (self.bottom_rect.position() - self.top_rect.position()),
                 size_off + (self.bottom_rect.size() - self.top_rect.size()),
@@ -113,18 +114,18 @@ impl Draw for Profile {
 }
 
 impl Profile {
-    fn draw_key_top(&self, key_type: KeyType, size: Vec2, color: Color, depth: f32) -> SvgPath {
+    fn draw_key_top(&self, typ: key::Type, size: Vec2, color: Color, depth: f32) -> SvgPath {
         let rect = self.top_rect;
         let curve = (depth / 19.05 * 1e3) * 0.381;
 
-        let (edge_t, edge_r, edge_b, edge_l) = match (self.profile_type, key_type) {
+        let (edge_t, edge_r, edge_b, edge_l) = match (self.profile_type, typ) {
             (ProfileType::Flat, _) => (
                 EdgeType::Line,
                 EdgeType::Line,
                 EdgeType::Line,
                 EdgeType::Line,
             ),
-            (_, KeyType::Space) => (
+            (_, key::Type::Space) => (
                 EdgeType::Line,
                 EdgeType::InsetCurve,
                 EdgeType::Line,
@@ -218,20 +219,20 @@ impl Profile {
             .set("stroke-width", "10")
     }
 
-    fn draw_iso_top(&self, key_type: KeyType, color: Color, depth: f32) -> SvgPath {
+    fn draw_iso_top(&self, typ: key::Type, color: Color, depth: f32) -> SvgPath {
         let rect = self.top_rect;
         let top_size = Vec2::new(1.5e3, 1e3);
         let btm_size = Vec2::new(1.25e3, 2e3);
         let curve = (depth / 19.05 * 1e3) * 0.381;
 
-        let (edge_t, edge_r, edge_b, edge_l) = match (self.profile_type, key_type) {
+        let (edge_t, edge_r, edge_b, edge_l) = match (self.profile_type, typ) {
             (ProfileType::Flat, _) => (
                 EdgeType::Line,
                 EdgeType::Line,
                 EdgeType::Line,
                 EdgeType::Line,
             ),
-            (_, KeyType::Space) => (
+            (_, key::Type::Space) => (
                 EdgeType::Line,
                 EdgeType::InsetCurve,
                 EdgeType::Line,
@@ -399,30 +400,29 @@ impl Profile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layout::tests::test_key;
 
     #[test]
     fn test_draw_key() {
         let profile = Profile::default();
-        let key = test_key();
-        let homing_scoop = KeyType::Homing(Some(HomingType::Scoop));
-        let homing_bar = KeyType::Homing(Some(HomingType::Bar));
-        let homing_bump = KeyType::Homing(Some(HomingType::Bump));
+        let key = Key::default();
+        let homing_scoop = key::Type::Homing(Some(key::Homing::Scoop));
+        let homing_bar = key::Type::Homing(Some(key::Homing::Bar));
+        let homing_bump = key::Type::Homing(Some(key::Homing::Bump));
         let test_config = vec![
-            (KeySize::Normal(Vec2::new(1., 1.)), KeyType::Normal, 2),
-            (KeySize::SteppedCaps, KeyType::Normal, 3),
-            (KeySize::IsoHorizontal, KeyType::Normal, 2),
-            (KeySize::IsoVertical, KeyType::Normal, 2),
-            (KeySize::Normal(Vec2::new(1., 1.)), homing_scoop, 2),
-            (KeySize::Normal(Vec2::new(1., 1.)), homing_bar, 3),
-            (KeySize::Normal(Vec2::new(1., 1.)), homing_bump, 3),
-            (KeySize::Normal(Vec2::new(1., 1.)), KeyType::None, 0),
+            (key::Shape::Normal(Vec2::new(1., 1.)), key::Type::Normal, 2),
+            (key::Shape::SteppedCaps, key::Type::Normal, 3),
+            (key::Shape::IsoHorizontal, key::Type::Normal, 2),
+            (key::Shape::IsoVertical, key::Type::Normal, 2),
+            (key::Shape::Normal(Vec2::new(1., 1.)), homing_scoop, 2),
+            (key::Shape::Normal(Vec2::new(1., 1.)), homing_bar, 3),
+            (key::Shape::Normal(Vec2::new(1., 1.)), homing_bump, 3),
+            (key::Shape::Normal(Vec2::new(1., 1.)), key::Type::None, 0),
         ];
 
-        for (size, key_type, len) in test_config {
+        for (shape, typ, len) in test_config {
             let key = Key {
-                size,
-                key_type,
+                shape,
+                typ,
                 ..key.clone()
             };
             let path = profile.draw_key(&key);
@@ -436,19 +436,19 @@ mod tests {
     #[test]
     fn test_draw_margin() {
         let profile = Profile::default();
-        let key = test_key();
+        let key = Key::example();
         let test_config = vec![
-            (KeySize::Normal(Vec2::new(1., 1.)), KeyType::Normal),
-            (KeySize::SteppedCaps, KeyType::Normal),
-            (KeySize::IsoHorizontal, KeyType::Normal),
-            (KeySize::IsoVertical, KeyType::Normal),
-            (KeySize::Normal(Vec2::new(1., 1.)), KeyType::None),
+            (key::Shape::Normal(Vec2::new(1., 1.)), key::Type::Normal),
+            (key::Shape::SteppedCaps, key::Type::Normal),
+            (key::Shape::IsoHorizontal, key::Type::Normal),
+            (key::Shape::IsoVertical, key::Type::Normal),
+            (key::Shape::Normal(Vec2::new(1., 1.)), key::Type::None),
         ];
 
-        for (size, key_type) in test_config {
+        for (shape, typ) in test_config {
             let key = Key {
-                size,
-                key_type,
+                shape,
+                typ,
                 ..key.clone()
             };
             let path = profile.draw_margin(&key);
@@ -461,29 +461,26 @@ mod tests {
     #[test]
     fn test_draw_key_top() {
         let profile = Profile::default();
-        let key = test_key();
-        let homing_scoop = KeyType::Homing(Some(HomingType::Scoop));
+        let key = Key::default();
+        let homing_scoop = key::Type::Homing(Some(key::Homing::Scoop));
         let size = Vec2::new(1., 1.);
-        let profile_key_types = vec![
-            (ProfileType::Cylindrical { depth: 1.0 }, KeyType::Normal),
-            (ProfileType::Cylindrical { depth: 1.0 }, KeyType::Space),
+        let profile_typs = vec![
+            (ProfileType::Cylindrical { depth: 1.0 }, key::Type::Normal),
+            (ProfileType::Cylindrical { depth: 1.0 }, key::Type::Space),
             (ProfileType::Cylindrical { depth: 1.0 }, homing_scoop),
-            (ProfileType::Spherical { depth: 0.8 }, KeyType::Normal),
+            (ProfileType::Spherical { depth: 0.8 }, key::Type::Normal),
             (ProfileType::Spherical { depth: 0.8 }, homing_scoop),
-            (ProfileType::Flat, KeyType::Normal),
+            (ProfileType::Flat, key::Type::Normal),
         ];
 
-        for (profile_type, key_type) in profile_key_types {
+        for (profile_type, typ) in profile_typs {
             let profile = Profile {
                 profile_type,
                 ..profile.clone()
             };
-            let key = Key {
-                key_type,
-                ..key.clone()
-            };
+            let key = Key { typ, ..key.clone() };
             let path = profile.draw_key_top(
-                key.key_type,
+                key.typ,
                 size,
                 Color::default_key(),
                 profile.profile_type.depth(),
@@ -515,31 +512,25 @@ mod tests {
     #[test]
     fn test_draw_iso_top() {
         let profile = Profile::default();
-        let key = test_key();
-        let homing_scoop = KeyType::Homing(Some(HomingType::Scoop));
-        let profile_key_types = vec![
-            (ProfileType::Cylindrical { depth: 1.0 }, KeyType::Normal),
-            (ProfileType::Cylindrical { depth: 1.0 }, KeyType::Space),
+        let key = Key::default();
+        let homing_scoop = key::Type::Homing(Some(key::Homing::Scoop));
+        let profile_typs = vec![
+            (ProfileType::Cylindrical { depth: 1.0 }, key::Type::Normal),
+            (ProfileType::Cylindrical { depth: 1.0 }, key::Type::Space),
             (ProfileType::Cylindrical { depth: 1.0 }, homing_scoop),
-            (ProfileType::Spherical { depth: 0.8 }, KeyType::Normal),
+            (ProfileType::Spherical { depth: 0.8 }, key::Type::Normal),
             (ProfileType::Spherical { depth: 0.8 }, homing_scoop),
-            (ProfileType::Flat, KeyType::Normal),
+            (ProfileType::Flat, key::Type::Normal),
         ];
 
-        for (profile_type, key_type) in profile_key_types {
+        for (profile_type, typ) in profile_typs {
             let profile = Profile {
                 profile_type,
                 ..profile.clone()
             };
-            let key = Key {
-                key_type,
-                ..key.clone()
-            };
-            let path = profile.draw_iso_top(
-                key.key_type,
-                Color::default_key(),
-                profile.profile_type.depth(),
-            );
+            let key = Key { typ, ..key.clone() };
+            let path =
+                profile.draw_iso_top(key.typ, Color::default_key(), profile.profile_type.depth());
 
             assert!(path.get_attributes().contains_key("d"));
         }
