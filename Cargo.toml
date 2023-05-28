@@ -11,18 +11,18 @@ keywords = ["keyboard", "keycap", "keyset", "layout", "diagram"]
 categories = ["command-line-utilities", "graphics", "multimedia::images", "rendering"]
 
 [dependencies]
-itertools = "0.10"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-interp = { version = "1.0", features = ["interp_array"] }
-toml = "0.7"
-maplit = "1.0"
-svg = "0.13"
-rgb = "0.8"
 array-init = "2.0"
-ttf-parser = "0.18"
+interp = { version = "1.0", features = ["interp_array"] }
+itertools = "0.10"
 log = "0.4"
+rgb = { version = "0.8", default-features = false }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = "1.0"
+svg = "0.13"
+toml = { version = "0.7", default-features = false, features = ["parse"] }
+ttf-parser = { version = "0.18", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 assert_approx_eq = "1.1"
 assert_matches = "1.5"
+maplit = "1.0"

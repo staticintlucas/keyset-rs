@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use maplit::hashmap;
-
 #[derive(Debug, Clone)]
 pub struct Kerning {
     pairs: HashMap<(char, char), f32>,
@@ -9,7 +7,9 @@ pub struct Kerning {
 
 impl Kerning {
     pub fn new() -> Self {
-        Self { pairs: hashmap! {} }
+        Self {
+            pairs: HashMap::new(),
+        }
     }
 
     pub fn get(&self, lhs: char, rhs: char) -> f32 {
@@ -41,6 +41,7 @@ impl Default for Kerning {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use maplit::hashmap;
 
     #[test]
     fn test_get() {
