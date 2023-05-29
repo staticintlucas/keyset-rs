@@ -1,9 +1,8 @@
 mod de;
 
 use std::collections::HashMap;
-use std::iter;
+use std::{array, iter};
 
-use array_init::array_init;
 use interp::interp_array;
 use itertools::Itertools;
 use serde::Deserialize;
@@ -112,7 +111,7 @@ impl TextHeight {
                     )
                     .unzip()
             };
-            let all_indeces = array_init(|i| i as f32);
+            let all_indeces = array::from_fn(|i| i as f32);
             Self(interp_array(&index, &height, &all_indeces))
         }
     }
@@ -129,7 +128,7 @@ impl TextHeight {
 impl Default for TextHeight {
     fn default() -> Self {
         const DEFAULT_MAX: f32 = 18.;
-        Self(array_init(|i| {
+        Self(array::from_fn(|i| {
             (i as f32) * DEFAULT_MAX / (Self::NUM_HEIGHTS as f32 - 1.)
         }))
     }

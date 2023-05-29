@@ -14,7 +14,7 @@ impl Draw for Font {
     fn draw_legends(&self, profile: &Profile, key: &Key) -> Vec<SvgPath> {
         let mut legends = vec![];
 
-        for (i, row) in key.legend.iter().enumerate() {
+        for (i, row) in key.legends.iter().enumerate() {
             for (j, legend) in row.iter().enumerate() {
                 let legend = if let Some(l) = legend { l } else { continue };
 
@@ -24,8 +24,8 @@ impl Draw for Font {
                 path.scale(Vec2::from(scale));
 
                 let align = Vec2::new(
-                    (j as f32) / ((key.legend.len() - 1) as f32),
-                    (i as f32) / ((key.legend[0].len() - 1) as f32),
+                    (j as f32) / ((key.legends.len() - 1) as f32),
+                    (i as f32) / ((key.legends[0].len() - 1) as f32),
                 );
                 let margin = profile.text_margin.get(legend.size);
                 let point = margin.position() + (margin.size() - path.bounds.size()) * align;

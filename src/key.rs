@@ -53,7 +53,7 @@ pub struct Key {
     pub shape: Shape,
     pub typ: Type,
     pub color: Color,
-    pub legend: [[Option<Legend>; 3]; 3],
+    pub legends: [[Option<Legend>; 3]; 3],
 }
 
 impl Key {
@@ -65,7 +65,7 @@ impl Key {
     // Example non-blank key used in some of our tests
     pub(crate) fn example() -> Self {
         Self {
-            legend: [
+            legends: [
                 [
                     Some(Legend {
                         text: "!".into(),
@@ -106,7 +106,7 @@ impl Default for Key {
             shape: Shape::Normal(Vec2::from(1.)),
             typ: Type::Normal,
             color: Color::default_key(),
-            legend: Default::default(), // [[None; 3]; 3] won't work since Option<Legend> : !Copy
+            legends: Default::default(), // [[None; 3]; 3] won't work since Option<Legend> : !Copy
         }
     }
 }
@@ -142,7 +142,7 @@ pub mod tests {
         assert_eq!(key.shape, Shape::Normal(Vec2::new(1., 1.)));
         assert_eq!(key.typ, Type::Normal);
         assert_eq!(key.color, Color::default_key());
-        for row in key.legend {
+        for row in key.legends {
             for el in row {
                 assert!(el.is_none());
             }

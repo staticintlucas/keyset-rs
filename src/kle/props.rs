@@ -1,4 +1,5 @@
-use array_init::array_init;
+use std::array;
+
 use itertools::izip;
 
 use crate::error::Result;
@@ -68,12 +69,12 @@ impl KleProps {
     pub fn update(&mut self, props: KlePropsObject) {
         let f = props.f.unwrap_or(self.f);
         let fa = if let Some(fa) = props.fa {
-            array_init(|i| match fa.get(i).copied() {
+            array::from_fn(|i| match fa.get(i).copied() {
                 Some(fa) if fa > 0 => fa,
                 _ => f,
             })
         } else if let Some(f2) = props.f2 {
-            array_init(|i| if i == 0 { f } else { f2 })
+            array::from_fn(|i| if i == 0 { f } else { f2 })
         } else if let Some(f) = props.f {
             [f; NUM_LEGENDS]
         } else {
@@ -84,7 +85,7 @@ impl KleProps {
             .and_then(|v| v.first().copied().flatten())
             .unwrap_or(self.t);
         let ta = props.t.map_or(self.ta, |ta| {
-            array_init(|i| ta.get(i).copied().flatten().unwrap_or(t))
+            array::from_fn(|i| ta.get(i).copied().flatten().unwrap_or(t))
         });
 
         // Per-key properties
@@ -160,19 +161,16 @@ impl KleProps {
 
         let color = self.c;
 
-        let legend =
-            array_init::from_iter(izip!(legends, self.fa, self.ta).map(|(text, size, color)| {
-                (!text.is_empty()).then_some(Legend { text, size, color })
-            }))
-            .unwrap();
-        let legend = realign_legends(&legend, self.a)?;
+        let legends = izip!(legends, self.fa, self.ta)
+            .map(|(text, size, color)| (!text.is_empty()).then_some(Legend { text, size, color }));
+        let legends = realign_legends(legends, self.a)?;
 
         Ok(Key {
             position,
             shape,
             typ,
             color,
-            legend,
+            legends,
         })
     }
 }
@@ -396,7 +394,7 @@ mod tests {
         assert_eq!(key1.shape, key::Shape::Normal(Vec2::from(1.)));
         assert_eq!(key1.typ, key::Type::Normal);
         assert_eq!(key1.color, Color::default_key());
-        for (res, exp) in key1.legend.iter().zip(expected) {
+        for (res, exp) in key1.legends.iter().zip(expected) {
             for (r, e) in res.iter().zip(exp) {
                 let r = r.as_ref().unwrap();
                 assert_eq!(r.text, e);

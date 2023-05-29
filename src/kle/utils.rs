@@ -1,36 +1,43 @@
-use array_init::array_init;
+use std::array;
+
+use itertools::Itertools;
 
 use crate::error::Result;
-use crate::key::Shape;
+use crate::key::{Legend, Shape};
 use crate::utils::Vec2;
 
 use super::props::{NUM_ALIGNMENTS, NUM_LEGENDS};
 use super::InvalidKleLayout;
 
-// This map is the same as that of kle-serial except the indices and values are swapped. Note the
-// blanks are also filled in, so we're slightly more permissive with not-strictly-valid KLE input.
+// This map is the same as that of kle-serial. Note the blanks are also filled in, so we're slightly
+// more permissive with not-strictly-valid KLE input.
 const KLE_2_ORD: [[usize; NUM_LEGENDS]; NUM_ALIGNMENTS] = [
-    [0, 8, 2, 6, 9, 7, 1, 10, 3, 4, 11, 5], // 0 = no centering
-    [2, 0, 3, 7, 6, 8, 9, 1, 10, 4, 11, 5], // 1 = center x
-    [1, 3, 6, 0, 8, 2, 7, 9, 10, 4, 11, 5], // 2 = center y
-    [1, 2, 3, 6, 0, 7, 8, 9, 10, 4, 11, 5], // 3 = center x & y
-    [0, 8, 2, 6, 9, 7, 1, 10, 3, 5, 4, 11], // 4 = center front (default)
-    [2, 0, 3, 5, 6, 7, 8, 1, 9, 10, 4, 11], // 5 = center front & x
-    [1, 3, 5, 0, 8, 2, 6, 7, 9, 10, 4, 11], // 6 = center front & y
-    [1, 2, 3, 5, 0, 6, 7, 8, 9, 10, 4, 11], // 7 = center front & x & y
+    [0, 6, 2, 8, 9, 11, 3, 5, 1, 4, 7, 10], // 0 = no centering
+    [1, 7, 0, 2, 9, 11, 4, 3, 5, 6, 8, 10], // 1 = center x
+    [3, 0, 5, 1, 9, 11, 2, 6, 4, 7, 8, 10], // 2 = center y
+    [4, 0, 1, 2, 9, 11, 3, 5, 6, 7, 8, 10], // 3 = center x & y
+    [0, 6, 2, 8, 10, 9, 3, 5, 1, 4, 7, 11], // 4 = center front (default)
+    [1, 7, 0, 2, 10, 3, 4, 5, 6, 8, 9, 11], // 5 = center front & x
+    [3, 0, 5, 1, 10, 2, 6, 7, 4, 8, 9, 11], // 6 = center front & y
+    [4, 0, 1, 2, 10, 3, 5, 6, 7, 8, 9, 11], // 7 = center front & x & y
 ];
 
-pub fn realign_legends<T>(values: &[T; NUM_LEGENDS], alignment: usize) -> Result<[[T; 3]; 3]>
+pub fn realign_legends<T>(values: T, alignment: usize) -> Result<[[Option<Legend>; 3]; 3]>
 where
-    T: Clone,
+    T: IntoIterator<Item = Option<Legend>>,
 {
     let mapping = KLE_2_ORD.get(alignment).ok_or(InvalidKleLayout {
         message: format!("Unsupported legend alignment ({alignment}). Expected <{NUM_ALIGNMENTS}"),
     })?;
 
     // Rearrange values based on the mapping and reshape into [[T; 3]; 3]
-    Ok(array_init(|i| {
-        array_init(|j| values[mapping[3 * i + j]].clone())
+    let mut iter = mapping
+        .iter()
+        .zip(values)
+        .sorted_by_key(|(&i, _v)| i)
+        .map(|(_i, v)| v);
+    Ok(array::from_fn(|_| {
+        array::from_fn(|_| iter.next().unwrap_or(None))
     }))
 }
 

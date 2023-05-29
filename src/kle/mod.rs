@@ -2,8 +2,8 @@ mod de;
 mod props;
 mod utils;
 
-use std::fmt;
 use std::vec::IntoIter;
+use std::{array, fmt};
 
 use self::de::KleKeyOrProps;
 use self::props::KleProps;
@@ -72,13 +72,8 @@ impl Iterator for KleLayoutIterator {
             }
         };
 
-        let legends = array_init::from_iter(
-            legends
-                .lines()
-                .chain(std::iter::repeat(""))
-                .map(String::from),
-        )
-        .unwrap(); // Can't panic due to the iter::repeat
+        let mut lines = legends.lines().map(String::from);
+        let legends = array::from_fn(|_| lines.next().unwrap_or(String::new()));
 
         let key = self.state.build_key(legends);
         self.state.next_key();

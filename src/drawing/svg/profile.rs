@@ -69,7 +69,7 @@ impl Draw for Profile {
 
     fn draw_margin(&self, key: &Key) -> Vec<SvgPath> {
         let rects = key
-            .legend
+            .legends
             .iter()
             .flat_map(|s| s.iter())
             .filter_map(|l| l.as_ref().map(|l| l.size))
