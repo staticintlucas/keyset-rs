@@ -7,12 +7,11 @@ mod drawing;
 mod error;
 mod font;
 mod key;
-mod kle;
+pub mod kle;
 mod profile;
 mod utils;
 
 pub use drawing::{Drawing, DrawingOptions, ToSvg};
 pub use font::Font;
 pub use key::Key;
-pub use kle::KleLayout;
 pub use profile::Profile;

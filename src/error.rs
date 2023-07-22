@@ -86,8 +86,8 @@ impl From<InvalidColor> for Error {
 mod tests {
     use super::*;
 
+    use crate::kle;
     use crate::utils::Color;
-    use crate::KleLayout;
 
     fn json_parse_error() -> Error {
         serde_json::from_str::<serde_json::Value>("invalid")
@@ -105,8 +105,7 @@ mod tests {
 
     fn invalid_key_size() -> Error {
         let kle = r#"[[{"w": 1, "h": 1, "x2": 1, "y2": 1, "w2": 1, "h2": 1}, "A"]]"#;
-        let layout = KleLayout::new(kle).unwrap();
-        layout.into_keys_iter().next().unwrap().unwrap_err().into()
+        kle::from_json(kle).unwrap_err().into()
     }
 
     fn invalid_color() -> Error {
@@ -134,7 +133,7 @@ expected `.`, `=`
                 invalid_key_size(),
                 "error parsing KLE layout: Unsupported non-standard key size \
                 (w: 1.00, h: 1.00, x2: 1.00, y2: 1.00, w2: 1.00, h2: 1.00). \
-                Note ISO enter and stepped caps are supported as special cases",
+                Note only ISO enter and stepped caps are supported as special cases",
             ),
             (
                 invalid_color(),
