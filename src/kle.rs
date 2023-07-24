@@ -92,7 +92,7 @@ impl TryFrom<kle::Key> for Key {
     fn try_from(key: kle::Key) -> Result<Self> {
         #[allow(clippy::cast_possible_truncation)]
         Ok(Self {
-            position: Vec2::new(key.x as f32, key.y as f32),
+            position: Vec2::new((key.x + key.x2.min(0.)) as f32, (key.y + key.y2.min(0.)) as f32),
             shape: key_shape_from_kle(&key)?,
             typ: key_type_from_kle(&key),
             color: Color::new(key.color.r, key.color.g, key.color.b),
