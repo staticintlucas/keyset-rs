@@ -1,6 +1,5 @@
-use std::{array, fmt, vec};
+use std::{array, fmt};
 
-use itertools::Itertools;
 use kle_serial as kle;
 
 use crate::error::{Error, Result};
@@ -92,7 +91,10 @@ impl TryFrom<kle::Key> for Key {
     fn try_from(key: kle::Key) -> Result<Self> {
         #[allow(clippy::cast_possible_truncation)]
         Ok(Self {
-            position: Vec2::new((key.x + key.x2.min(0.)) as f32, (key.y + key.y2.min(0.)) as f32),
+            position: Vec2::new(
+                (key.x + key.x2.min(0.)) as f32,
+                (key.y + key.y2.min(0.)) as f32,
+            ),
             shape: key_shape_from_kle(&key)?,
             typ: key_type_from_kle(&key),
             color: Color::new(key.color.r, key.color.g, key.color.b),
@@ -103,23 +105,20 @@ impl TryFrom<kle::Key> for Key {
     }
 }
 
-pub fn from_json(json: &str) -> Result<vec::IntoIter<Key>> {
-    // TODO try not to allocate a Vec here
-    let keys: Vec<_> = serde_json::from_str::<kle::KeyIterator>(json)?
-        .map(Key::try_from)
-        .try_collect()?;
-
-    Ok(keys.into_iter())
+pub fn from_json(json: &str) -> Result<impl Iterator<Item = Result<Key>>> {
+    Ok(serde_json::from_str::<kle::KeyIterator>(json)?.map(Key::try_from))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use assert_approx_eq::assert_approx_eq;
+    use itertools::Itertools;
 
     #[test]
     fn test_kle_from_json() {
-        let result1 = from_json(
+        let result1: Vec<_> = from_json(
             r#"[
                 {
                     "meta": "data"
@@ -143,7 +142,8 @@ mod tests {
             ]"#,
         )
         .unwrap()
-        .collect_vec();
+        .try_collect()
+        .unwrap();
 
         assert_eq!(result1.len(), 4);
         assert_approx_eq!(result1[0].position.x, 0.0);
@@ -151,7 +151,7 @@ mod tests {
         assert_approx_eq!(result1[2].position.x, 1.5);
         assert_approx_eq!(result1[3].position.x, 0.0);
 
-        let result2 = from_json(
+        let result2: Vec<_> = from_json(
             r#"[
                 [
                     "A"
@@ -159,7 +159,8 @@ mod tests {
             ]"#,
         )
         .unwrap()
-        .collect_vec();
+        .try_collect()
+        .unwrap();
 
         assert_eq!(result2.len(), 1);
     }

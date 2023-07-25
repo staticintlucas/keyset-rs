@@ -105,7 +105,7 @@ mod tests {
 
     fn invalid_key_size() -> Error {
         let kle = r#"[[{"w": 1, "h": 1, "x2": 1, "y2": 1, "w2": 1, "h2": 1}, "A"]]"#;
-        kle::from_json(kle).unwrap_err().into()
+        kle::from_json(kle).unwrap().next().unwrap().unwrap_err()
     }
 
     fn invalid_color() -> Error {
