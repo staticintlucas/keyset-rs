@@ -14,7 +14,7 @@ pub trait Draw {
 
 impl Draw for Profile {
     fn draw_key(&self, key: &Key) -> Vec<SvgPath> {
-        if key.typ == key::Type::None {
+        if matches!(key.typ, key::Type::None) {
             // Nothing to draw
             return vec![];
         }
@@ -83,7 +83,7 @@ impl Draw for Profile {
             key::Shape::Normal(size) => (Vec2::ZERO, (size - Vec2::from(1.)) * 1e3),
         };
 
-        let (pos_off, size_off) = if key.typ == key::Type::None {
+        let (pos_off, size_off) = if matches!(key.typ, key::Type::None) {
             (
                 pos_off + (self.bottom_rect.position() - self.top_rect.position()),
                 size_off + (self.bottom_rect.size() - self.top_rect.size()),

@@ -145,7 +145,7 @@ fn deserialize_legend_map<'de, D>(deserializer: D) -> Result<HashMap<usize, (f32
 where
     D: Deserializer<'de>,
 {
-    #[derive(Debug, Clone, Copy, Deserialize)]
+    #[derive(Deserialize)]
     struct RawLegendProps {
         size: f32,
         #[serde(flatten, deserialize_with = "deserialize_offset_rect")]
@@ -171,7 +171,7 @@ impl<'de> Deserialize<'de> for Profile {
     where
         D: Deserializer<'de>,
     {
-        #[derive(Debug, Clone, Deserialize)]
+        #[derive(Deserialize)]
         struct RawProfileData {
             #[serde(flatten)]
             profile_type: ProfileType,

@@ -1,13 +1,13 @@
 use crate::utils::{Color, Vec2};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub enum Homing {
     Scoop,
     Bar,
     Bump,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub enum Type {
     None,   // a.k.a. decal in KLE lingo
     Normal, // Just a regular ol' key
@@ -15,7 +15,7 @@ pub enum Type {
     Space,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub enum Shape {
     Normal(Vec2),
     SteppedCaps,
@@ -40,7 +40,7 @@ impl From<Vec2> for Shape {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Legend {
     pub text: String,
     pub size: usize,
@@ -139,8 +139,8 @@ pub mod tests {
         let key = Key::new();
 
         assert_eq!(key.position, Vec2::new(0., 0.));
-        assert_eq!(key.shape, Shape::Normal(Vec2::new(1., 1.)));
-        assert_eq!(key.typ, Type::Normal);
+        assert_matches!(key.shape, Shape::Normal(size) if size == Vec2::new(1., 1.));
+        assert_matches!(key.typ, Type::Normal);
         assert_eq!(key.color, Color::default_key());
         for row in key.legends {
             for el in row {

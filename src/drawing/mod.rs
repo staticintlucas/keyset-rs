@@ -6,6 +6,8 @@ use crate::key::Key;
 use crate::profile::Profile;
 use crate::Font;
 
+#[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct DrawingOptions {
     pub dpi: f32,
     pub show_keys: bool,
@@ -22,6 +24,7 @@ impl Default for DrawingOptions {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Drawing {
     keys: Vec<Key>,
     profile: Profile,

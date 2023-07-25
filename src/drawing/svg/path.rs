@@ -4,7 +4,7 @@ use crate::utils::{Path, Trim};
 use crate::utils::{PathSegment, RoundRect, Vec2};
 use crate::ToSvg;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy)]
 pub enum EdgeType {
     Line,
     CurveStretch,
@@ -200,7 +200,6 @@ mod tests {
 
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
-    use maplit::hashmap;
 
     use super::*;
 
@@ -248,15 +247,15 @@ mod tests {
             Path::edge_bottom,
             Path::edge_left,
         ];
-        let edge_type_len = hashmap! {
-            EdgeType::Line => 1,
-            EdgeType::CurveStretch => 1,
-            EdgeType::CurveLineCurve => 3,
-            EdgeType::InsetCurve => 1,
-        };
+        let edge_type_len = vec![
+            (EdgeType::Line, 1),
+            (EdgeType::CurveStretch, 1),
+            (EdgeType::CurveLineCurve, 3),
+            (EdgeType::InsetCurve, 1),
+        ];
 
         for func in edge_funcs {
-            for (&edge_type, &len) in &edge_type_len {
+            for &(edge_type, len) in &edge_type_len {
                 let mut path = path.clone();
                 func(&mut path, rect, size, edge_type, curve);
 

@@ -440,7 +440,7 @@ mod tests {
             assert_approx_eq!(e.size(), r.size(), 0.5);
         }
 
-        assert_eq!(profile.homing.default, key::Homing::Scoop);
+        assert_matches!(profile.homing.default, key::Homing::Scoop);
         assert_approx_eq!(profile.homing.scoop.depth, 1.5);
         assert_approx_eq!(profile.homing.bar.size, Vec2::new(202., 21.), 0.5);
         assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);

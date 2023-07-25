@@ -44,6 +44,7 @@ fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
         #[allow(clippy::cast_possible_truncation)]
         Ok(Shape::Normal(Vec2::new(w as f32, h as f32)))
     } else {
+        // TODO support all key shapes/sizes
         Err(InvalidKleLayout {
             message: format!(
                 "Unsupported non-standard key size \

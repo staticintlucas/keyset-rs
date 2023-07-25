@@ -9,6 +9,7 @@ pub(crate) use geometry::{Rect, RoundRect, Vec2};
 pub(crate) use path::{Path, PathSegment};
 
 // Utility wrapper used to format floats with minimal number of characters
+#[derive(Debug, Clone, Copy)]
 pub struct Trim(pub f32);
 
 impl Display for Trim {
