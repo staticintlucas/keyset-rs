@@ -37,7 +37,7 @@ impl PathSegment {
         }
     }
 
-    pub fn rotate(&mut self, angle: f32) {
+    pub fn rotate(&mut self, angle: f64) {
         match self {
             Move(point) => *point = point.rotate(angle),
             Line(dist) => *dist = dist.rotate(angle),
@@ -54,7 +54,7 @@ impl PathSegment {
         }
     }
 
-    pub fn skew_x(&mut self, angle: f32) {
+    pub fn skew_x(&mut self, angle: f64) {
         let tan = angle.tan();
         match self {
             Move(point) => point.x -= point.y * tan,
@@ -72,7 +72,7 @@ impl PathSegment {
         }
     }
 
-    pub fn skew_y(&mut self, angle: f32) {
+    pub fn skew_y(&mut self, angle: f64) {
         let tan = angle.tan();
         match self {
             Move(point) => point.y += point.x * tan,
@@ -95,14 +95,14 @@ impl PathSegment {
 mod tests {
     use super::*;
 
-    use std::f32::consts::{FRAC_PI_2, FRAC_PI_4};
+    use std::f64::consts::{FRAC_PI_2, FRAC_PI_4};
     use std::ops::Sub;
 
     use assert_approx_eq::assert_approx_eq;
 
     // Needed to implement assert_approx_eq!()
     impl Sub<PathSegment> for PathSegment {
-        type Output = f32;
+        type Output = f64;
         fn sub(self, rhs: PathSegment) -> Self::Output {
             match (self, rhs) {
                 (Move(p1), Move(p2)) => (p2 - p1).abs(),

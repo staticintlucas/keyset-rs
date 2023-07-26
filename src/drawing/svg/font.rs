@@ -24,8 +24,8 @@ impl Draw for Font {
                 path.scale(Vec2::from(scale));
 
                 let align = Vec2::new(
-                    (j as f32) / ((key.legends.len() - 1) as f32),
-                    (i as f32) / ((key.legends[0].len() - 1) as f32),
+                    (j as f64) / ((key.legends.len() - 1) as f64),
+                    (i as f64) / ((key.legends[0].len() - 1) as f64),
                 );
                 let margin = profile.text_margin.get(legend.size);
                 let point = margin.position() + (margin.size() - path.bounds.size()) * align;

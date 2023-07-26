@@ -114,7 +114,7 @@ impl Draw for Profile {
 }
 
 impl Profile {
-    fn draw_key_top(&self, typ: key::Type, size: Vec2, color: Color, depth: f32) -> SvgPath {
+    fn draw_key_top(&self, typ: key::Type, size: Vec2, color: Color, depth: f64) -> SvgPath {
         let rect = self.top_rect;
         let curve = (depth / 19.05 * 1e3) * 0.381;
 
@@ -219,7 +219,7 @@ impl Profile {
             .set("stroke-width", "10")
     }
 
-    fn draw_iso_top(&self, typ: key::Type, color: Color, depth: f32) -> SvgPath {
+    fn draw_iso_top(&self, typ: key::Type, color: Color, depth: f64) -> SvgPath {
         let rect = self.top_rect;
         let top_size = Vec2::new(1.5e3, 1e3);
         let btm_size = Vec2::new(1.25e3, 2e3);

@@ -16,13 +16,13 @@ use self::kerning::Kerning;
 #[derive(Clone, Debug)]
 pub struct Font {
     pub name: String,
-    pub em_size: f32,
-    pub cap_height: f32,
-    pub x_height: f32,
-    pub ascent: f32,
-    pub descent: f32,
-    pub line_height: f32,
-    pub slope: f32,
+    pub em_size: f64,
+    pub cap_height: f64,
+    pub x_height: f64,
+    pub ascent: f64,
+    pub descent: f64,
+    pub line_height: f64,
+    pub slope: f64,
     pub glyphs: HashMap<char, Glyph>,
     pub notdef: Glyph,
     pub kerning: Kerning,
@@ -44,13 +44,13 @@ impl Font {
             "unknown".to_owned()
         };
 
-        let em_size = f32::from(face.units_per_em());
-        let cap_height = face.capital_height().map(f32::from);
-        let x_height = face.x_height().map(f32::from);
-        let ascent = f32::from(face.ascender());
-        let descent = f32::from(-face.descender());
-        let line_height = ascent + descent + f32::from(face.line_gap());
-        let slope = face.italic_angle().unwrap_or(0.);
+        let em_size = f64::from(face.units_per_em());
+        let cap_height = face.capital_height().map(f64::from);
+        let x_height = face.x_height().map(f64::from);
+        let ascent = f64::from(face.ascender());
+        let descent = f64::from(-face.descender());
+        let line_height = ascent + descent + f64::from(face.line_gap());
+        let slope = face.italic_angle().map_or(0., f64::from);
 
         let codepoints = if let Some(cmap) = face.tables().cmap {
             cmap.subtables
@@ -106,7 +106,7 @@ impl Font {
                         .into_iter()
                         .find_map(|st| st.glyphs_kerning(gid_l, gid_r))
                         .unwrap_or(0);
-                    kerning.set(l, r, f32::from(kern));
+                    kerning.set(l, r, f64::from(kern));
                 });
             kerning
         } else {
@@ -132,22 +132,29 @@ impl Font {
 impl OutlineBuilder for crate::utils::Path {
     fn move_to(&mut self, x: f32, y: f32) {
         // Y axis is flipped in fonts compared to SVGs
-        self.abs_move(Vec2::new(x, -y));
+        self.abs_move(Vec2::new(f64::from(x), f64::from(-y)));
     }
 
     fn line_to(&mut self, x: f32, y: f32) {
         // Y axis is flipped in fonts compared to SVGs
-        self.abs_line(Vec2::new(x, -y));
+        self.abs_line(Vec2::new(f64::from(x), f64::from(-y)));
     }
 
     fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
         // Y axis is flipped in fonts compared to SVGs
-        self.abs_quadratic_bezier(Vec2::new(x1, -y1), Vec2::new(x, -y));
+        self.abs_quadratic_bezier(
+            Vec2::new(f64::from(x1), f64::from(-y1)),
+            Vec2::new(f64::from(x), f64::from(-y)),
+        );
     }
 
     fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
         // Y axis is flipped in fonts compared to SVGs
-        self.abs_cubic_bezier(Vec2::new(x1, -y1), Vec2::new(x2, -y2), Vec2::new(x, -y));
+        self.abs_cubic_bezier(
+            Vec2::new(f64::from(x1), f64::from(-y1)),
+            Vec2::new(f64::from(x2), f64::from(-y2)),
+            Vec2::new(f64::from(x), f64::from(-y)),
+        );
     }
 
     fn close(&mut self) {

@@ -42,7 +42,7 @@ fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
         Ok(Shape::IsoHorizontal)
     } else if is_close(&[x2, y2, w2, h2], &[0., 0., w, h]) {
         #[allow(clippy::cast_possible_truncation)]
-        Ok(Shape::Normal(Vec2::new(w as f32, h as f32)))
+        Ok(Shape::Normal(Vec2::new(w, h)))
     } else {
         // TODO support all key shapes/sizes
         Err(InvalidKleLayout {
@@ -92,10 +92,7 @@ impl TryFrom<kle::Key> for Key {
     fn try_from(key: kle::Key) -> Result<Self> {
         #[allow(clippy::cast_possible_truncation)]
         Ok(Self {
-            position: Vec2::new(
-                (key.x + key.x2.min(0.)) as f32,
-                (key.y + key.y2.min(0.)) as f32,
-            ),
+            position: Vec2::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.)),
             shape: key_shape_from_kle(&key)?,
             typ: key_type_from_kle(&key),
             color: Color::new(key.color.r, key.color.g, key.color.b),

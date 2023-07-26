@@ -9,7 +9,7 @@ use crate::Font;
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct DrawingOptions {
-    pub dpi: f32,
+    pub dpi: f64,
     pub show_keys: bool,
     pub show_margin: bool,
 }

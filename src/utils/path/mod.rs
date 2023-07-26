@@ -67,12 +67,12 @@ impl Path {
         self.bounds = Self::update_bounds(self.bounds, self.point);
     }
 
-    pub fn rel_horiz_line(&mut self, dx: f32) {
+    pub fn rel_horiz_line(&mut self, dx: f64) {
         let point = self.point;
         self.abs_horiz_line(point.x + dx);
     }
 
-    pub fn rel_vert_line(&mut self, dy: f32) {
+    pub fn rel_vert_line(&mut self, dy: f64) {
         let point = self.point;
         self.abs_vert_line(point.y + dy);
     }
@@ -105,7 +105,7 @@ impl Path {
         self.rel_quadratic_bezier(d1, d);
     }
 
-    pub fn rel_arc(&mut self, r: Vec2, xar: f32, laf: bool, sf: bool, d: Vec2) {
+    pub fn rel_arc(&mut self, r: Vec2, xar: f64, laf: bool, sf: bool, d: Vec2) {
         for (d1, d2, d) in arc_to_bezier(r, xar, laf, sf, d) {
             self.data.push(PathSegment::CubicBezier(d1, d2, d));
             self.point += d;
@@ -134,12 +134,12 @@ impl Path {
         self.rel_line(p - point);
     }
 
-    pub fn abs_horiz_line(&mut self, x: f32) {
+    pub fn abs_horiz_line(&mut self, x: f64) {
         let point = Vec2::new(x, self.point.y);
         self.abs_line(point);
     }
 
-    pub fn abs_vert_line(&mut self, y: f32) {
+    pub fn abs_vert_line(&mut self, y: f64) {
         let point = Vec2::new(self.point.x, y);
         self.abs_line(point);
     }
@@ -164,7 +164,7 @@ impl Path {
         self.rel_smooth_quadratic_bezier(p - point);
     }
 
-    pub fn abs_arc(&mut self, r: Vec2, xar: f32, laf: bool, sf: bool, p: Vec2) {
+    pub fn abs_arc(&mut self, r: Vec2, xar: f64, laf: bool, sf: bool, p: Vec2) {
         let point = self.point;
         self.rel_arc(r, xar, laf, sf, p - point);
     }
@@ -183,14 +183,14 @@ impl Path {
         self.bounds = Rect::new(self.bounds.position() + dist, self.bounds.size());
     }
 
-    pub fn rotate(&mut self, angle: f32) {
+    pub fn rotate(&mut self, angle: f64) {
         self.data.iter_mut().for_each(|s| s.rotate(angle));
         self.start = self.start.rotate(angle);
         self.point = self.point.rotate(angle);
         self.bounds = Self::recalculate_bounds(&self.data);
     }
 
-    pub fn skew_x(&mut self, angle: f32) {
+    pub fn skew_x(&mut self, angle: f64) {
         let tan = angle.tan();
         self.data.iter_mut().for_each(|s| s.skew_x(angle));
         self.start += Vec2::new(-self.start.y * tan, 0.);
@@ -198,7 +198,7 @@ impl Path {
         self.bounds = Self::recalculate_bounds(&self.data);
     }
 
-    pub fn skew_y(&mut self, angle: f32) {
+    pub fn skew_y(&mut self, angle: f64) {
         let tan = angle.tan();
         self.data.iter_mut().for_each(|s| s.skew_y(angle));
         self.start += Vec2::new(0., self.start.x * tan);
@@ -232,7 +232,7 @@ impl Path {
                     Some(*point)
                 })
                 .fold(
-                    (Vec2::from(f32::INFINITY), Vec2::from(f32::NEG_INFINITY)),
+                    (Vec2::from(f64::INFINITY), Vec2::from(f64::NEG_INFINITY)),
                     |(min, max), p| (Vec2::min(min, p), Vec2::max(max, p)),
                 );
 
@@ -256,7 +256,7 @@ impl Default for Path {
 mod tests {
     use super::*;
 
-    use std::f32::consts::{FRAC_PI_2, FRAC_PI_4};
+    use std::f64::consts::{FRAC_PI_2, FRAC_PI_4};
 
     use assert_approx_eq::assert_approx_eq;
 

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Kerning {
-    pairs: HashMap<(char, char), f32>,
+    pairs: HashMap<(char, char), f64>,
 }
 
 impl Kerning {
@@ -12,11 +12,11 @@ impl Kerning {
         }
     }
 
-    pub fn get(&self, lhs: char, rhs: char) -> f32 {
+    pub fn get(&self, lhs: char, rhs: char) -> f64 {
         self.pairs.get(&(lhs, rhs)).copied().unwrap_or(0.)
     }
 
-    pub fn set(&mut self, lhs: char, rhs: char, kern: f32) {
+    pub fn set(&mut self, lhs: char, rhs: char, kern: f64) {
         // Kern should be an integer here
         if kern.abs() > 0.5 {
             self.pairs.insert((lhs, rhs), kern);

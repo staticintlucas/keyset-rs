@@ -1,6 +1,6 @@
 use svg::node::Value;
 
-use crate::utils::{Path, Trim};
+use crate::utils::Path;
 use crate::utils::{PathSegment, RoundRect, Vec2};
 use crate::ToSvg;
 
@@ -20,12 +20,12 @@ pub trait KeyHelpers {
     fn corner_bottom_right(&mut self, rect: RoundRect);
     fn corner_bottom_left(&mut self, rect: RoundRect);
 
-    fn edge_top(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32);
-    fn edge_right(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32);
-    fn edge_bottom(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32);
-    fn edge_left(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32);
+    fn edge_top(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f64);
+    fn edge_right(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f64);
+    fn edge_bottom(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f64);
+    fn edge_left(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f64);
 
-    fn radius(curve: f32, distance: f32) -> Vec2 {
+    fn radius(curve: f64, distance: f64) -> Vec2 {
         Vec2::from((curve.powf(2.) + (distance.powf(2.) / 4.)) / (2. * curve))
     }
 }
@@ -65,7 +65,7 @@ impl KeyHelpers for Path {
         self.rel_arc(rect.radius(), 0., false, true, rect.radius() * -1.);
     }
 
-    fn edge_top(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32) {
+    fn edge_top(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f64) {
         let rect_dx = rect.size().x - 2. * rect.radius().x;
         let size_dx = size.x - 1e3;
         let dx = rect_dx + size_dx;
@@ -88,7 +88,7 @@ impl KeyHelpers for Path {
         }
     }
 
-    fn edge_right(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32) {
+    fn edge_right(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f64) {
         let rect_dy = rect.size().y - 2. * rect.radius().y;
         let size_dy = size.y - 1e3;
         let dy = rect_dy + size_dy;
@@ -111,7 +111,7 @@ impl KeyHelpers for Path {
         }
     }
 
-    fn edge_bottom(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32) {
+    fn edge_bottom(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f64) {
         let rect_dx = rect.size().x - 2. * rect.radius().x;
         let size_dx = size.x - 1e3;
         let dx = rect_dx + size_dx;
@@ -134,7 +134,7 @@ impl KeyHelpers for Path {
         }
     }
 
-    fn edge_left(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f32) {
+    fn edge_left(&mut self, rect: RoundRect, size: Vec2, typ: EdgeType, curve: f64) {
         let rect_dy = rect.size().y - 2. * rect.radius().y;
         let size_dy = size.y - 1e3;
         let dy = rect_dy + size_dy;
@@ -161,19 +161,33 @@ impl KeyHelpers for Path {
 impl ToSvg for PathSegment {
     fn to_svg(&self) -> String {
         match *self {
-            Self::Move(p) => format!("M{} {}", Trim(p.x), Trim(p.y)),
-            Self::Line(d) => format!("l{} {}", Trim(d.x), Trim(d.y)),
+            Self::Move(p) => format!(
+                "M{} {}",
+                (1e5 * p.x).floor() / 1e5,
+                (1e5 * p.y).floor() / 1e5
+            ),
+            Self::Line(d) => format!(
+                "l{} {}",
+                (1e5 * d.x).floor() / 1e5,
+                (1e5 * d.y).floor() / 1e5
+            ),
             Self::CubicBezier(d1, d2, d) => format!(
                 "c{} {} {} {} {} {}",
-                Trim(d1.x),
-                Trim(d1.y),
-                Trim(d2.x),
-                Trim(d2.y),
-                Trim(d.x),
-                Trim(d.y)
+                (1e5 * d1.x).floor() / 1e5,
+                (1e5 * d1.y).floor() / 1e5,
+                (1e5 * d2.x).floor() / 1e5,
+                (1e5 * d2.y).floor() / 1e5,
+                (1e5 * d.x).floor() / 1e5,
+                (1e5 * d.y).floor() / 1e5
             ),
             Self::QuadraticBezier(d1, d) => {
-                format!("q{} {} {} {}", Trim(d1.x), Trim(d1.y), Trim(d.x), Trim(d.y))
+                format!(
+                    "q{} {} {} {}",
+                    (1e5 * d1.x).floor() / 1e5,
+                    (1e5 * d1.y).floor() / 1e5,
+                    (1e5 * d.x).floor() / 1e5,
+                    (1e5 * d.y).floor() / 1e5
+                )
             }
             Self::Close => "z".into(),
         }
@@ -196,7 +210,7 @@ impl From<Path> for Value {
 
 #[cfg(test)]
 mod tests {
-    use std::f32::consts::{FRAC_1_SQRT_2, SQRT_2};
+    use std::f64::consts::{FRAC_1_SQRT_2, SQRT_2};
 
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
@@ -241,7 +255,7 @@ mod tests {
         let curve = 20.;
         let path = Path::start(rect);
 
-        let edge_funcs: Vec<fn(&mut Path, RoundRect, Vec2, EdgeType, f32)> = vec![
+        let edge_funcs = vec![
             Path::edge_top,
             Path::edge_right,
             Path::edge_bottom,

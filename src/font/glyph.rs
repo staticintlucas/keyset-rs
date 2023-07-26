@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
 use crate::utils::{Path, Vec2};
 
@@ -7,13 +7,13 @@ use ttf_parser::{Face, GlyphId};
 #[derive(Clone, Debug)]
 pub struct Glyph {
     pub codepoint: Option<char>,
-    pub advance: f32,
+    pub advance: f64,
     pub path: Path,
 }
 
 impl Glyph {
     pub fn new(face: &Face, codepoint: Option<char>, gid: GlyphId) -> Option<Self> {
-        let advance = f32::from(face.glyph_hor_advance(gid)?);
+        let advance = f64::from(face.glyph_hor_advance(gid)?);
 
         let mut path = Path::new();
         face.outline_glyph(gid, &mut path);
@@ -25,7 +25,7 @@ impl Glyph {
         })
     }
 
-    pub fn notdef(cap_height: f32, slope: f32) -> Self {
+    pub fn notdef(cap_height: f64, slope: f64) -> Self {
         let mut path = Path::new();
 
         path.abs_move(Vec2::ZERO); // M 0 0

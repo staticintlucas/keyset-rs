@@ -1,10 +1,10 @@
-use std::f32::consts::{FRAC_PI_2, PI};
+use std::f64::consts::{FRAC_PI_2, PI};
 
 use crate::utils::Vec2;
 
-const TOL: f32 = 1e-6;
+const TOL: f64 = 1e-6;
 
-pub fn arc_to_bezier(r: Vec2, xar: f32, laf: bool, sf: bool, d: Vec2) -> Vec<(Vec2, Vec2, Vec2)> {
+pub fn arc_to_bezier(r: Vec2, xar: f64, laf: bool, sf: bool, d: Vec2) -> Vec<(Vec2, Vec2, Vec2)> {
     if d.abs() < TOL {
         return vec![];
     }
@@ -55,7 +55,7 @@ pub fn arc_to_bezier(r: Vec2, xar: f32, laf: bool, sf: bool, d: Vec2) -> Vec<(Ve
     let dphi = dphi / segments;
 
     (0..i_segments)
-        .map(|i| phi0 + f32::from(i) * dphi) // Starting angle for segment
+        .map(|i| phi0 + f64::from(i) * dphi) // Starting angle for segment
         .map(|phi0| create_arc(r, phi0, dphi)) // Create seggment arc
         .map(|(ctrl1, ctrl2, point)| {
             // Re-rotate by xar
@@ -80,7 +80,7 @@ fn get_center(r: Vec2, laf: bool, sf: bool, d: Vec2) -> Vec2 {
     c * co + d_2
 }
 
-fn create_arc(r: Vec2, phi0: f32, dphi: f32) -> (Vec2, Vec2, Vec2) {
+fn create_arc(r: Vec2, phi0: f64, dphi: f64) -> (Vec2, Vec2, Vec2) {
     let a = (4. / 3.) * (dphi / 4.).tan();
 
     let swap = |(a, b)| (b, a);
@@ -97,7 +97,7 @@ fn create_arc(r: Vec2, phi0: f32, dphi: f32) -> (Vec2, Vec2, Vec2) {
 mod tests {
     use super::*;
 
-    use std::f32::consts::{FRAC_PI_2, PI, SQRT_2};
+    use std::f64::consts::{FRAC_PI_2, PI, SQRT_2};
 
     use assert_approx_eq::assert_approx_eq;
 
@@ -107,7 +107,7 @@ mod tests {
     fn test_arc_to_bezier() {
         struct Params {
             r: Vec2,
-            xar: f32,
+            xar: f64,
             laf: bool,
             sf: bool,
             d: Vec2,
@@ -280,11 +280,11 @@ mod tests {
 
     #[test]
     fn test_create_arc() {
-        const A: f32 = (4. / 3.) * (SQRT_2 - 1.); // (4 / 3) * tan(90deg / 4)
+        const A: f64 = (4. / 3.) * (SQRT_2 - 1.); // (4 / 3) * tan(90deg / 4)
         struct Params {
             r: Vec2,
-            phi0: f32,
-            dphi: f32,
+            phi0: f64,
+            dphi: f64,
             p: (Vec2, Vec2, Vec2),
         }
         let params = vec![

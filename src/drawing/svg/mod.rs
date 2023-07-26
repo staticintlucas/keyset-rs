@@ -7,7 +7,7 @@ use svg::Document;
 
 use crate::drawing::Drawing;
 use crate::key::Key;
-use crate::utils::{Trim, Vec2};
+use crate::utils::Vec2;
 
 use font::Draw as _;
 use profile::Draw as _;
@@ -33,8 +33,8 @@ impl ToSvg for Drawing {
         let Vec2 { x, y } = key_size * self.options.dpi * 0.75;
 
         let document = Document::new()
-            .set("width", format!("{}", Trim(x)))
-            .set("height", format!("{}", Trim(y)))
+            .set("width", format!("{}", (1e5 * x).floor() / 1e5))
+            .set("height", format!("{}", (1e5 * y).floor() / 1e5))
             .set("viewBox", format!("0 0 {:.0} {:.0}", size.x, size.y));
 
         let document = self

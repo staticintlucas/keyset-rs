@@ -2,51 +2,51 @@ use std::ops;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vec2 {
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
 impl Vec2 {
     pub const ZERO: Self = Self::from(0.);
 
     #[inline]
-    pub const fn new(x: f32, y: f32) -> Self {
+    pub const fn new(x: f64, y: f64) -> Self {
         Self { x, y }
     }
 
     #[inline]
-    pub const fn from(value: f32) -> Self {
+    pub const fn from(value: f64) -> Self {
         Self { x: value, y: value }
     }
 
     #[inline]
     pub fn min(self, other: Self) -> Self {
         Self {
-            x: f32::min(self.x, other.x),
-            y: f32::min(self.y, other.y),
+            x: f64::min(self.x, other.x),
+            y: f64::min(self.y, other.y),
         }
     }
 
     #[inline]
     pub fn max(self, other: Self) -> Self {
         Self {
-            x: f32::max(self.x, other.x),
-            y: f32::max(self.y, other.y),
+            x: f64::max(self.x, other.x),
+            y: f64::max(self.y, other.y),
         }
     }
 
     #[inline]
-    pub fn abs(self) -> f32 {
-        f32::sqrt(self.x * self.x + self.y * self.y)
+    pub fn abs(self) -> f64 {
+        f64::sqrt(self.x * self.x + self.y * self.y)
     }
 
     #[inline]
-    pub fn arg(self) -> f32 {
-        f32::atan2(self.y, self.x)
+    pub fn arg(self) -> f64 {
+        f64::atan2(self.y, self.x)
     }
 
     #[inline]
-    pub fn rotate(self, angle: f32) -> Self {
+    pub fn rotate(self, angle: f64) -> Self {
         let (sin, cos) = angle.sin_cos();
         Self {
             x: self.x * cos - self.y * sin,
@@ -74,14 +74,14 @@ impl ops::Neg for Vec2 {
     }
 }
 
-impl From<Vec2> for (f32, f32) {
+impl From<Vec2> for (f64, f64) {
     fn from(value: Vec2) -> Self {
         (value.x, value.y)
     }
 }
 
-impl From<(f32, f32)> for Vec2 {
-    fn from(value: (f32, f32)) -> Self {
+impl From<(f64, f64)> for Vec2 {
+    fn from(value: (f64, f64)) -> Self {
         Self {
             x: value.0,
             y: value.1,
@@ -91,7 +91,7 @@ impl From<(f32, f32)> for Vec2 {
 
 impl<T: Copy> ops::Mul<T> for Vec2
 where
-    f32: ops::Mul<T, Output = f32>,
+    f64: ops::Mul<T, Output = f64>,
 {
     type Output = Self;
 
@@ -104,7 +104,7 @@ where
     }
 }
 
-impl ops::Mul<Vec2> for f32 {
+impl ops::Mul<Vec2> for f64 {
     type Output = Vec2;
 
     #[inline]
@@ -118,7 +118,7 @@ impl ops::Mul<Vec2> for f32 {
 
 impl<T: Copy> ops::MulAssign<T> for Vec2
 where
-    f32: ops::MulAssign<T>,
+    f64: ops::MulAssign<T>,
 {
     #[inline]
     fn mul_assign(&mut self, rhs: T) {
@@ -129,7 +129,7 @@ where
 
 impl<T: Copy> ops::Div<T> for Vec2
 where
-    f32: ops::Div<T, Output = f32>,
+    f64: ops::Div<T, Output = f64>,
 {
     type Output = Self;
 
@@ -144,7 +144,7 @@ where
 
 impl<T: Copy> ops::DivAssign<T> for Vec2
 where
-    f32: ops::DivAssign<T>,
+    f64: ops::DivAssign<T>,
 {
     #[inline]
     fn div_assign(&mut self, scale: T) {
@@ -235,7 +235,7 @@ impl ops::DivAssign<Self> for Vec2 {
 
 #[cfg(test)]
 mod tests {
-    use std::f32::consts::PI;
+    use std::f64::consts::PI;
 
     use super::*;
 
@@ -319,7 +319,7 @@ mod tests {
 
     #[test]
     fn test_vector_into() {
-        let point: (f32, f32) = Vec2 { x: 1., y: 3. }.into();
+        let point: (f64, f64) = Vec2 { x: 1., y: 3. }.into();
 
         assert_eq!(point, (1., 3.));
     }
@@ -389,7 +389,7 @@ mod tests {
     }
 
     #[test]
-    fn test_vector_mul_f32() {
+    fn test_vector_mul_f64() {
         let point = Vec2 { x: 2., y: 4.5 };
 
         assert_approx_eq!(point * 2., Vec2 { x: 4., y: 9. });
@@ -397,7 +397,7 @@ mod tests {
     }
 
     #[test]
-    fn test_vector_mul_assign_f32() {
+    fn test_vector_mul_assign_f64() {
         let mut point = Vec2 { x: 3., y: 2.3 };
 
         point *= 1.4;
@@ -424,14 +424,14 @@ mod tests {
     }
 
     #[test]
-    fn test_vector_div_f32() {
+    fn test_vector_div_f64() {
         let point = Vec2 { x: 2., y: 4.5 };
 
         assert_approx_eq!(point / 2., Vec2 { x: 1., y: 2.25 });
     }
 
     #[test]
-    fn test_vector_div_assign_f32() {
+    fn test_vector_div_assign_f64() {
         let mut point = Vec2 { x: 3., y: 2.25 };
 
         point /= 1.5;

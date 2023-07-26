@@ -63,7 +63,7 @@ where
     }
 }
 
-impl ops::Mul<Rect> for f32 {
+impl ops::Mul<Rect> for f64 {
     type Output = Rect;
 
     #[inline]
@@ -116,14 +116,14 @@ where
 
 impl Rect {}
 
-impl From<Rect> for (f32, f32, f32, f32) {
-    fn from(rect: Rect) -> (f32, f32, f32, f32) {
+impl From<Rect> for (f64, f64, f64, f64) {
+    fn from(rect: Rect) -> (f64, f64, f64, f64) {
         (rect.position.x, rect.position.y, rect.size.x, rect.size.y)
     }
 }
 
-impl From<(f32, f32, f32, f32)> for Rect {
-    fn from(tuple: (f32, f32, f32, f32)) -> Self {
+impl From<(f64, f64, f64, f64)> for Rect {
+    fn from(tuple: (f64, f64, f64, f64)) -> Self {
         // The call to new will ensure that width/height < 0 is handled correctly
         Self::new((tuple.0, tuple.1).into(), (tuple.2, tuple.3).into())
     }
@@ -200,7 +200,7 @@ where
     }
 }
 
-impl ops::Mul<RoundRect> for f32 {
+impl ops::Mul<RoundRect> for f64 {
     type Output = RoundRect;
 
     #[inline]
@@ -253,16 +253,16 @@ where
     }
 }
 
-impl From<RoundRect> for (f32, f32, f32, f32, f32, f32) {
-    fn from(rect: RoundRect) -> (f32, f32, f32, f32, f32, f32) {
+impl From<RoundRect> for (f64, f64, f64, f64, f64, f64) {
+    fn from(rect: RoundRect) -> (f64, f64, f64, f64, f64, f64) {
         let ((x, y), (w, h), (rx, ry)) =
             (rect.position.into(), rect.size.into(), rect.radius.into());
         (x, y, w, h, rx, ry)
     }
 }
 
-impl From<(f32, f32, f32, f32, f32, f32)> for RoundRect {
-    fn from(tuple: (f32, f32, f32, f32, f32, f32)) -> Self {
+impl From<(f64, f64, f64, f64, f64, f64)> for RoundRect {
+    fn from(tuple: (f64, f64, f64, f64, f64, f64)) -> Self {
         // The call to new will ensure that width/height < 0 is handled correctly
         Self::new(
             (tuple.0, tuple.1).into(),
@@ -280,25 +280,25 @@ mod tests {
 
     // this is required for assert_approx_eq to work
     impl ops::Sub<Rect> for Rect {
-        type Output = f32;
+        type Output = f64;
 
-        fn sub(self, other: Self) -> f32 {
+        fn sub(self, other: Self) -> f64 {
             [
                 (other.position() - self.position()),
                 (other.size() - self.size()),
             ]
             .into_iter()
             .map(|v| v.abs().powi(2))
-            .sum::<f32>()
+            .sum::<f64>()
             .sqrt()
         }
     }
 
     // this is required for assert_approx_eq to work
     impl ops::Sub<RoundRect> for RoundRect {
-        type Output = f32;
+        type Output = f64;
 
-        fn sub(self, other: Self) -> f32 {
+        fn sub(self, other: Self) -> f64 {
             [
                 (other.position - self.position),
                 (other.size - self.size),
@@ -306,7 +306,7 @@ mod tests {
             ]
             .into_iter()
             .map(|v| v.abs().powi(2))
-            .sum::<f32>()
+            .sum::<f64>()
             .sqrt()
         }
     }
@@ -460,10 +460,10 @@ mod tests {
         let size = Vec2::new(3., 4.);
         let radius = Vec2::new(2., 0.5);
 
-        let rect: (f32, f32, f32, f32) = Rect { position, size }.into();
+        let rect: (f64, f64, f64, f64) = Rect { position, size }.into();
         assert_eq!(rect, (1., 2., 3., 4.));
 
-        let rect: (f32, f32, f32, f32, f32, f32) = RoundRect {
+        let rect: (f64, f64, f64, f64, f64, f64) = RoundRect {
             position,
             size,
             radius,
@@ -561,7 +561,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rect_mul_f32() {
+    fn test_rect_mul_f64() {
         let position = Vec2::new(2., 4.5);
         let size = Vec2::new(1.5, 2.);
         let radius = Vec2::new(1., 0.9);
@@ -606,7 +606,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rect_mul_assign_f32() {
+    fn test_rect_mul_assign_f64() {
         let position = Vec2::new(3., 2.3);
         let size = Vec2::new(5. / 7., 1.);
         let radius = Vec2::new(2., 2.3);
@@ -704,7 +704,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rect_div_f32() {
+    fn test_rect_div_f64() {
         let position = Vec2::new(2., 4.5);
         let size = Vec2::new(0.4, 9.);
         let radius = Vec2::new(1., 0.6);
@@ -734,7 +734,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rect_div_assign_f32() {
+    fn test_rect_div_assign_f64() {
         let position = Vec2::new(3., 2.25);
         let size = Vec2::new(1.5, 1.);
         let radius = Vec2::new(0.6, 0.45);

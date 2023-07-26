@@ -14,13 +14,13 @@ use crate::utils::{Rect, RoundRect, Vec2};
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum ProfileType {
-    Cylindrical { depth: f32 },
-    Spherical { depth: f32 },
+    Cylindrical { depth: f64 },
+    Spherical { depth: f64 },
     Flat,
 }
 
 impl ProfileType {
-    pub(crate) fn depth(self) -> f32 {
+    pub(crate) fn depth(self) -> f64 {
         match self {
             Self::Cylindrical { depth } | Self::Spherical { depth } => depth,
             Self::Flat => 0.,
@@ -37,19 +37,19 @@ impl Default for ProfileType {
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 pub struct ScoopProps {
-    pub depth: f32,
+    pub depth: f64,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct BarProps {
     pub size: Vec2,
-    pub y_offset: f32,
+    pub y_offset: f64,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct BumpProps {
-    pub diameter: f32,
-    pub y_offset: f32,
+    pub diameter: f64,
+    pub y_offset: f64,
 }
 
 #[derive(Deserialize)]
@@ -92,12 +92,12 @@ impl Default for HomingProps {
 }
 
 #[derive(Debug, Clone)]
-pub struct TextHeight([f32; Self::NUM_HEIGHTS]);
+pub struct TextHeight([f64; Self::NUM_HEIGHTS]);
 
 impl TextHeight {
     const NUM_HEIGHTS: usize = 10;
 
-    fn new(heights: &HashMap<usize, f32>) -> Self {
+    fn new(heights: &HashMap<usize, f64>) -> Self {
         if heights.is_empty() {
             Self::default()
         } else {
@@ -107,16 +107,16 @@ impl TextHeight {
                         heights
                             .iter()
                             .sorted_by_key(|(&i, _)| i)
-                            .map(|(&i, &h)| (i as f32, h)),
+                            .map(|(&i, &h)| (i as f64, h)),
                     )
                     .unzip()
             };
-            let all_indeces = array::from_fn(|i| i as f32);
+            let all_indeces = array::from_fn(|i| i as f64);
             Self(interp_array(&index, &height, &all_indeces))
         }
     }
 
-    pub fn get(&self, size_index: usize) -> f32 {
+    pub fn get(&self, size_index: usize) -> f64 {
         if size_index < self.0.len() {
             self.0[size_index]
         } else {
@@ -127,9 +127,9 @@ impl TextHeight {
 
 impl Default for TextHeight {
     fn default() -> Self {
-        const DEFAULT_MAX: f32 = 18.;
+        const DEFAULT_MAX: f64 = 18.;
         Self(array::from_fn(|i| {
-            (i as f32) * DEFAULT_MAX / (Self::NUM_HEIGHTS as f32 - 1.)
+            (i as f64) * DEFAULT_MAX / (Self::NUM_HEIGHTS as f64 - 1.)
         }))
     }
 }
@@ -289,7 +289,7 @@ mod tests {
         let heights = TextHeight::default();
 
         for (i, h) in heights.0.into_iter().enumerate() {
-            assert_approx_eq!(h, 2. * (i as f32));
+            assert_approx_eq!(h, 2. * (i as f64));
         }
     }
 
@@ -405,7 +405,7 @@ mod tests {
         .unwrap();
 
         assert!(
-            matches!(profile.profile_type, ProfileType::Cylindrical { depth } if f32::abs(depth - 0.5) < 1e-6)
+            matches!(profile.profile_type, ProfileType::Cylindrical { depth } if f64::abs(depth - 0.5) < 1e-6)
         );
 
         assert_approx_eq!(profile.bottom_rect.position(), Vec2::from(20.), 0.5);

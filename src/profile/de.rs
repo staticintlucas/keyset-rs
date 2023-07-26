@@ -16,9 +16,9 @@ impl<'de> Deserialize<'de> for BarProps {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawBarProps {
-            width: f32,
-            height: f32,
-            y_offset: f32,
+            width: f64,
+            height: f64,
+            y_offset: f64,
         }
 
         RawBarProps::deserialize(deserializer).map(|props| {
@@ -39,8 +39,8 @@ impl<'de> Deserialize<'de> for BumpProps {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawBumpProps {
-            diameter: f32,
-            y_offset: f32,
+            diameter: f64,
+            y_offset: f64,
         }
 
         RawBumpProps::deserialize(deserializer).map(|props| {
@@ -59,8 +59,8 @@ where
 {
     #[derive(Deserialize)]
     struct RawRect {
-        width: f32,
-        height: f32,
+        width: f64,
+        height: f64,
     }
 
     RawRect::deserialize(deserializer).map(|rect| {
@@ -78,9 +78,9 @@ where
 {
     #[derive(Deserialize)]
     struct RawRect {
-        width: f32,
-        height: f32,
-        radius: f32,
+        width: f64,
+        height: f64,
+        radius: f64,
     }
 
     RawRect::deserialize(deserializer).map(|rect| {
@@ -100,10 +100,10 @@ where
     #[derive(Deserialize)]
     #[serde(rename_all = "kebab-case")]
     struct RawOffsetRect {
-        width: f32,
-        height: f32,
+        width: f64,
+        height: f64,
         #[serde(default)]
-        y_offset: f32,
+        y_offset: f64,
     }
 
     RawOffsetRect::deserialize(deserializer).map(|rect| {
@@ -123,11 +123,11 @@ where
     #[derive(Deserialize)]
     #[serde(rename_all = "kebab-case")]
     struct RawOffsetRoundRect {
-        width: f32,
-        height: f32,
-        radius: f32,
+        width: f64,
+        height: f64,
+        radius: f64,
         #[serde(default)]
-        y_offset: f32,
+        y_offset: f64,
     }
 
     RawOffsetRoundRect::deserialize(deserializer).map(|rect| {
@@ -141,13 +141,13 @@ where
     })
 }
 
-fn deserialize_legend_map<'de, D>(deserializer: D) -> Result<HashMap<usize, (f32, Rect)>, D::Error>
+fn deserialize_legend_map<'de, D>(deserializer: D) -> Result<HashMap<usize, (f64, Rect)>, D::Error>
 where
     D: Deserializer<'de>,
 {
     #[derive(Deserialize)]
     struct RawLegendProps {
-        size: f32,
+        size: f64,
         #[serde(flatten, deserialize_with = "deserialize_offset_rect")]
         rect: Rect,
     }
@@ -180,7 +180,7 @@ impl<'de> Deserialize<'de> for Profile {
             #[serde(deserialize_with = "deserialize_offset_round_rect")]
             top: RoundRect,
             #[serde(deserialize_with = "deserialize_legend_map")]
-            legend: HashMap<usize, (f32, Rect)>,
+            legend: HashMap<usize, (f64, Rect)>,
             homing: HomingProps,
         }
 
