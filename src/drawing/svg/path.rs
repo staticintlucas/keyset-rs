@@ -255,7 +255,9 @@ mod tests {
         let curve = 20.;
         let path = Path::start(rect);
 
-        let edge_funcs = vec![
+        // TODO 1.69+ seems to allow us to remove type annotations (even though it's not mentioned
+        // in the release notes). Remove it when MSRV >= 1.69
+        let edge_funcs: Vec<fn(&mut Path, RoundRect, Vec2, EdgeType, f64)> = vec![
             Path::edge_top,
             Path::edge_right,
             Path::edge_bottom,
