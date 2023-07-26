@@ -1,7 +1,6 @@
 use std::fmt;
 
 use crate::kle::InvalidKleLayout;
-use crate::utils::InvalidColor;
 
 #[derive(Debug)]
 pub struct Error {
@@ -16,7 +15,6 @@ pub(crate) enum ErrorImpl {
     TomlParseError(toml::de::Error),
     FontParseError(ttf_parser::FaceParsingError),
     InvalidKleLayout(InvalidKleLayout),
-    InvalidColor(InvalidColor),
 }
 
 impl fmt::Display for Error {
@@ -26,7 +24,6 @@ impl fmt::Display for Error {
             ErrorImpl::TomlParseError(error) => write!(f, "error parsing TOML: {error}"),
             ErrorImpl::FontParseError(error) => write!(f, "error parsing font: {error}"),
             ErrorImpl::InvalidKleLayout(error) => write!(f, "error parsing KLE layout: {error}"),
-            ErrorImpl::InvalidColor(error) => write!(f, "error parsing color: {error}"),
         }
     }
 }
@@ -37,7 +34,7 @@ impl std::error::Error for Error {
             ErrorImpl::JsonParseError(error) => Some(error),
             ErrorImpl::TomlParseError(error) => Some(error),
             ErrorImpl::FontParseError(error) => Some(error),
-            ErrorImpl::InvalidKleLayout(_) | ErrorImpl::InvalidColor(_) => None,
+            ErrorImpl::InvalidKleLayout(_) => None,
         }
     }
 }
@@ -74,20 +71,11 @@ impl From<InvalidKleLayout> for Error {
     }
 }
 
-impl From<InvalidColor> for Error {
-    fn from(error: InvalidColor) -> Self {
-        Self {
-            inner: Box::new(ErrorImpl::InvalidColor(error)),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     use crate::kle;
-    use crate::utils::Color;
 
     fn json_parse_error() -> Error {
         serde_json::from_str::<serde_json::Value>("invalid")
@@ -106,10 +94,6 @@ mod tests {
     fn invalid_key_size() -> Error {
         let kle = r#"[[{"w": 1, "h": 1, "x2": 1, "y2": 1, "w2": 1, "h2": 1}, "A"]]"#;
         kle::from_json(kle).unwrap().next().unwrap().unwrap_err()
-    }
-
-    fn invalid_color() -> Error {
-        Color::from_hex("invalid").unwrap_err().into()
     }
 
     #[test]
@@ -135,10 +119,6 @@ expected `.`, `=`
                 (w: 1.00, h: 1.00, x2: 1.00, y2: 1.00, w2: 1.00, h2: 1.00). \
                 Note only ISO enter and stepped caps are supported as special cases",
             ),
-            (
-                invalid_color(),
-                "error parsing color: invalid hex code invalid",
-            ),
         ];
 
         for (err, fmt) in config {
@@ -155,7 +135,6 @@ expected `.`, `=`
             (toml_parse_error(), true),
             (font_parse_error(), true),
             (invalid_key_size(), false),
-            (invalid_color(), false),
         ];
 
         for (err, has_source) in config {

@@ -106,7 +106,7 @@ impl Draw for Profile {
                 SvgPath::new()
                     .set("d", path)
                     .set("fill", "none")
-                    .set("stroke", Color::new(255, 0, 0).to_hex())
+                    .set("stroke", Color::new(255, 0, 0).to_string())
                     .set("stroke-width", "5")
             })
             .collect()
@@ -158,8 +158,8 @@ impl Profile {
 
         SvgPath::new()
             .set("d", path)
-            .set("fill", color.to_hex())
-            .set("stroke", color.highlight(0.15).to_hex())
+            .set("fill", color.to_string())
+            .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
@@ -179,8 +179,8 @@ impl Profile {
 
         SvgPath::new()
             .set("d", path)
-            .set("fill", color.to_hex())
-            .set("stroke", color.highlight(0.15).to_hex())
+            .set("fill", color.to_string())
+            .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
@@ -214,8 +214,8 @@ impl Profile {
 
         SvgPath::new()
             .set("d", path)
-            .set("fill", color.to_hex())
-            .set("stroke", color.highlight(0.15).to_hex())
+            .set("fill", color.to_string())
+            .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
@@ -311,8 +311,8 @@ impl Profile {
 
         SvgPath::new()
             .set("d", path)
-            .set("fill", color.to_hex())
-            .set("stroke", color.highlight(0.15).to_hex())
+            .set("fill", color.to_string())
+            .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
@@ -339,8 +339,8 @@ impl Profile {
 
         SvgPath::new()
             .set("d", path)
-            .set("fill", color.to_hex())
-            .set("stroke", color.highlight(0.15).to_hex())
+            .set("fill", color.to_string())
+            .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
@@ -374,8 +374,8 @@ impl Profile {
 
         SvgPath::new()
             .set("d", path)
-            .set("fill", color.to_hex())
-            .set("stroke", color.highlight(0.25).to_hex())
+            .set("fill", color.to_string())
+            .set("stroke", color.highlight(0.25).to_string())
             .set("stroke-width", "10")
     }
 
@@ -391,8 +391,8 @@ impl Profile {
 
         SvgPath::new()
             .set("d", path)
-            .set("fill", color.to_hex())
-            .set("stroke", color.highlight(0.25).to_hex())
+            .set("fill", color.to_string())
+            .set("stroke", color.highlight(0.25).to_string())
             .set("stroke-width", "10")
     }
 }
@@ -482,7 +482,7 @@ mod tests {
             let path = profile.draw_key_top(
                 key.typ,
                 size,
-                Color::default_key(),
+                Color::new(0xCC, 0xCC, 0xCC),
                 profile.profile_type.depth(),
             );
 
@@ -495,7 +495,7 @@ mod tests {
         let profile = Profile::default();
         let size = Vec2::new(1., 1.);
 
-        let path = profile.draw_key_bottom(size, Color::default_key());
+        let path = profile.draw_key_bottom(size, Color::new(0xCC, 0xCC, 0xCC));
 
         assert!(path.get_attributes().contains_key("d"));
     }
@@ -504,7 +504,7 @@ mod tests {
     fn test_draw_step() {
         let profile = Profile::default();
 
-        let path = profile.draw_step(Color::default_key());
+        let path = profile.draw_step(Color::new(0xCC, 0xCC, 0xCC));
 
         assert!(path.get_attributes().contains_key("d"));
     }
@@ -529,8 +529,11 @@ mod tests {
                 ..profile.clone()
             };
             let key = Key { typ, ..key.clone() };
-            let path =
-                profile.draw_iso_top(key.typ, Color::default_key(), profile.profile_type.depth());
+            let path = profile.draw_iso_top(
+                key.typ,
+                Color::new(0xCC, 0xCC, 0xCC),
+                profile.profile_type.depth(),
+            );
 
             assert!(path.get_attributes().contains_key("d"));
         }
@@ -540,7 +543,7 @@ mod tests {
     fn test_draw_iso_bottom() {
         let profile = Profile::default();
 
-        let path = profile.draw_iso_bottom(Color::default_key());
+        let path = profile.draw_iso_bottom(Color::new(0xCC, 0xCC, 0xCC));
 
         assert!(path.get_attributes().contains_key("d"));
     }
@@ -550,7 +553,7 @@ mod tests {
         let profile = Profile::default();
         let size = Vec2::new(1., 1.);
 
-        let path = profile.draw_homing_bar(size, Color::default_key());
+        let path = profile.draw_homing_bar(size, Color::new(0xCC, 0xCC, 0xCC));
 
         assert!(path.get_attributes().contains_key("d"));
     }
@@ -560,7 +563,7 @@ mod tests {
         let profile = Profile::default();
         let size = Vec2::new(1., 1.);
 
-        let path = profile.draw_homing_bump(size, Color::default_key());
+        let path = profile.draw_homing_bump(size, Color::new(0xCC, 0xCC, 0xCC));
 
         assert!(path.get_attributes().contains_key("d"));
     }

@@ -70,13 +70,13 @@ impl Key {
                     Some(Legend {
                         text: "!".into(),
                         size: 4,
-                        color: Color::default_legend(),
+                        color: Color::new(0, 0, 0),
                     }),
                     None,
                     Some(Legend {
                         text: "¹".into(),
                         size: 4,
-                        color: Color::default_legend(),
+                        color: Color::new(0, 0, 0),
                     }),
                 ],
                 [None, None, None],
@@ -84,13 +84,13 @@ impl Key {
                     Some(Legend {
                         text: "1".into(),
                         size: 4,
-                        color: Color::default_legend(),
+                        color: Color::new(0, 0, 0),
                     }),
                     None,
                     Some(Legend {
                         text: "¡".into(),
                         size: 4,
-                        color: Color::default_legend(),
+                        color: Color::new(0, 0, 0),
                     }),
                 ],
             ],
@@ -105,7 +105,7 @@ impl Default for Key {
             position: Vec2::ZERO,
             shape: Shape::Normal(Vec2::from(1.)),
             typ: Type::Normal,
-            color: Color::default_key(),
+            color: Color::new(0xCC, 0xCC, 0xCC),
             legends: Default::default(), // [[None; 3]; 3] won't work since Option<Legend> : !Copy
         }
     }
@@ -141,7 +141,7 @@ pub mod tests {
         assert_eq!(key.position, Vec2::new(0., 0.));
         assert_matches!(key.shape, Shape::Normal(size) if size == Vec2::new(1., 1.));
         assert_matches!(key.typ, Type::Normal);
-        assert_eq!(key.color, Color::default_key());
+        assert_eq!(key.color, Color::new(0xCC, 0xCC, 0xCC));
         for row in key.legends {
             for el in row {
                 assert!(el.is_none());

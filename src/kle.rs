@@ -4,7 +4,7 @@ use kle_serial as kle;
 
 use crate::error::{Error, Result};
 use crate::key::{self, Key, Legend, Shape};
-use crate::utils::{Color, Vec2};
+use crate::utils::Vec2;
 
 #[derive(Debug)]
 pub(crate) struct InvalidKleLayout {
@@ -81,7 +81,7 @@ fn key_type_from_kle(key: &kle::Key) -> key::Type {
 impl From<kle::Legend> for Legend {
     fn from(legend: kle::Legend) -> Self {
         let kle::Legend { text, size, color } = legend;
-        let color = Color::new(color.r, color.g, color.b);
+        let color = color.rgb().into();
         Self { text, size, color }
     }
 }
@@ -95,7 +95,7 @@ impl TryFrom<kle::Key> for Key {
             position: Vec2::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.)),
             shape: key_shape_from_kle(&key)?,
             typ: key_type_from_kle(&key),
-            color: Color::new(key.color.r, key.color.g, key.color.b),
+            color: key.color.rgb().into(),
             legends: array::from_fn(|col| {
                 array::from_fn(|row| key.legends[col * 3 + row].clone().map(Legend::from))
             }),

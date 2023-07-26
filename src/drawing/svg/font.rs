@@ -33,7 +33,7 @@ impl Draw for Font {
 
                 let svg_path = SvgPath::new()
                     .set("d", path)
-                    .set("fill", legend.color.to_hex())
+                    .set("fill", legend.color.to_string())
                     .set("stroke", "none");
 
                 legends.push(svg_path);
