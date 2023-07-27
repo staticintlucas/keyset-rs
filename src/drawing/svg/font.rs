@@ -16,7 +16,7 @@ impl Draw for Font {
 
         for (i, row) in key.legends.iter().enumerate() {
             for (j, legend) in row.iter().enumerate() {
-                let legend = if let Some(l) = legend { l } else { continue };
+                let Some(legend) = legend else { continue };
 
                 let mut path = self.text_path(&legend.text);
 
