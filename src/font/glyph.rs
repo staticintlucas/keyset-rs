@@ -1,22 +1,20 @@
-use std::f64::consts::PI;
-
-use crate::utils::{Path, Vec2};
-
-use ttf_parser::{Face, GlyphId};
+use kurbo::{Affine, BezPath, Point};
+use ttf_parser::{Face, GlyphId, OutlineBuilder};
 
 #[derive(Clone, Debug)]
 pub struct Glyph {
     pub codepoint: Option<char>,
     pub advance: f64,
-    pub path: Path,
+    pub path: BezPath,
 }
 
 impl Glyph {
     pub fn new(face: &Face, codepoint: Option<char>, gid: GlyphId) -> Option<Self> {
         let advance = f64::from(face.glyph_hor_advance(gid)?);
 
-        let mut path = Path::new();
+        let mut path = KurboPathWrapper(BezPath::new());
         face.outline_glyph(gid, &mut path);
+        let path = path.0;
 
         Some(Self {
             codepoint,
@@ -26,55 +24,113 @@ impl Glyph {
     }
 
     pub fn notdef(cap_height: f64, slope: f64) -> Self {
-        let mut path = Path::new();
+        let mut path = BezPath::new();
 
-        path.abs_move(Vec2::ZERO); // M 0 0
-        path.rel_vert_line(1000.); // v 1000
-        path.rel_horiz_line(650.); // h 650
-        path.rel_vert_line(-1000.); // v -1000
-        path.rel_horiz_line(-650.); // h -650
-        path.close(); // z
+        path.move_to((0., 0.)); // M 0 0
+        path.line_to((0., 1000.)); // V 1000
+        path.line_to((650., 1000.)); // H 650
+        path.line_to((650., 0.)); // V 0
+        path.line_to((0., 0.)); // H 0
+        path.close_path(); // Z
 
-        path.abs_move(Vec2::new(80., 150.)); // M 80 150
-        path.rel_line(Vec2::new(190., 350.)); // l 190 350
-        path.rel_line(Vec2::new(-190., 350.)); // l -190 350
-        path.rel_vert_line(-700.); // v -700
-        path.close(); // z
+        path.move_to((80., 150.)); // M 80 150
+        path.line_to((270., 500.)); // L 270 500
+        path.line_to((80., 850.)); // L 80 850
+        path.line_to((80., 150.)); // V 150
+        path.close_path(); // Z
 
-        path.abs_move(Vec2::new(125., 920.)); // M 125 920
-        path.rel_line(Vec2::new(200., -360.)); // l 200 -360
-        path.rel_line(Vec2::new(200., 360.)); // l 200 360
-        path.rel_horiz_line(-400.); // h -400
-        path.close(); // z
+        path.move_to((125., 920.)); // M 125 920
+        path.line_to((325., 560.)); // L 325 560
+        path.line_to((525., 920.)); // L 525 920
+        path.line_to((125., 920.)); // H 125
+        path.close_path(); // Z
 
-        path.abs_move(Vec2::new(570., 850.)); // M 570 850
-        path.rel_line(Vec2::new(-190., -350.)); // l -190 -350
-        path.rel_line(Vec2::new(190., -350.)); // l 190 -350
-        path.rel_vert_line(700.); // v 700
-        path.close(); // z
+        path.move_to((570., 850.)); // M 570 850
+        path.line_to((380., 500.)); // L 380 500
+        path.line_to((570., 150.)); // L 570 150
+        path.line_to((570., 850.)); // V 850
+        path.close_path(); // Z
 
-        path.abs_move(Vec2::new(525., 80.)); // M 525 80
-        path.rel_line(Vec2::new(-200., 360.)); // l -200 360
-        path.rel_line(Vec2::new(-200., -360.)); // l -200 -360
-        path.rel_horiz_line(400.); // h 400
-        path.close(); // z
+        path.move_to((525., 80.)); // M 525 80
+        path.line_to((325., 440.)); // L 325 440
+        path.line_to((125., 80.)); // L 125 80
+        path.line_to((525., 80.)); // H 525
+        path.close_path(); // Z
 
-        path.scale(Vec2::from(cap_height / 1e3));
-        path.skew_x(slope * PI / 180.);
+        let skew_x = slope.to_radians().tan();
+        let scale = cap_height / 1e3;
+        let affine = Affine::skew(skew_x, 0.).pre_scale(scale);
+
+        path.apply_affine(affine);
+
+        // let advance = path.bounding_box().size().width;
+        let advance = scale * (650. + (1000. * skew_x).abs());
 
         Self {
             codepoint: None,
-            advance: path.bounds.size().x,
+            advance,
             path,
         }
     }
 }
 
+struct KurboPathWrapper(pub BezPath);
+
+impl From<BezPath> for KurboPathWrapper {
+    fn from(value: BezPath) -> Self {
+        Self(value)
+    }
+}
+
+impl From<KurboPathWrapper> for BezPath {
+    fn from(value: KurboPathWrapper) -> Self {
+        value.0
+    }
+}
+
+impl OutlineBuilder for KurboPathWrapper {
+    fn move_to(&mut self, x: f32, y: f32) {
+        // Y axis is flipped in fonts compared to SVGs
+        self.0.move_to(Point::new(x.into(), (-y).into()));
+    }
+
+    fn line_to(&mut self, x: f32, y: f32) {
+        // Y axis is flipped in fonts compared to SVGs
+        self.0.line_to(Point::new(x.into(), (-y).into()));
+    }
+
+    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
+        // Y axis is flipped in fonts compared to SVGs
+        self.0.quad_to(
+            Point::new(x1.into(), (-y1).into()),
+            Point::new(x.into(), (-y).into()),
+        );
+    }
+
+    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
+        // Y axis is flipped in fonts compared to SVGs
+        self.0.curve_to(
+            Point::new(x1.into(), (-y1).into()),
+            Point::new(x2.into(), (-y2).into()),
+            Point::new(x.into(), (-y).into()),
+        );
+    }
+
+    fn close(&mut self) {
+        self.0.close_path();
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use assert_approx_eq::assert_approx_eq;
+    use assert_matches::assert_matches;
+    use itertools::Itertools;
+    use kurbo::{PathEl, Shape, Size};
+
     use super::*;
 
-    use assert_approx_eq::assert_approx_eq;
+    use crate::utils::KurboAbs;
 
     #[test]
     fn test_new() {
@@ -83,7 +139,7 @@ mod tests {
 
         let a = Glyph::new(&demo, Some('A'), GlyphId(1)).unwrap();
         assert_approx_eq!(a.advance, 540.);
-        assert_eq!(a.path.data.len(), 15);
+        assert_eq!(a.path.into_iter().collect_vec().len(), 15);
 
         let null = std::fs::read("tests/fonts/null.ttf").unwrap();
         let null = Face::parse(&null, 0).unwrap();
@@ -99,11 +155,31 @@ mod tests {
     fn test_notdef() {
         let notdef = Glyph::notdef(500., 0.);
 
-        assert_approx_eq!(notdef.path.bounds.position(), Vec2::new(0., 0.));
-        assert_approx_eq!(notdef.path.bounds.size(), Vec2::new(325., 500.));
+        assert_approx_eq!(notdef.path.bounding_box().origin(), Point::new(0., 0.));
+        assert_approx_eq!(notdef.path.bounding_box().size(), Size::new(325., 500.));
         assert_approx_eq!(notdef.advance, 325.);
 
         let notdef = Glyph::notdef(500., 45.);
-        assert_approx_eq!(notdef.path.bounds.size(), Vec2::new(825., 500.));
+        assert_approx_eq!(notdef.path.bounding_box().size(), Size::new(825., 500.));
+    }
+
+    #[test]
+    fn test_outline_builder() {
+        let mut path = KurboPathWrapper(BezPath::new());
+
+        path.move_to(0., 0.);
+        path.line_to(1., 1.);
+        path.quad_to(2., 1., 2., 0.);
+        path.curve_to(2., -0.5, 1.5, -1., 1., -1.);
+        path.close();
+
+        let els = path.0.into_iter().collect_vec();
+
+        assert_eq!(els.len(), 5);
+        assert_matches!(els[0], PathEl::MoveTo(..));
+        assert_matches!(els[1], PathEl::LineTo(..));
+        assert_matches!(els[2], PathEl::QuadTo(..));
+        assert_matches!(els[3], PathEl::CurveTo(..));
+        assert_matches!(els[4], PathEl::ClosePath);
     }
 }

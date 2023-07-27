@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
+use kurbo::{Point, Rect, RoundedRect, Size};
 use serde::de::{Error, Unexpected};
 use serde::{Deserialize, Deserializer};
 
 use crate::profile::{HomingProps, ProfileType, TextHeight, TextRect};
-use crate::utils::{Rect, RoundRect, Vec2};
 
 use super::{BarProps, BumpProps, Profile};
 
@@ -24,7 +24,7 @@ impl<'de> Deserialize<'de> for BarProps {
         RawBarProps::deserialize(deserializer).map(|props| {
             // Convert mm to milli units
             BarProps {
-                size: Vec2::new(props.width, props.height) * (1e3 / 19.05),
+                size: Size::new(props.width, props.height) * (1e3 / 19.05),
                 y_offset: props.y_offset * (1000. / 19.05),
             }
         })
@@ -65,14 +65,14 @@ where
 
     RawRect::deserialize(deserializer).map(|rect| {
         // Convert mm to milli units
-        let size = Vec2::new(rect.width, rect.height) * (1e3 / 19.05);
-        let position = ((Vec2::from(1e3)) - size) / 2.;
+        let center = Point::new(500., 500.);
+        let size = Size::new(rect.width, rect.height) * (1e3 / 19.05);
 
-        Rect::new(position, size)
+        Rect::from_center_size(center, size)
     })
 }
 
-fn deserialize_round_rect<'de, D>(deserializer: D) -> Result<RoundRect, D::Error>
+fn deserialize_round_rect<'de, D>(deserializer: D) -> Result<RoundedRect, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -85,11 +85,11 @@ where
 
     RawRect::deserialize(deserializer).map(|rect| {
         // Convert mm to milli units
-        let size = Vec2::new(rect.width, rect.height) * (1e3 / 19.05);
-        let position = (Vec2::from(1e3) - size) / 2.;
-        let radius = Vec2::from(rect.radius * (1000. / 19.05));
+        let center = Point::new(500., 500.);
+        let size = Size::new(rect.width, rect.height) * (1e3 / 19.05);
+        let radius = rect.radius * (1000. / 19.05);
 
-        RoundRect::new(position, size, radius)
+        Rect::from_center_size(center, size).to_rounded_rect(radius)
     })
 }
 
@@ -108,15 +108,15 @@ where
 
     RawOffsetRect::deserialize(deserializer).map(|rect| {
         // Convert mm to milli units
-        let size = Vec2::new(rect.width, rect.height) * (1e3 / 19.05);
+        let center = Point::new(500., 500.);
+        let size = Size::new(rect.width, rect.height) * (1e3 / 19.05);
         let offset = rect.y_offset * (1e3 / 19.05);
-        let position = (Vec2::from(1e3) - size) / 2. + Vec2::new(0., offset);
 
-        Rect::new(position, size)
+        Rect::from_center_size(center + (0., offset), size)
     })
 }
 
-fn deserialize_offset_round_rect<'de, D>(deserializer: D) -> Result<RoundRect, D::Error>
+fn deserialize_offset_round_rect<'de, D>(deserializer: D) -> Result<RoundedRect, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -132,12 +132,12 @@ where
 
     RawOffsetRoundRect::deserialize(deserializer).map(|rect| {
         // Convert mm to milli units
-        let size = Vec2::new(rect.width, rect.height) * (1e3 / 19.05);
+        let center = Point::new(500., 500.);
+        let size = Size::new(rect.width, rect.height) * (1e3 / 19.05);
         let offset = rect.y_offset * (1e3 / 19.05);
-        let position = (Vec2::from(1e3) - size) / 2. + Vec2::new(0., offset);
-        let radius = Vec2::from(rect.radius * (1000. / 19.05));
+        let radius = rect.radius * (1000. / 19.05);
 
-        RoundRect::new(position, size, radius)
+        Rect::from_center_size(center + (0., offset), size).to_rounded_rect(radius)
     })
 }
 
@@ -176,9 +176,9 @@ impl<'de> Deserialize<'de> for Profile {
             #[serde(flatten)]
             profile_type: ProfileType,
             #[serde(deserialize_with = "deserialize_round_rect")]
-            bottom: RoundRect,
+            bottom: RoundedRect,
             #[serde(deserialize_with = "deserialize_offset_round_rect")]
-            top: RoundRect,
+            top: RoundedRect,
             #[serde(deserialize_with = "deserialize_legend_map")]
             legend: HashMap<usize, (f64, Rect)>,
             homing: HomingProps,
@@ -191,7 +191,7 @@ impl<'de> Deserialize<'de> for Profile {
             .legend
             .into_iter()
             .map(|(i, (s, r))| {
-                let r = Rect::new(r.position() + Vec2::new(0., top_offset), r.size());
+                let r = r.with_origin(r.origin() + (0., top_offset));
                 ((i, s), (i, r))
             })
             .unzip();
@@ -213,6 +213,8 @@ mod tests {
     use maplit::hashmap;
 
     use super::*;
+
+    use crate::utils::KurboAbs;
 
     #[test]
     fn test_text_height_new() {
@@ -257,39 +259,39 @@ mod tests {
 
     #[test]
     fn test_text_rect_new() {
-        let expected = vec![Rect::new(Vec2::ZERO, Vec2::from(1e3)); 10];
+        let expected = vec![Rect::from_origin_size(Point::ORIGIN, Size::new(1e3, 1e3)); 10];
         let result = TextRect::new(&hashmap! {}).0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.position(), r.position());
+            assert_approx_eq!(e.origin(), r.origin());
             assert_approx_eq!(e.size(), r.size());
         }
 
         let expected = vec![
-            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
-            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
-            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
-            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
+            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
+            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
+            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
         ];
         let result = TextRect::new(&hashmap! {
-            2 => Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            5 => Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            7 => Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            2 => Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            5 => Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            7 => Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
         })
         .0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.position(), r.position());
+            assert_approx_eq!(e.origin(), r.origin());
             assert_approx_eq!(e.size(), r.size());
         }
     }
@@ -297,18 +299,18 @@ mod tests {
     #[test]
     fn test_text_rect_get() {
         let rects = TextRect::new(&hashmap! {
-            2 => Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            5 => Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            7 => Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            2 => Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            5 => Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            7 => Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
         });
 
         let r = rects.get(2);
-        assert_approx_eq!(r.position(), Vec2::from(200.));
-        assert_approx_eq!(r.size(), Vec2::from(600.));
+        assert_approx_eq!(r.origin(), Point::new(200., 200.));
+        assert_approx_eq!(r.size(), Size::new(600., 600.));
 
         let r = rects.get(62);
-        assert_approx_eq!(r.position(), Vec2::from(300.));
-        assert_approx_eq!(r.size(), Vec2::from(400.));
+        assert_approx_eq!(r.origin(), Point::new(300., 300.));
+        assert_approx_eq!(r.size(), Size::new(400., 400.));
     }
 
     #[test]
@@ -323,8 +325,8 @@ mod tests {
         ))
         .unwrap();
 
-        assert_approx_eq!(rect.position(), Vec2::from(100.));
-        assert_approx_eq!(rect.size(), Vec2::from(800.));
+        assert_approx_eq!(rect.origin(), Point::new(100., 100.));
+        assert_approx_eq!(rect.size(), Size::new(800., 800.));
     }
 
     #[test]
@@ -340,9 +342,9 @@ mod tests {
         ))
         .unwrap();
 
-        assert_approx_eq!(rect.position(), Vec2::from(100.));
-        assert_approx_eq!(rect.size(), Vec2::from(800.));
-        assert_approx_eq!(rect.radius(), Vec2::from(100.));
+        assert_approx_eq!(rect.origin(), Point::new(100., 100.));
+        assert_approx_eq!(rect.rect().size(), Size::new(800., 800.));
+        assert_approx_eq!(rect.radii().as_single_radius().unwrap(), 100.);
     }
 
     #[test]
@@ -358,8 +360,8 @@ mod tests {
         ))
         .unwrap();
 
-        assert_approx_eq!(rect.position(), Vec2::new(100., 150.));
-        assert_approx_eq!(rect.size(), Vec2::from(800.));
+        assert_approx_eq!(rect.origin(), Point::new(100., 150.));
+        assert_approx_eq!(rect.size(), Size::new(800., 800.));
     }
 
     #[test]
@@ -376,8 +378,8 @@ mod tests {
         ))
         .unwrap();
 
-        assert_approx_eq!(rect.position(), Vec2::new(100., 150.));
-        assert_approx_eq!(rect.size(), Vec2::from(800.));
-        assert_approx_eq!(rect.radius(), Vec2::from(100.));
+        assert_approx_eq!(rect.origin(), Point::new(100., 150.));
+        assert_approx_eq!(rect.rect().size(), Size::new(800., 800.));
+        assert_approx_eq!(rect.radii().as_single_radius().unwrap(), 100.);
     }
 }

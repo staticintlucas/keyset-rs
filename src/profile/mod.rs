@@ -5,11 +5,11 @@ use std::{array, iter};
 
 use interp::interp_array;
 use itertools::Itertools;
+use kurbo::{Point, Rect, RoundedRect, Size};
 use serde::Deserialize;
 
 use crate::error::Result;
 use crate::key;
-use crate::utils::{Rect, RoundRect, Vec2};
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
@@ -42,7 +42,7 @@ pub struct ScoopProps {
 
 #[derive(Debug, Clone, Copy)]
 pub struct BarProps {
-    pub size: Vec2,
+    pub size: Size,
     pub y_offset: f64,
 }
 
@@ -80,7 +80,7 @@ impl Default for HomingProps {
                 depth: 2. * ProfileType::default().depth(), // 2x the regular depth
             },
             bar: BarProps {
-                size: Vec2::new(3.81, 0.51), // = 0.15in, 0.02in
+                size: Size::new(3.81, 0.51), // = 0.15in, 0.02in
                 y_offset: 6.35,              // = 0.25in
             },
             bump: BumpProps {
@@ -179,7 +179,7 @@ impl TextRect {
 
 impl Default for TextRect {
     fn default() -> Self {
-        let rect = Rect::new(Vec2::ZERO, Vec2::from(1e3));
+        let rect = Rect::from_origin_size(Point::ORIGIN, Size::new(1e3, 1e3));
         Self([rect; Self::NUM_RECTS])
     }
 }
@@ -187,8 +187,8 @@ impl Default for TextRect {
 #[derive(Debug, Clone)]
 pub struct Profile {
     pub profile_type: ProfileType,
-    pub bottom_rect: RoundRect,
-    pub top_rect: RoundRect,
+    pub bottom_rect: RoundedRect,
+    pub top_rect: RoundedRect,
     pub text_margin: TextRect,
     pub text_height: TextHeight,
     pub homing: HomingProps,
@@ -204,8 +204,16 @@ impl Default for Profile {
     fn default() -> Self {
         Self {
             profile_type: ProfileType::default(),
-            bottom_rect: RoundRect::new(Vec2::from(25.), Vec2::from(950.), Vec2::from(65.)),
-            top_rect: RoundRect::new(Vec2::new(170., 55.), Vec2::new(660., 735.), Vec2::from(65.)),
+            bottom_rect: RoundedRect::from_origin_size(
+                Point::new(25., 25.),
+                Size::new(950., 950.),
+                65.,
+            ),
+            top_rect: RoundedRect::from_origin_size(
+                Point::new(170., 55.),
+                Size::new(660., 735.),
+                65.,
+            ),
             text_margin: TextRect::default(),
             text_height: TextHeight::default(),
             homing: HomingProps::default(),
@@ -220,6 +228,8 @@ mod tests {
     use maplit::hashmap;
 
     use super::*;
+
+    use crate::utils::KurboAbs;
 
     #[test]
     fn test_profile_type_depth() {
@@ -237,7 +247,7 @@ mod tests {
     fn test_homing_props_default() {
         assert_matches!(HomingProps::default().default, key::Homing::Bar);
         assert_eq!(HomingProps::default().scoop.depth, 2.);
-        assert_eq!(HomingProps::default().bar.size, Vec2::new(3.81, 0.51));
+        assert_eq!(HomingProps::default().bar.size, Size::new(3.81, 0.51));
         assert_eq!(HomingProps::default().bar.y_offset, 6.35);
         assert_eq!(HomingProps::default().bump.diameter, 0.51);
         assert_eq!(HomingProps::default().bump.y_offset, 0.);
@@ -295,39 +305,39 @@ mod tests {
 
     #[test]
     fn test_text_rect_new() {
-        let expected = vec![Rect::new(Vec2::ZERO, Vec2::from(1e3)); 10];
+        let expected = vec![Rect::from_origin_size(Point::ORIGIN, Size::new(1e3, 1e3)); 10];
         let result = TextRect::new(&hashmap! {}).0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.position(), r.position());
+            assert_approx_eq!(e.origin(), r.origin());
             assert_approx_eq!(e.size(), r.size());
         }
 
         let expected = vec![
-            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
-            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
-            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
-            Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
+            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
+            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
+            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
         ];
         let result = TextRect::new(&hashmap! {
-            2 => Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            5 => Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            7 => Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            2 => Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            5 => Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            7 => Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
         })
         .0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.position(), r.position());
+            assert_approx_eq!(e.origin(), r.origin());
             assert_approx_eq!(e.size(), r.size());
         }
     }
@@ -335,18 +345,18 @@ mod tests {
     #[test]
     fn test_text_rect_get() {
         let rects = TextRect::new(&hashmap! {
-            2 => Rect::new(Vec2::new(200., 200.), Vec2::new(600., 600.)),
-            5 => Rect::new(Vec2::new(250., 250.), Vec2::new(500., 500.)),
-            7 => Rect::new(Vec2::new(300., 300.), Vec2::new(400., 400.)),
+            2 => Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
+            5 => Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
+            7 => Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
         });
 
         let r = rects.get(2);
-        assert_approx_eq!(r.position(), Vec2::from(200.));
-        assert_approx_eq!(r.size(), Vec2::from(600.));
+        assert_approx_eq!(r.origin(), Point::new(200., 200.));
+        assert_approx_eq!(r.size(), Size::new(600., 600.));
 
         let r = rects.get(62);
-        assert_approx_eq!(r.position(), Vec2::from(300.));
-        assert_approx_eq!(r.size(), Vec2::from(400.));
+        assert_approx_eq!(r.origin(), Point::new(300., 300.));
+        assert_approx_eq!(r.size(), Size::new(400., 400.));
     }
 
     #[test]
@@ -354,8 +364,8 @@ mod tests {
         let rects = TextRect::default();
 
         for r in rects.0.into_iter() {
-            assert_approx_eq!(r.position(), Vec2::ZERO);
-            assert_approx_eq!(r.size(), Vec2::from(1e3));
+            assert_approx_eq!(r.origin(), Point::ORIGIN);
+            assert_approx_eq!(r.size(), Size::new(1e3, 1e3));
         }
     }
 
@@ -408,13 +418,25 @@ mod tests {
             matches!(profile.profile_type, ProfileType::Cylindrical { depth } if f64::abs(depth - 0.5) < 1e-6)
         );
 
-        assert_approx_eq!(profile.bottom_rect.position(), Vec2::from(20.), 0.5);
-        assert_approx_eq!(profile.bottom_rect.size(), Vec2::from(960.), 0.5);
-        assert_approx_eq!(profile.bottom_rect.radius(), Vec2::from(20.), 0.5);
+        assert_approx_eq!(profile.bottom_rect.origin(), Point::new(20., 20.), 0.5);
+        assert_approx_eq!(
+            profile.bottom_rect.rect().size(),
+            Size::new(960., 960.),
+            0.5
+        );
+        assert_approx_eq!(
+            profile.bottom_rect.radii().as_single_radius().unwrap(),
+            20.,
+            0.5
+        );
 
-        assert_approx_eq!(profile.top_rect.position(), Vec2::new(190., 50.), 0.5);
-        assert_approx_eq!(profile.top_rect.size(), Vec2::new(620., 730.), 0.5);
-        assert_approx_eq!(profile.top_rect.radius(), Vec2::new(80., 80.), 0.5);
+        assert_approx_eq!(profile.top_rect.origin(), Point::new(190., 50.), 0.5);
+        assert_approx_eq!(profile.top_rect.rect().size(), Size::new(620., 730.), 0.5);
+        assert_approx_eq!(
+            profile.top_rect.radii().as_single_radius().unwrap(),
+            80.,
+            0.5
+        );
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = vec![0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
@@ -424,25 +446,25 @@ mod tests {
 
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = vec![
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 593.)),
-            Rect::new(Vec2::new(250., 185.), Vec2::new(500., 502.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
-            Rect::new(Vec2::new(252., 112.), Vec2::new(496., 606.)),
+            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 593.)),
+            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 593.)),
+            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 593.)),
+            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 593.)),
+            Rect::from_origin_size(Point::new(250., 185.), Size::new(500., 502.)),
+            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
+            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
+            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
+            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
+            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
         ];
         for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.position(), r.position(), 0.5);
+            assert_approx_eq!(e.origin(), r.origin(), 0.5);
             assert_approx_eq!(e.size(), r.size(), 0.5);
         }
 
         assert_matches!(profile.homing.default, key::Homing::Scoop);
         assert_approx_eq!(profile.homing.scoop.depth, 1.5);
-        assert_approx_eq!(profile.homing.bar.size, Vec2::new(202., 21.), 0.5);
+        assert_approx_eq!(profile.homing.bar.size, Size::new(202., 21.), 0.5);
         assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);
         assert_approx_eq!(profile.homing.bump.diameter, 21., 0.5);
         assert_approx_eq!(profile.homing.bump.y_offset, -10., 0.5);
@@ -468,13 +490,13 @@ expected `.`, `=`
 
         assert_matches!(profile.profile_type, ProfileType::Cylindrical { depth } if depth == 1.);
 
-        assert_approx_eq!(profile.bottom_rect.position(), Vec2::from(25.));
-        assert_approx_eq!(profile.bottom_rect.size(), Vec2::from(950.));
-        assert_approx_eq!(profile.bottom_rect.radius(), Vec2::from(65.));
+        assert_approx_eq!(profile.bottom_rect.origin(), Point::new(25., 25.));
+        assert_approx_eq!(profile.bottom_rect.rect().size(), Size::new(950., 950.));
+        assert_approx_eq!(profile.bottom_rect.radii().as_single_radius().unwrap(), 65.);
 
-        assert_approx_eq!(profile.top_rect.position(), Vec2::new(170., 55.));
-        assert_approx_eq!(profile.top_rect.size(), Vec2::new(660., 735.));
-        assert_approx_eq!(profile.top_rect.radius(), Vec2::from(65.));
+        assert_approx_eq!(profile.top_rect.origin(), Point::new(170., 55.));
+        assert_approx_eq!(profile.top_rect.rect().size(), Size::new(660., 735.));
+        assert_approx_eq!(profile.top_rect.radii().as_single_radius().unwrap(), 65.);
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = TextHeight::default();
@@ -485,7 +507,7 @@ expected `.`, `=`
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = TextRect::default();
         for (e, r) in expected.0.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.position(), r.position(), 0.5);
+            assert_approx_eq!(e.origin(), r.origin(), 0.5);
             assert_approx_eq!(e.size(), r.size(), 0.5);
         }
     }

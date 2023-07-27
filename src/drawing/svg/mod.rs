@@ -1,13 +1,12 @@
 mod font;
-mod path;
 mod profile;
 
+use kurbo::{Affine, Point, Rect, Size};
 use svg::node::element::Group;
 use svg::Document;
 
 use crate::drawing::Drawing;
 use crate::key::Key;
-use crate::utils::Vec2;
 
 use font::Draw as _;
 use profile::Draw as _;
@@ -19,23 +18,34 @@ pub trait ToSvg {
 impl ToSvg for Drawing {
     #[must_use]
     fn to_svg(&self) -> String {
-        let key_size = self
+        let bounds = self
             .keys
             .iter()
-            .map(|k| k.position + k.shape.size())
-            .fold(Vec2::from(1.), Vec2::max);
-
-        // scale from keyboard units to drawing units (milliunits)
-        let scale = Vec2::from(1e3);
-        let size = key_size * scale;
+            .map(|k| k.position + k.shape.size().to_vec2())
+            .fold(
+                Rect::from_origin_size(Point::ORIGIN, Size::new(1., 1.)),
+                |r, p| r.union_pt(p),
+            );
 
         // w and h are in dpi units, the 0.75 is keyboard units per inch
-        let Vec2 { x, y } = key_size * self.options.dpi * 0.75;
+        let Size { width, height } = bounds.size() * self.options.dpi * 0.75;
+
+        // scale from keyboard units to drawing units (milliunits)
+        let bounds = bounds.scale_from_origin(1e3);
 
         let document = Document::new()
-            .set("width", format!("{}", (1e5 * x).floor() / 1e5))
-            .set("height", format!("{}", (1e5 * y).floor() / 1e5))
-            .set("viewBox", format!("0 0 {:.0} {:.0}", size.x, size.y));
+            .set("width", format!("{}", (1e5 * width).floor() / 1e5))
+            .set("height", format!("{}", (1e5 * height).floor() / 1e5))
+            .set(
+                "viewBox",
+                format!(
+                    "{:.0} {:.0} {:.0} {:.0}",
+                    bounds.origin().x,
+                    bounds.origin().y,
+                    bounds.size().width,
+                    bounds.size().height
+                ),
+            );
 
         let document = self
             .keys
@@ -49,8 +59,8 @@ impl ToSvg for Drawing {
 
 impl Drawing {
     fn draw_key(&self, key: &Key) -> Group {
-        let scale = Vec2::from(1e3);
-        let pos = key.position * scale;
+        // scale from keyboard units to drawing units (milliunits)
+        let pos = Affine::scale(1e3) * key.position;
 
         let result = Group::new().set("transform", format!("translate({}, {})", pos.x, pos.y));
 

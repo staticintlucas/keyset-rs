@@ -1,10 +1,10 @@
 use itertools::Itertools;
+use kurbo::{Affine, BezPath, Shape, Vec2};
 use svg::node::element::Path as SvgPath;
 
 use crate::font::Font;
 use crate::key::Key;
 use crate::profile::Profile;
-use crate::utils::{Path, Vec2};
 
 pub trait Draw {
     fn draw_legends(&self, profile: &Profile, key: &Key) -> Vec<SvgPath>;
@@ -21,18 +21,20 @@ impl Draw for Font {
                 let mut path = self.text_path(&legend.text);
 
                 let scale = profile.text_height.get(legend.size) / self.cap_height;
-                path.scale(Vec2::from(scale));
+                path.apply_affine(Affine::scale(scale));
 
                 let align = Vec2::new(
                     (j as f64) / ((key.legends.len() - 1) as f64),
                     (i as f64) / ((key.legends[0].len() - 1) as f64),
                 );
                 let margin = profile.text_margin.get(legend.size);
-                let point = margin.position() + (margin.size() - path.bounds.size()) * align;
-                path.translate(point - path.bounds.position());
+                let bounds = path.bounding_box();
+                let size = margin.size() - bounds.size();
+                let point = margin.origin() + (align.x * size.width, align.y * size.height);
+                path.apply_affine(Affine::translate(point - bounds.origin()));
 
                 let svg_path = SvgPath::new()
-                    .set("d", path)
+                    .set("d", path.to_svg())
                     .set("fill", legend.color.to_string())
                     .set("stroke", "none");
 
@@ -45,8 +47,8 @@ impl Draw for Font {
 }
 
 impl Font {
-    fn text_path(&self, text: &str) -> Path {
-        let mut path = Path::new();
+    fn text_path(&self, text: &str) -> BezPath {
+        let mut path = BezPath::new();
 
         let first = if let Some(first) = text.chars().next() {
             self.glyphs.get(&first).unwrap_or(&self.notdef)
@@ -54,7 +56,7 @@ impl Font {
             return path;
         };
 
-        path.append(first.path.clone());
+        path.extend(first.path.clone());
         text.chars()
             .map(|char| self.glyphs.get(&char).unwrap_or(&self.notdef))
             .tuple_windows()
@@ -68,8 +70,8 @@ impl Font {
             })
             .for_each(|(pos, glyph)| {
                 let mut glyph = glyph.path.clone();
-                glyph.translate(Vec2::new(pos, 0.));
-                path.append(glyph);
+                glyph.apply_affine(Affine::translate((pos, 0.)));
+                path.extend(glyph);
             });
         path
     }
@@ -77,7 +79,7 @@ impl Font {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::PathSegment;
+    use kurbo::PathEl;
 
     use super::*;
 
@@ -98,14 +100,13 @@ mod tests {
         let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
         let path = font.text_path("AV");
         assert_eq!(
-            path.data
-                .into_iter()
-                .filter(|seg| matches!(seg, PathSegment::Move(..)))
+            path.into_iter()
+                .filter(|seg| matches!(seg, PathEl::MoveTo(..)))
                 .count(),
             3
         );
 
         let path = font.text_path("");
-        assert!(path.data.is_empty());
+        assert_eq!(path.into_iter().count(), 0);
     }
 }

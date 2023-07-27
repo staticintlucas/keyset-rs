@@ -1,11 +1,12 @@
+use std::f64::consts::{FRAC_PI_2, PI};
+
 use itertools::Itertools;
+use kurbo::{Arc, BezPath, Circle, Point, Rect, Shape, Size, Vec2};
 use svg::node::element::Path as SvgPath;
 
 use crate::key::{self, Key};
-use crate::profile::{Profile, ProfileType};
-use crate::utils::{Color, Path, Rect, RoundRect, Vec2};
-
-use super::path::{EdgeType, KeyHelpers};
+use crate::profile::Profile;
+use crate::utils::Color;
 
 pub trait Draw {
     fn draw_key(&self, key: &Key) -> Vec<SvgPath>;
@@ -41,8 +42,8 @@ impl Draw for Profile {
             }
             key::Shape::SteppedCaps => {
                 vec![
-                    self.draw_key_bottom(Vec2::new(1.75e3, 1e3), color),
-                    self.draw_key_top(typ, Vec2::new(1.25e3, 1e3), color, depth),
+                    self.draw_key_bottom(Size::new(1.75e3, 1e3), color),
+                    self.draw_key_top(typ, Size::new(1.25e3, 1e3), color, depth),
                     self.draw_step(color),
                 ]
             }
@@ -77,34 +78,27 @@ impl Draw for Profile {
             .map(|s| self.text_margin.get(s));
 
         let (pos_off, size_off) = match key.shape {
-            key::Shape::IsoHorizontal => (Vec2::ZERO, Vec2::new(500., 0.)),
-            key::Shape::IsoVertical => (Vec2::new(250., 0.), Vec2::new(250., 1000.)),
-            key::Shape::SteppedCaps => (Vec2::ZERO, Vec2::new(250., 0.)),
-            key::Shape::Normal(size) => (Vec2::ZERO, (size - Vec2::from(1.)) * 1e3),
+            key::Shape::IsoHorizontal => (Vec2::ZERO, Size::new(500., 0.)),
+            key::Shape::IsoVertical => (Vec2::new(250., 0.), Size::new(250., 1000.)),
+            key::Shape::SteppedCaps => (Vec2::ZERO, Size::new(250., 0.)),
+            key::Shape::Normal(size) => (Vec2::ZERO, (size * 1e3 - Size::new(1e3, 1e3))),
         };
 
         let (pos_off, size_off) = if matches!(key.typ, key::Type::None) {
             (
-                pos_off + (self.bottom_rect.position() - self.top_rect.position()),
-                size_off + (self.bottom_rect.size() - self.top_rect.size()),
+                pos_off + (self.bottom_rect.origin() - self.top_rect.origin()),
+                size_off + (self.bottom_rect.rect().size() - self.top_rect.rect().size()),
             )
         } else {
             (pos_off, size_off)
         };
 
         rects
-            .map(|r| Rect::new(r.position() + pos_off, r.size() + size_off))
-            .map(|r| {
-                let mut path = Path::new();
-                path.abs_move(r.position());
-                path.rel_horiz_line(r.size().x);
-                path.rel_vert_line(r.size().y);
-                path.rel_horiz_line(-r.size().x);
-                path.rel_vert_line(-r.size().y);
-                path.close();
-
+            .map(|rect| {
+                let path = Rect::from_origin_size(rect.origin() + pos_off, rect.size() + size_off)
+                    .into_path(1.);
                 SvgPath::new()
-                    .set("d", path)
+                    .set("d", path.to_svg())
                     .set("fill", "none")
                     .set("stroke", Color::new(255, 0, 0).to_string())
                     .set("stroke-width", "5")
@@ -114,283 +108,334 @@ impl Draw for Profile {
 }
 
 impl Profile {
-    fn draw_key_top(&self, typ: key::Type, size: Vec2, color: Color, depth: f64) -> SvgPath {
-        let rect = self.top_rect;
-        let curve = (depth / 19.05 * 1e3) * 0.381;
+    fn draw_key_top(&self, _typ: key::Type, size: Size, color: Color, _depth: f64) -> SvgPath {
+        let radii = self.top_rect.radii();
+        let rect = self.top_rect.rect();
+        let rect = rect
+            .with_size(rect.size() + size - Size::new(1e3, 1e3))
+            .to_rounded_rect(radii);
+        let path = rect.into_path(1.);
 
-        let (edge_t, edge_r, edge_b, edge_l) = match (self.profile_type, typ) {
-            (ProfileType::Flat, _) => (
-                EdgeType::Line,
-                EdgeType::Line,
-                EdgeType::Line,
-                EdgeType::Line,
-            ),
-            (_, key::Type::Space) => (
-                EdgeType::Line,
-                EdgeType::InsetCurve,
-                EdgeType::Line,
-                EdgeType::InsetCurve,
-            ),
-            (ProfileType::Cylindrical { .. }, _) => (
-                EdgeType::Line,
-                EdgeType::Line,
-                EdgeType::CurveStretch,
-                EdgeType::Line,
-            ),
-            (ProfileType::Spherical { .. }, _) => (
-                EdgeType::CurveLineCurve,
-                EdgeType::CurveLineCurve,
-                EdgeType::CurveLineCurve,
-                EdgeType::CurveLineCurve,
-            ),
-        };
-
-        let mut path = Path::start(rect);
-        path.corner_top_left(rect);
-        path.edge_top(rect, size, edge_t, curve);
-        path.corner_top_right(rect);
-        path.edge_right(rect, size, edge_r, curve);
-        path.corner_bottom_right(rect);
-        path.edge_bottom(rect, size, edge_b, curve);
-        path.corner_bottom_left(rect);
-        path.edge_left(rect, size, edge_l, curve);
-        path.close();
+        // let curve = (depth / 19.05 * 1e3) * 0.381;
+        // match (self.profile_type, typ) {
+        //     (ProfileType::Flat, _) => {}
+        //     (_, key::Type::Space) => {
+        //         // TODO inset left & right sides
+        //     }
+        //     (ProfileType::Cylindrical { .. }, _) => {
+        //         // TODO stretched curve on bottom
+        //     }
+        //     (ProfileType::Spherical { .. }, _) => {
+        //         // TODO curve-line-curve on all sides
+        //     }
+        // };
 
         SvgPath::new()
-            .set("d", path)
+            .set("d", path.to_svg())
             .set("fill", color.to_string())
             .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
-    fn draw_key_bottom(&self, size: Vec2, color: Color) -> SvgPath {
-        let rect = self.bottom_rect;
-
-        let mut path = Path::start(rect);
-        path.corner_top_left(rect);
-        path.edge_top(rect, size, EdgeType::Line, 0.);
-        path.corner_top_right(rect);
-        path.edge_right(rect, size, EdgeType::Line, 0.);
-        path.corner_bottom_right(rect);
-        path.edge_bottom(rect, size, EdgeType::Line, 0.);
-        path.corner_bottom_left(rect);
-        path.edge_left(rect, size, EdgeType::Line, 0.);
-        path.close();
+    fn draw_key_bottom(&self, size: Size, color: Color) -> SvgPath {
+        let radii = self.bottom_rect.radii();
+        let rect = self.bottom_rect.rect();
+        let rect = rect
+            .with_size(rect.size() + size - Size::new(1e3, 1e3))
+            .to_rounded_rect(radii);
+        let path = rect.into_path(1.);
 
         SvgPath::new()
-            .set("d", path)
+            .set("d", path.to_svg())
             .set("fill", color.to_string())
             .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
     fn draw_step(&self, color: Color) -> SvgPath {
-        // Take dimensions from average of top and bottom, adjusting only x and width
-        let rect = RoundRect::new(
-            Vec2::new(
-                1250. - (self.top_rect.position().x + self.bottom_rect.position().x) / 2.,
-                (self.top_rect.position().y + self.bottom_rect.position().y) / 2.,
+        // Take average dimensions of top and bottom, adjusting only x and width
+        let rect = Rect::from_origin_size(
+            Point::new(
+                1250. - (self.top_rect.origin().x + self.bottom_rect.origin().x) / 2.,
+                (self.top_rect.origin().y + self.bottom_rect.origin().y) / 2.,
             ),
-            Vec2::new(
-                500. + (self.top_rect.radius().x + self.bottom_rect.radius().x),
-                (self.top_rect.size().y + self.bottom_rect.size().y) / 2.,
+            Size::new(
+                500.,
+                (self.top_rect.height() + self.bottom_rect.height()) / 2.,
             ),
-            (self.top_rect.radius() + self.bottom_rect.radius()) / 2.,
         );
-        // Just set 1u as the size, with the dimensions above it will all line up properly
-        let size = Vec2::from(1e3);
+        let radius = (self.top_rect.radii().as_single_radius().unwrap()
+            + self.bottom_rect.radii().as_single_radius().unwrap())
+            / 2.;
 
-        let radius = rect.radius();
-        let mut path = Path::start(rect);
-        path.rel_arc(radius, 0., false, false, rect.radius() * -1.);
-        path.edge_top(rect, size, EdgeType::Line, 0.);
-        path.corner_top_right(rect);
-        path.edge_right(rect, size, EdgeType::Line, 0.);
-        path.corner_bottom_right(rect);
-        path.edge_bottom(rect, size, EdgeType::Line, 0.);
-        path.rel_arc(radius, 0., false, false, rect.radius() * Vec2::new(1., -1.));
-        path.edge_left(rect, size, EdgeType::Line, 0.);
-        path.close();
+        let mut path = BezPath::new();
+        path.move_to(rect.origin() + (0., radius));
+        path.extend(
+            Arc::new(
+                rect.origin() + (-radius, radius),
+                (radius, radius),
+                0.,
+                -FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect.origin() + (rect.width() - radius, 0.));
+        path.extend(
+            Arc::new(
+                rect.origin() + (rect.width() - radius, radius),
+                (radius, radius),
+                -FRAC_PI_2,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect.origin() + (rect.width(), rect.height() - radius));
+        path.extend(
+            Arc::new(
+                rect.origin() + (rect.width() - radius, rect.height() - radius),
+                (radius, radius),
+                0.,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect.origin() + (-radius, rect.height()));
+        path.extend(
+            Arc::new(
+                rect.origin() + (-radius, rect.height() - radius),
+                (radius, radius),
+                FRAC_PI_2,
+                -FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect.origin() + (0., radius));
+        path.close_path();
 
         SvgPath::new()
-            .set("d", path)
+            .set("d", path.to_svg())
             .set("fill", color.to_string())
             .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
-    fn draw_iso_top(&self, typ: key::Type, color: Color, depth: f64) -> SvgPath {
-        let rect = self.top_rect;
-        let top_size = Vec2::new(1.5e3, 1e3);
-        let btm_size = Vec2::new(1.25e3, 2e3);
-        let curve = (depth / 19.05 * 1e3) * 0.381;
+    fn draw_iso_top(&self, _typ: key::Type, color: Color, _depth: f64) -> SvgPath {
+        let rect = self.top_rect.rect();
+        let rect150 = rect.with_size(rect.size() + Size::new(500., 0.));
+        let rect125 = rect
+            .with_origin(rect.origin() + (250., 1000.))
+            .with_size(rect.size() + Size::new(250., 0.));
+        let radius = self.top_rect.radii().as_single_radius().unwrap();
 
-        let (edge_t, edge_r, edge_b, edge_l) = match (self.profile_type, typ) {
-            (ProfileType::Flat, _) => (
-                EdgeType::Line,
-                EdgeType::Line,
-                EdgeType::Line,
-                EdgeType::Line,
-            ),
-            (_, key::Type::Space) => (
-                EdgeType::Line,
-                EdgeType::InsetCurve,
-                EdgeType::Line,
-                EdgeType::InsetCurve,
-            ),
-            (ProfileType::Cylindrical { .. }, _) => (
-                EdgeType::Line,
-                EdgeType::Line,
-                EdgeType::CurveStretch,
-                EdgeType::Line,
-            ),
-            (ProfileType::Spherical { .. }, _) => (
-                EdgeType::CurveLineCurve,
-                EdgeType::CurveLineCurve,
-                EdgeType::CurveLineCurve,
-                EdgeType::CurveLineCurve,
-            ),
-        };
+        // match (self.profile_type, typ) {
+        //     (ProfileType::Flat, _) => {}
+        //     (_, key::Type::Space) => {
+        //         // TODO inset left & right sides
+        //     }
+        //     (ProfileType::Cylindrical { .. }, _) => {
+        //         // TODO stretched curve on bottom
+        //     }
+        //     (ProfileType::Spherical { .. }, _) => {
+        //         // TODO curve-line-curve on all sides
+        //     }
+        // };
 
-        let mut path = Path::start(rect);
-        path.corner_top_left(rect);
-        path.edge_top(rect, top_size, edge_t, curve);
-        path.corner_top_right(rect);
-        path.edge_right(rect, btm_size, edge_r, curve);
-        path.corner_bottom_right(rect);
-        path.edge_bottom(rect, btm_size, edge_b, curve);
-        path.corner_bottom_left(rect);
+        let mut path = BezPath::new();
+        path.move_to(rect150.origin() + (0., radius));
+        path.extend(
+            Arc::new(
+                rect150.origin() + (radius, radius),
+                (radius, radius),
+                PI,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect150.origin() + (rect150.width() - radius, 0.));
+        path.extend(
+            Arc::new(
+                rect150.origin() + (rect150.width() - radius, radius),
+                (radius, radius),
+                -FRAC_PI_2,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect125.origin() + (rect125.width(), rect125.height() - radius));
+        path.extend(
+            Arc::new(
+                rect125.origin() + (rect125.width() - radius, rect125.height() - radius),
+                (radius, radius),
+                0.,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect125.origin() + (radius, rect125.height()));
+        path.extend(
+            Arc::new(
+                rect125.origin() + (radius, rect125.height() - radius),
+                (radius, radius),
+                FRAC_PI_2,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
 
-        let h_line = 0.25e3 - 2. * rect.radius().x;
-        let v_line = 1e3 - 2. * rect.radius().y;
-        let h_curve = match edge_b {
-            // Curve deflection of the horizontal line
-            EdgeType::Line => 0.,
-            // a third seems to give a nice result here
-            EdgeType::CurveLineCurve | EdgeType::CurveStretch => curve / 3.,
-            EdgeType::InsetCurve => unreachable!(), // No horizontal insets currently possible
-        };
-        let v_curve = match edge_l {
-            // Curve deflection of the vertical line
-            EdgeType::Line => 0.,
-            EdgeType::CurveLineCurve => curve,
-            EdgeType::CurveStretch => unreachable!(), // No vertical stretches currently possible
-            EdgeType::InsetCurve => -curve,
-        };
+        // let h_line = 0.25e3 - 2. * radius;
+        // let v_line = 1e3 - 2. * radius;
+        // TODO curvature on inner L edges of ISO enter
 
-        match edge_l {
-            EdgeType::Line => path.rel_vert_line(-(v_line - h_curve)),
-            EdgeType::CurveLineCurve => {
-                let radius = Path::radius(curve, rect.size().y);
-                path.rel_arc(
-                    radius,
-                    0.,
-                    false,
-                    true,
-                    Vec2::new(-v_curve, -rect.size().y / 2.),
-                );
-                path.rel_vert_line(-(v_line - rect.size().y / 2. - h_curve));
-            }
-            EdgeType::CurveStretch => {
-                // let radius = Path::radius(curve, 2. * v_line);
-                // path.rel_arc(radius, 0., false, true, Vector::new(-v_curve, v_line))
-                unreachable!() // No vertical stretches currently possible
-            }
-            EdgeType::InsetCurve => {
-                let radius = Path::radius(curve, 2. * v_line);
-                path.rel_arc(radius, 0., false, false, Vec2::new(-v_curve, v_line));
-            }
-        };
-
-        let radius = rect.radius();
-        path.rel_arc(radius, 0., false, false, rect.radius() * -1.);
-        path.rel_line(Vec2::new(-(h_line - v_curve), -h_curve));
-        path.corner_bottom_left(rect);
-        path.edge_left(rect, top_size, edge_l, curve);
-        path.close();
+        path.line_to(
+            Point::new(rect125.origin().x, rect150.origin().y) + (0., rect150.height() + radius),
+        );
+        path.extend(
+            Arc::new(
+                Point::new(rect125.origin().x, rect150.origin().y)
+                    + (-radius, rect150.height() + radius),
+                (radius, radius),
+                0.,
+                -FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect150.origin() + (radius, rect150.height()));
+        path.extend(
+            Arc::new(
+                rect150.origin() + (radius, rect150.height() - radius),
+                (radius, radius),
+                FRAC_PI_2,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect150.origin() + (0., radius));
+        path.close_path();
 
         SvgPath::new()
-            .set("d", path)
+            .set("d", path.to_svg())
             .set("fill", color.to_string())
             .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
     fn draw_iso_bottom(&self, color: Color) -> SvgPath {
-        let rect = self.bottom_rect;
-        let top_size = Vec2::new(1.5e3, 1e3);
-        let btm_size = Vec2::new(1.25e3, 2e3);
+        let rect = self.bottom_rect.rect();
+        let rect150 = rect.with_size(rect.size() + Size::new(500., 0.));
+        let rect125 = rect
+            .with_origin(rect.origin() + (250., 1000.))
+            .with_size(rect.size() + Size::new(250., 0.));
+        let radius = self.bottom_rect.radii().as_single_radius().unwrap();
 
-        let radius = rect.radius();
-        let mut path = Path::start(rect);
-        path.corner_top_left(rect);
-        path.edge_top(rect, top_size, EdgeType::Line, 0.);
-        path.corner_top_right(rect);
-        path.edge_right(rect, btm_size, EdgeType::Line, 0.);
-        path.corner_bottom_right(rect);
-        path.edge_bottom(rect, btm_size, EdgeType::Line, 0.);
-        path.corner_bottom_left(rect);
-        path.rel_vert_line(-(1e3 - 2. * rect.radius().y));
-        path.rel_arc(radius, 0., false, false, rect.radius() * -1.);
-        path.rel_horiz_line(-(0.25e3 - 2. * rect.radius().x));
-        path.corner_bottom_left(rect);
-        path.edge_left(rect, top_size, EdgeType::Line, 0.);
-        path.close();
+        let mut path = BezPath::new();
+        path.move_to(rect150.origin() + (0., radius));
+        path.extend(
+            Arc::new(
+                rect150.origin() + (radius, radius),
+                (radius, radius),
+                PI,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect150.origin() + (rect150.width() - radius, 0.));
+        path.extend(
+            Arc::new(
+                rect150.origin() + (rect150.width() - radius, radius),
+                (radius, radius),
+                -FRAC_PI_2,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect125.origin() + (rect125.width(), rect125.height() - radius));
+        path.extend(
+            Arc::new(
+                rect125.origin() + (rect125.width() - radius, rect125.height() - radius),
+                (radius, radius),
+                0.,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect125.origin() + (radius, rect125.height()));
+        path.extend(
+            Arc::new(
+                rect125.origin() + (radius, rect125.height() - radius),
+                (radius, radius),
+                FRAC_PI_2,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(
+            Point::new(rect125.origin().x, rect150.origin().y) + (0., rect150.height() + radius),
+        );
+        path.extend(
+            Arc::new(
+                Point::new(rect125.origin().x, rect150.origin().y)
+                    + (-radius, rect150.height() + radius),
+                (radius, radius),
+                0.,
+                -FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect150.origin() + (radius, rect150.height()));
+        path.extend(
+            Arc::new(
+                rect150.origin() + (radius, rect150.height() - radius),
+                (radius, radius),
+                FRAC_PI_2,
+                FRAC_PI_2,
+                0.,
+            )
+            .append_iter(1.),
+        );
+        path.line_to(rect150.origin() + (0., radius));
+        path.close_path();
 
         SvgPath::new()
-            .set("d", path)
+            .set("d", path.to_svg())
             .set("fill", color.to_string())
             .set("stroke", color.highlight(0.15).to_string())
             .set("stroke-width", "10")
     }
 
-    fn draw_homing_bar(&self, size: Vec2, color: Color) -> SvgPath {
-        let center = self.top_rect.center() + (size - Vec2::from(1e3)) / 2.;
-        let rect = RoundRect::new(
-            center - self.homing.bar.size / 2. + Vec2::new(0., self.homing.bar.y_offset),
-            self.homing.bar.size,
-            Vec2::from(self.homing.bar.size.y / 2.),
-        );
-
-        let mut path = Path::new();
-        path.abs_move(rect.position() + Vec2::new(rect.radius().x, 0.));
-        path.rel_horiz_line(rect.size().x - 2. * rect.radius().x);
-        path.rel_arc(
-            rect.radius(),
-            0.,
-            false,
-            true,
-            Vec2::new(0., 2. * rect.radius().y),
-        );
-        path.rel_horiz_line(-(rect.size().x - 2. * rect.radius().x));
-        path.rel_arc(
-            rect.radius(),
-            0.,
-            false,
-            true,
-            Vec2::new(0., -2. * rect.radius().y),
-        );
-        path.close();
+    fn draw_homing_bar(&self, size: Size, color: Color) -> SvgPath {
+        let center = self.top_rect.center() + (size - Size::new(1e3, 1e3)).to_vec2() / 2.;
+        let rect = Rect::from_center_size(center, self.homing.bar.size)
+            .to_rounded_rect(self.homing.bar.size.height);
 
         SvgPath::new()
-            .set("d", path)
+            .set("d", rect.to_path(1.).to_svg())
             .set("fill", color.to_string())
             .set("stroke", color.highlight(0.25).to_string())
             .set("stroke-width", "10")
     }
 
-    fn draw_homing_bump(&self, size: Vec2, color: Color) -> SvgPath {
-        let center = self.top_rect.center() + (size - Vec2::from(1e3)) / 2.;
-        let r = self.homing.bump.diameter / 2.;
-
-        let mut path = Path::new();
-        path.abs_move(center + Vec2::new(0., -r));
-        path.rel_arc(Vec2::from(r), 0., false, true, Vec2::new(0., 2. * r));
-        path.rel_arc(Vec2::from(r), 0., false, true, Vec2::new(0., -2. * r));
-        path.close();
+    fn draw_homing_bump(&self, size: Size, color: Color) -> SvgPath {
+        let center = self.top_rect.center() + (size - Size::new(1e3, 1e3)).to_vec2() / 2.;
+        let radius = self.homing.bump.diameter / 2.;
+        let circle = Circle::new(center, radius);
 
         SvgPath::new()
-            .set("d", path)
+            .set("d", circle.to_path(1.).to_svg())
             .set("fill", color.to_string())
             .set("stroke", color.highlight(0.25).to_string())
             .set("stroke-width", "10")
@@ -399,6 +444,8 @@ impl Profile {
 
 #[cfg(test)]
 mod tests {
+    use crate::profile::ProfileType;
+
     use super::*;
 
     #[test]
@@ -409,14 +456,14 @@ mod tests {
         let homing_bar = key::Type::Homing(Some(key::Homing::Bar));
         let homing_bump = key::Type::Homing(Some(key::Homing::Bump));
         let test_config = vec![
-            (key::Shape::Normal(Vec2::new(1., 1.)), key::Type::Normal, 2),
+            (key::Shape::Normal(Size::new(1., 1.)), key::Type::Normal, 2),
             (key::Shape::SteppedCaps, key::Type::Normal, 3),
             (key::Shape::IsoHorizontal, key::Type::Normal, 2),
             (key::Shape::IsoVertical, key::Type::Normal, 2),
-            (key::Shape::Normal(Vec2::new(1., 1.)), homing_scoop, 2),
-            (key::Shape::Normal(Vec2::new(1., 1.)), homing_bar, 3),
-            (key::Shape::Normal(Vec2::new(1., 1.)), homing_bump, 3),
-            (key::Shape::Normal(Vec2::new(1., 1.)), key::Type::None, 0),
+            (key::Shape::Normal(Size::new(1., 1.)), homing_scoop, 2),
+            (key::Shape::Normal(Size::new(1., 1.)), homing_bar, 3),
+            (key::Shape::Normal(Size::new(1., 1.)), homing_bump, 3),
+            (key::Shape::Normal(Size::new(1., 1.)), key::Type::None, 0),
         ];
 
         for (shape, typ, len) in test_config {
@@ -438,11 +485,11 @@ mod tests {
         let profile = Profile::default();
         let key = Key::example();
         let test_config = vec![
-            (key::Shape::Normal(Vec2::new(1., 1.)), key::Type::Normal),
+            (key::Shape::Normal(Size::new(1., 1.)), key::Type::Normal),
             (key::Shape::SteppedCaps, key::Type::Normal),
             (key::Shape::IsoHorizontal, key::Type::Normal),
             (key::Shape::IsoVertical, key::Type::Normal),
-            (key::Shape::Normal(Vec2::new(1., 1.)), key::Type::None),
+            (key::Shape::Normal(Size::new(1., 1.)), key::Type::None),
         ];
 
         for (shape, typ) in test_config {
@@ -463,7 +510,7 @@ mod tests {
         let profile = Profile::default();
         let key = Key::default();
         let homing_scoop = key::Type::Homing(Some(key::Homing::Scoop));
-        let size = Vec2::new(1., 1.);
+        let size = Size::new(1., 1.);
         let profile_typs = vec![
             (ProfileType::Cylindrical { depth: 1.0 }, key::Type::Normal),
             (ProfileType::Cylindrical { depth: 1.0 }, key::Type::Space),
@@ -493,7 +540,7 @@ mod tests {
     #[test]
     fn test_draw_key_bottom() {
         let profile = Profile::default();
-        let size = Vec2::new(1., 1.);
+        let size = Size::new(1., 1.);
 
         let path = profile.draw_key_bottom(size, Color::new(0xCC, 0xCC, 0xCC));
 
@@ -551,7 +598,7 @@ mod tests {
     #[test]
     fn test_draw_homing_bar() {
         let profile = Profile::default();
-        let size = Vec2::new(1., 1.);
+        let size = Size::new(1., 1.);
 
         let path = profile.draw_homing_bar(size, Color::new(0xCC, 0xCC, 0xCC));
 
@@ -561,7 +608,7 @@ mod tests {
     #[test]
     fn test_draw_homing_bump() {
         let profile = Profile::default();
-        let size = Vec2::new(1., 1.);
+        let size = Size::new(1., 1.);
 
         let path = profile.draw_homing_bump(size, Color::new(0xCC, 0xCC, 0xCC));
 

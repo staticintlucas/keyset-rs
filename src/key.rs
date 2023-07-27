@@ -1,4 +1,6 @@
-use crate::utils::{Color, Vec2};
+use kurbo::{Point, Size};
+
+use crate::utils::Color;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Homing {
@@ -17,7 +19,7 @@ pub enum Type {
 
 #[derive(Debug, Clone, Copy)]
 pub enum Shape {
-    Normal(Vec2),
+    Normal(Size),
     SteppedCaps,
     IsoVertical,
     IsoHorizontal,
@@ -25,17 +27,17 @@ pub enum Shape {
 
 impl Shape {
     #[inline]
-    pub fn size(self) -> Vec2 {
+    pub fn size(self) -> Size {
         match self {
             Self::Normal(s) => s,
-            Self::IsoHorizontal | Self::IsoVertical => Vec2::new(1.5, 2.0),
-            Self::SteppedCaps => Vec2::new(1.75, 1.0),
+            Self::IsoHorizontal | Self::IsoVertical => Size::new(1.5, 2.0),
+            Self::SteppedCaps => Size::new(1.75, 1.0),
         }
     }
 }
 
-impl From<Vec2> for Shape {
-    fn from(value: Vec2) -> Self {
+impl From<Size> for Shape {
+    fn from(value: Size) -> Self {
         Self::Normal(value)
     }
 }
@@ -49,7 +51,7 @@ pub struct Legend {
 
 #[derive(Debug, Clone)]
 pub struct Key {
-    pub position: Vec2,
+    pub position: Point,
     pub shape: Shape,
     pub typ: Type,
     pub color: Color,
@@ -102,8 +104,8 @@ impl Key {
 impl Default for Key {
     fn default() -> Self {
         Self {
-            position: Vec2::ZERO,
-            shape: Shape::Normal(Vec2::from(1.)),
+            position: Point::ORIGIN,
+            shape: Shape::Normal(Size::new(1., 1.)),
             typ: Type::Normal,
             color: Color::new(0xCC, 0xCC, 0xCC),
             legends: Default::default(), // [[None; 3]; 3] won't work since Option<Legend> : !Copy
@@ -120,26 +122,26 @@ pub mod tests {
     #[test]
     fn test_shape_size() {
         assert_eq!(
-            Shape::Normal(Vec2::new(2.25, 1.)).size(),
-            Vec2::new(2.25, 1.)
+            Shape::Normal(Size::new(2.25, 1.)).size(),
+            Size::new(2.25, 1.)
         );
-        assert_eq!(Shape::IsoVertical.size(), Vec2::new(1.5, 2.0));
-        assert_eq!(Shape::IsoHorizontal.size(), Vec2::new(1.5, 2.0));
-        assert_eq!(Shape::SteppedCaps.size(), Vec2::new(1.75, 1.0));
+        assert_eq!(Shape::IsoVertical.size(), Size::new(1.5, 2.0));
+        assert_eq!(Shape::IsoHorizontal.size(), Size::new(1.5, 2.0));
+        assert_eq!(Shape::SteppedCaps.size(), Size::new(1.75, 1.0));
     }
 
     #[test]
     fn test_shape_from() {
-        let shape = Shape::from(Vec2::new(1.75, 1.));
-        assert_matches!(shape, Shape::Normal(x) if x == Vec2::new(1.75, 1.));
+        let shape = Shape::from(Size::new(1.75, 1.));
+        assert_matches!(shape, Shape::Normal(x) if x == Size::new(1.75, 1.));
     }
 
     #[test]
     fn test_key_new() {
         let key = Key::new();
 
-        assert_eq!(key.position, Vec2::new(0., 0.));
-        assert_matches!(key.shape, Shape::Normal(size) if size == Vec2::new(1., 1.));
+        assert_eq!(key.position, Point::new(0., 0.));
+        assert_matches!(key.shape, Shape::Normal(size) if size == Size::new(1., 1.));
         assert_matches!(key.typ, Type::Normal);
         assert_eq!(key.color, Color::new(0xCC, 0xCC, 0xCC));
         for row in key.legends {

@@ -4,11 +4,11 @@ mod kerning;
 use std::collections::HashMap;
 
 use crate::error::Result;
-use crate::utils::{Path, Vec2};
 
 use itertools::Itertools;
+use kurbo::Shape;
 use log::warn;
-use ttf_parser::{cmap, name_id, Face, GlyphId, OutlineBuilder};
+use ttf_parser::{cmap, name_id, Face, GlyphId};
 
 use self::glyph::Glyph;
 use self::kerning::Kerning;
@@ -79,10 +79,10 @@ impl Font {
             .collect();
 
         let cap_height = cap_height
-            .or_else(|| Some(glyphs.get(&'X')?.path.bounds.size().y))
+            .or_else(|| Some(glyphs.get(&'X')?.path.bounding_box().size().height))
             .unwrap_or(0.6 * line_height); // TODO is there a better default?
         let x_height = x_height
-            .or_else(|| Some(glyphs.get(&'x')?.path.bounds.size().y))
+            .or_else(|| Some(glyphs.get(&'x')?.path.bounding_box().size().height))
             .unwrap_or(0.4 * line_height); // TODO is there a better default?
 
         let notdef = if let Some(glyph) = Glyph::new(&face, None, GlyphId(0)) {
@@ -129,45 +129,11 @@ impl Font {
     }
 }
 
-impl OutlineBuilder for crate::utils::Path {
-    fn move_to(&mut self, x: f32, y: f32) {
-        // Y axis is flipped in fonts compared to SVGs
-        self.abs_move(Vec2::new(f64::from(x), f64::from(-y)));
-    }
-
-    fn line_to(&mut self, x: f32, y: f32) {
-        // Y axis is flipped in fonts compared to SVGs
-        self.abs_line(Vec2::new(f64::from(x), f64::from(-y)));
-    }
-
-    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
-        // Y axis is flipped in fonts compared to SVGs
-        self.abs_quadratic_bezier(
-            Vec2::new(f64::from(x1), f64::from(-y1)),
-            Vec2::new(f64::from(x), f64::from(-y)),
-        );
-    }
-
-    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
-        // Y axis is flipped in fonts compared to SVGs
-        self.abs_cubic_bezier(
-            Vec2::new(f64::from(x1), f64::from(-y1)),
-            Vec2::new(f64::from(x2), f64::from(-y2)),
-            Vec2::new(f64::from(x), f64::from(-y)),
-        );
-    }
-
-    fn close(&mut self) {
-        Path::close(self);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     use assert_approx_eq::assert_approx_eq;
-    use assert_matches::assert_matches;
 
     #[test]
     fn test_from_ttf() {
@@ -202,25 +168,5 @@ mod tests {
             Glyph::notdef(null.cap_height, null.slope).advance
         );
         assert_eq!(null.kerning.len(), 0);
-    }
-
-    #[test]
-    fn test_outline_builder() {
-        use crate::utils::PathSegment;
-
-        let mut path = Path::new();
-
-        path.move_to(0., 0.);
-        path.line_to(1., 1.);
-        path.quad_to(2., 1., 2., 0.);
-        path.curve_to(2., -0.5, 1.5, -1., 1., -1.);
-        OutlineBuilder::close(&mut path);
-
-        assert_eq!(path.data.len(), 5);
-        assert_matches!(path.data[0], PathSegment::Move(..));
-        assert_matches!(path.data[1], PathSegment::Line(..));
-        assert_matches!(path.data[2], PathSegment::QuadraticBezier(..));
-        assert_matches!(path.data[3], PathSegment::CubicBezier(..));
-        assert_matches!(path.data[4], PathSegment::Close);
     }
 }

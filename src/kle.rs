@@ -1,10 +1,10 @@
 use std::{array, fmt};
 
 use kle_serial as kle;
+use kurbo::{Point, Size};
 
 use crate::error::{Error, Result};
 use crate::key::{self, Key, Legend, Shape};
-use crate::utils::Vec2;
 
 #[derive(Debug)]
 pub(crate) struct InvalidKleLayout {
@@ -42,7 +42,7 @@ fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
         Ok(Shape::IsoHorizontal)
     } else if is_close(&[x2, y2, w2, h2], &[0., 0., w, h]) {
         #[allow(clippy::cast_possible_truncation)]
-        Ok(Shape::Normal(Vec2::new(w, h)))
+        Ok(Shape::Normal(Size::new(w, h)))
     } else {
         // TODO support all key shapes/sizes
         Err(InvalidKleLayout {
@@ -92,7 +92,7 @@ impl TryFrom<kle::Key> for Key {
     fn try_from(key: kle::Key) -> Result<Self> {
         #[allow(clippy::cast_possible_truncation)]
         Ok(Self {
-            position: Vec2::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.)),
+            position: Point::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.)),
             shape: key_shape_from_kle(&key)?,
             typ: key_type_from_kle(&key),
             color: key.color.rgb().into(),
