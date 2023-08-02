@@ -1,61 +1,12 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use kurbo::{Arc, BezPath, Circle, Point, Rect, RoundedRect, RoundedRectRadii, Shape, Size};
+use kurbo::{Arc, BezPath, Circle, Point, Rect, Shape, Size};
 
-use crate::{
-    key::Homing, key::Shape as KeyShape, key::Type as KeyType, utils::Color, DrawingOptions, Key,
-};
+use crate::key::{Homing, Shape as KeyShape, Type as KeyType};
+use crate::utils::{Color, RoundRect};
+use crate::{DrawingOptions, Key};
 
 use super::ARC_TOL;
-
-// Quick trait to implement some funcs that are otherwise not implemented for RoundedRect in Kurbo
-// and some extras I just needed
-pub trait RoundedRectHelper {
-    fn with_origin(self, origin: impl Into<Point>) -> Self;
-    fn size(&self) -> Size;
-    fn with_size(self, size: impl Into<Size>) -> Self;
-    fn average(&self, other: &Self) -> Self;
-}
-
-impl RoundedRectHelper for RoundedRect {
-    fn with_origin(self, origin: impl Into<Point>) -> Self {
-        self.rect()
-            .with_origin(origin)
-            .to_rounded_rect(self.radii())
-    }
-
-    fn size(&self) -> Size {
-        self.rect().size()
-    }
-
-    fn with_size(self, size: impl Into<Size>) -> Self {
-        self.rect().with_size(size).to_rounded_rect(self.radii())
-    }
-
-    fn average(&self, other: &Self) -> Self {
-        let origin = ((self.origin().to_vec2() + other.origin().to_vec2()) / 2.).to_point();
-        let size = (self.size() + other.size()) / 2.;
-        let RoundedRectRadii {
-            top_left: top_left_1,
-            top_right: top_right_1,
-            bottom_right: bottom_right_1,
-            bottom_left: bottom_left_1,
-        } = self.radii();
-        let RoundedRectRadii {
-            top_left: top_left_2,
-            top_right: top_right_2,
-            bottom_right: bottom_right_2,
-            bottom_left: bottom_left_2,
-        } = other.radii();
-        let radii = (
-            (top_left_1 + top_left_2) / 2.,
-            (top_right_1 + top_right_2) / 2.,
-            (bottom_right_1 + bottom_right_2) / 2.,
-            (bottom_left_1 + bottom_left_2) / 2.,
-        );
-        RoundedRect::from_origin_size(origin, size, radii)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub(crate) struct KeyPath {
@@ -147,7 +98,13 @@ impl KeyPath {
             let profile = &options.profile;
 
             // Take average dimensions of top and bottom
-            let rect = profile.top_rect.average(&profile.bottom_rect);
+            let rect = RoundRect::from_origin_size(
+                ((profile.top_rect.origin().to_vec2() + profile.bottom_rect.origin().to_vec2())
+                    / 2.)
+                    .to_point(),
+                (profile.top_rect.size() + profile.bottom_rect.size()) / 2.,
+                (profile.top_rect.radii() + profile.bottom_rect.radii()) / 2.,
+            );
 
             Self {
                 path: step_path(rect),
@@ -158,64 +115,54 @@ impl KeyPath {
     }
 }
 
-fn iso_bottom_path(rect: RoundedRect) -> BezPath {
+fn iso_bottom_path(rect: RoundRect) -> BezPath {
     let rect150 = rect.with_size(rect.size() + Size::new(500., 0.));
     let rect125 = rect
         .with_origin(rect.origin() + (250., 1000.))
         .with_size(rect.size() + Size::new(250., 0.));
-
-    let RoundedRectRadii {
-        top_left: r_top_left,
-        top_right: r_top_right,
-        bottom_right: r_bottom_right,
-        bottom_left: r_bottom_left,
-    } = rect.radii();
+    let radii = rect.radii();
 
     // TODO ensure Arc is transformed to single PathEl::CurveTo. Then we can avoid using
     // extend and use [PathEl].into_iter().collect() and avoid reallocations.
     let mut path = BezPath::new();
-    path.move_to(rect150.origin() + (0., r_top_left));
+    path.move_to(rect150.origin() + (0., radii.y));
     path.extend(
         Arc::new(
-            rect150.origin() + (r_top_left, r_top_left),
-            (r_top_left, r_top_left),
+            rect150.origin() + (radii.x, radii.y),
+            radii,
             PI,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect150.origin() + (rect150.width() - r_top_right, 0.));
+    path.line_to(rect150.origin() + (rect150.width() - radii.x, 0.));
     path.extend(
         Arc::new(
-            rect150.origin() + (rect150.width() - r_top_right, r_top_right),
-            (r_top_right, r_top_right),
+            rect150.origin() + (rect150.width() - radii.x, radii.y),
+            radii,
             -FRAC_PI_2,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect125.origin() + (rect125.width(), rect125.height() - r_bottom_right));
+    path.line_to(rect125.origin() + (rect125.width(), rect125.height() - radii.y));
     path.extend(
         Arc::new(
-            rect125.origin()
-                + (
-                    rect125.width() - r_bottom_right,
-                    rect125.height() - r_bottom_right,
-                ),
-            (r_bottom_right, r_bottom_right),
+            rect125.origin() + (rect125.width() - radii.x, rect125.height() - radii.y),
+            radii,
             0.,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect125.origin() + (r_bottom_left, rect125.height()));
+    path.line_to(rect125.origin() + (radii.x, rect125.height()));
     path.extend(
         Arc::new(
-            rect125.origin() + (r_bottom_left, rect125.height() - r_bottom_left),
-            (r_bottom_left, r_bottom_left),
+            rect125.origin() + (radii.x, rect125.height() - radii.y),
+            radii,
             FRAC_PI_2,
             FRAC_PI_2,
             0.,
@@ -223,94 +170,84 @@ fn iso_bottom_path(rect: RoundedRect) -> BezPath {
         .append_iter(ARC_TOL),
     );
     path.line_to(
-        Point::new(rect125.origin().x, rect150.origin().y) + (0., rect150.height() + r_top_right),
+        Point::new(rect125.origin().x, rect150.origin().y) + (0., rect150.height() + radii.y),
     );
     path.extend(
         Arc::new(
             Point::new(rect125.origin().x, rect150.origin().y)
-                + (-r_top_right, rect150.height() + r_top_right),
-            (r_top_right, r_top_right),
+                + (-radii.x, rect150.height() + radii.y),
+            radii,
             0.,
             -FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect150.origin() + (r_bottom_left, rect150.height()));
+    path.line_to(rect150.origin() + (radii.x, rect150.height()));
     path.extend(
         Arc::new(
-            rect150.origin() + (r_bottom_left, rect150.height() - r_bottom_left),
-            (r_bottom_left, r_bottom_left),
+            rect150.origin() + (radii.x, rect150.height() - radii.y),
+            radii,
             FRAC_PI_2,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect150.origin() + (0., r_top_left));
+    path.line_to(rect150.origin() + (0., radii.y));
     path.close_path();
 
     path
 }
 
-fn iso_top_path(rect: RoundedRect) -> BezPath {
+fn iso_top_path(rect: RoundRect) -> BezPath {
     let rect150 = rect.with_size(rect.size() + Size::new(500., 0.));
     let rect125 = rect
         .with_origin(rect.origin() + (250., 1000.))
         .with_size(rect.size() + Size::new(250., 0.));
-
-    let RoundedRectRadii {
-        top_left: r_top_left,
-        top_right: r_top_right,
-        bottom_right: r_bottom_right,
-        bottom_left: r_bottom_left,
-    } = rect.radii();
+    let radii = rect.radii();
 
     // TODO ensure Arc is transformed to single PathEl::CurveTo. Then we can avoid using
     // extend and use [PathEl].into_iter().collect() and avoid reallocations.
     let mut path = BezPath::new();
-    path.move_to(rect150.origin() + (0., r_top_left));
+    path.move_to(rect150.origin() + (0., radii.y));
     path.extend(
         Arc::new(
-            rect150.origin() + (r_top_left, r_top_left),
-            (r_top_left, r_top_left),
+            rect150.origin() + (radii.x, radii.y),
+            radii,
             PI,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect150.origin() + (rect150.width() - r_top_right, 0.));
+    path.line_to(rect150.origin() + (rect150.width() - radii.x, 0.));
     path.extend(
         Arc::new(
-            rect150.origin() + (rect150.width() - r_top_right, r_top_right),
-            (r_top_right, r_top_right),
+            rect150.origin() + (rect150.width() - radii.x, radii.y),
+            radii,
             -FRAC_PI_2,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect125.origin() + (rect125.width(), rect125.height() - r_bottom_right));
+    path.line_to(rect125.origin() + (rect125.width(), rect125.height() - radii.y));
     path.extend(
         Arc::new(
-            rect125.origin()
-                + (
-                    rect125.width() - r_bottom_right,
-                    rect125.height() - r_bottom_right,
-                ),
-            (r_bottom_right, r_bottom_right),
+            rect125.origin() + (rect125.width() - radii.x, rect125.height() - radii.y),
+            radii,
             0.,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect125.origin() + (r_bottom_left, rect125.height()));
+    path.line_to(rect125.origin() + (radii.x, rect125.height()));
     path.extend(
         Arc::new(
-            rect125.origin() + (r_bottom_left, rect125.height() - r_bottom_left),
-            (r_bottom_left, r_bottom_left),
+            rect125.origin() + (radii.x, rect125.height() - radii.y),
+            radii,
             FRAC_PI_2,
             FRAC_PI_2,
             0.,
@@ -318,94 +255,88 @@ fn iso_top_path(rect: RoundedRect) -> BezPath {
         .append_iter(ARC_TOL),
     );
     path.line_to(
-        Point::new(rect125.origin().x, rect150.origin().y) + (0., rect150.height() + r_top_right),
+        Point::new(rect125.origin().x, rect150.origin().y) + (0., rect150.height() + radii.y),
     );
     path.extend(
         Arc::new(
             Point::new(rect125.origin().x, rect150.origin().y)
-                + (-r_top_right, rect150.height() + r_top_right),
-            (r_top_right, r_top_right),
+                + (-radii.x, rect150.height() + radii.y),
+            radii,
             0.,
             -FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect150.origin() + (r_bottom_left, rect150.height()));
+    path.line_to(rect150.origin() + (radii.x, rect150.height()));
     path.extend(
         Arc::new(
-            rect150.origin() + (r_bottom_left, rect150.height() - r_bottom_left),
-            (r_bottom_left, r_bottom_left),
+            rect150.origin() + (radii.x, rect150.height() - radii.y),
+            radii,
             FRAC_PI_2,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect150.origin() + (0., r_top_left));
+    path.line_to(rect150.origin() + (0., radii.y));
     path.close_path();
 
     path
 }
 
-fn step_path(rect: RoundedRect) -> BezPath {
+fn step_path(rect: RoundRect) -> BezPath {
     let rect = rect
         .with_origin((1250. - rect.origin().x, rect.origin().y))
         .with_size((500., rect.height()));
-
-    let RoundedRectRadii {
-        top_left: _,
-        top_right: r_top,
-        bottom_right: r_bottom,
-        bottom_left: _,
-    } = rect.radii();
+    let radii = rect.radii();
 
     let mut path = BezPath::new();
-    path.move_to(rect.origin() + (0., r_top));
+    path.move_to(rect.origin() + (0., radii.y));
     path.extend(
         Arc::new(
-            rect.origin() + (-r_top, r_top),
-            (r_top, r_top),
+            rect.origin() + (-radii.x, radii.y),
+            radii,
             0.,
             -FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect.origin() + (rect.width() - r_top, 0.));
+    path.line_to(rect.origin() + (rect.width() - radii.x, 0.));
     path.extend(
         Arc::new(
-            rect.origin() + (rect.width() - r_top, r_top),
-            (r_top, r_top),
+            rect.origin() + (rect.width() - radii.x, radii.y),
+            radii,
             -FRAC_PI_2,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect.origin() + (rect.width(), rect.height() - r_bottom));
+    path.line_to(rect.origin() + (rect.width(), rect.height() - radii.y));
     path.extend(
         Arc::new(
-            rect.origin() + (rect.width() - r_bottom, rect.height() - r_bottom),
-            (r_bottom, r_bottom),
+            rect.origin() + (rect.width() - radii.x, rect.height() - radii.y),
+            radii,
             0.,
             FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect.origin() + (-r_bottom, rect.height()));
+    path.line_to(rect.origin() + (-radii.x, rect.height()));
     path.extend(
         Arc::new(
-            rect.origin() + (-r_bottom, rect.height() - r_bottom),
-            (r_bottom, r_bottom),
+            rect.origin() + (-radii.x, rect.height() - radii.y),
+            radii,
             FRAC_PI_2,
             -FRAC_PI_2,
             0.,
         )
         .append_iter(ARC_TOL),
     );
-    path.line_to(rect.origin() + (0., r_top));
+    path.line_to(rect.origin() + (0., radii.y));
     path.close_path();
 
     path

@@ -5,11 +5,12 @@ use std::{array, iter};
 
 use interp::interp_array;
 use itertools::Itertools;
-use kurbo::{Point, Rect, RoundedRect, Size};
+use kurbo::{Point, Rect, Size};
 use serde::Deserialize;
 
 use crate::error::Result;
 use crate::key;
+use crate::utils::RoundRect;
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
@@ -187,8 +188,8 @@ impl Default for TextRect {
 #[derive(Debug, Clone)]
 pub struct Profile {
     pub profile_type: ProfileType,
-    pub bottom_rect: RoundedRect,
-    pub top_rect: RoundedRect,
+    pub bottom_rect: RoundRect,
+    pub top_rect: RoundRect,
     pub text_margin: TextRect,
     pub text_height: TextHeight,
     pub homing: HomingProps,
@@ -204,15 +205,15 @@ impl Default for Profile {
     fn default() -> Self {
         Self {
             profile_type: ProfileType::default(),
-            bottom_rect: RoundedRect::from_origin_size(
+            bottom_rect: RoundRect::from_origin_size(
                 Point::new(25., 25.),
                 Size::new(950., 950.),
-                65.,
+                (65., 65.),
             ),
-            top_rect: RoundedRect::from_origin_size(
+            top_rect: RoundRect::from_origin_size(
                 Point::new(170., 55.),
                 Size::new(660., 735.),
-                65.,
+                (65., 65.),
             ),
             text_margin: TextRect::default(),
             text_height: TextHeight::default(),
@@ -424,19 +425,13 @@ mod tests {
             Size::new(960., 960.),
             0.5
         );
-        assert_approx_eq!(
-            profile.bottom_rect.radii().as_single_radius().unwrap(),
-            20.,
-            0.5
-        );
+        assert_approx_eq!(profile.bottom_rect.radii().x, 20., 0.5);
+        assert_approx_eq!(profile.bottom_rect.radii().y, 20., 0.5);
 
         assert_approx_eq!(profile.top_rect.origin(), Point::new(190., 50.), 0.5);
         assert_approx_eq!(profile.top_rect.rect().size(), Size::new(620., 730.), 0.5);
-        assert_approx_eq!(
-            profile.top_rect.radii().as_single_radius().unwrap(),
-            80.,
-            0.5
-        );
+        assert_approx_eq!(profile.top_rect.radii().x, 80., 0.5);
+        assert_approx_eq!(profile.top_rect.radii().y, 80., 0.5);
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = vec![0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
@@ -492,11 +487,13 @@ expected `.`, `=`
 
         assert_approx_eq!(profile.bottom_rect.origin(), Point::new(25., 25.));
         assert_approx_eq!(profile.bottom_rect.rect().size(), Size::new(950., 950.));
-        assert_approx_eq!(profile.bottom_rect.radii().as_single_radius().unwrap(), 65.);
+        assert_approx_eq!(profile.bottom_rect.radii().x, 65.);
+        assert_approx_eq!(profile.bottom_rect.radii().y, 65.);
 
         assert_approx_eq!(profile.top_rect.origin(), Point::new(170., 55.));
         assert_approx_eq!(profile.top_rect.rect().size(), Size::new(660., 735.));
-        assert_approx_eq!(profile.top_rect.radii().as_single_radius().unwrap(), 65.);
+        assert_approx_eq!(profile.top_rect.radii().x, 65.);
+        assert_approx_eq!(profile.top_rect.radii().y, 65.);
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = TextHeight::default();

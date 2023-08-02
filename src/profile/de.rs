@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use kurbo::{Point, Rect, RoundedRect, Size};
+use kurbo::{Point, Rect, Size, Vec2};
 use serde::de::{Error, Unexpected};
 use serde::{Deserialize, Deserializer};
 
 use crate::profile::{HomingProps, ProfileType, TextHeight, TextRect};
+use crate::utils::RoundRect;
 
 use super::{BarProps, BumpProps, Profile};
 
@@ -72,7 +73,7 @@ where
     })
 }
 
-fn deserialize_round_rect<'de, D>(deserializer: D) -> Result<RoundedRect, D::Error>
+fn deserialize_round_rect<'de, D>(deserializer: D) -> Result<RoundRect, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -87,9 +88,9 @@ where
         // Convert mm to milli units
         let center = Point::new(500., 500.);
         let size = Size::new(rect.width, rect.height) * (1e3 / 19.05);
-        let radius = rect.radius * (1000. / 19.05);
+        let radii = Vec2::new(rect.radius, rect.radius) * (1000. / 19.05);
 
-        Rect::from_center_size(center, size).to_rounded_rect(radius)
+        RoundRect::from_center_size(center, size, radii)
     })
 }
 
@@ -116,7 +117,7 @@ where
     })
 }
 
-fn deserialize_offset_round_rect<'de, D>(deserializer: D) -> Result<RoundedRect, D::Error>
+fn deserialize_offset_round_rect<'de, D>(deserializer: D) -> Result<RoundRect, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -135,9 +136,9 @@ where
         let center = Point::new(500., 500.);
         let size = Size::new(rect.width, rect.height) * (1e3 / 19.05);
         let offset = rect.y_offset * (1e3 / 19.05);
-        let radius = rect.radius * (1000. / 19.05);
+        let radii = Vec2::new(rect.radius, rect.radius) * (1000. / 19.05);
 
-        Rect::from_center_size(center + (0., offset), size).to_rounded_rect(radius)
+        RoundRect::from_center_size(center + (0., offset), size, radii)
     })
 }
 
@@ -176,9 +177,9 @@ impl<'de> Deserialize<'de> for Profile {
             #[serde(flatten)]
             profile_type: ProfileType,
             #[serde(deserialize_with = "deserialize_round_rect")]
-            bottom: RoundedRect,
+            bottom: RoundRect,
             #[serde(deserialize_with = "deserialize_offset_round_rect")]
-            top: RoundedRect,
+            top: RoundRect,
             #[serde(deserialize_with = "deserialize_legend_map")]
             legend: HashMap<usize, (f64, Rect)>,
             homing: HomingProps,
@@ -344,7 +345,8 @@ mod tests {
 
         assert_approx_eq!(rect.origin(), Point::new(100., 100.));
         assert_approx_eq!(rect.rect().size(), Size::new(800., 800.));
-        assert_approx_eq!(rect.radii().as_single_radius().unwrap(), 100.);
+        assert_approx_eq!(rect.radii().x, 100.);
+        assert_approx_eq!(rect.radii().y, 100.);
     }
 
     #[test]
@@ -380,6 +382,7 @@ mod tests {
 
         assert_approx_eq!(rect.origin(), Point::new(100., 150.));
         assert_approx_eq!(rect.rect().size(), Size::new(800., 800.));
-        assert_approx_eq!(rect.radii().as_single_radius().unwrap(), 100.);
+        assert_approx_eq!(rect.radii().x, 100.);
+        assert_approx_eq!(rect.radii().y, 100.);
     }
 }
