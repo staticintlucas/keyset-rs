@@ -28,6 +28,30 @@ pub struct Font {
     pub kerning: Kerning,
 }
 
+impl Default for Font {
+    fn default() -> Self {
+        let cap_height = 714.;
+        let x_height = 523.;
+        let ascent = 952.;
+        let descent = 213.;
+        let slope = 0.;
+
+        Self {
+            name: String::new(),
+            em_size: 1000.,
+            cap_height,
+            x_height,
+            ascent,
+            descent,
+            line_height: ascent + descent,
+            slope,
+            glyphs: HashMap::new(),
+            notdef: Glyph::notdef(cap_height, slope),
+            kerning: Kerning::new(),
+        }
+    }
+}
+
 impl Font {
     pub fn from_ttf(data: &[u8]) -> Result<Self> {
         let face = Face::parse(data, 0)?;
