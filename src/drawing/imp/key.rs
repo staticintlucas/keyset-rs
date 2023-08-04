@@ -3,116 +3,118 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use kurbo::{Arc, BezPath, Circle, Point, Rect, Shape, Size};
 
 use crate::key::{Homing, Shape as KeyShape, Type as KeyType};
-use crate::utils::{Color, RoundRect};
+use crate::utils::RoundRect;
 use crate::{DrawingOptions, Key};
 
-use super::ARC_TOL;
+use super::{Outline, Path, ARC_TOL};
 
-#[derive(Debug, Clone)]
-pub(crate) struct KeyPath {
-    pub path: BezPath,
-    pub fill: Color,
-    pub outline: Color,
+pub(crate) fn top(key: &Key, options: &DrawingOptions) -> Path {
+    let top_rect = options.profile.top_rect;
+
+    let path = match key.shape {
+        KeyShape::Normal(size) => top_rect
+            .with_size(top_rect.size() + 1e3 * (size - Size::new(1., 1.)))
+            .to_path(ARC_TOL),
+        KeyShape::SteppedCaps => top_rect
+            .with_size(top_rect.size() + 1e3 * (Size::new(0.25, 0.)))
+            .to_path(ARC_TOL),
+        KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_top_path(top_rect),
+    };
+
+    Path {
+        path,
+        fill: Some(key.color),
+        outline: Some(Outline {
+            color: key.color.highlight(0.15),
+            width: options.outline_width,
+        }),
+    }
 }
 
-impl KeyPath {
-    pub fn top(key: &Key, options: &DrawingOptions) -> Self {
-        let top_rect = options.profile.top_rect;
+pub(crate) fn bottom(key: &Key, options: &DrawingOptions) -> Path {
+    let bottom_rect = options.profile.bottom_rect;
 
-        let path = match key.shape {
-            KeyShape::Normal(size) => top_rect
-                .with_size(top_rect.size() + 1e3 * (size - Size::new(1., 1.)))
-                .to_path(ARC_TOL),
-            KeyShape::SteppedCaps => top_rect
-                .with_size(top_rect.size() + 1e3 * (Size::new(0.25, 0.)))
-                .to_path(ARC_TOL),
-            KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_top_path(top_rect),
-        };
+    let path = match key.shape {
+        KeyShape::Normal(size) => bottom_rect
+            .with_size(bottom_rect.size() + 1e3 * (size - Size::new(1., 1.)))
+            .to_path(ARC_TOL),
+        KeyShape::SteppedCaps => bottom_rect
+            .with_size(bottom_rect.size() + 1e3 * (Size::new(0.75, 0.)))
+            .to_path(ARC_TOL),
+        KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_bottom_path(bottom_rect),
+    };
 
-        Self {
-            path,
-            fill: key.color,
-            outline: key.color.highlight(0.15),
-        }
+    Path {
+        path,
+        fill: Some(key.color),
+        outline: Some(Outline {
+            color: key.color.highlight(0.15),
+            width: options.outline_width,
+        }),
     }
+}
 
-    pub fn bottom(key: &Key, options: &DrawingOptions) -> Self {
-        let bottom_rect = options.profile.bottom_rect;
+pub(crate) fn homing(key: &Key, options: &DrawingOptions) -> Option<Path> {
+    let profile = &options.profile;
 
-        let path = match key.shape {
-            KeyShape::Normal(size) => bottom_rect
-                .with_size(bottom_rect.size() + 1e3 * (size - Size::new(1., 1.)))
-                .to_path(ARC_TOL),
-            KeyShape::SteppedCaps => bottom_rect
-                .with_size(bottom_rect.size() + 1e3 * (Size::new(0.75, 0.)))
-                .to_path(ARC_TOL),
-            KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_bottom_path(bottom_rect),
-        };
+    let KeyType::Homing(homing) = key.typ else { return None };
+    let homing = homing.unwrap_or(profile.homing.default);
 
-        Self {
-            path,
-            fill: key.color,
-            outline: key.color.highlight(0.15),
-        }
-    }
+    let center = profile
+        .top_rect
+        .rect()
+        .with_size(profile.top_rect.size() + 1e3 * (key.shape.size() - Size::new(1., 1.)))
+        .center();
 
-    pub fn homing(key: &Key, options: &DrawingOptions) -> Option<Self> {
+    let bez_path = match homing {
+        Homing::Scoop => None,
+        Homing::Bar => Some(
+            Rect::from_center_size(
+                center + (0., profile.homing.bar.y_offset),
+                profile.homing.bar.size,
+            )
+            .into_path(ARC_TOL),
+        ),
+        Homing::Bump => Some(
+            Circle::new(
+                center + (0., profile.homing.bump.y_offset),
+                profile.homing.bump.diameter / 2.,
+            )
+            .into_path(ARC_TOL),
+        ),
+    };
+
+    bez_path.map(|path| Path {
+        path,
+        fill: Some(key.color),
+        outline: Some(Outline {
+            color: key.color.highlight(0.15),
+            width: options.outline_width,
+        }),
+    })
+}
+
+pub(crate) fn step(key: &Key, options: &DrawingOptions) -> Option<Path> {
+    matches!(key.shape, KeyShape::SteppedCaps).then(|| {
         let profile = &options.profile;
 
-        let KeyType::Homing(homing) = key.typ else { return None };
-        let homing = homing.unwrap_or(profile.homing.default);
+        // Take average dimensions of top and bottom
+        let rect = RoundRect::from_origin_size(
+            ((profile.top_rect.origin().to_vec2() + profile.bottom_rect.origin().to_vec2()) / 2.)
+                .to_point(),
+            (profile.top_rect.size() + profile.bottom_rect.size()) / 2.,
+            (profile.top_rect.radii() + profile.bottom_rect.radii()) / 2.,
+        );
 
-        let center = profile
-            .top_rect
-            .rect()
-            .with_size(profile.top_rect.size() + 1e3 * (key.shape.size() - Size::new(1., 1.)))
-            .center();
-
-        let bez_path = match homing {
-            Homing::Scoop => None,
-            Homing::Bar => Some(
-                Rect::from_center_size(
-                    center + (0., profile.homing.bar.y_offset),
-                    profile.homing.bar.size,
-                )
-                .into_path(ARC_TOL),
-            ),
-            Homing::Bump => Some(
-                Circle::new(
-                    center + (0., profile.homing.bump.y_offset),
-                    profile.homing.bump.diameter / 2.,
-                )
-                .into_path(ARC_TOL),
-            ),
-        };
-
-        bez_path.map(|path| Self {
-            path,
-            fill: key.color,
-            outline: key.color.highlight(0.15),
-        })
-    }
-
-    pub fn step(key: &Key, options: &DrawingOptions) -> Option<Self> {
-        matches!(key.shape, KeyShape::SteppedCaps).then(|| {
-            let profile = &options.profile;
-
-            // Take average dimensions of top and bottom
-            let rect = RoundRect::from_origin_size(
-                ((profile.top_rect.origin().to_vec2() + profile.bottom_rect.origin().to_vec2())
-                    / 2.)
-                    .to_point(),
-                (profile.top_rect.size() + profile.bottom_rect.size()) / 2.,
-                (profile.top_rect.radii() + profile.bottom_rect.radii()) / 2.,
-            );
-
-            Self {
-                path: step_path(rect),
-                fill: key.color,
-                outline: key.color.highlight(0.15),
-            }
-        })
-    }
+        Path {
+            path: step_path(rect),
+            fill: Some(key.color),
+            outline: Some(Outline {
+                color: key.color.highlight(0.15),
+                width: options.outline_width,
+            }),
+        }
+    })
 }
 
 fn iso_bottom_path(rect: RoundRect) -> BezPath {

@@ -1,11 +1,11 @@
 use itertools::Itertools;
 use kurbo::{Affine, PathEl, Point};
-use svg::node::element::{Group, Path};
+use svg::node::element::{Group, Path as SvgPath};
 use svg::Document;
 
 use crate::drawing::Drawing;
 
-use super::{KeyDrawing, KeyPath};
+use super::{KeyDrawing, Path};
 
 macro_rules! fmt_num {
     ($fmt:literal, $($args:expr),*) => {
@@ -34,25 +34,22 @@ pub(crate) fn draw(drawing: &Drawing) -> String {
     let document = drawing
         .keys
         .iter()
-        .map(|k| draw_key(k, drawing.outline))
+        .map(draw_key)
         .fold(document, Document::add);
 
     document.to_string()
 }
 
-fn draw_key(key: &KeyDrawing, outline: f64) -> Group {
+fn draw_key(key: &KeyDrawing) -> Group {
     // scale from keyboard units to drawing units (milliunits)
     let pos = Affine::scale(1e3) * key.origin;
 
     let group = Group::new().set("transform", fmt_num!("translate({}, {})", pos.x, pos.y));
 
-    key.paths
-        .iter()
-        .map(|p| draw_path(p, outline))
-        .fold(group, Group::add)
+    key.paths.iter().map(draw_path).fold(group, Group::add)
 }
 
-fn draw_path(key: &KeyPath, outline: f64) -> Path {
+fn draw_path(key: &Path) -> SvgPath {
     let data = key
         .path
         .iter()
@@ -91,11 +88,16 @@ fn draw_path(key: &KeyPath, outline: f64) -> Path {
         })
         .join("");
 
-    let path = Path::new().set("d", data).set("fill", key.fill.to_string());
+    let fill = if let Some(color) = key.fill {
+        color.to_string()
+    } else {
+        "none".into()
+    };
+    let path = SvgPath::new().set("d", data).set("fill", fill);
 
-    if outline > 1e-3 {
-        path.set("stroke", key.outline.to_string())
-            .set("stroke-width", fmt_num!("{}", outline))
+    if let Some(outline) = key.outline {
+        path.set("stroke", outline.color.to_string())
+            .set("stroke-width", fmt_num!("{}", outline.width))
     } else {
         path.set("stroke", "none")
     }

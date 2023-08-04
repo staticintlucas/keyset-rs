@@ -5,14 +5,13 @@ use kurbo::{Point, Rect, Size};
 
 use crate::{Font, Key, Profile};
 
-pub(crate) use imp::{KeyDrawing, KeyPath};
+pub(crate) use imp::{KeyDrawing, Path};
 
 #[derive(Debug, Clone)]
 pub struct Drawing {
     bounds: Rect,
     keys: Vec<imp::KeyDrawing>,
     scale: f64,
-    outline: f64,
 }
 
 impl Drawing {
@@ -34,7 +33,6 @@ impl Drawing {
             bounds,
             keys,
             scale: options.dpi * 0.75, // 1u = 0.75in => dpu = 0.75*dpi
-            outline: options.outline_width,
         }
     }
 
