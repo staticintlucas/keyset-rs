@@ -1,4 +1,5 @@
 mod key;
+mod legend;
 
 use itertools::Itertools;
 use kurbo::{BezPath, Point, Shape, Size, Vec2};
@@ -38,27 +39,26 @@ impl KeyDrawing {
         let step = show_key.then(|| key::step(key, options)).flatten();
         let homing = show_key.then(|| key::homing(key, options)).flatten();
 
-        let margin = options.show_margin.then(|| {
+        let top_rect = {
+            let rect = options.profile.top_rect.rect();
             let (offset, size) = match key.shape {
                 KeyShape::Normal(size) => (Vec2::ZERO, 1e3 * (size - Size::new(1., 1.))),
                 KeyShape::SteppedCaps => (Vec2::ZERO, Size::new(250., 0.)),
                 KeyShape::IsoHorizontal => (Vec2::ZERO, Size::new(500., 0.)),
                 KeyShape::IsoVertical => (Vec2::new(250., 0.), Size::new(250., 1000.)),
             };
+            rect.with_origin(rect.origin() + offset)
+                .with_size(rect.size() + size)
+        };
 
+        let margin = options.show_margin.then(|| {
             let path = key
                 .legends
                 .iter()
                 .flatten()
                 .filter_map(|l| l.as_ref().map(|l| l.size))
                 .unique()
-                .map(|s| options.profile.text_margin.get(s))
-                .map(move |insets| {
-                    let rect = options.profile.top_rect.rect() + insets;
-                    rect.with_origin(rect.origin() + offset)
-                        .with_size(rect.size() + size)
-                        .into_path(ARC_TOL)
-                })
+                .map(|s| (top_rect + options.profile.text_margin.get(s)).into_path(ARC_TOL))
                 .fold(BezPath::new(), |mut p, r| {
                     p.extend(r);
                     p
@@ -74,6 +74,26 @@ impl KeyDrawing {
             }
         });
 
+        let align = |row_idx, col_idx| {
+            Vec2::new(
+                (col_idx as f64) / ((key.legends.len() - 1) as f64),
+                (row_idx as f64) / ((key.legends[0].len() - 1) as f64),
+            )
+        };
+
+        let legends = key
+            .legends
+            .iter()
+            .enumerate()
+            .flat_map(|(row_idx, row)| {
+                row.iter().enumerate().filter_map(move |(col_idx, legend)| {
+                    legend.as_ref().map(|l| (align(row_idx, col_idx), l))
+                })
+            })
+            .map(|(align, legend)| {
+                legend::draw(legend, &options.font, &options.profile, top_rect, align)
+            });
+
         // Do a bunch of chaining here rather than using [...].iter().filter_map(|it| it). This
         // gives iterator a known size so it will allocate the required size when collecting to a
         // Vec<_>
@@ -82,7 +102,8 @@ impl KeyDrawing {
             .chain(top)
             .chain(step)
             .chain(homing)
-            .chain(margin);
+            .chain(margin)
+            .chain(legends);
 
         Self {
             origin: key.position,
