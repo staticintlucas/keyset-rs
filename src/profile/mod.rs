@@ -5,10 +5,10 @@ use std::{array, iter};
 
 use interp::interp_array;
 use itertools::Itertools;
-use kurbo::{Point, Rect, Size};
+use kurbo::{Insets, Point, Size};
 use serde::Deserialize;
 
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::key;
 use crate::utils::RoundRect;
 
@@ -128,7 +128,7 @@ impl TextHeight {
 
 impl Default for TextHeight {
     fn default() -> Self {
-        const DEFAULT_MAX: f64 = 18.;
+        const DEFAULT_MAX: f64 = 18. * (1e3 / 19.05);
         Self(array::from_fn(|i| {
             (i as f64) * DEFAULT_MAX / (Self::NUM_HEIGHTS as f64 - 1.)
         }))
@@ -136,27 +136,27 @@ impl Default for TextHeight {
 }
 
 #[derive(Debug, Clone)]
-pub struct TextRect([Rect; Self::NUM_RECTS]);
+pub struct TextMargin([Insets; Self::NUM_RECTS]);
 
-impl TextRect {
+impl TextMargin {
     const NUM_RECTS: usize = 10;
 
-    fn new(rects: &HashMap<usize, Rect>) -> Self {
-        if rects.is_empty() {
+    fn new(insets: &HashMap<usize, Insets>) -> Self {
+        if insets.is_empty() {
             Self::default()
         } else {
             // Note this unwrap will not panic because we know rects is not empty at this stage
-            let max_rect = rects[rects.keys().max().unwrap()];
+            let max_rect = insets[insets.keys().max().unwrap()];
 
             // TODO clean up this logic
             // For each font size where the alignment rectangle isn't set, the rectangle of the
             // next largest rect is used, so we need to scan in reverse to carry the back the next
             // largest rect.
-            let rects: Vec<_> = {
+            let insets: Vec<_> = {
                 let tmp = (0..Self::NUM_RECTS)
                     .rev()
                     .scan(max_rect, |prev, i| {
-                        if let Some(&value) = rects.get(&i) {
+                        if let Some(&value) = insets.get(&i) {
                             *prev = value;
                         }
                         Some(*prev)
@@ -165,11 +165,11 @@ impl TextRect {
                 tmp.into_iter().rev().collect()
             };
 
-            Self(rects.try_into().unwrap())
+            Self(insets.try_into().unwrap())
         }
     }
 
-    pub fn get(&self, size_index: usize) -> Rect {
+    pub fn get(&self, size_index: usize) -> Insets {
         if size_index < self.0.len() {
             self.0[size_index]
         } else {
@@ -178,10 +178,10 @@ impl TextRect {
     }
 }
 
-impl Default for TextRect {
+impl Default for TextMargin {
     fn default() -> Self {
-        let rect = Rect::from_origin_size(Point::ORIGIN, Size::new(1e3, 1e3));
-        Self([rect; Self::NUM_RECTS])
+        let insets = Insets::uniform(-50.);
+        Self([insets; Self::NUM_RECTS])
     }
 }
 
@@ -190,14 +190,14 @@ pub struct Profile {
     pub profile_type: ProfileType,
     pub bottom_rect: RoundRect,
     pub top_rect: RoundRect,
-    pub text_margin: TextRect,
+    pub text_margin: TextMargin,
     pub text_height: TextHeight,
     pub homing: HomingProps,
 }
 
 impl Profile {
     pub fn from_toml(s: &str) -> Result<Self> {
-        Ok(toml::from_str(s)?)
+        toml::from_str(s).map_err(Error::from)
     }
 }
 
@@ -215,7 +215,7 @@ impl Default for Profile {
                 Size::new(660., 735.),
                 (65., 65.),
             ),
-            text_margin: TextRect::default(),
+            text_margin: TextMargin::default(),
             text_height: TextHeight::default(),
             homing: HomingProps::default(),
         }
@@ -256,7 +256,7 @@ mod tests {
 
     #[test]
     fn test_text_height_new() {
-        let expected = vec![0., 2., 4., 6., 8., 10., 12., 14., 16., 18.];
+        let expected: [_; 10] = array::from_fn(|i| 2. * (i as f64) * (1e3 / 19.05));
         let result = TextHeight::new(&hashmap! {}).0;
 
         assert_eq!(expected.len(), result.len());
@@ -265,13 +265,13 @@ mod tests {
             assert_approx_eq!(e, r);
         }
 
-        let expected = vec![0., 3., 6., 9., 9.5, 10.5, 11.5, 14., 16.5, 19.];
+        let expected = [0., 60., 120., 180., 190., 210., 230., 280., 330., 380.];
         let result = TextHeight::new(&hashmap! {
-            1 => 3.,
-            3 => 9.,
-            4 => 9.5,
-            6 => 11.5,
-            9 => 19.
+            1 => 60.,
+            3 => 180.,
+            4 => 190.,
+            6 => 230.,
+            9 => 380.
         })
         .0;
 
@@ -300,73 +300,68 @@ mod tests {
         let heights = TextHeight::default();
 
         for (i, h) in heights.0.into_iter().enumerate() {
-            assert_approx_eq!(h, 2. * (i as f64));
+            assert_approx_eq!(h, 2. * (i as f64) * (1e3 / 19.05));
         }
     }
 
     #[test]
-    fn test_text_rect_new() {
-        let expected = vec![Rect::from_origin_size(Point::ORIGIN, Size::new(1e3, 1e3)); 10];
-        let result = TextRect::new(&hashmap! {}).0;
+    fn test_text_margin_new() {
+        let expected = vec![Insets::uniform(-50.); 10];
+        let result = TextMargin::new(&hashmap! {}).0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.origin(), r.origin());
             assert_approx_eq!(e.size(), r.size());
         }
 
         let expected = vec![
-            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
-            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
-            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
-            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
+            Insets::uniform(0.),
+            Insets::uniform(0.),
+            Insets::uniform(0.),
+            Insets::uniform(-50.),
+            Insets::uniform(-50.),
+            Insets::uniform(-50.),
+            Insets::uniform(-100.),
+            Insets::uniform(-100.),
+            Insets::uniform(-100.),
+            Insets::uniform(-100.),
         ];
-        let result = TextRect::new(&hashmap! {
-            2 => Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            5 => Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            7 => Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
+        let result = TextMargin::new(&hashmap! {
+            2 => Insets::uniform(0.),
+            5 => Insets::uniform(-50.),
+            7 => Insets::uniform(-100.),
         })
         .0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.origin(), r.origin());
             assert_approx_eq!(e.size(), r.size());
         }
     }
 
     #[test]
-    fn test_text_rect_get() {
-        let rects = TextRect::new(&hashmap! {
-            2 => Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            5 => Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            7 => Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
+    fn test_text_margin_get() {
+        let margin = TextMargin::new(&hashmap! {
+            2 => Insets::uniform(0.),
+            5 => Insets::uniform(-50.),
+            7 => Insets::uniform(-100.),
         });
 
-        let r = rects.get(2);
-        assert_approx_eq!(r.origin(), Point::new(200., 200.));
-        assert_approx_eq!(r.size(), Size::new(600., 600.));
+        let inset = margin.get(2);
+        assert_approx_eq!(inset.size(), Size::new(0., 0.));
 
-        let r = rects.get(62);
-        assert_approx_eq!(r.origin(), Point::new(300., 300.));
-        assert_approx_eq!(r.size(), Size::new(400., 400.));
+        let inset = margin.get(62);
+        assert_approx_eq!(inset.size(), Size::new(-200., -200.));
     }
 
     #[test]
-    fn test_text_rect_default() {
-        let rects = TextRect::default();
+    fn test_text_margin_default() {
+        let margin = TextMargin::default();
 
-        for r in rects.0.into_iter() {
-            assert_approx_eq!(r.origin(), Point::ORIGIN);
-            assert_approx_eq!(r.size(), Size::new(1e3, 1e3));
+        for inset in margin.0.into_iter() {
+            assert_approx_eq!(inset.size(), Size::new(-100., -100.));
         }
     }
 
@@ -441,19 +436,18 @@ mod tests {
 
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = vec![
-            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 593.)),
-            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 593.)),
-            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 593.)),
-            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 593.)),
-            Rect::from_origin_size(Point::new(250., 185.), Size::new(500., 502.)),
-            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
-            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
-            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
-            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
-            Rect::from_origin_size(Point::new(252., 112.), Size::new(496., 606.)),
+            Insets::new(-62., -62., -62., -75.),
+            Insets::new(-62., -62., -62., -75.),
+            Insets::new(-62., -62., -62., -75.),
+            Insets::new(-62., -62., -62., -75.),
+            Insets::new(-60., -135., -60., -93.),
+            Insets::new(-62., -62., -62., -62.),
+            Insets::new(-62., -62., -62., -62.),
+            Insets::new(-62., -62., -62., -62.),
+            Insets::new(-62., -62., -62., -62.),
+            Insets::new(-62., -62., -62., -62.),
         ];
         for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.origin(), r.origin(), 0.5);
             assert_approx_eq!(e.size(), r.size(), 0.5);
         }
 
@@ -502,9 +496,8 @@ expected `.`, `=`
         }
 
         assert_eq!(profile.text_margin.0.len(), 10);
-        let expected = TextRect::default();
+        let expected = TextMargin::default();
         for (e, r) in expected.0.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.origin(), r.origin(), 0.5);
             assert_approx_eq!(e.size(), r.size(), 0.5);
         }
     }

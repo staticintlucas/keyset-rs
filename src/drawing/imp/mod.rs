@@ -1,7 +1,7 @@
 mod key;
 
 use itertools::Itertools;
-use kurbo::{BezPath, Point, Rect, Shape, Size, Vec2};
+use kurbo::{BezPath, Point, Shape, Size, Vec2};
 
 use crate::key::{Shape as KeyShape, Type as KeyType};
 use crate::utils::Color;
@@ -53,8 +53,11 @@ impl KeyDrawing {
                 .filter_map(|l| l.as_ref().map(|l| l.size))
                 .unique()
                 .map(|s| options.profile.text_margin.get(s))
-                .map(move |r| {
-                    Rect::from_origin_size(r.origin() + offset, r.size() + size).into_path(ARC_TOL)
+                .map(move |insets| {
+                    let rect = options.profile.top_rect.rect() + insets;
+                    rect.with_origin(rect.origin() + offset)
+                        .with_size(rect.size() + size)
+                        .into_path(ARC_TOL)
                 })
                 .fold(BezPath::new(), |mut p, r| {
                     p.extend(r);

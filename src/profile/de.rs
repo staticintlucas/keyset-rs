@@ -4,7 +4,7 @@ use kurbo::{Point, Rect, Size, Vec2};
 use serde::de::{Error, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use crate::profile::{HomingProps, ProfileType, TextHeight, TextRect};
+use crate::profile::{HomingProps, ProfileType, TextHeight, TextMargin};
 use crate::utils::RoundRect;
 
 use super::{BarProps, BumpProps, Profile};
@@ -188,12 +188,13 @@ impl<'de> Deserialize<'de> for Profile {
         let raw_data: RawProfileData = RawProfileData::deserialize(deserializer)?;
 
         let top_offset = raw_data.top.center().y - 500.;
-        let (heights, rects): (HashMap<_, _>, HashMap<_, _>) = raw_data
+        let (heights, insets): (HashMap<_, _>, HashMap<_, _>) = raw_data
             .legend
             .into_iter()
-            .map(|(i, (s, r))| {
-                let r = r.with_origin(r.origin() + (0., top_offset));
-                ((i, s), (i, r))
+            .map(|(i, (size, rect))| {
+                let inset =
+                    rect.with_origin(rect.origin() + (0., top_offset)) - raw_data.top.rect();
+                ((i, size), (i, inset))
             })
             .unzip();
 
@@ -201,7 +202,7 @@ impl<'de> Deserialize<'de> for Profile {
             profile_type: raw_data.profile_type,
             bottom_rect: raw_data.bottom,
             top_rect: raw_data.top,
-            text_margin: TextRect::new(&rects),
+            text_margin: TextMargin::new(&insets),
             text_height: TextHeight::new(&heights),
             homing: raw_data.homing,
         })
@@ -211,108 +212,10 @@ impl<'de> Deserialize<'de> for Profile {
 #[cfg(test)]
 mod tests {
     use assert_approx_eq::assert_approx_eq;
-    use maplit::hashmap;
 
     use super::*;
 
     use crate::utils::KurboAbs;
-
-    #[test]
-    fn test_text_height_new() {
-        let expected = vec![0., 2., 4., 6., 8., 10., 12., 14., 16., 18.];
-        let result = TextHeight::new(&hashmap! {}).0;
-
-        assert_eq!(expected.len(), result.len());
-
-        for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e, r);
-        }
-
-        let expected = vec![0., 3., 6., 9., 9.5, 10.5, 11.5, 14., 16.5, 19.];
-        let result = TextHeight::new(&hashmap! {
-            1 => 3.,
-            3 => 9.,
-            4 => 9.5,
-            6 => 11.5,
-            9 => 19.
-        })
-        .0;
-
-        assert_eq!(expected.len(), result.len());
-
-        for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e, r);
-        }
-    }
-
-    #[test]
-    fn test_text_height_get() {
-        let heights = TextHeight::new(&hashmap! {
-            1 => 3.,
-            3 => 9.,
-            4 => 9.5,
-            6 => 11.5,
-            9 => 19.
-        });
-        assert_approx_eq!(heights.get(5), 10.5);
-        assert_approx_eq!(heights.get(23), 19.);
-    }
-
-    #[test]
-    fn test_text_rect_new() {
-        let expected = vec![Rect::from_origin_size(Point::ORIGIN, Size::new(1e3, 1e3)); 10];
-        let result = TextRect::new(&hashmap! {}).0;
-
-        assert_eq!(expected.len(), result.len());
-
-        for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.origin(), r.origin());
-            assert_approx_eq!(e.size(), r.size());
-        }
-
-        let expected = vec![
-            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
-            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
-            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
-            Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
-        ];
-        let result = TextRect::new(&hashmap! {
-            2 => Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            5 => Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            7 => Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
-        })
-        .0;
-
-        assert_eq!(expected.len(), result.len());
-
-        for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.origin(), r.origin());
-            assert_approx_eq!(e.size(), r.size());
-        }
-    }
-
-    #[test]
-    fn test_text_rect_get() {
-        let rects = TextRect::new(&hashmap! {
-            2 => Rect::from_origin_size(Point::new(200., 200.), Size::new(600., 600.)),
-            5 => Rect::from_origin_size(Point::new(250., 250.), Size::new(500., 500.)),
-            7 => Rect::from_origin_size(Point::new(300., 300.), Size::new(400., 400.)),
-        });
-
-        let r = rects.get(2);
-        assert_approx_eq!(r.origin(), Point::new(200., 200.));
-        assert_approx_eq!(r.size(), Size::new(600., 600.));
-
-        let r = rects.get(62);
-        assert_approx_eq!(r.origin(), Point::new(300., 300.));
-        assert_approx_eq!(r.size(), Size::new(400., 400.));
-    }
 
     #[test]
     fn test_deserialize_rect() {
