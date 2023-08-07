@@ -128,9 +128,9 @@ impl TextHeight {
 
 impl Default for TextHeight {
     fn default() -> Self {
-        const DEFAULT_MAX: f64 = 18. * (1e3 / 19.05);
         Self(array::from_fn(|i| {
-            (i as f64) * DEFAULT_MAX / (Self::NUM_HEIGHTS as f64 - 1.)
+            // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5b0a9cdfc7cc9bb225839192298d82a66d/kb.css#L113
+            (6.0 + 2.0 * (i as f64)) * (1e3 / 72.)
         }))
     }
 }
@@ -266,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_text_height_new() {
-        let expected: [_; 10] = array::from_fn(|i| 2. * (i as f64) * (1e3 / 19.05));
+        let expected: [_; 10] = array::from_fn(|i| (6. + 2. * (i as f64)) * (1e3 / 72.));
         let result = TextHeight::new(&hashmap! {}).0;
 
         assert_eq!(expected.len(), result.len());
@@ -310,7 +310,7 @@ mod tests {
         let heights = TextHeight::default();
 
         for (i, h) in heights.0.into_iter().enumerate() {
-            assert_approx_eq!(h, 2. * (i as f64) * (1e3 / 19.05));
+            assert_approx_eq!(h, (6. + 2. * (i as f64)) * (1e3 / 72.));
         }
     }
 
