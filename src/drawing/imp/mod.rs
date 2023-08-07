@@ -2,7 +2,7 @@ mod key;
 mod legend;
 
 use itertools::Itertools;
-use kurbo::{BezPath, Point, Shape, Size, Vec2};
+use kurbo::{BezPath, Point, Shape, Vec2};
 
 use crate::key::{Shape as KeyShape, Type as KeyType};
 use crate::utils::Color;
@@ -39,16 +39,15 @@ impl KeyDrawing {
         let step = show_key.then(|| key::step(key, options)).flatten();
         let homing = show_key.then(|| key::homing(key, options)).flatten();
 
-        let top_rect = {
-            let rect = options.profile.top_rect.rect();
-            let (offset, size) = match key.shape {
-                KeyShape::Normal(size) => (Vec2::ZERO, 1e3 * (size - Size::new(1., 1.))),
-                KeyShape::SteppedCaps => (Vec2::ZERO, Size::new(250., 0.)),
-                KeyShape::IsoHorizontal => (Vec2::ZERO, Size::new(500., 0.)),
-                KeyShape::IsoVertical => (Vec2::new(250., 0.), Size::new(250., 1000.)),
-            };
-            rect.with_origin(rect.origin() + offset)
-                .with_size(rect.size() + size)
+        let top_rect = match key.shape {
+            KeyShape::Normal(size) => options.profile.top_rect(size).rect(),
+            KeyShape::SteppedCaps => options.profile.top_rect((1.25, 1.)).rect(),
+            KeyShape::IsoHorizontal => options.profile.top_rect((1.5, 1.)).rect(),
+            KeyShape::IsoVertical => options
+                .profile
+                .top_rect((1.25, 2.))
+                .with_origin(options.profile.top_rect.origin() + (250., 0.))
+                .rect(),
         };
 
         let margin = options.show_margin.then(|| {

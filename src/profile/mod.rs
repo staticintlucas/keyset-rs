@@ -199,6 +199,16 @@ impl Profile {
     pub fn from_toml(s: &str) -> Result<Self> {
         toml::from_str(s).map_err(Error::from)
     }
+
+    pub fn top_rect(&self, size: impl Into<Size>) -> RoundRect {
+        self.top_rect
+            .with_size(self.top_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
+    }
+
+    pub fn bottom_rect(&self, size: impl Into<Size>) -> RoundRect {
+        self.bottom_rect
+            .with_size(self.bottom_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
+    }
 }
 
 impl Default for Profile {

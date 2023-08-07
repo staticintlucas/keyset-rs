@@ -1,24 +1,18 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use kurbo::{Arc, BezPath, Circle, Point, Rect, Shape, Size};
+use kurbo::{Arc, BezPath, Circle, Point, Rect, Shape};
 
 use crate::key::{Homing, Shape as KeyShape, Type as KeyType};
 use crate::utils::RoundRect;
-use crate::{DrawingOptions, Key};
+use crate::{DrawingOptions, Key, Profile};
 
 use super::{Outline, Path, ARC_TOL};
 
 pub(crate) fn top(key: &Key, options: &DrawingOptions) -> Path {
-    let top_rect = options.profile.top_rect;
-
     let path = match key.shape {
-        KeyShape::Normal(size) => top_rect
-            .with_size(top_rect.size() + 1e3 * (size - Size::new(1., 1.)))
-            .to_path(ARC_TOL),
-        KeyShape::SteppedCaps => top_rect
-            .with_size(top_rect.size() + 1e3 * (Size::new(0.25, 0.)))
-            .to_path(ARC_TOL),
-        KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_top_path(top_rect),
+        KeyShape::Normal(size) => options.profile.top_rect(size).to_path(ARC_TOL),
+        KeyShape::SteppedCaps => options.profile.top_rect((1.25, 1.)).to_path(ARC_TOL),
+        KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_top_path(&options.profile),
     };
 
     Path {
@@ -32,16 +26,10 @@ pub(crate) fn top(key: &Key, options: &DrawingOptions) -> Path {
 }
 
 pub(crate) fn bottom(key: &Key, options: &DrawingOptions) -> Path {
-    let bottom_rect = options.profile.bottom_rect;
-
     let path = match key.shape {
-        KeyShape::Normal(size) => bottom_rect
-            .with_size(bottom_rect.size() + 1e3 * (size - Size::new(1., 1.)))
-            .to_path(ARC_TOL),
-        KeyShape::SteppedCaps => bottom_rect
-            .with_size(bottom_rect.size() + 1e3 * (Size::new(0.75, 0.)))
-            .to_path(ARC_TOL),
-        KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_bottom_path(bottom_rect),
+        KeyShape::Normal(size) => options.profile.bottom_rect(size).to_path(ARC_TOL),
+        KeyShape::SteppedCaps => options.profile.bottom_rect((1.75, 1.)).to_path(ARC_TOL),
+        KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_bottom_path(&options.profile),
     };
 
     Path {
@@ -60,11 +48,7 @@ pub(crate) fn homing(key: &Key, options: &DrawingOptions) -> Option<Path> {
     let KeyType::Homing(homing) = key.typ else { return None };
     let homing = homing.unwrap_or(profile.homing.default);
 
-    let center = profile
-        .top_rect
-        .rect()
-        .with_size(profile.top_rect.size() + 1e3 * (key.shape.size() - Size::new(1., 1.)))
-        .center();
+    let center = profile.top_rect(key.shape.size()).center();
 
     let bez_path = match homing {
         Homing::Scoop => None,
@@ -117,12 +101,13 @@ pub(crate) fn step(key: &Key, options: &DrawingOptions) -> Option<Path> {
     })
 }
 
-fn iso_bottom_path(rect: RoundRect) -> BezPath {
-    let rect150 = rect.with_size(rect.size() + Size::new(500., 0.));
-    let rect125 = rect
-        .with_origin(rect.origin() + (250., 1000.))
-        .with_size(rect.size() + Size::new(250., 0.));
-    let radii = rect.radii();
+fn iso_bottom_path(profile: &Profile) -> BezPath {
+    let rect150 = profile.bottom_rect((1.5, 1.)).rect();
+    let rect125 = profile
+        .bottom_rect((1.25, 2.))
+        .with_origin(profile.bottom_rect.origin() + (250., 0.))
+        .rect();
+    let radii = profile.bottom_rect.radii();
 
     // TODO ensure Arc is transformed to single PathEl::CurveTo. Then we can avoid using
     // extend and use [PathEl].into_iter().collect() and avoid reallocations.
@@ -202,12 +187,13 @@ fn iso_bottom_path(rect: RoundRect) -> BezPath {
     path
 }
 
-fn iso_top_path(rect: RoundRect) -> BezPath {
-    let rect150 = rect.with_size(rect.size() + Size::new(500., 0.));
-    let rect125 = rect
-        .with_origin(rect.origin() + (250., 1000.))
-        .with_size(rect.size() + Size::new(250., 0.));
-    let radii = rect.radii();
+fn iso_top_path(profile: &Profile) -> BezPath {
+    let rect150 = profile.top_rect((1.5, 1.)).rect();
+    let rect125 = profile
+        .top_rect((1.25, 2.))
+        .with_origin(profile.top_rect.origin() + (250., 0.))
+        .rect();
+    let radii = profile.top_rect.radii();
 
     // TODO ensure Arc is transformed to single PathEl::CurveTo. Then we can avoid using
     // extend and use [PathEl].into_iter().collect() and avoid reallocations.
