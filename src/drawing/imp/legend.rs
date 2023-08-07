@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use kurbo::{Affine, Rect, Shape, Vec2};
+use log::warn;
 
 use crate::font::Font;
 use crate::key::Legend;
@@ -41,7 +42,10 @@ pub(crate) fn draw(
     let margin = top_rect + profile.text_margin.get(legend.size);
     let bounds = path.bounding_box();
     if bounds.width() > margin.width() {
-        // TODO warn about shrinking legends?
+        warn!(
+            r#"legend "{text}" is {}% too wide; squishing legend to fit"#,
+            100. * (bounds.width() / margin.width() - 1.)
+        );
         path.apply_affine(Affine::scale_non_uniform(
             margin.width() / bounds.width(),
             1.,
