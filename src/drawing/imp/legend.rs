@@ -36,11 +36,18 @@ pub(crate) fn draw(
             path
         });
 
-    let scale = profile.text_height.get(legend.size) / font.cap_height;
-    path.apply_affine(Affine::scale(scale));
+    let height = profile.text_height.get(legend.size);
+    path.apply_affine(Affine::scale(height / font.cap_height)); // Scale to correct height
 
-    let margin = top_rect + profile.text_margin.get(legend.size);
+    // Calculate legend bounds. For x this is based on actual size while for y we use the base line
+    // and text height so each character (especially symbols) are still aligned across keys
     let bounds = path.bounding_box();
+    let bounds = bounds
+        .with_origin((bounds.origin().x, -height))
+        .with_size((bounds.width(), height));
+
+    // Check to ensure our legend fits
+    let margin = top_rect + profile.text_margin.get(legend.size);
     if bounds.width() > margin.width() {
         warn!(
             r#"legend "{text}" is {}% too wide; squishing legend to fit"#,
@@ -51,6 +58,8 @@ pub(crate) fn draw(
             1.,
         ));
     }
+
+    // Align the legend within the margins
     let size = margin.size() - bounds.size();
     let point = margin.origin() + (align.x * size.width, align.y * size.height);
     path.apply_affine(Affine::translate(point - bounds.origin()));
