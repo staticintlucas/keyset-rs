@@ -1,11 +1,13 @@
 mod imp;
+mod png;
 mod svg;
 
 use kurbo::{Point, Rect, Size};
 
-use crate::{Font, Key, Profile};
+use crate::{error::Result, Font, Key, Profile};
 
 pub(crate) use imp::{KeyDrawing, Path};
+pub(crate) use png::PngEncodingError;
 
 #[derive(Debug, Clone)]
 pub struct Drawing {
@@ -38,6 +40,10 @@ impl Drawing {
 
     pub fn to_svg(&self) -> String {
         svg::draw(self)
+    }
+
+    pub fn to_png(&self) -> Result<Vec<u8>> {
+        png::draw(self)
     }
 }
 

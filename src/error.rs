@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::drawing::PngEncodingError;
 use crate::kle::InvalidKleLayout;
 
 #[derive(Debug)]
@@ -15,6 +16,7 @@ pub(crate) enum ErrorImpl {
     TomlParseError(toml::de::Error),
     FontParseError(ttf_parser::FaceParsingError),
     InvalidKleLayout(InvalidKleLayout),
+    PngEncodingError(PngEncodingError),
 }
 
 impl fmt::Display for Error {
@@ -24,6 +26,7 @@ impl fmt::Display for Error {
             ErrorImpl::TomlParseError(error) => write!(f, "error parsing TOML: {error}"),
             ErrorImpl::FontParseError(error) => write!(f, "error parsing font: {error}"),
             ErrorImpl::InvalidKleLayout(error) => write!(f, "error parsing KLE layout: {error}"),
+            ErrorImpl::PngEncodingError(error) => write!(f, "error encoding PNG: {error}"),
         }
     }
 }
@@ -34,7 +37,7 @@ impl std::error::Error for Error {
             ErrorImpl::JsonParseError(error) => Some(error),
             ErrorImpl::TomlParseError(error) => Some(error),
             ErrorImpl::FontParseError(error) => Some(error),
-            ErrorImpl::InvalidKleLayout(_) => None,
+            ErrorImpl::InvalidKleLayout(_) | ErrorImpl::PngEncodingError(_) => None,
         }
     }
 }
@@ -67,6 +70,14 @@ impl From<InvalidKleLayout> for Error {
     fn from(error: InvalidKleLayout) -> Self {
         Self {
             inner: Box::new(ErrorImpl::InvalidKleLayout(error)),
+        }
+    }
+}
+
+impl From<PngEncodingError> for Error {
+    fn from(error: PngEncodingError) -> Self {
+        Self {
+            inner: Box::new(ErrorImpl::PngEncodingError(error)),
         }
     }
 }

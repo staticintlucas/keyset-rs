@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use rgb::{ComponentMap, RGB16, RGB8};
+use rgb::{ComponentMap, RGB, RGB16, RGB8};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Color(RGB16);
@@ -29,6 +29,19 @@ impl From<Color> for RGB8 {
     }
 }
 
+impl From<RGB<f32>> for Color {
+    fn from(value: RGB<f32>) -> Self {
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        value.map(|c| (65536.0 * c) as u16).into()
+    }
+}
+
+impl From<Color> for RGB<f32> {
+    fn from(value: Color) -> Self {
+        RGB16::from(value).map(|c| f32::from(c) / 65535.0)
+    }
+}
+
 impl From<(u16, u16, u16)> for Color {
     fn from(value: (u16, u16, u16)) -> Self {
         RGB16::from(value).into()
@@ -50,6 +63,25 @@ impl From<(u8, u8, u8)> for Color {
 impl From<Color> for (u8, u8, u8) {
     fn from(value: Color) -> Self {
         RGB8::from(value).into()
+    }
+}
+
+impl From<(f32, f32, f32)> for Color {
+    fn from(value: (f32, f32, f32)) -> Self {
+        RGB::<f32>::from(value).into()
+    }
+}
+
+impl From<Color> for (f32, f32, f32) {
+    fn from(value: Color) -> Self {
+        RGB::<f32>::from(value).into()
+    }
+}
+
+impl From<Color> for tiny_skia::Color {
+    fn from(value: Color) -> Self {
+        let (r, g, b) = value.into();
+        tiny_skia::Color::from_rgba(r, g, b, 1.0).unwrap()
     }
 }
 

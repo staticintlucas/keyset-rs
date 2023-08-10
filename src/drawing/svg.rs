@@ -49,8 +49,8 @@ fn draw_key(key: &KeyDrawing) -> Group {
     key.paths.iter().map(draw_path).fold(group, Group::add)
 }
 
-fn draw_path(key: &Path) -> SvgPath {
-    let data = key
+fn draw_path(path: &Path) -> SvgPath {
+    let data = path
         .path
         .iter()
         .scan((Point::ORIGIN, Point::ORIGIN), |(origin, point), el| {
@@ -88,18 +88,19 @@ fn draw_path(key: &Path) -> SvgPath {
         })
         .join("");
 
-    let fill = if let Some(color) = key.fill {
+    let fill = if let Some(color) = path.fill {
         color.to_string()
     } else {
         "none".into()
     };
-    let path = SvgPath::new().set("d", data).set("fill", fill);
+    let svg_path = SvgPath::new().set("d", data).set("fill", fill);
 
-    if let Some(outline) = key.outline {
-        path.set("stroke", outline.color.to_string())
+    if let Some(outline) = path.outline {
+        svg_path
+            .set("stroke", outline.color.to_string())
             .set("stroke-width", fmt_num!("{}", outline.width))
     } else {
-        path.set("stroke", "none")
+        svg_path.set("stroke", "none")
     }
 }
 
