@@ -1,4 +1,5 @@
 mod imp;
+mod pdf;
 mod png;
 mod svg;
 
@@ -44,6 +45,20 @@ impl Drawing {
 
     pub fn to_png(&self) -> Result<Vec<u8>> {
         png::draw(self)
+    }
+
+    pub fn to_pdf(&self) -> Vec<u8> {
+        pdf::draw(self)
+    }
+
+    pub fn to_ai(&self) -> Vec<u8> {
+        // An Illustrator file typically contains both an Illustrator-native and a PDF copy of an
+        // image. Most other software (including Adobe's own InDesign) use the PDF data and not the
+        // native Illustrator format. Illustrator also happily opens a PDF with .ai file extension,
+        // so we just generate a PDF when exporting an Illustrator file. I have not come across any
+        // compatibility issues using this approach, but I do recommend checking your files in
+        // Illustrator just in case.
+        pdf::draw(self)
     }
 }
 
