@@ -16,6 +16,7 @@ itertools = "0.10"
 kle-serial = "0.2"
 kurbo = "0.9"
 log = "0.4"
+miniz_oxide = "0.7"
 pdf-writer = "0.8"
 rgb = { version = "0.8", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"] }

@@ -1,9 +1,12 @@
 use kurbo::{PathEl, Point};
-use pdf_writer::{Content, Finish, PdfWriter, Rect, Ref, TextStr};
+use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
+use pdf_writer::{Content, Filter, Finish, PdfWriter, Rect, Ref, TextStr};
 
 use crate::drawing::Drawing;
 
 use super::{KeyDrawing, Path};
+
+const COMPRESSION_LEVEL: u8 = CompressionLevel::DefaultLevel as u8;
 
 macro_rules! transform {
     (($($x:expr, $y:expr),+), $origin:expr, $scale:expr) => {
@@ -57,7 +60,11 @@ pub(crate) fn draw(drawing: &Drawing) -> Vec<u8> {
         draw_key(&mut content, key, drawing.bounds.height(), scale);
     }
 
-    writer.stream(content_id, &content.finish());
+    let data = compress_to_vec_zlib(&content.finish(), COMPRESSION_LEVEL);
+    writer
+        .stream(content_id, &data)
+        .filter(Filter::FlateDecode)
+        .finish();
 
     writer
         .document_info(doc_info_id)
