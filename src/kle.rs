@@ -1,5 +1,6 @@
 use std::{array, fmt};
 
+use itertools::Itertools;
 use kle_serial as kle;
 use kurbo::{Point, Size};
 
@@ -103,8 +104,9 @@ impl TryFrom<kle::Key> for Key {
     }
 }
 
-pub fn from_json(json: &str) -> Result<impl Iterator<Item = Result<Key>>> {
-    Ok(serde_json::from_str::<kle::KeyIterator>(json)?.map(Key::try_from))
+pub fn from_json(json: &str) -> Result<Vec<Key>> {
+    let key_iter: kle::KeyIterator = serde_json::from_str(json)?;
+    key_iter.map(Key::try_from).try_collect()
 }
 
 #[cfg(test)]
@@ -113,7 +115,6 @@ mod tests {
 
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
-    use itertools::Itertools;
 
     #[test]
     fn test_key_shape_from_kle() {
@@ -251,8 +252,6 @@ mod tests {
                 ]
             ]"#,
         )
-        .unwrap()
-        .try_collect()
         .unwrap();
 
         assert_eq!(result1.len(), 4);
@@ -268,8 +267,6 @@ mod tests {
                 ]
             ]"#,
         )
-        .unwrap()
-        .try_collect()
         .unwrap();
 
         assert_eq!(result2.len(), 1);
