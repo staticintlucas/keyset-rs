@@ -35,7 +35,7 @@ impl Drawing {
         Self {
             bounds,
             keys,
-            scale: options.dpi * 0.75, // 1u = 0.75in => dpu = 0.75*dpi
+            scale: options.scale,
         }
     }
 
@@ -43,8 +43,8 @@ impl Drawing {
         svg::draw(self)
     }
 
-    pub fn to_png(&self) -> Result<Vec<u8>> {
-        png::draw(self)
+    pub fn to_png(&self, dpi: f64) -> Result<Vec<u8>> {
+        png::draw(self, dpi)
     }
 
     pub fn to_pdf(&self) -> Vec<u8> {
@@ -66,7 +66,7 @@ impl Drawing {
 pub struct DrawingOptions {
     profile: Profile,
     font: Font,
-    dpi: f64,
+    scale: f64,
     outline_width: f64,
     show_keys: bool,
     show_margin: bool,
@@ -77,7 +77,7 @@ impl Default for DrawingOptions {
         Self {
             profile: Profile::default(),
             font: Font::default(),
-            dpi: 96.,
+            scale: 1.,
             outline_width: 10.,
             show_keys: true,
             show_margin: false,
@@ -101,8 +101,8 @@ impl DrawingOptions {
         self
     }
 
-    pub fn dpi(&mut self, dpi: f64) -> &mut Self {
-        self.dpi = dpi;
+    pub fn scale(&mut self, scale: f64) -> &mut Self {
+        self.scale = scale;
         self
     }
 
@@ -140,7 +140,7 @@ mod tests {
     fn test_drawing_options() {
         let options = DrawingOptions::default();
 
-        assert_approx_eq!(options.dpi, 96.);
+        assert_approx_eq!(options.scale, 1.);
         assert_eq!(options.font.glyphs.len(), 0);
 
         let profile = Profile::default();
@@ -149,7 +149,7 @@ mod tests {
         options
             .profile(profile)
             .font(font)
-            .dpi(192.)
+            .scale(2.)
             .show_keys(false)
             .show_margin(true);
 
@@ -158,6 +158,6 @@ mod tests {
             ProfileType::Cylindrical { .. }
         );
         assert_eq!(options.font.glyphs.len(), 2);
-        assert_eq!(options.dpi, 192.);
+        assert_eq!(options.scale, 2.);
     }
 }

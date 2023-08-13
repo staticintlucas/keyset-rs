@@ -1,4 +1,4 @@
-use kurbo::{PathEl, Point};
+use kurbo::{Affine, PathEl, Point};
 use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
 use pdf_writer::{Content, Filter, Finish, PdfWriter, Rect, Ref, TextStr};
 
@@ -6,13 +6,29 @@ use crate::drawing::Drawing;
 
 use super::{KeyDrawing, Path};
 
+const PDF_DPI: f64 = 72.0; // PDF uses 72 dpi
 const COMPRESSION_LEVEL: u8 = CompressionLevel::DefaultLevel as u8;
 
 macro_rules! transform {
-    (($($x:expr, $y:expr),+), $origin:expr, $scale:expr) => {
-        // Negate Y since PDF has rising Y axis
-        ($((($origin.x + $x / 1e3) * $scale) as f32, (($origin.y - $y / 1e3) * $scale) as f32),+)
-    };
+    ($p:expr, $affine:expr) => {{
+        let p = $affine * $p;
+        (p.x as f32, p.y as f32)
+    }};
+    ($p1:expr, $p:expr, $affine:expr) => {{
+        let (p1, p) = ($affine * $p1, $affine * $p);
+        (p1.x as f32, p1.y as f32, p.x as f32, p.y as f32)
+    }};
+    ($p1:expr, $p2:expr, $p:expr, $affine:expr) => {{
+        let (p1, p2, p) = ($affine * $p1, $affine * $p2, $affine * $p);
+        (
+            p1.x as f32,
+            p1.y as f32,
+            p2.x as f32,
+            p2.y as f32,
+            p.x as f32,
+            p.y as f32,
+        )
+    }};
 }
 
 struct RefGen(i32);
@@ -29,7 +45,7 @@ impl RefGen {
 }
 
 pub(crate) fn draw(drawing: &Drawing) -> Vec<u8> {
-    let scale = drawing.scale * (72.0 / 96.0);
+    let scale = drawing.scale * PDF_DPI * 0.75; // 0.75 in/key
     let size = drawing.bounds.size() * scale;
 
     let mut ref_gen = RefGen::new();
@@ -56,8 +72,10 @@ pub(crate) fn draw(drawing: &Drawing) -> Vec<u8> {
 
     let mut content = Content::new();
 
+    // Flip origin since PDF has rising Y axis
+    let affine = Affine::scale_non_uniform(scale, -scale).then_translate((0., size.height).into());
     for key in &drawing.keys {
-        draw_key(&mut content, key, drawing.bounds.height(), scale);
+        draw_key(&mut content, key, &affine);
     }
 
     let data = compress_to_vec_zlib(&content.finish(), COMPRESSION_LEVEL);
@@ -76,45 +94,45 @@ pub(crate) fn draw(drawing: &Drawing) -> Vec<u8> {
     writer.finish()
 }
 
-fn draw_key(content: &mut Content, key: &KeyDrawing, height: f64, scale: f64) {
+fn draw_key(content: &mut Content, key: &KeyDrawing, affine: &Affine) {
+    let affine = *affine * Affine::scale(1e-3).then_translate(key.origin.to_vec2());
     for path in &key.paths {
-        // Flip origin since PDF has rising Y axis
-        let origin = Point::new(key.origin.x, height - key.origin.y);
-        draw_path(content, path, origin, scale);
+        draw_path(content, path, &affine);
     }
 }
 
-fn draw_path(content: &mut Content, path: &Path, origin: Point, scale: f64) {
+fn draw_path(content: &mut Content, path: &Path, affine: &Affine) {
     // previous point, needed for quad => cubic Bézier conversion
+    let mut origin = Point::ORIGIN;
     let mut p0 = Point::ORIGIN;
 
     for el in &path.path {
         match el {
             PathEl::MoveTo(p) => {
+                origin = p;
                 p0 = p;
-                let (x, y) = transform!((p.x, p.y), origin, scale);
+                let (x, y) = transform!(p, *affine);
                 content.move_to(x, y);
             }
             PathEl::LineTo(p) => {
                 p0 = p;
-                let (x, y) = transform!((p.x, p.y), origin, scale);
+                let (x, y) = transform!(p, *affine);
                 content.line_to(x, y);
             }
             PathEl::CurveTo(p1, p2, p) => {
                 p0 = p;
-                let (x1, y1, x2, y2, x, y) =
-                    transform!((p1.x, p1.y, p2.x, p2.y, p.x, p.y), origin, scale);
+                let (x1, y1, x2, y2, x, y) = transform!(p1, p2, p, *affine);
                 content.cubic_to(x1, y1, x2, y2, x, y);
             }
             PathEl::QuadTo(p1, p) => {
                 // Convert quad to cubic since PostScript doesn't have quadratic Béziers
                 let (p1, p2) = (p0 + (2.0 / 3.0) * (p1 - p0), p + (2.0 / 3.0) * (p1 - p));
                 p0 = p;
-                let (x1, y1, x2, y2, x, y) =
-                    transform!((p1.x, p1.y, p2.x, p2.y, p.x, p.y), origin, scale);
+                let (x1, y1, x2, y2, x, y) = transform!(p1, p2, p, *affine);
                 content.cubic_to(x1, y1, x2, y2, x, y);
             }
             PathEl::ClosePath => {
+                p0 = origin;
                 content.close_path();
             }
         }
@@ -129,7 +147,7 @@ fn draw_path(content: &mut Content, path: &Path, origin: Point, scale: f64) {
         let (r, g, b) = outline.color.into();
         content.set_stroke_rgb(r, g, b);
         #[allow(clippy::cast_possible_truncation)]
-        content.set_line_width((outline.width * scale / 1e3) as f32);
+        content.set_line_width((outline.width * affine.as_coeffs()[0]) as f32);
     }
 
     match (path.fill, path.outline) {

@@ -15,11 +15,11 @@ macro_rules! fmt_num {
 
 pub(crate) fn draw(drawing: &Drawing) -> String {
     let size = drawing.bounds.size() * drawing.scale;
-    let view_box = drawing.bounds.scale_from_origin(1e3);
+    let view_box = drawing.bounds.scale_from_origin(1e3); // Use 1000 user units per key
 
     let document = Document::new()
-        .set("width", fmt_num!("{}", size.width))
-        .set("height", fmt_num!("{}", size.height))
+        .set("width", fmt_num!("{}mm", size.width * 19.05))
+        .set("height", fmt_num!("{}mm", size.height * 19.05))
         .set(
             "viewBox",
             fmt_num!(
