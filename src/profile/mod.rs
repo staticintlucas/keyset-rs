@@ -56,7 +56,7 @@ pub struct BumpProps {
 #[derive(Deserialize)]
 #[serde(remote = "key::Homing", rename_all = "kebab-case")]
 pub enum HomingDef {
-    #[serde(alias = "deep-dish")]
+    #[serde(alias = "deep-dish", alias = "dish")]
     Scoop,
     #[serde(alias = "line")]
     Bar,
@@ -200,12 +200,12 @@ impl Profile {
         toml::from_str(s).map_err(Error::from)
     }
 
-    pub fn top_rect(&self, size: impl Into<Size>) -> RoundRect {
+    pub fn top_with_size(&self, size: impl Into<Size>) -> RoundRect {
         self.top_rect
             .with_size(self.top_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
     }
 
-    pub fn bottom_rect(&self, size: impl Into<Size>) -> RoundRect {
+    pub fn bottom_with_size(&self, size: impl Into<Size>) -> RoundRect {
         self.bottom_rect
             .with_size(self.bottom_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
     }
@@ -481,6 +481,45 @@ expected `.`, `=`
 "#
             ),
         )
+    }
+
+    #[test]
+    fn test_profile_with_size() {
+        let profile = Profile::default();
+
+        assert_approx_eq!(
+            profile.top_with_size((1., 1.)).origin(),
+            profile.top_rect.origin()
+        );
+        assert_approx_eq!(
+            profile.top_with_size((1., 1.)).size(),
+            profile.top_rect.size()
+        );
+        assert_approx_eq!(
+            profile.bottom_with_size((1., 1.)).origin(),
+            profile.bottom_rect.origin()
+        );
+        assert_approx_eq!(
+            profile.bottom_with_size((1., 1.)).size(),
+            profile.bottom_rect.size()
+        );
+
+        assert_approx_eq!(
+            profile.bottom_with_size((3., 2.)).origin(),
+            profile.bottom_rect.origin()
+        );
+        assert_approx_eq!(
+            profile.bottom_with_size((3., 2.)).size(),
+            profile.bottom_rect.size() + Size::new(2e3, 1e3)
+        );
+        assert_approx_eq!(
+            profile.bottom_with_size((3., 2.)).origin(),
+            profile.bottom_rect.origin()
+        );
+        assert_approx_eq!(
+            profile.bottom_with_size((3., 2.)).size(),
+            profile.bottom_rect.size() + Size::new(2e3, 1e3)
+        );
     }
 
     #[test]

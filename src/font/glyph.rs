@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn test_outline_builder() {
-        let mut path = KurboPathWrapper(BezPath::new());
+        let mut path: KurboPathWrapper = BezPath::new().into();
 
         path.move_to(0., 0.);
         path.line_to(1., 1.);
@@ -173,7 +173,8 @@ mod tests {
         path.curve_to(2., -0.5, 1.5, -1., 1., -1.);
         path.close();
 
-        let els = path.0.into_iter().collect_vec();
+        let bez_path: BezPath = path.into();
+        let els = bez_path.into_iter().collect_vec();
 
         assert_eq!(els.len(), 5);
         assert_matches!(els[0], PathEl::MoveTo(..));

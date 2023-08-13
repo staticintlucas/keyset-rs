@@ -26,3 +26,21 @@ mod kurbo_shim {
 
 #[cfg(test)]
 pub(crate) use kurbo_shim::*;
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use std::f64::consts::SQRT_2;
+
+    use assert_approx_eq::assert_approx_eq;
+    use kurbo::{Size, Vec2};
+
+    fn test_kurbo_shim() {
+        let vec = Vec2::new(1., 1.);
+        let size = Size::new(1., 1.);
+
+        assert_approx_eq!(vec.abs(), SQRT_2);
+        assert_approx_eq!(size.abs(), SQRT_2);
+    }
+}

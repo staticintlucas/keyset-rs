@@ -10,8 +10,8 @@ use super::{Outline, Path, ARC_TOL};
 
 pub(crate) fn top(key: &Key, options: &DrawingOptions) -> Path {
     let path = match key.shape {
-        KeyShape::Normal(size) => options.profile.top_rect(size).to_path(ARC_TOL),
-        KeyShape::SteppedCaps => options.profile.top_rect((1.25, 1.)).to_path(ARC_TOL),
+        KeyShape::Normal(size) => options.profile.top_with_size(size).to_path(ARC_TOL),
+        KeyShape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).to_path(ARC_TOL),
         KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_top_path(&options.profile),
     };
 
@@ -27,8 +27,11 @@ pub(crate) fn top(key: &Key, options: &DrawingOptions) -> Path {
 
 pub(crate) fn bottom(key: &Key, options: &DrawingOptions) -> Path {
     let path = match key.shape {
-        KeyShape::Normal(size) => options.profile.bottom_rect(size).to_path(ARC_TOL),
-        KeyShape::SteppedCaps => options.profile.bottom_rect((1.75, 1.)).to_path(ARC_TOL),
+        KeyShape::Normal(size) => options.profile.bottom_with_size(size).to_path(ARC_TOL),
+        KeyShape::SteppedCaps => options
+            .profile
+            .bottom_with_size((1.75, 1.))
+            .to_path(ARC_TOL),
         KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_bottom_path(&options.profile),
     };
 
@@ -48,7 +51,7 @@ pub(crate) fn homing(key: &Key, options: &DrawingOptions) -> Option<Path> {
     let KeyType::Homing(homing) = key.typ else { return None };
     let homing = homing.unwrap_or(profile.homing.default);
 
-    let center = profile.top_rect(key.shape.size()).center();
+    let center = profile.top_with_size(key.shape.size()).center();
 
     let bez_path = match homing {
         Homing::Scoop => None,
@@ -102,9 +105,9 @@ pub(crate) fn step(key: &Key, options: &DrawingOptions) -> Option<Path> {
 }
 
 fn iso_bottom_path(profile: &Profile) -> BezPath {
-    let rect150 = profile.bottom_rect((1.5, 1.)).rect();
+    let rect150 = profile.bottom_with_size((1.5, 1.)).rect();
     let rect125 = profile
-        .bottom_rect((1.25, 2.))
+        .bottom_with_size((1.25, 2.))
         .with_origin(profile.bottom_rect.origin() + (250., 0.))
         .rect();
     let radii = profile.bottom_rect.radii();
@@ -188,9 +191,9 @@ fn iso_bottom_path(profile: &Profile) -> BezPath {
 }
 
 fn iso_top_path(profile: &Profile) -> BezPath {
-    let rect150 = profile.top_rect((1.5, 1.)).rect();
+    let rect150 = profile.top_with_size((1.5, 1.)).rect();
     let rect125 = profile
-        .top_rect((1.25, 2.))
+        .top_with_size((1.25, 2.))
         .with_origin(profile.top_rect.origin() + (250., 0.))
         .rect();
     let radii = profile.top_rect.radii();

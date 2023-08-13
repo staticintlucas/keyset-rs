@@ -218,6 +218,35 @@ mod tests {
     use crate::utils::KurboAbs;
 
     #[test]
+    fn test_deserialize_bar_props() {
+        let bar_props: BarProps = toml::from_str(
+            r"
+            width = 3.85
+            height = 0.4
+            y-offset = 5.05
+        ",
+        )
+        .unwrap();
+
+        assert_approx_eq!(bar_props.size, Size::new(202., 21.), 0.5);
+        assert_approx_eq!(bar_props.y_offset, 265., 0.5);
+    }
+
+    #[test]
+    fn test_deserialize_bump_props() {
+        let bar_props: BumpProps = toml::from_str(
+            r"
+            diameter = 0.4
+            y-offset = -0.2
+        ",
+        )
+        .unwrap();
+
+        assert_approx_eq!(bar_props.diameter, 21., 0.5);
+        assert_approx_eq!(bar_props.y_offset, -10.5, 0.5);
+    }
+
+    #[test]
     fn test_deserialize_rect() {
         use toml::Deserializer;
 

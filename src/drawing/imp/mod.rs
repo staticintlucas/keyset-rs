@@ -40,12 +40,12 @@ impl KeyDrawing {
         let homing = show_key.then(|| key::homing(key, options)).flatten();
 
         let top_rect = match key.shape {
-            KeyShape::Normal(size) => options.profile.top_rect(size).rect(),
-            KeyShape::SteppedCaps => options.profile.top_rect((1.25, 1.)).rect(),
-            KeyShape::IsoHorizontal => options.profile.top_rect((1.5, 1.)).rect(),
+            KeyShape::Normal(size) => options.profile.top_with_size(size).rect(),
+            KeyShape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).rect(),
+            KeyShape::IsoHorizontal => options.profile.top_with_size((1.5, 1.)).rect(),
             KeyShape::IsoVertical => options
                 .profile
-                .top_rect((1.25, 2.))
+                .top_with_size((1.25, 2.))
                 .with_origin(options.profile.top_rect.origin() + (250., 0.))
                 .rect(),
         };

@@ -160,6 +160,23 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
+    fn test_font_default() {
+        let font = Font::default();
+
+        assert_eq!(font.name, "");
+        assert_approx_eq!(font.em_size, 1e3);
+        assert_approx_eq!(font.cap_height, 714.);
+        assert_approx_eq!(font.x_height, 523.);
+        assert_approx_eq!(font.ascent, 952.);
+        assert_approx_eq!(font.descent, 213.);
+        assert_approx_eq!(font.line_height, 1165.);
+        assert_approx_eq!(font.slope, 0.);
+        assert_eq!(font.glyphs.len(), 0);
+        assert_eq!(font.notdef.codepoint, None);
+        assert_eq!(font.kerning.len(), 0);
+    }
+
+    #[test]
     fn test_from_ttf() {
         let data = std::fs::read("tests/fonts/demo.ttf").unwrap();
         let font = Font::from_ttf(&data).unwrap();

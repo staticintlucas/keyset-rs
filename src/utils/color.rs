@@ -142,6 +142,10 @@ mod tests {
             Color::from(RGB16::new(0x1234, 0x5678, 0x9abc)),
             Color::new16(0x1234, 0x5678, 0x9abc)
         );
+        assert_eq!(
+            Color::from(RGB::<f32>::new(0.2, 0.4, 0.6)),
+            Color::new16(0x3333, 0x6666, 0x9999)
+        )
     }
 
     #[test]
@@ -153,6 +157,10 @@ mod tests {
         assert_eq!(
             RGB16::from(Color::new16(0x1234, 0x5678, 0x9abc)),
             RGB16::new(0x1234, 0x5678, 0x9abc)
+        );
+        assert_eq!(
+            RGB::<f32>::from(Color::new16(0x6666, 0x9999, 0xcccc)),
+            RGB::<f32>::new(0.4, 0.6, 0.8)
         );
     }
 
@@ -166,6 +174,10 @@ mod tests {
             Color::from((0x1234_u16, 0x5678, 0x9abc)),
             Color::new16(0x1234, 0x5678, 0x9abc)
         );
+        assert_eq!(
+            Color::from((0.0, 0.2, 0.4)),
+            Color::new16(0x0000, 0x3333, 0x6666)
+        );
     }
 
     #[test]
@@ -178,6 +190,18 @@ mod tests {
             <(u16, u16, u16)>::from(Color::new16(0x1234, 0x5678, 0x9abc)),
             (0x1234, 0x5678, 0x9abc)
         );
+        assert_eq!(
+            <(f32, f32, f32)>::from(Color::new16(0x9999, 0xcccc, 0xffff)),
+            (0.6, 0.8, 1.0)
+        );
+    }
+
+    #[test]
+    fn test_skia_from_color() {
+        assert_eq!(
+            tiny_skia::Color::from(Color::new16(0x3333, 0x6666, 0x9999)),
+            tiny_skia::Color::from_rgba(0.2, 0.4, 0.6, 1.0).unwrap()
+        )
     }
 
     #[test]
