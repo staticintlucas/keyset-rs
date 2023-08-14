@@ -36,6 +36,7 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
     use kurbo::{Size, Vec2};
 
+    #[test]
     fn test_kurbo_shim() {
         let vec = Vec2::new(1., 1.);
         let size = Size::new(1., 1.);

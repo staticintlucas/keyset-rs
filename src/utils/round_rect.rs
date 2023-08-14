@@ -99,16 +99,6 @@ impl RoundRect {
     pub fn with_radii(self, radii: impl Into<Vec2>) -> Self {
         Self::from_origin_size(self.origin(), self.size(), radii)
     }
-
-    #[inline]
-    pub fn is_finite(&self) -> bool {
-        self.rect.is_finite() && self.radii.is_finite()
-    }
-
-    #[inline]
-    pub fn is_nan(&self) -> bool {
-        self.rect.is_nan() || self.radii.is_nan()
-    }
 }
 
 #[doc(hidden)]
@@ -266,7 +256,7 @@ impl Iterator for RectPathIter {
                 self.rect.y1,
             ))),
             5 => Some(PathEl::ClosePath),
-            _ => None,
+            _ => None, // unreachable!() maybe?
         }
     }
 }
@@ -322,25 +312,174 @@ impl Sub<Vec2> for RoundRect {
 mod tests {
     use super::*;
 
+    use assert_approx_eq::assert_approx_eq;
     use kurbo::{Circle, Point, Rect, Shape};
 
     #[test]
-    fn area() {
-        let epsilon = 1e-9;
+    fn test_round_rect_new() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75);
 
-        // Extremum: 0.0 radius corner -> rectangle
-        let rect = Rect::new(0.0, 0.0, 100.0, 100.0);
-        let rounded_rect = RoundRect::new(0.0, 0.0, 100.0, 100.0, 0.0, 0.0);
-        assert!((rect.area() - rounded_rect.area()).abs() < epsilon);
-
-        // Extremum: half-size radius corner -> circle
-        let circle = Circle::new((0.0, 0.0), 50.0);
-        let rounded_rect = RoundRect::new(0.0, 0.0, 100.0, 100.0, 50.0, 50.0);
-        assert!((circle.area() - rounded_rect.area()).abs() < epsilon);
+        assert_eq!(rect.rect.x0, 1.0);
+        assert_eq!(rect.rect.y0, 2.0);
+        assert_eq!(rect.rect.x1, 3.0);
+        assert_eq!(rect.rect.y1, 5.0);
+        assert_eq!(rect.radii.x, 0.25);
+        assert_eq!(rect.radii.y, 0.75);
     }
 
     #[test]
-    fn winding() {
+    fn test_round_rect_from_rect() {
+        let rect = RoundRect::from_rect(Rect::new(1.0, 2.0, 3.0, 5.0), (0.25, 0.75));
+
+        assert_eq!(rect.rect.x0, 1.0);
+        assert_eq!(rect.rect.y0, 2.0);
+        assert_eq!(rect.rect.x1, 3.0);
+        assert_eq!(rect.rect.y1, 5.0);
+        assert_eq!(rect.radii.x, 0.25);
+        assert_eq!(rect.radii.y, 0.75);
+    }
+
+    #[test]
+    fn test_round_rect_from_points() {
+        let rect = RoundRect::from_points((1.0, 2.0), (3.0, 5.0), (0.25, 0.75));
+
+        assert_eq!(rect.rect.x0, 1.0);
+        assert_eq!(rect.rect.y0, 2.0);
+        assert_eq!(rect.rect.x1, 3.0);
+        assert_eq!(rect.rect.y1, 5.0);
+        assert_eq!(rect.radii.x, 0.25);
+        assert_eq!(rect.radii.y, 0.75);
+    }
+
+    #[test]
+    fn test_round_rect_from_origin_size() {
+        let rect = RoundRect::from_origin_size((1.0, 2.0), (2.0, 3.0), (0.25, 0.75));
+
+        assert_eq!(rect.rect.x0, 1.0);
+        assert_eq!(rect.rect.y0, 2.0);
+        assert_eq!(rect.rect.x1, 3.0);
+        assert_eq!(rect.rect.y1, 5.0);
+        assert_eq!(rect.radii.x, 0.25);
+        assert_eq!(rect.radii.y, 0.75);
+    }
+
+    #[test]
+    fn test_round_rect_from_center_size() {
+        let rect = RoundRect::from_center_size((2.0, 3.5), (2.0, 3.0), (0.25, 0.75));
+
+        assert_eq!(rect.rect.x0, 1.0);
+        assert_eq!(rect.rect.y0, 2.0);
+        assert_eq!(rect.rect.x1, 3.0);
+        assert_eq!(rect.rect.y1, 5.0);
+        assert_eq!(rect.radii.x, 0.25);
+        assert_eq!(rect.radii.y, 0.75);
+    }
+
+    #[test]
+    fn test_round_rect_width() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75);
+
+        assert_eq!(rect.width(), 2.0);
+    }
+
+    #[test]
+    fn test_round_rect_height() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75);
+
+        assert_eq!(rect.height(), 3.0);
+    }
+
+    #[test]
+    fn test_round_rect_radii() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75);
+
+        assert_eq!(rect.radii(), Vec2::new(0.25, 0.75));
+    }
+
+    #[test]
+    fn test_round_rect_rect() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75);
+
+        assert_eq!(rect.rect(), Rect::new(1.0, 2.0, 3.0, 5.0));
+    }
+
+    #[test]
+    fn test_round_rect_origin() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75);
+
+        assert_eq!(rect.origin(), Point::new(1.0, 2.0));
+    }
+
+    #[test]
+    fn test_round_rect_center() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75);
+
+        assert_eq!(rect.center(), Point::new(2.0, 3.5));
+    }
+
+    #[test]
+    fn test_round_rect_size() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75);
+
+        assert_eq!(rect.size(), Size::new(2.0, 3.0));
+    }
+
+    #[test]
+    fn test_round_rect_with_origin() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75).with_origin((2.0, 4.0));
+
+        assert_eq!(rect.origin(), Point::new(2.0, 4.0));
+    }
+
+    #[test]
+    fn test_round_rect_with_size() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75).with_size((3.0, 1.0));
+
+        assert_eq!(rect.size(), Size::new(3.0, 1.0));
+    }
+
+    #[test]
+    fn test_round_rect_with_radii() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75).with_radii((0.5, 0.25));
+
+        assert_eq!(rect.radii(), Vec2::new(0.5, 0.25));
+    }
+
+    #[test]
+    fn test_round_rect_path_elements() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75);
+        let path = rect.to_path(1e-9);
+
+        assert_approx_eq!(rect.area(), path.area());
+        assert_eq!(path.winding(Point::new(2.0, 3.0)), 1);
+    }
+
+    #[test]
+    fn test_round_rect_area() {
+        // Extremum: 0.0 radius corner -> rectangle
+        let ref_rect = Rect::new(0.0, 0.0, 10.0, 10.0);
+        let rect = RoundRect::new(0.0, 0.0, 10.0, 10.0, 0.0, 0.0);
+        assert_approx_eq!(ref_rect.area(), rect.area());
+
+        // Extremum: half-size radius corner -> circle
+        let circle = Circle::new((0.0, 0.0), 5.0);
+        let rect = RoundRect::new(0.0, 0.0, 10.0, 10.0, 5.0, 5.0);
+        assert_approx_eq!(circle.area(), rect.area());
+    }
+
+    #[test]
+    fn test_round_rect_perimeter() {
+        // Extremum: 0.0 radius corner -> rectangle
+        let rect = RoundRect::new(0.0, 0.0, 10.0, 10.0, 0.0, 0.0);
+        assert_approx_eq!(rect.perimeter(1.0), 40.0);
+
+        // Extremum: half-size radius corner -> circle
+        let rect = RoundRect::new(0.0, 0.0, 10.0, 10.0, 5.0, 5.0);
+        assert_approx_eq!(rect.perimeter(1.0), 10. * PI, 0.01);
+    }
+
+    #[test]
+    fn test_round_rect_winding() {
         let rect = RoundRect::new(-5.0, -5.0, 10.0, 20.0, 5.0, 5.0);
         assert_eq!(rect.winding(Point::new(0.0, 0.0)), 1);
         assert_eq!(rect.winding(Point::new(-5.0, 0.0)), 1); // left edge
@@ -354,12 +493,15 @@ mod tests {
     }
 
     #[test]
-    fn bez_conversion() {
-        let rect = RoundRect::new(-5.0, -5.0, 10.0, 20.0, 5.0, 5.0);
-        let p = rect.to_path(1e-9);
-        // Note: could be more systematic about tolerance tightness.
-        let epsilon = 1e-7;
-        assert!((rect.area() - p.area()).abs() < epsilon);
-        assert_eq!(p.winding(Point::new(0.0, 0.0)), 1);
+    fn test_round_rect_add_sub() {
+        let rect = RoundRect::new(1.0, 2.0, 3.0, 5.0, 0.25, 0.75) + Vec2::new(2.0, 3.0);
+
+        assert_eq!(rect.rect, Rect::new(3.0, 5.0, 5.0, 8.0));
+        assert_eq!(rect.radii, Vec2::new(0.25, 0.75));
+
+        let rect = rect - Vec2::new(1.0, 4.0);
+
+        assert_eq!(rect.rect, Rect::new(2.0, 1.0, 4.0, 4.0));
+        assert_eq!(rect.radii, Vec2::new(0.25, 0.75));
     }
 }
