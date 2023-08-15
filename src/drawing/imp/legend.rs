@@ -49,10 +49,8 @@ pub(crate) fn draw(
     // Check to ensure our legend fits
     let margin = top_rect + profile.text_margin.get(legend.size);
     if bounds.width() > margin.width() {
-        warn!(
-            r#"legend "{text}" is {}% too wide; squishing legend to fit"#,
-            100. * (bounds.width() / margin.width() - 1.)
-        );
+        let percent = 100. * (bounds.width() / margin.width() - 1.);
+        warn!(r#"legend "{text}" is {percent}% too wide; squishing legend to fit"#);
         path.apply_affine(Affine::scale_non_uniform(
             margin.width() / bounds.width(),
             1.,
@@ -73,11 +71,12 @@ pub(crate) fn draw(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    use assert_approx_eq::assert_approx_eq;
     use kurbo::PathEl;
 
     use crate::utils::Color;
-
-    use super::*;
 
     #[test]
     fn test_legend_draw() {
@@ -108,7 +107,19 @@ mod tests {
 
         assert_eq!(
             path.path.into_iter().count(),
-            font.notdef.path.into_iter().count()
+            font.notdef.path.iter().count()
+        );
+
+        let legend = Legend {
+            text: "Some really long legend that will totally need to be squished".into(),
+            size: 5,
+            color: Color::new(0, 0, 0),
+        };
+        let path = draw(&legend, &font, &profile, top_rect, Vec2::new(1., 1.));
+
+        assert_approx_eq!(
+            path.path.bounding_box().width(),
+            (profile.top_rect.rect() + profile.text_margin.get(5)).width()
         );
     }
 }

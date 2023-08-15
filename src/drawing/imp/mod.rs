@@ -110,3 +110,76 @@ impl KeyDrawing {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use assert_approx_eq::assert_approx_eq;
+
+    use crate::utils::KurboAbs;
+
+    #[test]
+    fn test_key_drawing_new() {
+        // Regular 1u
+        let key = Key::example();
+        let options = DrawingOptions::default();
+        let drawing = KeyDrawing::new(&key, &options);
+
+        assert_eq!(drawing.origin, key.position);
+        assert_eq!(drawing.paths.len(), 6); // top, bottom, 4x legends
+
+        // Stepped caps
+        let key = Key {
+            shape: KeyShape::SteppedCaps,
+            ..Key::example()
+        };
+        let options = DrawingOptions::default();
+        let drawing = KeyDrawing::new(&key, &options);
+
+        assert_eq!(drawing.origin, key.position);
+        assert_eq!(drawing.paths.len(), 7); // top, bottom, step, 4x legends
+
+        // ISO H
+        let key = Key {
+            shape: KeyShape::IsoHorizontal,
+            ..Key::example()
+        };
+        let options = DrawingOptions {
+            show_margin: true,
+            ..DrawingOptions::default()
+        };
+        let drawing = KeyDrawing::new(&key, &options);
+
+        assert_eq!(drawing.origin, key.position);
+        assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
+        let font_size = key.legends[0][0].as_ref().unwrap().size;
+        let margin_rect = options.profile.top_with_size((1.5, 1.0)).rect()
+            + options.profile.text_margin.get(font_size);
+        assert_approx_eq!(
+            drawing.paths[2].path.bounding_box().size(),
+            margin_rect.size()
+        );
+
+        // ISO V
+        let key = Key {
+            shape: KeyShape::IsoVertical,
+            ..Key::example()
+        };
+        let options = DrawingOptions {
+            show_margin: true,
+            ..DrawingOptions::default()
+        };
+        let drawing = KeyDrawing::new(&key, &options);
+
+        assert_eq!(drawing.origin, key.position);
+        assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
+        let font_size = key.legends[0][0].as_ref().unwrap().size;
+        let margin_rect = options.profile.top_with_size((1.25, 2.0)).rect()
+            + options.profile.text_margin.get(font_size);
+        assert_approx_eq!(
+            drawing.paths[2].path.bounding_box().size(),
+            margin_rect.size()
+        );
+    }
+}
