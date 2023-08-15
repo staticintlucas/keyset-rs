@@ -1,22 +1,9 @@
-use std::fmt;
-
 use kurbo::{Affine, PathEl};
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform};
 
 use crate::drawing::Drawing;
 
 use super::{KeyDrawing, Path};
-
-#[derive(Debug)]
-pub(crate) struct PngEncodingError {
-    message: String,
-}
-
-impl fmt::Display for PngEncodingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
 
 macro_rules! transform {
     ($p:expr, $affine:expr) => {{
@@ -39,8 +26,6 @@ macro_rules! transform {
         )
     }};
 }
-
-impl std::error::Error for PngEncodingError {}
 
 pub(crate) fn draw(drawing: &Drawing, dpi: f64) -> Vec<u8> {
     let scale = drawing.scale * dpi * 0.75; // 0.75 in/key

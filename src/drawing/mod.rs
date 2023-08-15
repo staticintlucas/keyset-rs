@@ -8,7 +8,6 @@ use kurbo::{Point, Rect, Size};
 use crate::{Font, Key, Profile};
 
 pub(crate) use imp::{KeyDrawing, Path};
-pub(crate) use png::PngEncodingError;
 
 #[derive(Debug, Clone)]
 pub struct Drawing {
