@@ -4,7 +4,6 @@ use kurbo::{Affine, PathEl};
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform};
 
 use crate::drawing::Drawing;
-use crate::error::Result;
 
 use super::{KeyDrawing, Path};
 
@@ -43,16 +42,16 @@ macro_rules! transform {
 
 impl std::error::Error for PngEncodingError {}
 
-pub(crate) fn draw(drawing: &Drawing, dpi: f64) -> Result<Vec<u8>> {
+pub(crate) fn draw(drawing: &Drawing, dpi: f64) -> Vec<u8> {
     let scale = drawing.scale * dpi * 0.75; // 0.75 in/key
     let size = drawing.bounds.size() * scale;
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let (width, height) = (size.width.ceil() as u32, size.height.ceil() as u32);
 
-    let mut pixmap = Pixmap::new(width, height).ok_or(PngEncodingError {
-        message: format!("cannot create pixmap with size (w: {width}, h: {height})"),
-    })?;
+    // Will panic if width/height = 0 which we prevent with max, or if width/height are too large
+    // in which case we'll likely end up with OOM aborts here anyway
+    let mut pixmap = Pixmap::new(width.max(1), height.max(1)).unwrap();
 
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
 
@@ -61,9 +60,8 @@ pub(crate) fn draw(drawing: &Drawing, dpi: f64) -> Result<Vec<u8>> {
         draw_key(&mut pixmap, key, &affine);
     }
 
-    Ok(pixmap.encode_png().map_err(|e| PngEncodingError {
-        message: e.to_string(),
-    })?)
+    // Will panic for an IO error, but writing to a Vec<_> is infallible
+    pixmap.encode_png().unwrap()
 }
 
 fn draw_key(pixmap: &mut Pixmap, key: &KeyDrawing, affine: &Affine) {

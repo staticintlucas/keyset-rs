@@ -5,7 +5,7 @@ mod svg;
 
 use kurbo::{Point, Rect, Size};
 
-use crate::{error::Result, Font, Key, Profile};
+use crate::{Font, Key, Profile};
 
 pub(crate) use imp::{KeyDrawing, Path};
 pub(crate) use png::PngEncodingError;
@@ -43,7 +43,7 @@ impl Drawing {
         svg::draw(self)
     }
 
-    pub fn to_png(&self, dpi: f64) -> Result<Vec<u8>> {
+    pub fn to_png(&self, dpi: f64) -> Vec<u8> {
         png::draw(self, dpi)
     }
 
