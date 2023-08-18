@@ -72,12 +72,14 @@ fn draw_path(path: &Path) -> SvgPath {
                     *point = p;
                     fmt_num!("c{} {} {} {} {} {}", d1.x, d1.y, d2.x, d2.y, d.x, d.y)
                 }
+                // GRCOV_EXCL_START - no quads in example
                 PathEl::QuadTo(p1, p) => {
                     let d1 = p1 - *point;
                     let d = p - *point;
                     *point = p;
                     fmt_num!("q{} {} {} {}", d1.x, d1.y, d.x, d.y)
                 }
+                // GRCOV_EXCL_STOP
                 PathEl::ClosePath => {
                     *point = *origin;
                     "z".into()
@@ -104,58 +106,38 @@ fn draw_path(path: &Path) -> SvgPath {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::drawing::DrawingOptions;
-//     use crate::font::Font;
-//     use crate::profile::Profile;
+#[cfg(test)]
+mod tests {
+    use unindent::unindent;
 
-//     use super::*;
+    use crate::{DrawingOptions, Key};
 
-//     #[test]
-//     fn test_to_svg() {
-//         let layout = vec![];
-//         let profile = Profile::default();
-//         let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
-//         let options = DrawingOptions::default();
-//         let drawing = DrawingOptions::new(layout, profile, font, options);
+    #[test]
+    fn test_to_svg() {
+        let options = DrawingOptions {
+            show_margin: true,
+            ..Default::default()
+        };
+        let keys = [Key::example()];
+        let drawing = options.draw(&keys);
 
-//         assert_eq!(
-//             drawing.to_svg(),
-//             r#"<svg height="72" viewBox="0 0 1000 1000" width="72" xmlns="http://www.w3.org/2000/svg"/>"#
-//         );
-//     }
+        let svg = drawing.to_svg();
 
-//     #[test]
-//     fn test_draw_key() {
-//         let key = Key::example();
-//         let layout = vec![];
-//         let profile = Profile::default();
-//         let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
-
-//         let test_config = vec![
-//             (DrawingOptions::default(), 6),
-//             (
-//                 DrawingOptions {
-//                     show_keys: false,
-//                     ..DrawingOptions::default()
-//                 },
-//                 4,
-//             ),
-//             (
-//                 DrawingOptions {
-//                     show_margin: true,
-//                     ..DrawingOptions::default()
-//                 },
-//                 7,
-//             ),
-//         ];
-
-//         for (options, len) in test_config {
-//             let drawing = DrawingOptions::new(layout.clone(), profile.clone(), font.clone(), options);
-//             let group = drawing.draw_key(&key);
-
-//             assert_eq!(group.get_children().len(), len);
-//         }
-//     }
-// }
+        assert_eq!(
+            svg,
+            unindent(
+                r##"<svg height="19.05mm" viewBox="0 0 1000 1000" width="19.05mm" xmlns="http://www.w3.org/2000/svg">
+                <g transform="translate(0, 0)">
+                <path d="M25 90c0 -35.89851 29.10149 -65 65 -65l820 0c35.89851 -0 65 29.10149 65 65l0 820c0 35.89851 -29.10149 65 -65 65l-820 0c-35.89851 0 -65 -29.10149 -65 -65z" fill="#cccccc" stroke="#aeaeae" stroke-width="10"/>
+                <path d="M170 120c0 -35.89851 29.10149 -65 65 -65l530 0c35.89851 -0 65 29.10149 65 65l0 605c0 35.89851 -29.10149 65 -65 65l-530 0c-35.89851 0 -65 -29.10149 -65 -65z" fill="#cccccc" stroke="#aeaeae" stroke-width="10"/>
+                <path d="M220 105l560 0l0 635l-560 0z" fill="none" stroke="#ff0000" stroke-width="5"/>
+                <path d="M220 299.44444l0 194.44444l126.38889 0l0 -194.44444l-126.38889 0zM235.55556 328.61111l36.94444 68.05556l-36.94444 68.05556l0 -136.11111zM244.30556 478.33333l38.88889 -70l38.88889 70l-77.77778 0zM330.83333 464.72222l-36.94444 -68.05556l36.94444 -68.05556l0 136.11111zM322.08333 315l-38.88889 70l-38.88889 -70l77.77778 0z" fill="#000000" stroke="none"/>
+                <path d="M653.61111 299.44444l0 194.44444l126.38889 0l0 -194.44444l-126.38889 0zM669.16667 328.61111l36.94444 68.05556l-36.94444 68.05556l0 -136.11111zM677.91667 478.33333l38.88889 -70l38.88889 70l-77.77778 0zM764.44444 464.72222l-36.94444 -68.05556l36.94444 -68.05556l0 136.11111zM755.69444 315l-38.88889 70l-38.88889 -70l77.77778 0z" fill="#000000" stroke="none"/>
+                <path d="M220 740l0 194.44444l126.38889 0l0 -194.44444l-126.38889 0zM235.55556 769.16667l36.94444 68.05556l-36.94444 68.05556l0 -136.11111zM244.30556 918.88889l38.88889 -70l38.88889 70l-77.77778 0zM330.83333 905.27778l-36.94444 -68.05556l36.94444 -68.05556l0 136.11111zM322.08333 755.55556l-38.88889 70l-38.88889 -70l77.77778 0z" fill="#000000" stroke="none"/>
+                <path d="M653.61111 740l0 194.44444l126.38889 0l0 -194.44444l-126.38889 0zM669.16667 769.16667l36.94444 68.05556l-36.94444 68.05556l0 -136.11111zM677.91667 918.88889l38.88889 -70l38.88889 70l-77.77778 0zM764.44444 905.27778l-36.94444 -68.05556l36.94444 -68.05556l0 136.11111zM755.69444 755.55556l-38.88889 70l-38.88889 -70l77.77778 0z" fill="#000000" stroke="none"/>
+                </g>
+                </svg>"##
+            )
+        );
+    }
+}

@@ -129,11 +129,10 @@ impl DrawingOptions {
 #[cfg(test)]
 mod tests {
     use assert_approx_eq::assert_approx_eq;
-    use assert_matches::assert_matches;
 
     use super::*;
 
-    use crate::profile::{Profile, ProfileType};
+    use crate::profile::Profile;
 
     #[test]
     fn test_drawing_options() {
@@ -149,14 +148,25 @@ mod tests {
             .profile(profile)
             .font(font)
             .scale(2.)
+            .outline_width(20.)
             .show_keys(false)
             .show_margin(true);
 
-        assert_matches!(
-            options.profile.profile_type,
-            ProfileType::Cylindrical { .. }
-        );
+        assert_eq!(options.profile.profile_type.depth(), 1.0);
         assert_eq!(options.font.glyphs.len(), 2);
         assert_eq!(options.scale, 2.);
+    }
+
+    #[test]
+    fn test_drawing_options_draw() {
+        let options = DrawingOptions::new();
+        let keys = [Key::example()];
+
+        let drawing = options.draw(&keys);
+
+        assert_eq!(drawing.bounds.width(), 1.);
+        assert_eq!(drawing.bounds.height(), 1.);
+        assert_eq!(drawing.keys.len(), 1);
+        assert_eq!(drawing.scale, options.scale);
     }
 }

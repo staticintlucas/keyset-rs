@@ -74,7 +74,9 @@ jobs:
           --ignore-not-existing
           --output-path ./lcov.info
           --ignore '/*'
-          --excl-line '(^\s*#\[derive\([\w, ]*\)\]|unreachable!\(\))'
+          --excl-line '(^\s*#\[derive\([\w, ]*\)\]|unreachable!\(\))|GRCOV_EXCL_LINE'
+          --excl-start 'GRCOV_EXCL_START'
+          --excl-stop 'GRCOV_EXCL_STOP'
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:

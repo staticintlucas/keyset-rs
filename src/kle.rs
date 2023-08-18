@@ -113,6 +113,8 @@ pub fn from_json(json: &str) -> Result<Vec<Key>> {
 mod tests {
     use super::*;
 
+    use unindent::unindent;
+
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
 
@@ -229,7 +231,7 @@ mod tests {
 
     #[test]
     fn test_kle_from_json() {
-        let result1: Vec<_> = from_json(
+        let result1: Vec<_> = from_json(&unindent(
             r#"[
                 {
                     "meta": "data"
@@ -251,7 +253,7 @@ mod tests {
                     "D"
                 ]
             ]"#,
-        )
+        ))
         .unwrap();
 
         assert_eq!(result1.len(), 4);
@@ -260,13 +262,13 @@ mod tests {
         assert_approx_eq!(result1[2].position.x, 1.5);
         assert_approx_eq!(result1[3].position.x, 0.0);
 
-        let result2: Vec<_> = from_json(
+        let result2: Vec<_> = from_json(&unindent(
             r#"[
                 [
                     "A"
                 ]
             ]"#,
-        )
+        ))
         .unwrap();
 
         assert_eq!(result2.len(), 1);

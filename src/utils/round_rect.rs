@@ -256,7 +256,7 @@ impl Iterator for RectPathIter {
                 self.rect.y1,
             ))),
             5 => Some(PathEl::ClosePath),
-            _ => None, // unreachable!() maybe?
+            _ => None, // GRCOV_EXCL_LINE - unreachable?
         }
     }
 }

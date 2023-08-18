@@ -124,6 +124,7 @@ fn draw_path(content: &mut Content, path: &Path, affine: &Affine) {
                 let (x1, y1, x2, y2, x, y) = transform!(p1, p2, p, *affine);
                 content.cubic_to(x1, y1, x2, y2, x, y);
             }
+            // GRCOV_EXCL_START - no quads in example
             PathEl::QuadTo(p1, p) => {
                 // Convert quad to cubic since PostScript doesn't have quadratic Béziers
                 let (p1, p2) = (p0 + (2.0 / 3.0) * (p1 - p0), p + (2.0 / 3.0) * (p1 - p));
@@ -131,6 +132,7 @@ fn draw_path(content: &mut Content, path: &Path, affine: &Affine) {
                 let (x1, y1, x2, y2, x, y) = transform!(p1, p2, p, *affine);
                 content.cubic_to(x1, y1, x2, y2, x, y);
             }
+            // GRCOV_EXCL_STOP
             PathEl::ClosePath => {
                 p0 = origin;
                 content.close_path();
@@ -160,6 +162,26 @@ fn draw_path(content: &mut Content, path: &Path, affine: &Affine) {
         (None, Some(_)) => {
             content.stroke();
         }
-        (None, None) => {}
+        (None, None) => {} // GRCOV_EXCL_LINE - unreachable?
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{DrawingOptions, Key};
+
+    #[test]
+    fn test_to_svg() {
+        let options = DrawingOptions {
+            show_margin: true, // to give us an unfilled path
+            ..Default::default()
+        };
+        let keys = [Key::example()];
+        let drawing = options.draw(&keys);
+
+        let pdf = drawing.to_pdf();
+        let ai = drawing.to_ai();
+
+        assert_eq!(pdf, ai);
+    }
 }

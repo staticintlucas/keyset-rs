@@ -72,10 +72,12 @@ fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
                 let (x1, y1, x2, y2, x, y) = transform!(p1, p2, p, *affine);
                 path_builder.cubic_to(x1, y1, x2, y2, x, y);
             }
+            // GRCOV_EXCL_START - no quads in example
             PathEl::QuadTo(p1, p) => {
                 let (x1, y1, x, y) = transform!(p1, p, *affine);
                 path_builder.quad_to(x1, y1, x, y);
             }
+            // GRCOV_EXCL_STOP
             PathEl::ClosePath => path_builder.close(),
         }
     }
@@ -108,5 +110,36 @@ fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
             ..Default::default()
         };
         pixmap.stroke_path(&skia_path, &paint, &stroke, Transform::default(), None);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use tiny_skia::Pixmap;
+
+    use crate::{DrawingOptions, Key};
+
+    #[test]
+    fn test_to_png() {
+        // It's pretty difficult to test this stuff without visually inspecting
+        // the image, so we just test a few pixels
+
+        let options = DrawingOptions::default();
+        let keys = [Key::example()];
+        let drawing = options.draw(&keys);
+
+        let png = drawing.to_png(96.0);
+
+        let pixmap = Pixmap::decode_png(&png).unwrap();
+        assert_eq!(pixmap.width(), 72);
+        assert_eq!(pixmap.height(), 72);
+
+        let pixel = pixmap
+            .pixel(pixmap.width() / 2, pixmap.height() / 2)
+            .unwrap();
+        assert_eq!(pixel.demultiply().red(), 0xCC);
+        assert_eq!(pixel.demultiply().green(), 0xCC);
+        assert_eq!(pixel.demultiply().blue(), 0xCC);
     }
 }

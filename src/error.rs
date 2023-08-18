@@ -75,6 +75,8 @@ impl From<InvalidKleLayout> for Error {
 mod tests {
     use super::*;
 
+    use unindent::unindent;
+
     use crate::kle;
 
     fn json_parse_error() -> Error {
@@ -101,23 +103,29 @@ mod tests {
         let config = vec![
             (
                 json_parse_error(),
-                "error parsing JSON: expected value at line 1 column 1",
+                "error parsing JSON: expected value at line 1 column 1".to_owned(),
             ),
             (
                 toml_parse_error(),
-                r#"error parsing TOML: TOML parse error at line 1, column 8
-  |
-1 | invalid
-  |        ^
-expected `.`, `=`
-"#,
+                unindent(
+                    r#"error parsing TOML: TOML parse error at line 1, column 8
+                      |
+                    1 | invalid
+                      |        ^
+                    expected `.`, `=`
+                    "#,
+                ),
             ),
-            (font_parse_error(), "error parsing font: unknown magic"),
+            (
+                font_parse_error(),
+                "error parsing font: unknown magic".to_owned(),
+            ),
             (
                 invalid_key_size(),
                 "error parsing KLE layout: Unsupported non-standard key size \
                 (w: 1.00, h: 1.00, x2: 1.00, y2: 1.00, w2: 1.00, h2: 1.00). \
-                Note only ISO enter and stepped caps are supported as special cases",
+                Note only ISO enter and stepped caps are supported as special cases"
+                    .to_owned(),
             ),
         ];
 
