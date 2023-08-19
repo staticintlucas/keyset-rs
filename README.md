@@ -1,17 +1,19 @@
-# keyset.rs
+# keyset.rs &emsp; [![Test Status]][actions]&thinsp;[![Test Coverage]][codecov]&thinsp;[![Crate Version]][crates]&thinsp;[![Rust Version]][crates]
 
-[![Test status](https://img.shields.io/github/actions/workflow/status/staticintlucas/keyset-rs/test.yml?branch=main&label=tests&style=flat-square)][tests]
-[![Code coverage](https://img.shields.io/codecov/c/gh/staticintlucas/keyset-rs?style=flat-square)][coverage]
-[![Rust version](https://img.shields.io/badge/rust-1.64%2B-informational?style=flat-square)][rust version]
+[test status]: https://img.shields.io/github/actions/workflow/status/staticintlucas/keyset-rs/test.yml?branch=main&label=tests&style=flat-square
+[test coverage]: https://img.shields.io/codecov/c/gh/staticintlucas/keyset-rs?style=flat-square
+[crate version]: https://img.shields.io/crates/v/keyset?style=flat-square
+[rust version]: https://img.shields.io/badge/rust-1.65%2B-informational?style=flat-square
+
+[actions]: https://github.com/staticintlucas/keyset-rs/actions?query=branch%3Amain
+[codecov]: https://app.codecov.io/github/staticintlucas/keyset-rs
+[crates]: https://crates.io/crates/keyset
 
 A (WIP) reimplementation of [pykeyset] in Rust for improved performance.
 Eventually this aims to become the backend for pykeyset using a Python wrapper around this project.
 
-Current minimum supported Rust version is 1.60.0, although this is subject to change as development continues.
+Current minimum supported Rust version is 1.65.0, although this is subject to change as development continues.
 
-[tests]: https://github.com/staticintlucas/keyset-rs/actions
-[coverage]: https://codecov.io/gh/staticintlucas/keyset-rs
-[rust version]: #readme
 [pykeyset]: https://github.com/staticintlucas/pykeyset
 
 ## Installation
