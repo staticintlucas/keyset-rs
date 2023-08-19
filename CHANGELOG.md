@@ -1,5 +1,28 @@
 # Change Log
 
+## [v0.2.0](https://github.com/staticintlucas/keyset-rs/releases/tag/v0.2.0)
+
+### New features
+
+* New default font size which better matches KLE
+* Automatic squishing of legends that don't otherwise fit (and associated warning)
+* Add PNG, PDF, and AI output formats
+
+### Changes
+
+* Rework of `key` module
+* Removed `layout` module and `Layout` struct in favour of directly using `Vec<Key>`
+* Move all KLE import functionality to separate crate: [kle-serial]
+* Remove all internal geometry primitives and instead rely on [kurbo]
+* Major rewrite of `drawing` module to be generic over different output formats
+
+[kle-serial]: https://crates.io/crates/kle-serial
+[kurbo]: https://crates.io/crates/kurbo
+
+### Fixes
+
+* Fix bug in ISO enter positioning (or more generally keys with negative `x2` or `y2` in KLE)
+
 ## [v0.1.1](https://github.com/staticintlucas/keyset-rs/releases/tag/v0.1.1)
 
 ### Changes
