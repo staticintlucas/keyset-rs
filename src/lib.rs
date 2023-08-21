@@ -11,7 +11,7 @@ pub mod kle;
 mod profile;
 mod utils;
 
-pub use drawing::DrawingOptions;
+pub use drawing::{Drawing, DrawingOptions};
 pub use font::Font;
 pub use key::Key;
 pub use profile::Profile;

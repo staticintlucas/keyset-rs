@@ -17,6 +17,7 @@ pub struct Drawing {
 }
 
 impl Drawing {
+    #[must_use]
     pub fn new(keys: &[Key], options: &DrawingOptions) -> Self {
         let bounds = keys
             .iter()
@@ -38,18 +39,22 @@ impl Drawing {
         }
     }
 
+    #[must_use]
     pub fn to_svg(&self) -> String {
         svg::draw(self)
     }
 
+    #[must_use]
     pub fn to_png(&self, dpi: f64) -> Vec<u8> {
         png::draw(self, dpi)
     }
 
+    #[must_use]
     pub fn to_pdf(&self) -> Vec<u8> {
         pdf::draw(self)
     }
 
+    #[must_use]
     pub fn to_ai(&self) -> Vec<u8> {
         // An Illustrator file typically contains both an Illustrator-native and a PDF copy of an
         // image. Most other software (including Adobe's own InDesign) use the PDF data and not the
