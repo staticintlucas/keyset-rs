@@ -310,10 +310,10 @@ impl Sub<Vec2> for RoundRect {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use assert_approx_eq::assert_approx_eq;
     use kurbo::{Circle, Point, Rect, Shape};
+
+    use super::*;
 
     #[test]
     fn test_round_rect_new() {

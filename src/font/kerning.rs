@@ -40,8 +40,9 @@ impl Default for Kerning {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use maplit::hashmap;
+
+    use super::*;
 
     #[test]
     fn test_get() {

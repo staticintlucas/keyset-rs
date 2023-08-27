@@ -48,7 +48,9 @@ pub(crate) fn bottom(key: &Key, options: &DrawingOptions) -> Path {
 pub(crate) fn homing(key: &Key, options: &DrawingOptions) -> Option<Path> {
     let profile = &options.profile;
 
-    let KeyType::Homing(homing) = key.typ else { return None };
+    let KeyType::Homing(homing) = key.typ else {
+        return None;
+    };
     let homing = homing.unwrap_or(profile.homing.default);
 
     let center = profile.top_with_size(key.shape.size()).center();
@@ -335,11 +337,11 @@ fn step_path(rect: RoundRect) -> BezPath {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use assert_approx_eq::assert_approx_eq;
 
     use crate::utils::KurboAbs;
+
+    use super::*;
 
     #[test]
     fn test_top() {

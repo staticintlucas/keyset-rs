@@ -64,7 +64,8 @@ impl Key {
         Self::default()
     }
 
-    // Example non-blank key used in some of our tests
+    // Example non-blank key used in some of our tests. Set as cfg(test) to avoid dead code warnings
+    #[cfg(test)]
     pub(crate) fn example() -> Self {
         Self {
             legends: [
@@ -115,9 +116,9 @@ impl Default for Key {
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
-
     use assert_matches::assert_matches;
+
+    use super::*;
 
     #[test]
     fn test_shape_size() {

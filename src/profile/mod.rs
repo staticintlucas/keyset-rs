@@ -239,9 +239,9 @@ mod tests {
     use maplit::hashmap;
     use unindent::unindent;
 
-    use super::*;
-
     use crate::utils::KurboAbs;
+
+    use super::*;
 
     #[test]
     fn test_profile_type_depth() {

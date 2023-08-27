@@ -42,7 +42,6 @@ fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
     } else if is_close(&[w, h, x2, y2, w2, h2], &[1.5, 1., 0.25, 0., 1.25, 2.]) {
         Ok(Shape::IsoHorizontal)
     } else if is_close(&[x2, y2, w2, h2], &[0., 0., w, h]) {
-        #[allow(clippy::cast_possible_truncation)]
         Ok(Shape::Normal(Size::new(w, h)))
     } else {
         // TODO support all key shapes/sizes
@@ -91,7 +90,6 @@ impl TryFrom<kle::Key> for Key {
     type Error = Error;
 
     fn try_from(key: kle::Key) -> Result<Self> {
-        #[allow(clippy::cast_possible_truncation)]
         Ok(Self {
             position: Point::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.)),
             shape: key_shape_from_kle(&key)?,
@@ -111,12 +109,11 @@ pub fn from_json(json: &str) -> Result<Vec<Key>> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use unindent::unindent;
-
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
+    use unindent::unindent;
+
+    use super::*;
 
     #[test]
     fn test_key_shape_from_kle() {

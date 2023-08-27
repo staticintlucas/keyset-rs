@@ -128,9 +128,9 @@ mod tests {
     use itertools::Itertools;
     use kurbo::{PathEl, Shape, Size};
 
-    use super::*;
-
     use crate::utils::KurboAbs;
+
+    use super::*;
 
     #[test]
     fn test_new() {

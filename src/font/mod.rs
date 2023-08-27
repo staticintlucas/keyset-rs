@@ -3,12 +3,12 @@ mod kerning;
 
 use std::collections::HashMap;
 
-use crate::error::Result;
-
 use itertools::Itertools;
 use kurbo::Shape;
 use log::warn;
 use ttf_parser::{cmap, name_id, Face, GlyphId};
+
+use crate::error::Result;
 
 use self::glyph::Glyph;
 use self::kerning::Kerning;
@@ -155,9 +155,9 @@ impl Font {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use assert_approx_eq::assert_approx_eq;
+
+    use super::*;
 
     #[test]
     fn test_font_default() {

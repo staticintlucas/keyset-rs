@@ -113,11 +113,11 @@ impl KeyDrawing {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use assert_approx_eq::assert_approx_eq;
 
     use crate::utils::KurboAbs;
+
+    use super::*;
 
     #[test]
     fn test_key_drawing_new() {

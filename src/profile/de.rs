@@ -54,25 +54,6 @@ impl<'de> Deserialize<'de> for BumpProps {
     }
 }
 
-fn deserialize_rect<'de, D>(deserializer: D) -> Result<Rect, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    struct RawRect {
-        width: f64,
-        height: f64,
-    }
-
-    RawRect::deserialize(deserializer).map(|rect| {
-        // Convert mm to milli units
-        let center = Point::new(500., 500.);
-        let size = Size::new(rect.width, rect.height) * (1e3 / 19.05);
-
-        Rect::from_center_size(center, size)
-    })
-}
-
 fn deserialize_round_rect<'de, D>(deserializer: D) -> Result<RoundRect, D::Error>
 where
     D: Deserializer<'de>,
@@ -213,9 +194,9 @@ impl<'de> Deserialize<'de> for Profile {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
-    use super::*;
-
     use crate::utils::KurboAbs;
+
+    use super::*;
 
     #[test]
     fn test_deserialize_bar_props() {
@@ -244,22 +225,6 @@ mod tests {
 
         assert_approx_eq!(bar_props.diameter, 21., 0.5);
         assert_approx_eq!(bar_props.y_offset, -10.5, 0.5);
-    }
-
-    #[test]
-    fn test_deserialize_rect() {
-        use toml::Deserializer;
-
-        let rect = deserialize_rect(Deserializer::new(
-            r"
-            width = 15.24
-            height = 15.24
-        ",
-        ))
-        .unwrap();
-
-        assert_approx_eq!(rect.origin(), Point::new(100., 100.));
-        assert_approx_eq!(rect.size(), Size::new(800., 800.));
     }
 
     #[test]

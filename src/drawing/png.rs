@@ -81,7 +81,9 @@ fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
             PathEl::ClosePath => path_builder.close(),
         }
     }
-    let Some(skia_path) = path_builder.finish() else { return };
+    let Some(skia_path) = path_builder.finish() else {
+        return;
+    };
 
     if let Some(color) = path.fill {
         let paint = Paint {
@@ -115,7 +117,6 @@ fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
 
 #[cfg(test)]
 mod tests {
-
     use tiny_skia::Pixmap;
 
     use crate::{DrawingOptions, Key};

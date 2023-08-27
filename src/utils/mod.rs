@@ -29,12 +29,12 @@ pub(crate) use kurbo_shim::*;
 
 #[cfg(test)]
 mod tests {
-
-    use super::*;
     use std::f64::consts::SQRT_2;
 
     use assert_approx_eq::assert_approx_eq;
     use kurbo::{Size, Vec2};
+
+    use super::*;
 
     #[test]
     fn test_kurbo_shim() {

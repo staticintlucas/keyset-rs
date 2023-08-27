@@ -73,11 +73,11 @@ impl From<InvalidKleLayout> for Error {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use unindent::unindent;
 
     use crate::kle;
+
+    use super::*;
 
     fn json_parse_error() -> Error {
         serde_json::from_str::<serde_json::Value>("invalid")

@@ -16,7 +16,9 @@ pub(crate) fn draw(
     align: Vec2,
 ) -> Path {
     let text = &legend.text;
-    let Some(first) = text.chars().next() else { unreachable!() };
+    let Some(first) = text.chars().next() else {
+        unreachable!()
+    };
     let first = font.glyphs.get(&first).unwrap_or(&font.notdef);
 
     let mut path = text
@@ -71,12 +73,12 @@ pub(crate) fn draw(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use assert_approx_eq::assert_approx_eq;
     use kurbo::PathEl;
 
     use crate::utils::Color;
+
+    use super::*;
 
     #[test]
     fn test_legend_draw() {
