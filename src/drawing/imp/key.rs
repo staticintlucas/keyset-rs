@@ -2,7 +2,7 @@ use std::f64::consts::{FRAC_PI_2, PI};
 
 use kurbo::{Arc, BezPath, Circle, Point, Rect, Shape};
 
-use crate::key::{Homing, Shape as KeyShape, Type as KeyType};
+use crate::key::{Homing, KeyShape, KeyType};
 use crate::utils::RoundRect;
 use crate::{DrawingOptions, Key, Profile};
 

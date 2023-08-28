@@ -4,7 +4,7 @@ mod legend;
 use itertools::Itertools;
 use kurbo::{BezPath, Point, Shape, Vec2};
 
-use crate::key::{Shape as KeyShape, Type as KeyType};
+use crate::key::{KeyShape, KeyType};
 use crate::utils::Color;
 use crate::{DrawingOptions, Key};
 

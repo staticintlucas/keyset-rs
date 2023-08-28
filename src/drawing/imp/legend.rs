@@ -23,13 +23,16 @@ pub(crate) fn draw(
 
     let mut path = text
         .chars()
-        .map(|ch| font.glyphs.get(&ch).unwrap_or(&font.notdef))
         .tuple_windows()
-        .scan(0., |pos, (lhs, rhs)| {
-            let kern = Option::zip(lhs.codepoint, rhs.codepoint)
-                .map_or(0., |(l, r)| font.kerning.get(l, r));
-            *pos += lhs.advance + kern;
-            Some((*pos, rhs))
+        .map(|(lhs, rhs)| {
+            let glyph = font.glyphs.get(&rhs).unwrap_or(&font.notdef);
+            let kern = font.kerning.get(lhs, rhs);
+            (glyph, kern)
+        })
+        .scan(first.advance, |pos, (glyph, kern)| {
+            let result = Some((*pos + kern, glyph));
+            *pos += kern + glyph.advance;
+            result
         })
         .fold(first.path.clone(), |mut path, (pos, glyph)| {
             let mut p = glyph.path.clone();

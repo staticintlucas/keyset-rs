@@ -3,26 +3,23 @@ use ttf_parser::{Face, GlyphId, OutlineBuilder};
 
 #[derive(Clone, Debug)]
 pub struct Glyph {
-    pub codepoint: Option<char>,
     pub advance: f64,
     pub path: BezPath,
 }
 
 impl Glyph {
-    pub fn new(face: &Face, codepoint: Option<char>, gid: GlyphId) -> Option<Self> {
+    #[must_use]
+    pub fn new(face: &Face, gid: GlyphId) -> Option<Self> {
         let advance = f64::from(face.glyph_hor_advance(gid)?);
 
         let mut path = KurboPathWrapper(BezPath::new());
         face.outline_glyph(gid, &mut path);
         let path = path.0;
 
-        Some(Self {
-            codepoint,
-            advance,
-            path,
-        })
+        Some(Self { advance, path })
     }
 
+    #[must_use]
     pub fn notdef(cap_height: f64, slope: f64) -> Self {
         let mut path = BezPath::new();
 
@@ -66,11 +63,7 @@ impl Glyph {
         // let advance = path.bounding_box().size().width;
         let advance = scale * (650. + (1000. * skew_x).abs());
 
-        Self {
-            codepoint: None,
-            advance,
-            path,
-        }
+        Self { advance, path }
     }
 }
 
@@ -137,17 +130,17 @@ mod tests {
         let demo = std::fs::read("tests/fonts/demo.ttf").unwrap();
         let demo = Face::parse(&demo, 0).unwrap();
 
-        let a = Glyph::new(&demo, Some('A'), GlyphId(1)).unwrap();
+        let a = Glyph::new(&demo, GlyphId(1)).unwrap();
         assert_approx_eq!(a.advance, 540.);
         assert_eq!(a.path.into_iter().collect_vec().len(), 15);
 
         let null = std::fs::read("tests/fonts/null.ttf").unwrap();
         let null = Face::parse(&null, 0).unwrap();
 
-        let a = Glyph::new(&null, Some('A'), GlyphId(1));
+        let a = Glyph::new(&null, GlyphId(1));
         assert!(a.is_none()); // Glyph not found
 
-        let notdef = Glyph::new(&null, None, GlyphId(0));
+        let notdef = Glyph::new(&null, GlyphId(0));
         assert!(notdef.is_none()); // Glyph has no outline
     }
 

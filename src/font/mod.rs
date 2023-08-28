@@ -10,8 +10,8 @@ use ttf_parser::{cmap, name_id, Face, GlyphId};
 
 use crate::error::Result;
 
-use self::glyph::Glyph;
-use self::kerning::Kerning;
+pub use self::glyph::Glyph;
+pub use self::kerning::Kerning;
 
 #[derive(Clone, Debug)]
 pub struct Font {
@@ -99,7 +99,7 @@ impl Font {
         let glyphs: HashMap<_, _> = codepoints
             .iter()
             .filter_map(|&cp| Some((cp, face.glyph_index(cp)?)))
-            .filter_map(|(cp, gid)| Some((cp, Glyph::new(&face, Some(cp), gid)?)))
+            .filter_map(|(cp, gid)| Some((cp, Glyph::new(&face, gid)?)))
             .collect();
 
         let cap_height = cap_height
@@ -109,7 +109,7 @@ impl Font {
             .or_else(|| Some(glyphs.get(&'x')?.path.bounding_box().size().height))
             .unwrap_or(0.4 * line_height); // TODO is there a better default?
 
-        let notdef = if let Some(glyph) = Glyph::new(&face, None, GlyphId(0)) {
+        let notdef = if let Some(glyph) = Glyph::new(&face, GlyphId(0)) {
             glyph
         } else {
             warn!("no valid outline for glyph .notdef in font {name:?}");
@@ -172,7 +172,6 @@ mod tests {
         assert_approx_eq!(font.line_height, 1165.);
         assert_approx_eq!(font.slope, 0.);
         assert_eq!(font.glyphs.len(), 0);
-        assert_eq!(font.notdef.codepoint, None);
         assert_eq!(font.kerning.len(), 0);
     }
 

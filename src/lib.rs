@@ -12,6 +12,7 @@ mod profile;
 mod utils;
 
 pub use drawing::{Drawing, DrawingOptions};
-pub use font::Font;
-pub use key::Key;
+pub use error::{Error, Result};
+pub use font::{Font, Glyph, Kerning};
+pub use key::{Homing, Key, KeyShape, KeyType, Legend};
 pub use profile::Profile;

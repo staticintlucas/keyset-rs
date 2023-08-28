@@ -5,7 +5,7 @@ use kle_serial as kle;
 use kurbo::{Point, Size};
 
 use crate::error::{Error, Result};
-use crate::key::{self, Key, Legend, Shape};
+use crate::key::{self, Key, KeyShape, Legend};
 
 #[derive(Debug)]
 pub(crate) struct InvalidKleLayout {
@@ -20,7 +20,7 @@ impl fmt::Display for InvalidKleLayout {
 
 impl std::error::Error for InvalidKleLayout {}
 
-fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
+fn key_shape_from_kle(key: &kle::Key) -> Result<KeyShape> {
     fn is_close<const N: usize>(a: &[f64; N], b: &[f64; N]) -> bool {
         a.iter().zip(b).all(|(a, b)| (b - a).abs() < 1e-2)
     }
@@ -36,13 +36,13 @@ fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
     } = key;
 
     if is_close(&[w, h, x2, y2, w2, h2], &[1.25, 1., 0., 0., 1.75, 1.]) {
-        Ok(Shape::SteppedCaps)
+        Ok(KeyShape::SteppedCaps)
     } else if is_close(&[w, h, x2, y2, w2, h2], &[1.25, 2., -0.25, 0., 1.5, 1.]) {
-        Ok(Shape::IsoVertical)
+        Ok(KeyShape::IsoVertical)
     } else if is_close(&[w, h, x2, y2, w2, h2], &[1.5, 1., 0.25, 0., 1.25, 2.]) {
-        Ok(Shape::IsoHorizontal)
+        Ok(KeyShape::IsoHorizontal)
     } else if is_close(&[x2, y2, w2, h2], &[0., 0., w, h]) {
-        Ok(Shape::Normal(Size::new(w, h)))
+        Ok(KeyShape::Normal(Size::new(w, h)))
     } else {
         // TODO support all key shapes/sizes
         Err(InvalidKleLayout {
@@ -55,26 +55,26 @@ fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
     }
 }
 
-fn key_type_from_kle(key: &kle::Key) -> key::Type {
+fn key_type_from_kle(key: &kle::Key) -> key::KeyType {
     const SCOOP_KW: [&str; 2] = ["scoop", "dish"];
     const BAR_KW: [&str; 2] = ["bar", "line"];
     const BUMP_KW: [&str; 4] = ["bump", "dot", "nub", "nipple"];
 
     // TODO support ghosted keys?
     if SCOOP_KW.iter().any(|kw| key.profile.contains(kw)) {
-        key::Type::Homing(Some(key::Homing::Scoop))
+        key::KeyType::Homing(Some(key::Homing::Scoop))
     } else if BAR_KW.iter().any(|kw| key.profile.contains(kw)) {
-        key::Type::Homing(Some(key::Homing::Bar))
+        key::KeyType::Homing(Some(key::Homing::Bar))
     } else if BUMP_KW.iter().any(|kw| key.profile.contains(kw)) {
-        key::Type::Homing(Some(key::Homing::Bump))
+        key::KeyType::Homing(Some(key::Homing::Bump))
     } else if key.profile.contains("space") {
-        key::Type::Space
+        key::KeyType::Space
     } else if key.homing {
-        key::Type::Homing(None)
+        key::KeyType::Homing(None)
     } else if key.decal {
-        key::Type::None
+        key::KeyType::None
     } else {
-        key::Type::Normal
+        key::KeyType::Normal
     }
 }
 
@@ -158,10 +158,10 @@ mod tests {
         })
         .unwrap();
 
-        assert_matches!(regular_key, Shape::Normal(size) if size == Size::new(2.25, 1.));
-        assert_matches!(iso_horiz, Shape::IsoHorizontal);
-        assert_matches!(iso_vert, Shape::IsoVertical);
-        assert_matches!(step_caps, Shape::SteppedCaps);
+        assert_matches!(regular_key, KeyShape::Normal(size) if size == Size::new(2.25, 1.));
+        assert_matches!(iso_horiz, KeyShape::IsoHorizontal);
+        assert_matches!(iso_vert, KeyShape::IsoVertical);
+        assert_matches!(step_caps, KeyShape::SteppedCaps);
     }
 
     #[test]
@@ -217,13 +217,13 @@ mod tests {
             ..Default::default()
         });
 
-        assert_matches!(regular_key, key::Type::Normal);
-        assert_matches!(decal, key::Type::None);
-        assert_matches!(space, key::Type::Space);
-        assert_matches!(homing_default, key::Type::Homing(None));
-        assert_matches!(homing_scoop, key::Type::Homing(Some(key::Homing::Scoop)));
-        assert_matches!(homing_bar, key::Type::Homing(Some(key::Homing::Bar)));
-        assert_matches!(homing_bump, key::Type::Homing(Some(key::Homing::Bump)));
+        assert_matches!(regular_key, key::KeyType::Normal);
+        assert_matches!(decal, key::KeyType::None);
+        assert_matches!(space, key::KeyType::Space);
+        assert_matches!(homing_default, key::KeyType::Homing(None));
+        assert_matches!(homing_scoop, key::KeyType::Homing(Some(key::Homing::Scoop)));
+        assert_matches!(homing_bar, key::KeyType::Homing(Some(key::Homing::Bar)));
+        assert_matches!(homing_bump, key::KeyType::Homing(Some(key::Homing::Bump)));
     }
 
     #[test]

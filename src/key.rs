@@ -10,7 +10,7 @@ pub enum Homing {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum Type {
+pub enum KeyType {
     None,   // a.k.a. decal in KLE lingo
     Normal, // Just a regular ol' key
     Homing(Option<Homing>),
@@ -18,15 +18,16 @@ pub enum Type {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum Shape {
+pub enum KeyShape {
     Normal(Size),
     SteppedCaps,
     IsoVertical,
     IsoHorizontal,
 }
 
-impl Shape {
+impl KeyShape {
     #[inline]
+    #[must_use]
     pub fn size(self) -> Size {
         match self {
             Self::Normal(s) => s,
@@ -36,7 +37,7 @@ impl Shape {
     }
 }
 
-impl From<Size> for Shape {
+impl From<Size> for KeyShape {
     fn from(value: Size) -> Self {
         Self::Normal(value)
     }
@@ -50,10 +51,11 @@ pub struct Legend {
 }
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Key {
     pub position: Point,
-    pub shape: Shape,
-    pub typ: Type,
+    pub shape: KeyShape,
+    pub typ: KeyType,
     pub color: Color,
     pub legends: [[Option<Legend>; 3]; 3],
 }
@@ -106,8 +108,8 @@ impl Default for Key {
     fn default() -> Self {
         Self {
             position: Point::ORIGIN,
-            shape: Shape::Normal(Size::new(1., 1.)),
-            typ: Type::Normal,
+            shape: KeyShape::Normal(Size::new(1., 1.)),
+            typ: KeyType::Normal,
             color: Color::new(0xCC, 0xCC, 0xCC),
             legends: Default::default(), // [[None; 3]; 3] won't work since Option<Legend> : !Copy
         }
@@ -123,18 +125,18 @@ pub mod tests {
     #[test]
     fn test_shape_size() {
         assert_eq!(
-            Shape::Normal(Size::new(2.25, 1.)).size(),
+            KeyShape::Normal(Size::new(2.25, 1.)).size(),
             Size::new(2.25, 1.)
         );
-        assert_eq!(Shape::IsoVertical.size(), Size::new(1.5, 2.0));
-        assert_eq!(Shape::IsoHorizontal.size(), Size::new(1.5, 2.0));
-        assert_eq!(Shape::SteppedCaps.size(), Size::new(1.75, 1.0));
+        assert_eq!(KeyShape::IsoVertical.size(), Size::new(1.5, 2.0));
+        assert_eq!(KeyShape::IsoHorizontal.size(), Size::new(1.5, 2.0));
+        assert_eq!(KeyShape::SteppedCaps.size(), Size::new(1.75, 1.0));
     }
 
     #[test]
     fn test_shape_from() {
-        let shape = Shape::from(Size::new(1.75, 1.));
-        assert_matches!(shape, Shape::Normal(x) if x == Size::new(1.75, 1.));
+        let shape = KeyShape::from(Size::new(1.75, 1.));
+        assert_matches!(shape, KeyShape::Normal(x) if x == Size::new(1.75, 1.));
     }
 
     #[test]
@@ -142,8 +144,8 @@ pub mod tests {
         let key = Key::new();
 
         assert_eq!(key.position, Point::new(0., 0.));
-        assert_matches!(key.shape, Shape::Normal(size) if size == Size::new(1., 1.));
-        assert_matches!(key.typ, Type::Normal);
+        assert_matches!(key.shape, KeyShape::Normal(size) if size == Size::new(1., 1.));
+        assert_matches!(key.typ, KeyType::Normal);
         assert_eq!(key.color, Color::new(0xCC, 0xCC, 0xCC));
         for row in key.legends {
             for el in row {

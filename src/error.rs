@@ -10,7 +10,7 @@ pub struct Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
-pub(crate) enum ErrorImpl {
+enum ErrorImpl {
     JsonParseError(serde_json::Error),
     TomlParseError(toml::de::Error),
     FontParseError(ttf_parser::FaceParsingError),

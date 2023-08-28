@@ -9,7 +9,7 @@ use kurbo::{Insets, Point, Size};
 use serde::Deserialize;
 
 use crate::error::{Error, Result};
-use crate::key;
+use crate::key::Homing;
 use crate::utils::RoundRect;
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -54,7 +54,7 @@ pub struct BumpProps {
 }
 
 #[derive(Deserialize)]
-#[serde(remote = "key::Homing", rename_all = "kebab-case")]
+#[serde(remote = "Homing", rename_all = "kebab-case")]
 pub enum HomingDef {
     #[serde(alias = "deep-dish", alias = "dish")]
     Scoop,
@@ -67,7 +67,7 @@ pub enum HomingDef {
 #[derive(Debug, Clone, Copy, Deserialize)]
 pub struct HomingProps {
     #[serde(with = "HomingDef")]
-    pub default: key::Homing,
+    pub default: Homing,
     pub scoop: ScoopProps,
     pub bar: BarProps,
     pub bump: BumpProps,
@@ -76,7 +76,7 @@ pub struct HomingProps {
 impl Default for HomingProps {
     fn default() -> Self {
         Self {
-            default: key::Homing::Bar,
+            default: Homing::Bar,
             scoop: ScoopProps {
                 depth: 2. * ProfileType::default().depth(), // 2x the regular depth
             },
@@ -257,7 +257,7 @@ mod tests {
 
     #[test]
     fn test_homing_props_default() {
-        assert_matches!(HomingProps::default().default, key::Homing::Bar);
+        assert_matches!(HomingProps::default().default, Homing::Bar);
         assert_eq!(HomingProps::default().scoop.depth, 2.);
         assert_eq!(HomingProps::default().bar.size, Size::new(3.81, 0.51));
         assert_eq!(HomingProps::default().bar.y_offset, 6.35);
@@ -462,7 +462,7 @@ mod tests {
             assert_approx_eq!(e.size(), r.size(), 0.5);
         }
 
-        assert_matches!(profile.homing.default, key::Homing::Scoop);
+        assert_matches!(profile.homing.default, Homing::Scoop);
         assert_approx_eq!(profile.homing.scoop.depth, 1.5);
         assert_approx_eq!(profile.homing.bar.size, Size::new(202., 21.), 0.5);
         assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);

@@ -6,12 +6,14 @@ pub struct Kerning {
 }
 
 impl Kerning {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             pairs: HashMap::new(),
         }
     }
 
+    #[must_use]
     pub fn get(&self, lhs: char, rhs: char) -> f64 {
         self.pairs.get(&(lhs, rhs)).copied().unwrap_or(0.)
     }
@@ -23,10 +25,12 @@ impl Kerning {
         }
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.pairs.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.pairs.is_empty()
     }
