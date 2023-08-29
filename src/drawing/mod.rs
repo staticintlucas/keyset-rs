@@ -157,7 +157,7 @@ mod tests {
             .show_keys(false)
             .show_margin(true);
 
-        assert_eq!(options.profile.profile_type.depth(), 1.0);
+        assert_eq!(options.profile.typ.depth(), 1.0);
         assert_eq!(options.font.glyphs.len(), 2);
         assert_eq!(options.scale, 2.);
     }

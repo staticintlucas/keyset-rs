@@ -88,12 +88,15 @@ pub(crate) fn step(key: &Key, options: &DrawingOptions) -> Option<Path> {
         let profile = &options.profile;
 
         // Take average dimensions of top and bottom
-        let rect = RoundRect::from_origin_size(
-            ((profile.top_rect.origin().to_vec2() + profile.bottom_rect.origin().to_vec2()) / 2.)
-                .to_point(),
-            (profile.top_rect.size() + profile.bottom_rect.size()) / 2.,
-            (profile.top_rect.radii() + profile.bottom_rect.radii()) / 2.,
-        );
+        let rect = {
+            let top = profile.top_with_size((1., 1.));
+            let btm = profile.bottom_with_size((1., 1.));
+            RoundRect::from_origin_size(
+                ((top.origin().to_vec2() + btm.origin().to_vec2()) / 2.).to_point(),
+                (top.size() + btm.size()) / 2.,
+                (top.radii() + btm.radii()) / 2.,
+            )
+        };
 
         Path {
             path: step_path(rect),
@@ -108,11 +111,13 @@ pub(crate) fn step(key: &Key, options: &DrawingOptions) -> Option<Path> {
 
 fn iso_bottom_path(profile: &Profile) -> BezPath {
     let rect150 = profile.bottom_with_size((1.5, 1.)).rect();
-    let rect125 = profile
-        .bottom_with_size((1.25, 2.))
-        .with_origin(profile.bottom_rect.origin() + (250., 0.))
-        .rect();
-    let radii = profile.bottom_rect.radii();
+    let (rect125, radii) = {
+        let rect = profile.bottom_with_size((1.25, 2.));
+        (
+            rect.with_origin(rect.origin() + (250., 0.)).rect(),
+            rect.radii(),
+        )
+    };
 
     // TODO ensure Arc is transformed to single PathEl::CurveTo. Then we can avoid using
     // extend and use [PathEl].into_iter().collect() and avoid reallocations.
@@ -194,11 +199,13 @@ fn iso_bottom_path(profile: &Profile) -> BezPath {
 
 fn iso_top_path(profile: &Profile) -> BezPath {
     let rect150 = profile.top_with_size((1.5, 1.)).rect();
-    let rect125 = profile
-        .top_with_size((1.25, 2.))
-        .with_origin(profile.top_rect.origin() + (250., 0.))
-        .rect();
-    let radii = profile.top_rect.radii();
+    let (rect125, radii) = {
+        let rect = profile.top_with_size((1.25, 2.));
+        (
+            rect.with_origin(rect.origin() + (250., 0.)).rect(),
+            rect.radii(),
+        )
+    };
 
     // TODO ensure Arc is transformed to single PathEl::CurveTo. Then we can avoid using
     // extend and use [PathEl].into_iter().collect() and avoid reallocations.
@@ -355,8 +362,14 @@ mod tests {
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        assert_approx_eq!(bounds.origin(), options.profile.top_rect.origin());
-        assert_approx_eq!(bounds.size(), options.profile.top_rect.size());
+        assert_approx_eq!(
+            bounds.origin(),
+            options.profile.top_with_size((1., 1.)).origin()
+        );
+        assert_approx_eq!(
+            bounds.size(),
+            options.profile.top_with_size((1., 1.)).size()
+        );
 
         // Stepped caps
         let key = Key {
@@ -402,8 +415,14 @@ mod tests {
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        assert_approx_eq!(bounds.origin(), options.profile.bottom_rect.origin());
-        assert_approx_eq!(bounds.size(), options.profile.bottom_rect.size());
+        assert_approx_eq!(
+            bounds.origin(),
+            options.profile.bottom_with_size((1., 1.)).origin()
+        );
+        assert_approx_eq!(
+            bounds.size(),
+            options.profile.bottom_with_size((1., 1.)).size()
+        );
 
         // Stepped caps
         let key = Key {
@@ -467,7 +486,8 @@ mod tests {
         assert_eq!(path.outline.unwrap().width, options.outline_width);
         assert_approx_eq!(
             bounds.center(),
-            options.profile.top_rect.center() + (0., options.profile.homing.bar.y_offset)
+            options.profile.top_with_size((1., 1.)).center()
+                + (0., options.profile.homing.bar.y_offset)
         );
         assert_approx_eq!(bounds.size(), options.profile.homing.bar.size);
 
@@ -487,7 +507,8 @@ mod tests {
         assert_eq!(path.outline.unwrap().width, options.outline_width);
         assert_approx_eq!(
             bounds.center(),
-            options.profile.top_rect.center() + (0., options.profile.homing.bump.y_offset)
+            options.profile.top_with_size((1., 1.)).center()
+                + (0., options.profile.homing.bump.y_offset)
         );
         assert_approx_eq!(bounds.width(), options.profile.homing.bump.diameter);
         assert_approx_eq!(bounds.height(), options.profile.homing.bump.diameter);
@@ -519,11 +540,15 @@ mod tests {
         let rect = RoundRect::from_origin_size(
             options
                 .profile
-                .top_rect
+                .top_with_size((1., 1.))
                 .origin()
-                .midpoint(options.profile.bottom_rect.origin()),
-            (options.profile.top_rect.size() + options.profile.bottom_rect.size()) / 2.,
-            (options.profile.top_rect.radii() + options.profile.bottom_rect.radii()) / 2.,
+                .midpoint(options.profile.bottom_with_size((1., 1.)).origin()),
+            (options.profile.top_with_size((1., 1.)).size()
+                + options.profile.bottom_with_size((1., 1.)).size())
+                / 2.,
+            (options.profile.top_with_size((1., 1.)).radii()
+                + options.profile.bottom_with_size((1., 1.)).radii())
+                / 2.,
         );
         let rect = rect
             .with_origin((1250. - rect.origin().x - rect.radii().x, rect.origin().y))

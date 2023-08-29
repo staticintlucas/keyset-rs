@@ -92,7 +92,7 @@ mod tests {
         };
         let font = Font::from_ttf(&std::fs::read("tests/fonts/demo.ttf").unwrap()).unwrap();
         let profile = Profile::default();
-        let top_rect = profile.top_rect.rect();
+        let top_rect = profile.top_with_size((1., 1.)).rect();
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(0., 0.));
 
         assert_eq!(
@@ -124,7 +124,7 @@ mod tests {
 
         assert_approx_eq!(
             path.path.bounding_box().width(),
-            (profile.top_rect.rect() + profile.text_margin.get(5)).width()
+            (profile.top_with_size((1., 1.)).rect() + profile.text_margin.get(5)).width()
         );
     }
 }

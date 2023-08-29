@@ -43,11 +43,10 @@ impl KeyDrawing {
             KeyShape::Normal(size) => options.profile.top_with_size(size).rect(),
             KeyShape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).rect(),
             KeyShape::IsoHorizontal => options.profile.top_with_size((1.5, 1.)).rect(),
-            KeyShape::IsoVertical => options
-                .profile
-                .top_with_size((1.25, 2.))
-                .with_origin(options.profile.top_rect.origin() + (250., 0.))
-                .rect(),
+            KeyShape::IsoVertical => {
+                let rect = options.profile.top_with_size((1.25, 2.)).rect();
+                rect.with_origin(rect.origin() + (250., 0.))
+            }
         };
 
         let margin = options.show_margin.then(|| {

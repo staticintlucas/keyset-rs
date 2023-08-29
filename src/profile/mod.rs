@@ -5,7 +5,7 @@ use std::{array, iter};
 
 use interp::interp_array;
 use itertools::Itertools;
-use kurbo::{Insets, Point, Size};
+use kurbo::{Insets, Point, Rect, Size, Vec2};
 use serde::Deserialize;
 
 use crate::error::{Error, Result};
@@ -186,10 +186,62 @@ impl Default for TextMargin {
 }
 
 #[derive(Debug, Clone)]
+pub struct TopSurface {
+    pub size: Size,
+    pub radius: f64,
+    pub y_offset: f64,
+}
+
+impl TopSurface {
+    pub(crate) fn rect(&self) -> Rect {
+        Rect::from_center_size(Point::new(500., 500. + self.y_offset), self.size)
+    }
+
+    pub(crate) fn round_rect(&self) -> RoundRect {
+        RoundRect::from_rect(self.rect(), Vec2::new(self.radius, self.radius))
+    }
+}
+
+impl Default for TopSurface {
+    fn default() -> Self {
+        Self {
+            size: Size::new(660., 735.),
+            radius: 65.,
+            y_offset: -77.5,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BottomSurface {
+    pub size: Size,
+    pub radius: f64,
+}
+
+impl BottomSurface {
+    pub(crate) fn rect(&self) -> Rect {
+        Rect::from_center_size(Point::new(500., 500.), self.size)
+    }
+
+    pub(crate) fn round_rect(&self) -> RoundRect {
+        RoundRect::from_rect(self.rect(), Vec2::new(self.radius, self.radius))
+    }
+}
+
+impl Default for BottomSurface {
+    fn default() -> Self {
+        Self {
+            size: Size::new(950., 950.),
+            radius: 65.,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct Profile {
-    pub profile_type: ProfileType,
-    pub bottom_rect: RoundRect,
-    pub top_rect: RoundRect,
+    pub typ: ProfileType,
+    pub bottom: BottomSurface,
+    pub top: TopSurface,
     pub text_margin: TextMargin,
     pub text_height: TextHeight,
     pub homing: HomingProps,
@@ -201,34 +253,13 @@ impl Profile {
     }
 
     pub fn top_with_size(&self, size: impl Into<Size>) -> RoundRect {
-        self.top_rect
-            .with_size(self.top_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
+        let top_rect = self.top.round_rect();
+        top_rect.with_size(top_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
     }
 
     pub fn bottom_with_size(&self, size: impl Into<Size>) -> RoundRect {
-        self.bottom_rect
-            .with_size(self.bottom_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
-    }
-}
-
-impl Default for Profile {
-    fn default() -> Self {
-        Self {
-            profile_type: ProfileType::default(),
-            bottom_rect: RoundRect::from_origin_size(
-                Point::new(25., 25.),
-                Size::new(950., 950.),
-                (65., 65.),
-            ),
-            top_rect: RoundRect::from_origin_size(
-                Point::new(170., 55.),
-                Size::new(660., 735.),
-                (65., 65.),
-            ),
-            text_margin: TextMargin::default(),
-            text_height: TextHeight::default(),
-            homing: HomingProps::default(),
-        }
+        let bottom_rect = self.bottom.round_rect();
+        bottom_rect.with_size(bottom_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
     }
 }
 
@@ -377,6 +408,51 @@ mod tests {
     }
 
     #[test]
+    fn test_top_surface_rect() {
+        let surf = TopSurface::default();
+        assert_eq!(surf.rect().origin(), Point::new(170., 55.),);
+        assert_eq!(surf.rect().size(), Size::new(660., 735.),);
+    }
+
+    #[test]
+    fn test_top_surface_round_rect() {
+        let surf = TopSurface::default();
+        assert_eq!(surf.round_rect().origin(), Point::new(170., 55.),);
+        assert_eq!(surf.round_rect().size(), Size::new(660., 735.),);
+        assert_eq!(surf.round_rect().radii(), Vec2::new(65., 65.),);
+    }
+
+    #[test]
+    fn test_top_surface_default() {
+        let surf = TopSurface::default();
+        assert_eq!(surf.size, Size::new(660., 735.));
+        assert_eq!(surf.radius, 65.);
+        assert_eq!(surf.y_offset, -77.5);
+    }
+
+    #[test]
+    fn test_bottom_surface_rect() {
+        let surf = BottomSurface::default();
+        assert_eq!(surf.rect().origin(), Point::new(25., 25.),);
+        assert_eq!(surf.rect().size(), Size::new(950., 950.),);
+    }
+
+    #[test]
+    fn test_bottom_surface_round_rect() {
+        let surf = BottomSurface::default();
+        assert_eq!(surf.round_rect().origin(), Point::new(25., 25.),);
+        assert_eq!(surf.round_rect().size(), Size::new(950., 950.),);
+        assert_eq!(surf.round_rect().radii(), Vec2::new(65., 65.),);
+    }
+
+    #[test]
+    fn test_bottom_surface_default() {
+        let surf = BottomSurface::default();
+        assert_eq!(surf.size, Size::new(950., 950.));
+        assert_eq!(surf.radius, 65.);
+    }
+
+    #[test]
     fn test_profile_from_toml() {
         let profile = Profile::from_toml(&unindent(
             r#"
@@ -422,22 +498,14 @@ mod tests {
         .unwrap();
 
         assert!(
-            matches!(profile.profile_type, ProfileType::Cylindrical { depth } if f64::abs(depth - 0.5) < 1e-6)
+            matches!(profile.typ, ProfileType::Cylindrical { depth } if f64::abs(depth - 0.5) < 1e-6)
         );
 
-        assert_approx_eq!(profile.bottom_rect.origin(), Point::new(20., 20.), 0.5);
-        assert_approx_eq!(
-            profile.bottom_rect.rect().size(),
-            Size::new(960., 960.),
-            0.5
-        );
-        assert_approx_eq!(profile.bottom_rect.radii().x, 20., 0.5);
-        assert_approx_eq!(profile.bottom_rect.radii().y, 20., 0.5);
+        assert_approx_eq!(profile.bottom.size, Size::new(960., 960.), 0.5);
+        assert_approx_eq!(profile.bottom.radius, 20., 0.5);
 
-        assert_approx_eq!(profile.top_rect.origin(), Point::new(190., 50.), 0.5);
-        assert_approx_eq!(profile.top_rect.rect().size(), Size::new(620., 730.), 0.5);
-        assert_approx_eq!(profile.top_rect.radii().x, 80., 0.5);
-        assert_approx_eq!(profile.top_rect.radii().y, 80., 0.5);
+        assert_approx_eq!(profile.top.size, Size::new(620., 730.), 0.5);
+        assert_approx_eq!(profile.top.radius, 80., 0.5);
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = vec![0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
@@ -490,36 +558,45 @@ mod tests {
 
         assert_approx_eq!(
             profile.top_with_size((1., 1.)).origin(),
-            profile.top_rect.origin()
+            Point::new(
+                500. - profile.top.size.width / 2.,
+                500. - profile.top.size.height / 2. + profile.top.y_offset,
+            )
         );
-        assert_approx_eq!(
-            profile.top_with_size((1., 1.)).size(),
-            profile.top_rect.size()
-        );
+        assert_approx_eq!(profile.top_with_size((1., 1.)).size(), profile.top.size);
         assert_approx_eq!(
             profile.bottom_with_size((1., 1.)).origin(),
-            profile.bottom_rect.origin()
+            Point::new(
+                500. - profile.bottom.size.width / 2.,
+                500. - profile.bottom.size.height / 2.
+            )
         );
         assert_approx_eq!(
             profile.bottom_with_size((1., 1.)).size(),
-            profile.bottom_rect.size()
+            profile.bottom.size
         );
 
         assert_approx_eq!(
+            profile.top_with_size((3., 2.)).origin(),
+            Point::new(
+                500. - profile.top.size.width / 2.,
+                500. - profile.top.size.height / 2. + profile.top.y_offset,
+            )
+        );
+        assert_approx_eq!(
+            profile.top_with_size((3., 2.)).size(),
+            profile.top.size + Size::new(2e3, 1e3)
+        );
+        assert_approx_eq!(
             profile.bottom_with_size((3., 2.)).origin(),
-            profile.bottom_rect.origin()
+            Point::new(
+                500. - profile.bottom.size.width / 2.,
+                500. - profile.bottom.size.height / 2.
+            )
         );
         assert_approx_eq!(
             profile.bottom_with_size((3., 2.)).size(),
-            profile.bottom_rect.size() + Size::new(2e3, 1e3)
-        );
-        assert_approx_eq!(
-            profile.bottom_with_size((3., 2.)).origin(),
-            profile.bottom_rect.origin()
-        );
-        assert_approx_eq!(
-            profile.bottom_with_size((3., 2.)).size(),
-            profile.bottom_rect.size() + Size::new(2e3, 1e3)
+            profile.bottom.size + Size::new(2e3, 1e3)
         );
     }
 
@@ -527,17 +604,14 @@ mod tests {
     fn test_profile_default() {
         let profile = Profile::default();
 
-        assert_matches!(profile.profile_type, ProfileType::Cylindrical { depth } if depth == 1.);
+        assert_matches!(profile.typ, ProfileType::Cylindrical { depth } if depth == 1.);
 
-        assert_approx_eq!(profile.bottom_rect.origin(), Point::new(25., 25.));
-        assert_approx_eq!(profile.bottom_rect.rect().size(), Size::new(950., 950.));
-        assert_approx_eq!(profile.bottom_rect.radii().x, 65.);
-        assert_approx_eq!(profile.bottom_rect.radii().y, 65.);
+        assert_approx_eq!(profile.bottom.size, Size::new(950., 950.));
+        assert_approx_eq!(profile.bottom.radius, 65.);
 
-        assert_approx_eq!(profile.top_rect.origin(), Point::new(170., 55.));
-        assert_approx_eq!(profile.top_rect.rect().size(), Size::new(660., 735.));
-        assert_approx_eq!(profile.top_rect.radii().x, 65.);
-        assert_approx_eq!(profile.top_rect.radii().y, 65.);
+        assert_approx_eq!(profile.top.size, Size::new(660., 735.));
+        assert_approx_eq!(profile.top.radius, 65.);
+        assert_approx_eq!(profile.top.y_offset, -77.5);
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = TextHeight::default();
