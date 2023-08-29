@@ -82,7 +82,7 @@ fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
         }
     }
     let Some(skia_path) = path_builder.finish() else {
-        return;
+        return; // GRCOV_EXCL_LINE
     };
 
     if let Some(color) = path.fill {
