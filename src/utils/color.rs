@@ -78,10 +78,11 @@ impl From<Color> for (f32, f32, f32) {
     }
 }
 
+#[allow(clippy::fallible_impl_from)] // It's not really fallible
 impl From<Color> for tiny_skia::Color {
     fn from(value: Color) -> Self {
         let (r, g, b) = value.into();
-        tiny_skia::Color::from_rgba(r, g, b, 1.0).unwrap()
+        Self::from_rgba(r, g, b, 1.0).unwrap()
     }
 }
 

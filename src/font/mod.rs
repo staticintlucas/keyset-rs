@@ -56,17 +56,18 @@ impl Font {
     pub fn from_ttf(data: &[u8]) -> Result<Self> {
         let face = Face::parse(data, 0)?;
 
-        let name = if let Some(name) = face
+        let name = face
             .names()
             .into_iter()
             .filter(|n| n.name_id == name_id::FAMILY)
             .find_map(|n| n.to_string())
-        {
-            name
-        } else {
-            warn!("cannot read font family name");
-            "unknown".to_owned()
-        };
+            .map_or_else(
+                || {
+                    warn!("cannot read font family name");
+                    "unknown".to_owned()
+                },
+                |name| name,
+            );
 
         let em_size = f64::from(face.units_per_em());
         let cap_height = face.capital_height().map(f64::from);
@@ -76,22 +77,26 @@ impl Font {
         let line_height = ascent + descent + f64::from(face.line_gap());
         let slope = face.italic_angle().map_or(0., f64::from);
 
-        let codepoints = if let Some(cmap) = face.tables().cmap {
-            cmap.subtables
-                .into_iter()
-                .filter(cmap::Subtable::is_unicode) // Filter out non-unicode subtables
-                .flat_map(|st| {
-                    let mut codepoints = Vec::with_capacity(256);
-                    // This is the only way to iterate code points in a subtable
-                    st.codepoints(|cp| codepoints.push(cp));
-                    codepoints
-                })
-                .filter_map(char::from_u32) // Convert to char, filtering out invalid
-                .collect()
-        } else {
-            warn!("no CMAP table in font {name:?}");
-            vec![]
-        };
+        let codepoints = face.tables().cmap.map_or_else(
+            || {
+                warn!("no CMAP table in font {name:?}");
+                vec![]
+            },
+            |cmap| {
+                cmap.subtables
+                    .into_iter()
+                    .filter(cmap::Subtable::is_unicode) // Filter out non-unicode subtables
+                    .flat_map(|st| {
+                        let mut codepoints = Vec::with_capacity(256);
+                        // This is the only way to iterate code points in a subtable
+                        st.codepoints(|cp| codepoints.push(cp));
+                        codepoints
+                    })
+                    .filter_map(char::from_u32) // Convert to char, filtering out invalid
+                    .collect_vec()
+            },
+        );
+
         if codepoints.is_empty() {
             warn!("no valid Unicode code points font {name:?}");
         }
@@ -109,14 +114,15 @@ impl Font {
             .or_else(|| Some(glyphs.get(&'x')?.path.bounding_box().size().height))
             .unwrap_or(0.4 * line_height); // TODO is there a better default?
 
-        let notdef = if let Some(glyph) = Glyph::new(&face, GlyphId(0)) {
-            glyph
-        } else {
-            warn!("no valid outline for glyph .notdef in font {name:?}");
-            Glyph::notdef(cap_height, slope)
-        };
+        let notdef = Glyph::new(&face, GlyphId(0)).map_or_else(
+            || {
+                warn!("no valid outline for glyph .notdef in font {name:?}");
+                Glyph::notdef(cap_height, slope)
+            },
+            |glyph| glyph,
+        );
 
-        let kerning = if let Some(kern) = face.tables().kern {
+        let kerning = face.tables().kern.map_or_else(Kerning::new, |kern| {
             let mut kerning = Kerning::new();
             // TODO this is slow AF
             codepoints
@@ -133,9 +139,7 @@ impl Font {
                     kerning.set(l, r, f64::from(kern));
                 });
             kerning
-        } else {
-            Kerning::new()
-        };
+        });
 
         Ok(Self {
             name,

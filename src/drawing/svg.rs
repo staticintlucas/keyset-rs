@@ -90,11 +90,9 @@ fn draw_path(path: &Path) -> SvgPath {
         })
         .join("");
 
-    let fill = if let Some(color) = path.fill {
-        color.to_string()
-    } else {
-        "none".into()
-    };
+    let fill = path
+        .fill
+        .map_or_else(|| "none".to_owned(), |color| color.to_string());
     let svg_path = SvgPath::new().set("d", data).set("fill", fill);
 
     if let Some(outline) = path.outline {

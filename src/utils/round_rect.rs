@@ -61,12 +61,12 @@ impl RoundRect {
     }
 
     #[inline]
-    pub fn radii(&self) -> Vec2 {
+    pub const fn radii(&self) -> Vec2 {
         self.radii
     }
 
     #[inline]
-    pub fn rect(&self) -> Rect {
+    pub const fn rect(&self) -> Rect {
         self.rect
     }
 
@@ -291,20 +291,20 @@ impl Iterator for RoundRectPathIter {
 }
 
 impl Add<Vec2> for RoundRect {
-    type Output = RoundRect;
+    type Output = Self;
 
     #[inline]
-    fn add(self, v: Vec2) -> RoundRect {
-        RoundRect::from_rect(self.rect + v, self.radii)
+    fn add(self, v: Vec2) -> Self::Output {
+        Self::from_rect(self.rect + v, self.radii)
     }
 }
 
 impl Sub<Vec2> for RoundRect {
-    type Output = RoundRect;
+    type Output = Self;
 
     #[inline]
-    fn sub(self, v: Vec2) -> RoundRect {
-        RoundRect::from_rect(self.rect - v, self.radii)
+    fn sub(self, v: Vec2) -> Self::Output {
+        Self::from_rect(self.rect - v, self.radii)
     }
 }
 

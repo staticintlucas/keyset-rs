@@ -21,7 +21,7 @@ pub enum ProfileType {
 }
 
 impl ProfileType {
-    pub(crate) fn depth(self) -> f64 {
+    pub(crate) const fn depth(self) -> f64 {
         match self {
             Self::Cylindrical { depth } | Self::Spherical { depth } => depth,
             Self::Flat => 0.,
@@ -117,7 +117,7 @@ impl TextHeight {
         }
     }
 
-    pub fn get(&self, size_index: usize) -> f64 {
+    pub const fn get(&self, size_index: usize) -> f64 {
         if size_index < self.0.len() {
             self.0[size_index]
         } else {
@@ -169,7 +169,7 @@ impl TextMargin {
         }
     }
 
-    pub fn get(&self, size_index: usize) -> Insets {
+    pub const fn get(&self, size_index: usize) -> Insets {
         if size_index < self.0.len() {
             self.0[size_index]
         } else {

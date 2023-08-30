@@ -34,7 +34,7 @@ macro_rules! transform {
 struct RefGen(i32);
 
 impl RefGen {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self(0)
     }
 

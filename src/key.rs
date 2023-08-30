@@ -28,7 +28,7 @@ pub enum KeyShape {
 impl KeyShape {
     #[inline]
     #[must_use]
-    pub fn size(self) -> Size {
+    pub const fn size(self) -> Size {
         match self {
             Self::Normal(s) => s,
             Self::IsoHorizontal | Self::IsoVertical => Size::new(1.5, 2.0),
