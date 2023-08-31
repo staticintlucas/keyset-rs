@@ -1,0 +1,15 @@
+[package]
+name = "keyset"
+description = "A Rust tool to create pretty keyset layout diagrams using correct fonts and icons."
+keywords = ["keyboard", "keycap", "keyset", "layout", "diagram"]
+categories = ["command-line-utilities", "graphics", "multimedia::images", "rendering"]
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+keyset-core = { path = "../keyset-core", version = "0.2.1" }
