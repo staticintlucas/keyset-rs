@@ -104,14 +104,16 @@ impl Color {
     #[must_use]
     pub fn as_rgb8(&self) -> (u8, u8, u8) {
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // We want truncation
-        self.0.map(|c| (c * 256.0) as u8).into()
+        let [r, g, b] = self.0.map(|c| (c * 256.0) as u8);
+        (r, g, b)
     }
 
     /// Returns a tuple containing the red, green, and blue components as [`u16`].
     #[must_use]
     pub fn as_rgb16(&self) -> (u16, u16, u16) {
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // We want truncation
-        self.0.map(|c| (c * 65536.0) as u16).into()
+        let [r, g, b] = self.0.map(|c| (c * 65536.0) as u16);
+        (r, g, b)
     }
 
     /// Creates a new [`Color`] from a tuple containing the red, green, and blue
