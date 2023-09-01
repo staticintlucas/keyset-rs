@@ -1,7 +1,5 @@
-mod color;
 mod round_rect;
 
-pub(crate) use color::Color;
 pub(crate) use round_rect::RoundRect;
 
 // Shim to allow us to use assert_approx_eq with Kurbo types

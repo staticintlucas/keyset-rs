@@ -1,6 +1,6 @@
 use kurbo::{Point, Size};
 
-use crate::utils::Color;
+use color::Color;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Homing {
@@ -75,13 +75,13 @@ impl Key {
                     Some(Legend {
                         text: "!".into(),
                         size: 4,
-                        color: Color::new(0, 0, 0),
+                        color: Color::new(0.0, 0.0, 0.0),
                     }),
                     None,
                     Some(Legend {
                         text: "¹".into(),
                         size: 4,
-                        color: Color::new(0, 0, 0),
+                        color: Color::new(0.0, 0.0, 0.0),
                     }),
                 ],
                 [None, None, None],
@@ -89,13 +89,13 @@ impl Key {
                     Some(Legend {
                         text: "1".into(),
                         size: 4,
-                        color: Color::new(0, 0, 0),
+                        color: Color::new(0.0, 0.0, 0.0),
                     }),
                     None,
                     Some(Legend {
                         text: "¡".into(),
                         size: 4,
-                        color: Color::new(0, 0, 0),
+                        color: Color::new(0.0, 0.0, 0.0),
                     }),
                 ],
             ],
@@ -110,7 +110,7 @@ impl Default for Key {
             position: Point::ORIGIN,
             shape: KeyShape::Normal(Size::new(1., 1.)),
             typ: KeyType::Normal,
-            color: Color::new(0xCC, 0xCC, 0xCC),
+            color: Color::new(0.8, 0.8, 0.8),
             legends: Default::default(), // [[None; 3]; 3] won't work since Option<Legend> : !Copy
         }
     }
@@ -146,7 +146,7 @@ pub mod tests {
         assert_eq!(key.position, Point::new(0., 0.));
         assert_matches!(key.shape, KeyShape::Normal(size) if size == Size::new(1., 1.));
         assert_matches!(key.typ, KeyType::Normal);
-        assert_eq!(key.color, Color::new(0xCC, 0xCC, 0xCC));
+        assert_eq!(key.color, Color::new(0.8, 0.8, 0.8));
         for row in key.legends {
             for el in row {
                 assert!(el.is_none());

@@ -79,7 +79,7 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
     use kurbo::PathEl;
 
-    use crate::utils::Color;
+    use color::Color;
 
     use super::*;
 
@@ -88,7 +88,7 @@ mod tests {
         let legend = Legend {
             text: "AV".into(),
             size: 5,
-            color: Color::new(0, 0, 0),
+            color: Color::new(0.0, 0.0, 0.0),
         };
         let font = Font::from_ttf(
             &std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap(),
@@ -109,7 +109,7 @@ mod tests {
         let legend = Legend {
             text: "😎".into(),
             size: 5,
-            color: Color::new(0, 0, 0),
+            color: Color::new(0.0, 0.0, 0.0),
         };
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(1., 1.));
 
@@ -121,7 +121,7 @@ mod tests {
         let legend = Legend {
             text: "Some really long legend that will totally need to be squished".into(),
             size: 5,
-            color: Color::new(0, 0, 0),
+            color: Color::new(0.0, 0.0, 0.0),
         };
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(1., 1.));
 

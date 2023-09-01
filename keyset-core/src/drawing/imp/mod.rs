@@ -1,11 +1,11 @@
 mod key;
 mod legend;
 
+use color::Color;
 use itertools::Itertools;
 use kurbo::{BezPath, Point, Shape, Vec2};
 
 use crate::key::{KeyShape, KeyType};
-use crate::utils::Color;
 use crate::{DrawingOptions, Key};
 
 // TODO move this somewhere?
@@ -65,7 +65,7 @@ impl KeyDrawing {
             Path {
                 path,
                 outline: Some(Outline {
-                    color: Color::new(0xff, 0, 0),
+                    color: Color::new(1.0, 0.0, 0.0),
                     width: 5.,
                 }),
                 fill: None,

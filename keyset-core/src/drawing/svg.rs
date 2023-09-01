@@ -92,12 +92,12 @@ fn draw_path(path: &Path) -> SvgPath {
 
     let fill = path
         .fill
-        .map_or_else(|| "none".to_owned(), |color| color.to_string());
+        .map_or_else(|| "none".to_owned(), |color| format!("{color:x}"));
     let svg_path = SvgPath::new().set("d", data).set("fill", fill);
 
     if let Some(outline) = path.outline {
         svg_path
-            .set("stroke", outline.color.to_string())
+            .set("stroke", format!("{:x}", outline.color))
             .set("stroke-width", fmt_num!("{}", outline.width))
     } else {
         svg_path.set("stroke", "none")

@@ -1,12 +1,12 @@
 [workspace]
 members = [
   "keyset",
+  "keyset-color",
   "keyset-core",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.2.1"
 authors = ["Lucas Jansen"]
 edition = "2021"
 rust-version = "1.65"

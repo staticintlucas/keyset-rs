@@ -1,10 +1,13 @@
 [package]
 name = "keyset-core"
+version = "0.2.1"
 description = "A Rust tool to create pretty keyset layout diagrams using correct fonts and icons."
-keywords = ["keyboard", "keycap", "keyset", "layout", "diagram"]
-categories = ["command-line-utilities", "graphics", "multimedia::images", "rendering"]
 
-version.workspace = true
+# We don't  really care about SEO for this crate, but Clippy complains if we
+# leave these out altogether
+keywords = ["keyset"]
+categories = ["none"]
+
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -12,6 +15,8 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
+color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0", features = ["rgb", "tiny-skia"]}
+
 interp = { version = "1.0", features = ["interp_array"] }
 itertools = "0.10"
 kle-serial = "0.2"

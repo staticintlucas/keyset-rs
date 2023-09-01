@@ -10,4 +10,6 @@
     clippy::nursery
 )]
 
-pub use keyset_core::*;
+pub use color;
+
+pub use core::*;
