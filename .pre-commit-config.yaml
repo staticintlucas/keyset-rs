@@ -28,6 +28,7 @@ repos:
   - id: cargo-test
     name: cargo test
     entry: cargo test
+    args: [--all-features]
     language: system
     types: [rust]
     pass_filenames: false
