@@ -1,3 +1,17 @@
+#![warn(
+    missing_docs,
+    clippy::all,
+    clippy::correctness,
+    clippy::suspicious,
+    clippy::style,
+    clippy::complexity,
+    clippy::perf,
+    clippy::pedantic,
+    clippy::cargo,
+    clippy::nursery
+)]
+#![allow(missing_docs, clippy::missing_errors_doc)]
+
 #[cfg(feature = "kle")]
 pub mod kle;
 
@@ -37,22 +51,22 @@ impl From<Size> for Shape {
 impl Shape {
     #[must_use]
     pub fn bounds(self) -> Rect {
-        use Shape::*;
         match self {
-            Normal(size) => Rect::from_origin_size((0.0, 0.0), size),
-            IsoHorizontal | IsoVertical => Rect::from_origin_size((0.0, 0.0), (1.5, 2.0)),
-            SteppedCaps => Rect::from_origin_size((0.0, 0.0), (1.75, 1.0)),
+            Self::Normal(size) => Rect::from_origin_size((0.0, 0.0), size),
+            Self::IsoHorizontal | Self::IsoVertical => {
+                Rect::from_origin_size((0.0, 0.0), (1.5, 2.0))
+            }
+            Self::SteppedCaps => Rect::from_origin_size((0.0, 0.0), (1.75, 1.0)),
         }
     }
 
     #[must_use]
     pub fn margin(self) -> Rect {
-        use Shape::*;
         match self {
-            Normal(size) => Rect::from_origin_size((0.0, 0.0), size),
-            SteppedCaps => Rect::from_origin_size((0.0, 0.0), (1.25, 1.0)),
-            IsoVertical => Rect::from_origin_size((0.25, 0.0), (1.25, 2.0)),
-            IsoHorizontal => Rect::from_origin_size((0.0, 0.0), (1.5, 1.0)),
+            Self::Normal(size) => Rect::from_origin_size((0.0, 0.0), size),
+            Self::SteppedCaps => Rect::from_origin_size((0.0, 0.0), (1.25, 1.0)),
+            Self::IsoVertical => Rect::from_origin_size((0.25, 0.0), (1.25, 2.0)),
+            Self::IsoHorizontal => Rect::from_origin_size((0.0, 0.0), (1.5, 1.0)),
         }
     }
 }
@@ -80,7 +94,8 @@ impl Key {
         Self::default()
     }
 
-    // Example non-blank key used in some of our tests. Set as cfg(test) to avoid dead code warnings
+    // Example non-blank key used in some of our tests
+    #[must_use]
     pub fn example() -> Self {
         Self {
             legends: [

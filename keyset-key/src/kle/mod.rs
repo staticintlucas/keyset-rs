@@ -5,7 +5,7 @@ use std::array;
 use kle_serial as kle;
 use kurbo::{Point, Size};
 
-use crate::*;
+use crate::{Homing, Key, Legend, Shape, Type};
 pub use error::{Error, Result};
 
 fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
