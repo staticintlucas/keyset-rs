@@ -1,26 +1,14 @@
-use std::{array, fmt};
+mod error;
 
-use itertools::Itertools;
+use std::array;
+
 use kle_serial as kle;
 use kurbo::{Point, Size};
 
-use crate::error::{Error, Result};
-use crate::key::{self, Key, KeyShape, Legend};
+use crate::*;
+pub use error::{Error, Result};
 
-#[derive(Debug)]
-pub(crate) struct InvalidKleLayout {
-    message: String,
-}
-
-impl fmt::Display for InvalidKleLayout {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
-
-impl std::error::Error for InvalidKleLayout {}
-
-fn key_shape_from_kle(key: &kle::Key) -> Result<KeyShape> {
+fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
     fn is_close<const N: usize>(a: &[f64; N], b: &[f64; N]) -> bool {
         a.iter().zip(b).all(|(a, b)| (b - a).abs() < 1e-2)
     }
@@ -36,45 +24,46 @@ fn key_shape_from_kle(key: &kle::Key) -> Result<KeyShape> {
     } = key;
 
     if is_close(&[w, h, x2, y2, w2, h2], &[1.25, 1., 0., 0., 1.75, 1.]) {
-        Ok(KeyShape::SteppedCaps)
+        Ok(Shape::SteppedCaps)
     } else if is_close(&[w, h, x2, y2, w2, h2], &[1.25, 2., -0.25, 0., 1.5, 1.]) {
-        Ok(KeyShape::IsoVertical)
+        Ok(Shape::IsoVertical)
     } else if is_close(&[w, h, x2, y2, w2, h2], &[1.5, 1., 0.25, 0., 1.25, 2.]) {
-        Ok(KeyShape::IsoHorizontal)
+        Ok(Shape::IsoHorizontal)
     } else if is_close(&[x2, y2, w2, h2], &[0., 0., w, h]) {
-        Ok(KeyShape::Normal(Size::new(w, h)))
+        Ok(Shape::Normal(Size::new(w, h)))
     } else {
         // TODO support all key shapes/sizes
-        Err(InvalidKleLayout {
-            message: format!(
-                "Unsupported non-standard key size \
-                (w: {w:.2}, h: {h:.2}, x2: {x2:.2}, y2: {y2:.2}, w2: {w2:.2}, h2: {h2:.2}). \
-                Note only ISO enter and stepped caps are supported as special cases"
-            ),
-        })?
+        Err(Error::UnsupportedKeySize {
+            w,
+            h,
+            x2,
+            y2,
+            w2,
+            h2,
+        })
     }
 }
 
-fn key_type_from_kle(key: &kle::Key) -> key::KeyType {
+fn key_type_from_kle(key: &kle::Key) -> Type {
     const SCOOP_KW: [&str; 2] = ["scoop", "dish"];
     const BAR_KW: [&str; 2] = ["bar", "line"];
     const BUMP_KW: [&str; 4] = ["bump", "dot", "nub", "nipple"];
 
     // TODO support ghosted keys?
     if SCOOP_KW.iter().any(|kw| key.profile.contains(kw)) {
-        key::KeyType::Homing(Some(key::Homing::Scoop))
+        Type::Homing(Some(Homing::Scoop))
     } else if BAR_KW.iter().any(|kw| key.profile.contains(kw)) {
-        key::KeyType::Homing(Some(key::Homing::Bar))
+        Type::Homing(Some(Homing::Bar))
     } else if BUMP_KW.iter().any(|kw| key.profile.contains(kw)) {
-        key::KeyType::Homing(Some(key::Homing::Bump))
+        Type::Homing(Some(Homing::Bump))
     } else if key.profile.contains("space") {
-        key::KeyType::Space
+        Type::Space
     } else if key.homing {
-        key::KeyType::Homing(None)
+        Type::Homing(None)
     } else if key.decal {
-        key::KeyType::None
+        Type::None
     } else {
-        key::KeyType::Normal
+        Type::Normal
     }
 }
 
@@ -104,12 +93,11 @@ impl TryFrom<kle::Key> for Key {
 
 pub fn from_json(json: &str) -> Result<Vec<Key>> {
     let key_iter: kle::KeyIterator = serde_json::from_str(json)?;
-    key_iter.map(Key::try_from).try_collect()
+    key_iter.map(Key::try_from).collect()
 }
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
     use unindent::unindent;
 
@@ -158,10 +146,10 @@ mod tests {
         })
         .unwrap();
 
-        assert_matches!(regular_key, KeyShape::Normal(size) if size == Size::new(2.25, 1.));
-        assert_matches!(iso_horiz, KeyShape::IsoHorizontal);
-        assert_matches!(iso_vert, KeyShape::IsoVertical);
-        assert_matches!(step_caps, KeyShape::SteppedCaps);
+        assert_matches!(regular_key, Shape::Normal(size) if size == Size::new(2.25, 1.));
+        assert_matches!(iso_horiz, Shape::IsoHorizontal);
+        assert_matches!(iso_vert, Shape::IsoVertical);
+        assert_matches!(step_caps, Shape::SteppedCaps);
     }
 
     #[test]
@@ -180,7 +168,7 @@ mod tests {
         assert_eq!(
             format!("{}", invalid.unwrap_err()),
             format!(concat!(
-                "error parsing KLE layout: Unsupported non-standard key size (w: 1.00, h: 1.00, ",
+                "unsupported non-standard key size (w: 1.00, h: 1.00, ",
                 "x2: -0.25, y2: 0.00, w2: 1.50, h2: 1.00). Note only ISO enter and stepped caps ",
                 "are supported as special cases"
             ))
@@ -217,13 +205,13 @@ mod tests {
             ..Default::default()
         });
 
-        assert_matches!(regular_key, key::KeyType::Normal);
-        assert_matches!(decal, key::KeyType::None);
-        assert_matches!(space, key::KeyType::Space);
-        assert_matches!(homing_default, key::KeyType::Homing(None));
-        assert_matches!(homing_scoop, key::KeyType::Homing(Some(key::Homing::Scoop)));
-        assert_matches!(homing_bar, key::KeyType::Homing(Some(key::Homing::Bar)));
-        assert_matches!(homing_bump, key::KeyType::Homing(Some(key::Homing::Bump)));
+        assert_matches!(regular_key, Type::Normal);
+        assert_matches!(decal, Type::None);
+        assert_matches!(space, Type::Space);
+        assert_matches!(homing_default, Type::Homing(None));
+        assert_matches!(homing_scoop, Type::Homing(Some(Homing::Scoop)));
+        assert_matches!(homing_bar, Type::Homing(Some(Homing::Bar)));
+        assert_matches!(homing_bump, Type::Homing(Some(Homing::Bump)));
     }
 
     #[test]
@@ -254,10 +242,10 @@ mod tests {
         .unwrap();
 
         assert_eq!(result1.len(), 4);
-        assert_approx_eq!(result1[0].position.x, 0.0);
-        assert_approx_eq!(result1[1].position.x, 1.0);
-        assert_approx_eq!(result1[2].position.x, 1.5);
-        assert_approx_eq!(result1[3].position.x, 0.0);
+        assert_eq!(result1[0].position.x, 0.0);
+        assert_eq!(result1[1].position.x, 1.0);
+        assert_eq!(result1[2].position.x, 1.5);
+        assert_eq!(result1[3].position.x, 0.0);
 
         let result2: Vec<_> = from_json(&unindent(
             r#"[

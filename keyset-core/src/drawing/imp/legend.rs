@@ -3,13 +3,12 @@ use kurbo::{Affine, Rect, Shape, Vec2};
 use log::warn;
 
 use crate::font::Font;
-use crate::key::Legend;
 use crate::profile::Profile;
 
 use super::Path;
 
 pub(crate) fn draw(
-    legend: &Legend,
+    legend: &::key::Legend,
     font: &Font,
     profile: &Profile,
     top_rect: Rect,
@@ -85,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_legend_draw() {
-        let legend = Legend {
+        let legend = ::key::Legend {
             text: "AV".into(),
             size: 5,
             color: Color::new(0.0, 0.0, 0.0),
@@ -106,7 +105,7 @@ mod tests {
             3
         );
 
-        let legend = Legend {
+        let legend = ::key::Legend {
             text: "😎".into(),
             size: 5,
             color: Color::new(0.0, 0.0, 0.0),
@@ -118,7 +117,7 @@ mod tests {
             font.notdef.path.iter().count()
         );
 
-        let legend = Legend {
+        let legend = ::key::Legend {
             text: "Some really long legend that will totally need to be squished".into(),
             size: 5,
             color: Color::new(0.0, 0.0, 0.0),

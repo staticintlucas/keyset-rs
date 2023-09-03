@@ -1,0 +1,29 @@
+[package]
+name = "keyset-key"
+version = "0.1.0"
+description = "Key type and functionality for keyset"
+
+# We don't  really care about SEO for this crate, but Clippy complains if we
+# leave these out altogether
+keywords = ["keyset"]
+categories = ["none"]
+
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[features]
+kle = ["kle-serial", "serde_json"]
+
+[dependencies]
+color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0", features = ["rgb"]}
+
+kle-serial = { version = "0.2", optional = true }
+kurbo = "0.9"
+serde_json = { version = "1.0", optional = true }
+
+[dev-dependencies]
+assert_matches = "1.5"
+unindent = "0.2"

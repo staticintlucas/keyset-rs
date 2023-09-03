@@ -21,13 +21,10 @@
 mod drawing;
 mod error;
 mod font;
-mod key;
-pub mod kle;
 mod profile;
 mod utils;
 
 pub use drawing::{Drawing, DrawingOptions};
 pub use error::{Error, Result};
 pub use font::{Font, Glyph, Kerning};
-pub use key::{Homing, Key, KeyShape, KeyType, Legend};
 pub use profile::Profile;

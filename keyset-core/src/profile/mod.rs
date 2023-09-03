@@ -5,11 +5,11 @@ use std::{array, iter};
 
 use interp::interp_array;
 use itertools::Itertools;
+use key::Homing;
 use kurbo::{Insets, Point, Rect, Size, Vec2};
 use serde::Deserialize;
 
 use crate::error::{Error, Result};
-use crate::key::Homing;
 use crate::utils::RoundRect;
 
 #[derive(Debug, Clone, Copy, Deserialize)]

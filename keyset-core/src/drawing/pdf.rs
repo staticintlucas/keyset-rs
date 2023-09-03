@@ -168,7 +168,9 @@ fn draw_path(content: &mut Content, path: &Path, affine: &Affine) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{DrawingOptions, Key};
+    use key::Key;
+
+    use crate::DrawingOptions;
 
     #[test]
     fn test_to_svg() {

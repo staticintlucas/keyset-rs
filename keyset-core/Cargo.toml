@@ -15,11 +15,11 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
-color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0", features = ["rgb", "tiny-skia"]}
+color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0", features = ["rgb", "tiny-skia"] }
+key = { package = "keyset-key", path = "../keyset-key", version = "0.1.0", features = ["kle"] }
 
 interp = { version = "1.0", features = ["interp_array"] }
 itertools = "0.10"
-kle-serial = "0.2"
 kurbo = "0.9"
 log = "0.4"
 miniz_oxide = "0.7"

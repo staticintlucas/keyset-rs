@@ -1,12 +1,12 @@
 mod key;
 mod legend;
 
+use ::key::Key;
 use color::Color;
 use itertools::Itertools;
 use kurbo::{BezPath, Point, Shape, Vec2};
 
-use crate::key::{KeyShape, KeyType};
-use crate::{DrawingOptions, Key};
+use crate::DrawingOptions;
 
 // TODO move this somewhere?
 const ARC_TOL: f64 = 1.; // Tolerance for converting Arc->Bézier with Kurbo
@@ -32,7 +32,7 @@ pub(crate) struct KeyDrawing {
 
 impl KeyDrawing {
     pub fn new(key: &Key, options: &DrawingOptions) -> Self {
-        let show_key = options.show_keys && !matches!(key.typ, KeyType::None);
+        let show_key = options.show_keys && !matches!(key.typ, ::key::Type::None);
 
         let bottom = show_key.then(|| key::bottom(key, options));
         let top = show_key.then(|| key::top(key, options));
@@ -40,10 +40,10 @@ impl KeyDrawing {
         let homing = show_key.then(|| key::homing(key, options)).flatten();
 
         let top_rect = match key.shape {
-            KeyShape::Normal(size) => options.profile.top_with_size(size).rect(),
-            KeyShape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).rect(),
-            KeyShape::IsoHorizontal => options.profile.top_with_size((1.5, 1.)).rect(),
-            KeyShape::IsoVertical => {
+            ::key::Shape::Normal(size) => options.profile.top_with_size(size).rect(),
+            ::key::Shape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).rect(),
+            ::key::Shape::IsoHorizontal => options.profile.top_with_size((1.5, 1.)).rect(),
+            ::key::Shape::IsoVertical => {
                 let rect = options.profile.top_with_size((1.25, 2.)).rect();
                 rect.with_origin(rect.origin() + (250., 0.))
             }
@@ -129,9 +129,10 @@ mod tests {
         assert_eq!(drawing.paths.len(), 6); // top, bottom, 4x legends
 
         // Stepped caps
-        let key = Key {
-            shape: KeyShape::SteppedCaps,
-            ..Key::example()
+        let key = {
+            let mut key = Key::example();
+            key.shape = ::key::Shape::SteppedCaps;
+            key
         };
         let options = DrawingOptions::default();
         let drawing = KeyDrawing::new(&key, &options);
@@ -140,9 +141,10 @@ mod tests {
         assert_eq!(drawing.paths.len(), 7); // top, bottom, step, 4x legends
 
         // ISO H
-        let key = Key {
-            shape: KeyShape::IsoHorizontal,
-            ..Key::example()
+        let key = {
+            let mut key = Key::example();
+            key.shape = ::key::Shape::IsoHorizontal;
+            key
         };
         let options = DrawingOptions {
             show_margin: true,
@@ -161,9 +163,10 @@ mod tests {
         );
 
         // ISO V
-        let key = Key {
-            shape: KeyShape::IsoVertical,
-            ..Key::example()
+        let key = {
+            let mut key = Key::example();
+            key.shape = ::key::Shape::IsoVertical;
+            key
         };
         let options = DrawingOptions {
             show_margin: true,

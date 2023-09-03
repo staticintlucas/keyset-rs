@@ -11,5 +11,6 @@
 )]
 
 pub use color;
+pub use key;
 
 pub use core::*;

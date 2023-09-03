@@ -106,9 +106,10 @@ fn draw_path(path: &Path) -> SvgPath {
 
 #[cfg(test)]
 mod tests {
+    use key::Key;
     use unindent::unindent;
 
-    use crate::{DrawingOptions, Key};
+    use crate::DrawingOptions;
 
     #[test]
     fn test_to_svg() {

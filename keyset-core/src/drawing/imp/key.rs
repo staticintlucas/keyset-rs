@@ -2,17 +2,16 @@ use std::f64::consts::{FRAC_PI_2, PI};
 
 use kurbo::{Arc, BezPath, Circle, Point, Rect, Shape};
 
-use crate::key::{Homing, KeyShape, KeyType};
 use crate::utils::RoundRect;
-use crate::{DrawingOptions, Key, Profile};
+use crate::{DrawingOptions, Profile};
 
 use super::{Outline, Path, ARC_TOL};
 
-pub(crate) fn top(key: &Key, options: &DrawingOptions) -> Path {
+pub(crate) fn top(key: &key::Key, options: &DrawingOptions) -> Path {
     let path = match key.shape {
-        KeyShape::Normal(size) => options.profile.top_with_size(size).to_path(ARC_TOL),
-        KeyShape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).to_path(ARC_TOL),
-        KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_top_path(&options.profile),
+        key::Shape::Normal(size) => options.profile.top_with_size(size).to_path(ARC_TOL),
+        key::Shape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).to_path(ARC_TOL),
+        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_top_path(&options.profile),
     };
 
     Path {
@@ -25,14 +24,14 @@ pub(crate) fn top(key: &Key, options: &DrawingOptions) -> Path {
     }
 }
 
-pub(crate) fn bottom(key: &Key, options: &DrawingOptions) -> Path {
+pub(crate) fn bottom(key: &key::Key, options: &DrawingOptions) -> Path {
     let path = match key.shape {
-        KeyShape::Normal(size) => options.profile.bottom_with_size(size).to_path(ARC_TOL),
-        KeyShape::SteppedCaps => options
+        key::Shape::Normal(size) => options.profile.bottom_with_size(size).to_path(ARC_TOL),
+        key::Shape::SteppedCaps => options
             .profile
             .bottom_with_size((1.75, 1.))
             .to_path(ARC_TOL),
-        KeyShape::IsoHorizontal | KeyShape::IsoVertical => iso_bottom_path(&options.profile),
+        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_bottom_path(&options.profile),
     };
 
     Path {
@@ -45,26 +44,26 @@ pub(crate) fn bottom(key: &Key, options: &DrawingOptions) -> Path {
     }
 }
 
-pub(crate) fn homing(key: &Key, options: &DrawingOptions) -> Option<Path> {
+pub(crate) fn homing(key: &key::Key, options: &DrawingOptions) -> Option<Path> {
     let profile = &options.profile;
 
-    let KeyType::Homing(homing) = key.typ else {
+    let key::Type::Homing(homing) = key.typ else {
         return None;
     };
     let homing = homing.unwrap_or(profile.homing.default);
 
-    let center = profile.top_with_size(key.shape.size()).center();
+    let center = profile.top_with_size(key.shape.margin().size()).center();
 
     let bez_path = match homing {
-        Homing::Scoop => None,
-        Homing::Bar => Some(
+        key::Homing::Scoop => None,
+        key::Homing::Bar => Some(
             Rect::from_center_size(
                 center + (0., profile.homing.bar.y_offset),
                 profile.homing.bar.size,
             )
             .into_path(ARC_TOL),
         ),
-        Homing::Bump => Some(
+        key::Homing::Bump => Some(
             Circle::new(
                 center + (0., profile.homing.bump.y_offset),
                 profile.homing.bump.diameter / 2.,
@@ -83,8 +82,8 @@ pub(crate) fn homing(key: &Key, options: &DrawingOptions) -> Option<Path> {
     })
 }
 
-pub(crate) fn step(key: &Key, options: &DrawingOptions) -> Option<Path> {
-    matches!(key.shape, KeyShape::SteppedCaps).then(|| {
+pub(crate) fn step(key: &key::Key, options: &DrawingOptions) -> Option<Path> {
+    matches!(key.shape, key::Shape::SteppedCaps).then(|| {
         let profile = &options.profile;
 
         // Take average dimensions of top and bottom
@@ -355,7 +354,7 @@ mod tests {
         let options = DrawingOptions::default();
 
         // Regular 1u key
-        let key = Key::example();
+        let key = key::Key::example();
         let path = top(&key, &options);
         let bounds = path.path.bounding_box();
 
@@ -372,9 +371,10 @@ mod tests {
         );
 
         // Stepped caps
-        let key = Key {
-            shape: KeyShape::SteppedCaps,
-            ..Key::example()
+        let key = {
+            let mut key = key::Key::example();
+            key.shape = key::Shape::SteppedCaps;
+            key
         };
         let path = top(&key, &options);
         let bounds = path.path.bounding_box();
@@ -388,9 +388,10 @@ mod tests {
         );
 
         // ISO enter
-        let key = Key {
-            shape: KeyShape::IsoVertical,
-            ..Key::example()
+        let key = {
+            let mut key = key::Key::example();
+            key.shape = key::Shape::IsoVertical;
+            key
         };
         let path = top(&key, &options);
         let bounds = path.path.bounding_box();
@@ -406,7 +407,7 @@ mod tests {
 
     #[test]
     fn test_bottom() {
-        let key = Key::example();
+        let key = key::Key::example();
         let options = DrawingOptions::default();
 
         let path = bottom(&key, &options);
@@ -425,9 +426,10 @@ mod tests {
         );
 
         // Stepped caps
-        let key = Key {
-            shape: KeyShape::SteppedCaps,
-            ..Key::example()
+        let key = {
+            let mut key = key::Key::example();
+            key.shape = key::Shape::SteppedCaps;
+            key
         };
         let path = bottom(&key, &options);
         let bounds = path.path.bounding_box();
@@ -441,9 +443,10 @@ mod tests {
         );
 
         // ISO enter
-        let key = Key {
-            shape: KeyShape::IsoVertical,
-            ..Key::example()
+        let key = {
+            let mut key = key::Key::example();
+            key.shape = key::Shape::IsoVertical;
+            key
         };
         let path = bottom(&key, &options);
         let bounds = path.path.bounding_box();
@@ -462,18 +465,20 @@ mod tests {
         let options = DrawingOptions::default();
 
         // Scoop
-        let scoop = Key {
-            typ: KeyType::Homing(Some(Homing::Scoop)),
-            ..Key::example()
+        let scoop = {
+            let mut key = key::Key::example();
+            key.typ = key::Type::Homing(Some(key::Homing::Scoop));
+            key
         };
 
         let path = homing(&scoop, &options);
         assert!(path.is_none()); // Top is already scooped; no additional feature to draw
 
         // Bar
-        let bar = Key {
-            typ: KeyType::Homing(Some(Homing::Bar)),
-            ..Key::example()
+        let bar = {
+            let mut key = key::Key::example();
+            key.typ = key::Type::Homing(Some(key::Homing::Bar));
+            key
         };
 
         let path = homing(&bar, &options);
@@ -492,9 +497,10 @@ mod tests {
         assert_approx_eq!(bounds.size(), options.profile.homing.bar.size);
 
         // Bump
-        let bump = Key {
-            typ: KeyType::Homing(Some(Homing::Bump)),
-            ..Key::example()
+        let bump = {
+            let mut key = key::Key::example();
+            key.typ = key::Type::Homing(Some(key::Homing::Bump));
+            key
         };
 
         let path = homing(&bump, &options);
@@ -514,7 +520,7 @@ mod tests {
         assert_approx_eq!(bounds.height(), options.profile.homing.bump.diameter);
 
         // Non-homing key
-        let none = Key::example();
+        let none = key::Key::example();
 
         let path = homing(&none, &options);
         assert!(path.is_none()); // No additional feature to draw
@@ -522,9 +528,10 @@ mod tests {
 
     #[test]
     fn test_step() {
-        let key = Key {
-            shape: KeyShape::SteppedCaps,
-            ..Key::example()
+        let key = {
+            let mut key = key::Key::example();
+            key.shape = key::Shape::SteppedCaps;
+            key
         };
         let options = DrawingOptions::default();
 

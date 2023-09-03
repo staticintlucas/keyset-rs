@@ -117,9 +117,10 @@ fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
 
 #[cfg(test)]
 mod tests {
+    use key::Key;
     use tiny_skia::Pixmap;
 
-    use crate::{DrawingOptions, Key};
+    use crate::DrawingOptions;
 
     #[test]
     fn test_to_png() {

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::kle::InvalidKleLayout;
+use key::kle::Error as KleError;
 
 #[derive(Debug)]
 pub struct Error {
@@ -14,7 +14,7 @@ enum ErrorImpl {
     JsonParseError(serde_json::Error),
     TomlParseError(toml::de::Error),
     FontParseError(ttf_parser::FaceParsingError),
-    InvalidKleLayout(InvalidKleLayout),
+    InvalidKle(KleError),
 }
 
 impl fmt::Display for Error {
@@ -23,7 +23,7 @@ impl fmt::Display for Error {
             ErrorImpl::JsonParseError(error) => write!(f, "error parsing JSON: {error}"),
             ErrorImpl::TomlParseError(error) => write!(f, "error parsing TOML: {error}"),
             ErrorImpl::FontParseError(error) => write!(f, "error parsing font: {error}"),
-            ErrorImpl::InvalidKleLayout(error) => write!(f, "error parsing KLE layout: {error}"),
+            ErrorImpl::InvalidKle(error) => write!(f, "error parsing KLE JSON: {error}"),
         }
     }
 }
@@ -34,7 +34,7 @@ impl std::error::Error for Error {
             ErrorImpl::JsonParseError(error) => Some(error),
             ErrorImpl::TomlParseError(error) => Some(error),
             ErrorImpl::FontParseError(error) => Some(error),
-            ErrorImpl::InvalidKleLayout(_) => None,
+            ErrorImpl::InvalidKle(error) => Some(error),
         }
     }
 }
@@ -63,10 +63,10 @@ impl From<ttf_parser::FaceParsingError> for Error {
     }
 }
 
-impl From<InvalidKleLayout> for Error {
-    fn from(error: InvalidKleLayout) -> Self {
+impl From<KleError> for Error {
+    fn from(error: KleError) -> Self {
         Self {
-            inner: Box::new(ErrorImpl::InvalidKleLayout(error)),
+            inner: Box::new(ErrorImpl::InvalidKle(error)),
         }
     }
 }
@@ -75,7 +75,7 @@ impl From<InvalidKleLayout> for Error {
 mod tests {
     use unindent::unindent;
 
-    use crate::kle;
+    use key::kle;
 
     use super::*;
 
@@ -95,7 +95,11 @@ mod tests {
 
     fn invalid_key_size() -> Error {
         let kle = r#"[[{"w": 1, "h": 1, "x2": 1, "y2": 1, "w2": 1, "h2": 1}, "A"]]"#;
-        kle::from_json(kle).unwrap_err()
+        kle::from_json(kle).unwrap_err().into()
+    }
+
+    fn invalid_json() -> Error {
+        kle::from_json("invalid").unwrap_err().into()
     }
 
     #[test]
@@ -122,7 +126,7 @@ mod tests {
             ),
             (
                 invalid_key_size(),
-                "error parsing KLE layout: Unsupported non-standard key size \
+                "error parsing KLE JSON: unsupported non-standard key size \
                 (w: 1.00, h: 1.00, x2: 1.00, y2: 1.00, w2: 1.00, h2: 1.00). \
                 Note only ISO enter and stepped caps are supported as special cases"
                     .to_owned(),
@@ -142,7 +146,8 @@ mod tests {
             (json_parse_error(), true),
             (toml_parse_error(), true),
             (font_parse_error(), true),
-            (invalid_key_size(), false),
+            (invalid_key_size(), true),
+            (invalid_json(), true),
         ];
 
         for (err, has_source) in config {

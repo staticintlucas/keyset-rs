@@ -14,3 +14,4 @@ license.workspace = true
 [dependencies]
 color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0" }
 core = { package = "keyset-core", path = "../keyset-core", version = "0.2.1" }
+key = { package = "keyset-key", path = "../keyset-key", version = "0.1.0" }

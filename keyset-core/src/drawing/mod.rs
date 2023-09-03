@@ -3,9 +3,10 @@ mod pdf;
 mod png;
 mod svg;
 
+use key::Key;
 use kurbo::{Point, Rect, Size};
 
-use crate::{Font, Key, Profile};
+use crate::{Font, Profile};
 
 pub(crate) use imp::{KeyDrawing, Path};
 
@@ -21,7 +22,7 @@ impl Drawing {
     pub fn new(keys: &[Key], options: &DrawingOptions) -> Self {
         let bounds = keys
             .iter()
-            .map(|k| Rect::from_origin_size(k.position, k.shape.size()))
+            .map(|k| k.shape.bounds().with_origin(k.position))
             .fold(
                 Rect::from_origin_size(Point::ORIGIN, Size::new(1., 1.)),
                 |rect, key| rect.union(key),
