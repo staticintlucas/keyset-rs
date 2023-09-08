@@ -1,7 +1,5 @@
 mod error;
 
-use std::array;
-
 use kle_serial as kle;
 use kurbo::{Point, Size};
 
@@ -70,23 +68,34 @@ fn key_type_from_kle(key: &kle::Key) -> Type {
 impl From<kle::Legend> for Legend {
     fn from(legend: kle::Legend) -> Self {
         let kle::Legend { text, size, color } = legend;
-        let color = color.rgb().into();
-        Self { text, size, color }
+        Self {
+            text,
+            size_idx: size,
+            color: color.rgb().into(),
+        }
     }
 }
 
 impl TryFrom<kle::Key> for Key {
     type Error = Error;
 
-    fn try_from(key: kle::Key) -> Result<Self> {
+    fn try_from(mut key: kle::Key) -> Result<Self> {
+        let position = Point::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.));
+        let shape = key_shape_from_kle(&key)?;
+        let typ = key_type_from_kle(&key);
+        let color = key.color.rgb().into();
+        let legends = {
+            let mut arr = <[Option<kle::Legend>; 9]>::default();
+            arr.swap_with_slice(&mut key.legends[..9]);
+            arr
+        };
+        let legends = legends.map(|l| l.map(Legend::from)).into();
         Ok(Self {
-            position: Point::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.)),
-            shape: key_shape_from_kle(&key)?,
-            typ: key_type_from_kle(&key),
-            color: key.color.rgb().into(),
-            legends: array::from_fn(|col| {
-                array::from_fn(|row| key.legends[col * 3 + row].clone().map(Legend::from))
-            }),
+            position,
+            shape,
+            typ,
+            color,
+            legends,
         })
     }
 }

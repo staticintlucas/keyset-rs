@@ -54,7 +54,7 @@ impl KeyDrawing {
                 .legends
                 .iter()
                 .flatten()
-                .filter_map(|l| l.as_ref().map(|l| l.size))
+                .map(|l| l.size_idx)
                 .unique()
                 .map(|s| (top_rect + options.profile.text_margin.get(s)).into_path(ARC_TOL))
                 .fold(BezPath::new(), |mut p, r| {
@@ -72,25 +72,12 @@ impl KeyDrawing {
             }
         });
 
-        let align = |row_idx, col_idx| {
-            Vec2::new(
-                (col_idx as f64) / ((key.legends.len() - 1) as f64),
-                (row_idx as f64) / ((key.legends[0].len() - 1) as f64),
-            )
-        };
-
-        let legends = key
-            .legends
-            .iter()
-            .enumerate()
-            .flat_map(|(row_idx, row)| {
-                row.iter().enumerate().filter_map(move |(col_idx, legend)| {
-                    legend.as_ref().map(|l| (align(row_idx, col_idx), l))
-                })
-            })
-            .map(|(align, legend)| {
+        let legends = key.legends.iter().enumerate().filter_map(|(i, l)| {
+            l.as_ref().map(|legend| {
+                let align = Vec2::new(((i % 3) as f64) / 2.0, ((i / 3) as f64) / 2.0);
                 legend::draw(legend, &options.font, &options.profile, top_rect, align)
-            });
+            })
+        });
 
         // Do a bunch of chaining here rather than using [...].iter().filter_map(|it| it). This
         // gives iterator a known size so it will allocate the required size when collecting to a
@@ -154,7 +141,7 @@ mod tests {
 
         assert_eq!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
-        let font_size = key.legends[0][0].as_ref().unwrap().size;
+        let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = options.profile.top_with_size((1.5, 1.0)).rect()
             + options.profile.text_margin.get(font_size);
         assert_approx_eq!(
@@ -176,7 +163,7 @@ mod tests {
 
         assert_eq!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
-        let font_size = key.legends[0][0].as_ref().unwrap().size;
+        let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = options.profile.top_with_size((1.25, 2.0)).rect()
             + options.profile.text_margin.get(font_size);
         assert_approx_eq!(

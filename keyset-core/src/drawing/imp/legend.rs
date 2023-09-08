@@ -40,7 +40,7 @@ pub(crate) fn draw(
             path
         });
 
-    let height = profile.text_height.get(legend.size);
+    let height = profile.text_height.get(legend.size_idx);
     path.apply_affine(Affine::scale(height / font.cap_height)); // Scale to correct height
 
     // Calculate legend bounds. For x this is based on actual size while for y we use the base line
@@ -51,7 +51,7 @@ pub(crate) fn draw(
         .with_size((bounds.width(), height));
 
     // Check to ensure our legend fits
-    let margin = top_rect + profile.text_margin.get(legend.size);
+    let margin = top_rect + profile.text_margin.get(legend.size_idx);
     if bounds.width() > margin.width() {
         let percent = 100. * (bounds.width() / margin.width() - 1.);
         warn!(r#"legend "{text}" is {percent}% too wide; squishing legend to fit"#);
@@ -86,7 +86,7 @@ mod tests {
     fn test_legend_draw() {
         let legend = ::key::Legend {
             text: "AV".into(),
-            size: 5,
+            size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
         let font = Font::from_ttf(
@@ -107,7 +107,7 @@ mod tests {
 
         let legend = ::key::Legend {
             text: "😎".into(),
-            size: 5,
+            size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(1., 1.));
@@ -119,7 +119,7 @@ mod tests {
 
         let legend = ::key::Legend {
             text: "Some really long legend that will totally need to be squished".into(),
-            size: 5,
+            size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(1., 1.));

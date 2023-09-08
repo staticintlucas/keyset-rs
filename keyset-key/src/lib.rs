@@ -12,8 +12,12 @@
 )]
 #![allow(missing_docs, clippy::missing_errors_doc)]
 
+mod legend;
+
 #[cfg(feature = "kle")]
 pub mod kle;
+
+pub use legend::{Legend, Legends};
 
 use kurbo::{Point, Rect, Size};
 
@@ -71,13 +75,6 @@ impl Shape {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Legend {
-    pub text: String,
-    pub size: usize,
-    pub color: Color,
-}
-
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct Key {
@@ -85,7 +82,7 @@ pub struct Key {
     pub shape: Shape,
     pub typ: Type,
     pub color: Color,
-    pub legends: [[Option<Legend>; 3]; 3],
+    pub legends: Legends,
 }
 
 impl Key {
@@ -99,34 +96,17 @@ impl Key {
     pub fn example() -> Self {
         Self {
             legends: [
-                [
-                    Some(Legend {
-                        text: "!".into(),
-                        size: 4,
-                        color: Color::new(0.0, 0.0, 0.0),
-                    }),
-                    None,
-                    Some(Legend {
-                        text: "¹".into(),
-                        size: 4,
-                        color: Color::new(0.0, 0.0, 0.0),
-                    }),
-                ],
-                [None, None, None],
-                [
-                    Some(Legend {
-                        text: "1".into(),
-                        size: 4,
-                        color: Color::new(0.0, 0.0, 0.0),
-                    }),
-                    None,
-                    Some(Legend {
-                        text: "¡".into(),
-                        size: 4,
-                        color: Color::new(0.0, 0.0, 0.0),
-                    }),
-                ],
-            ],
+                Some(Legend::new("!", 4, Color::new(0.0, 0.0, 0.0))),
+                None,
+                Some(Legend::new("¹", 4, Color::new(0.0, 0.0, 0.0))),
+                None,
+                None,
+                None,
+                Some(Legend::new("1", 4, Color::new(0.0, 0.0, 0.0))),
+                None,
+                Some(Legend::new("¡", 4, Color::new(0.0, 0.0, 0.0))),
+            ]
+            .into(),
             ..Self::default()
         }
     }
@@ -139,7 +119,7 @@ impl Default for Key {
             shape: Shape::Normal(Size::new(1., 1.)),
             typ: Type::Normal,
             color: Color::new(0.8, 0.8, 0.8),
-            legends: Default::default(), // [[None; 3]; 3] won't work since Option<Legend> : !Copy
+            legends: Legends::default(),
         }
     }
 }
@@ -186,10 +166,8 @@ pub mod tests {
         assert_matches!(key.shape, Shape::Normal(size) if size == Size::new(1., 1.));
         assert_matches!(key.typ, Type::Normal);
         assert_eq!(key.color, Color::new(0.8, 0.8, 0.8));
-        for row in key.legends {
-            for el in row {
-                assert!(el.is_none());
-            }
+        for legend in key.legends {
+            assert!(legend.is_none());
         }
     }
 }
