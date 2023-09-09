@@ -95,18 +95,7 @@ impl Key {
     #[must_use]
     pub fn example() -> Self {
         Self {
-            legends: [
-                Some(Legend::new("!", 4, Color::new(0.0, 0.0, 0.0))),
-                None,
-                Some(Legend::new("¹", 4, Color::new(0.0, 0.0, 0.0))),
-                None,
-                None,
-                None,
-                Some(Legend::new("1", 4, Color::new(0.0, 0.0, 0.0))),
-                None,
-                Some(Legend::new("¡", 4, Color::new(0.0, 0.0, 0.0))),
-            ]
-            .into(),
+            legends: Legends::example(),
             ..Self::default()
         }
     }
@@ -168,6 +157,20 @@ pub mod tests {
         assert_eq!(key.color, Color::new(0.8, 0.8, 0.8));
         for legend in key.legends {
             assert!(legend.is_none());
+        }
+    }
+
+    #[test]
+    fn key_example() {
+        let key = Key::example();
+        let legend_is_some = [true, false, true, false, false, false, true, false, true];
+
+        assert_eq!(key.position, Point::new(0., 0.));
+        assert_matches!(key.shape, Shape::Normal(size) if size == Size::new(1., 1.));
+        assert_matches!(key.typ, Type::Normal);
+        assert_eq!(key.color, Color::new(0.8, 0.8, 0.8));
+        for (legend, is_some) in key.legends.into_iter().zip(legend_is_some) {
+            assert_eq!(legend.is_some(), is_some);
         }
     }
 }

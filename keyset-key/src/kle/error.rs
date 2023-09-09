@@ -13,7 +13,6 @@ pub enum Error {
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // write!(f, "{}", self.message)
         match self {
             Self::UnsupportedKeySize {
                 w,
@@ -49,3 +48,58 @@ impl From<serde_json::Error> for Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+#[cfg(test)]
+pub mod tests {
+    use std::error::Error as _;
+
+    use assert_matches::assert_matches;
+
+    use super::*;
+
+    #[test]
+    fn error_fmt() {
+        let unsupported_key_size = Error::UnsupportedKeySize {
+            w: 1.,
+            h: 1.,
+            x2: -0.25,
+            y2: 0.,
+            w2: 1.5,
+            h2: 1.,
+        };
+        assert_eq!(
+            format!("{unsupported_key_size}"),
+            "unsupported non-standard key size (w: 1.00, h: 1.00, x2: -0.25, y2: 0.00, w2: 1.50, \
+            h2: 1.00). Note only ISO enter and stepped caps are supported as special cases"
+        );
+
+        let json_parse_error: Error = serde_json::from_str::<i32>("error").unwrap_err().into();
+        assert_eq!(
+            format!("{json_parse_error}"),
+            "expected value at line 1 column 1"
+        );
+    }
+
+    #[test]
+    fn error_source() {
+        let unsupported_key_size = Error::UnsupportedKeySize {
+            w: 1.,
+            h: 1.,
+            x2: -0.25,
+            y2: 0.,
+            w2: 1.5,
+            h2: 1.,
+        };
+        assert!(unsupported_key_size.source().is_none());
+
+        let json_parse_error: Error = serde_json::from_str::<i32>("error").unwrap_err().into();
+        assert!(json_parse_error.source().is_some());
+    }
+
+    #[test]
+    fn error_from() {
+        let json_parse_error = serde_json::from_str::<i32>("error").unwrap_err();
+
+        assert_matches!(json_parse_error.into(), Error::JsonParseError(..));
+    }
+}

@@ -6,7 +6,7 @@ use kurbo::{Point, Size};
 use crate::{Homing, Key, Legend, Shape, Type};
 pub use error::{Error, Result};
 
-fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
+fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
     fn is_close<const N: usize>(a: &[f64; N], b: &[f64; N]) -> bool {
         a.iter().zip(b).all(|(a, b)| (b - a).abs() < 1e-2)
     }
@@ -42,7 +42,7 @@ fn key_shape_from_kle(key: &kle::Key) -> Result<Shape> {
     }
 }
 
-fn key_type_from_kle(key: &kle::Key) -> Type {
+fn type_from_kle(key: &kle::Key) -> Type {
     const SCOOP_KW: [&str; 2] = ["scoop", "dish"];
     const BAR_KW: [&str; 2] = ["bar", "line"];
     const BUMP_KW: [&str; 4] = ["bump", "dot", "nub", "nipple"];
@@ -81,8 +81,8 @@ impl TryFrom<kle::Key> for Key {
 
     fn try_from(mut key: kle::Key) -> Result<Self> {
         let position = Point::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.));
-        let shape = key_shape_from_kle(&key)?;
-        let typ = key_type_from_kle(&key);
+        let shape = shape_from_kle(&key)?;
+        let typ = type_from_kle(&key);
         let color = key.color.rgb().into();
         let legends = {
             let mut arr = <[Option<kle::Legend>; 9]>::default();
@@ -113,8 +113,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_key_shape_from_kle() {
-        let regular_key = key_shape_from_kle(&kle::Key {
+    fn key_shape_from_kle() {
+        let regular_key = shape_from_kle(&kle::Key {
             width: 2.25,
             height: 1.,
             x2: 0.,
@@ -124,7 +124,7 @@ mod tests {
             ..Default::default()
         })
         .unwrap();
-        let iso_horiz = key_shape_from_kle(&kle::Key {
+        let iso_horiz = shape_from_kle(&kle::Key {
             width: 1.5,
             height: 1.,
             x2: 0.25,
@@ -134,7 +134,7 @@ mod tests {
             ..Default::default()
         })
         .unwrap();
-        let iso_vert = key_shape_from_kle(&kle::Key {
+        let iso_vert = shape_from_kle(&kle::Key {
             width: 1.25,
             height: 2.,
             x2: -0.25,
@@ -144,7 +144,7 @@ mod tests {
             ..Default::default()
         })
         .unwrap();
-        let step_caps = key_shape_from_kle(&kle::Key {
+        let step_caps = shape_from_kle(&kle::Key {
             width: 1.25,
             height: 1.,
             x2: 0.,
@@ -162,8 +162,8 @@ mod tests {
     }
 
     #[test]
-    fn test_key_shape_from_kle_invalid() {
-        let invalid = key_shape_from_kle(&kle::Key {
+    fn key_shape_from_kle_invalid() {
+        let invalid = shape_from_kle(&kle::Key {
             width: 1.,
             height: 1.,
             x2: -0.25,
@@ -185,31 +185,31 @@ mod tests {
     }
 
     #[test]
-    fn test_key_type_from_kle() {
-        let regular_key = key_type_from_kle(&kle::Key {
+    fn key_type_from_kle() {
+        let regular_key = type_from_kle(&kle::Key {
             ..Default::default()
         });
-        let decal = key_type_from_kle(&kle::Key {
+        let decal = type_from_kle(&kle::Key {
             decal: true,
             ..Default::default()
         });
-        let space = key_type_from_kle(&kle::Key {
+        let space = type_from_kle(&kle::Key {
             profile: "space".into(),
             ..Default::default()
         });
-        let homing_default = key_type_from_kle(&kle::Key {
+        let homing_default = type_from_kle(&kle::Key {
             homing: true,
             ..Default::default()
         });
-        let homing_scoop = key_type_from_kle(&kle::Key {
+        let homing_scoop = type_from_kle(&kle::Key {
             profile: "scoop".into(),
             ..Default::default()
         });
-        let homing_bar = key_type_from_kle(&kle::Key {
+        let homing_bar = type_from_kle(&kle::Key {
             profile: "bar".into(),
             ..Default::default()
         });
-        let homing_bump = key_type_from_kle(&kle::Key {
+        let homing_bump = type_from_kle(&kle::Key {
             profile: "bump".into(),
             ..Default::default()
         });
@@ -224,7 +224,7 @@ mod tests {
     }
 
     #[test]
-    fn test_kle_from_json() {
+    fn kle_from_json() {
         let result1: Vec<_> = from_json(&unindent(
             r#"[
                 {
