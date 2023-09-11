@@ -1,3 +1,4 @@
+#[cfg(feature = "serde")]
 mod de;
 
 use std::collections::HashMap;
@@ -9,7 +10,8 @@ use itertools::Itertools;
 use key::Homing;
 use serde::Deserialize;
 
-use crate::error::{Error, Result};
+#[cfg(feature = "serde")]
+use de::{Error, Result};
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
@@ -20,7 +22,7 @@ pub enum ProfileType {
 }
 
 impl ProfileType {
-    pub(crate) const fn depth(self) -> f64 {
+    pub const fn depth(self) -> f64 {
         match self {
             Self::Cylindrical { depth } | Self::Spherical { depth } => depth,
             Self::Flat => 0.,
@@ -247,6 +249,7 @@ pub struct Profile {
 }
 
 impl Profile {
+    #[cfg(feature = "toml")]
     pub fn from_toml(s: &str) -> Result<Self> {
         toml::from_str(s).map_err(Error::from)
     }
@@ -266,10 +269,7 @@ impl Profile {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
-    use maplit::hashmap;
     use unindent::unindent;
-
-    use crate::utils::KurboAbs;
 
     use super::*;
 
@@ -298,7 +298,7 @@ mod tests {
     #[test]
     fn test_text_height_new() {
         let expected: [_; 10] = array::from_fn(|i| (6. + 2. * (i as f64)) * (1e3 / 72.));
-        let result = TextHeight::new(&hashmap! {}).0;
+        let result = TextHeight::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
 
@@ -307,13 +307,13 @@ mod tests {
         }
 
         let expected = [0., 60., 120., 180., 190., 210., 230., 280., 330., 380.];
-        let result = TextHeight::new(&hashmap! {
-            1 => 60.,
-            3 => 180.,
-            4 => 190.,
-            6 => 230.,
-            9 => 380.
-        })
+        let result = TextHeight::new(&HashMap::from([
+            (1, 60.0),
+            (3, 180.0),
+            (4, 190.0),
+            (6, 230.0),
+            (9, 380.0),
+        ]))
         .0;
 
         assert_eq!(expected.len(), result.len());
@@ -325,13 +325,13 @@ mod tests {
 
     #[test]
     fn test_text_height_get() {
-        let heights = TextHeight::new(&hashmap! {
-            1 => 3.,
-            3 => 9.,
-            4 => 9.5,
-            6 => 11.5,
-            9 => 19.
-        });
+        let heights = TextHeight::new(&HashMap::from([
+            (1, 3.0),
+            (3, 9.0),
+            (4, 9.5),
+            (6, 11.5),
+            (9, 19.0),
+        ]));
         assert_approx_eq!(heights.get(5), 10.5);
         assert_approx_eq!(heights.get(23), 19.);
     }
@@ -348,12 +348,13 @@ mod tests {
     #[test]
     fn test_text_margin_new() {
         let expected = vec![Insets::uniform(-50.); 10];
-        let result = TextMargin::new(&hashmap! {}).0;
+        let result = TextMargin::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.size(), r.size());
+            assert_approx_eq!(e.size().width, r.size().width);
+            assert_approx_eq!(e.size().height, r.size().height);
         }
 
         let expected = vec![
@@ -368,33 +369,36 @@ mod tests {
             Insets::uniform(-100.),
             Insets::uniform(-100.),
         ];
-        let result = TextMargin::new(&hashmap! {
-            2 => Insets::uniform(0.),
-            5 => Insets::uniform(-50.),
-            7 => Insets::uniform(-100.),
-        })
+        let result = TextMargin::new(&HashMap::from([
+            (2, Insets::uniform(0.0)),
+            (5, Insets::uniform(-50.0)),
+            (7, Insets::uniform(-100.0)),
+        ]))
         .0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.size(), r.size());
+            assert_approx_eq!(e.size().width, r.size().width);
+            assert_approx_eq!(e.size().height, r.size().height);
         }
     }
 
     #[test]
     fn test_text_margin_get() {
-        let margin = TextMargin::new(&hashmap! {
-            2 => Insets::uniform(0.),
-            5 => Insets::uniform(-50.),
-            7 => Insets::uniform(-100.),
-        });
+        let margin = TextMargin::new(&HashMap::from([
+            (2, Insets::uniform(0.0)),
+            (5, Insets::uniform(-50.0)),
+            (7, Insets::uniform(-100.0)),
+        ]));
 
         let inset = margin.get(2);
-        assert_approx_eq!(inset.size(), Size::new(0., 0.));
+        assert_approx_eq!(inset.size().width, 0.0);
+        assert_approx_eq!(inset.size().height, 0.0);
 
         let inset = margin.get(62);
-        assert_approx_eq!(inset.size(), Size::new(-200., -200.));
+        assert_approx_eq!(inset.size().width, -200.0);
+        assert_approx_eq!(inset.size().height, -200.0);
     }
 
     #[test]
@@ -402,7 +406,8 @@ mod tests {
         let margin = TextMargin::default();
 
         for inset in margin.0.into_iter() {
-            assert_approx_eq!(inset.size(), Size::new(-100., -100.));
+            assert_approx_eq!(inset.size().width, -100.0);
+            assert_approx_eq!(inset.size().height, -100.0);
         }
     }
 
@@ -500,10 +505,12 @@ mod tests {
             matches!(profile.typ, ProfileType::Cylindrical { depth } if f64::abs(depth - 0.5) < 1e-6)
         );
 
-        assert_approx_eq!(profile.bottom.size, Size::new(960., 960.), 0.5);
-        assert_approx_eq!(profile.bottom.radius, 20., 0.5);
+        assert_approx_eq!(profile.bottom.size.width, 960.0, 0.5);
+        assert_approx_eq!(profile.bottom.size.height, 960.0, 0.5);
+        assert_approx_eq!(profile.bottom.radius, 20.0, 0.5);
 
-        assert_approx_eq!(profile.top.size, Size::new(620., 730.), 0.5);
+        assert_approx_eq!(profile.top.size.width, 620.0, 0.5);
+        assert_approx_eq!(profile.top.size.height, 730.0, 0.5);
         assert_approx_eq!(profile.top.radius, 80., 0.5);
 
         assert_eq!(profile.text_height.0.len(), 10);
@@ -526,12 +533,14 @@ mod tests {
             Insets::new(-62., -62., -62., -62.),
         ];
         for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.size(), r.size(), 0.5);
+            assert_approx_eq!(e.size().width, r.size().width, 0.5);
+            assert_approx_eq!(e.size().height, r.size().height, 0.5);
         }
 
         assert_matches!(profile.homing.default, Homing::Scoop);
         assert_approx_eq!(profile.homing.scoop.depth, 1.5);
-        assert_approx_eq!(profile.homing.bar.size, Size::new(202., 21.), 0.5);
+        assert_approx_eq!(profile.homing.bar.size.width, 202.0, 0.5);
+        assert_approx_eq!(profile.homing.bar.size.height, 21.0, 0.5);
         assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);
         assert_approx_eq!(profile.homing.bump.diameter, 21., 0.5);
         assert_approx_eq!(profile.homing.bump.y_offset, -10., 0.5);
@@ -541,7 +550,7 @@ mod tests {
         assert_eq!(
             format!("{}", result.unwrap_err()),
             unindent(
-                r#"error parsing TOML: TOML parse error at line 1, column 5
+                r#"TOML parse error at line 1, column 5
                   |
                 1 | null
                   |     ^
@@ -555,48 +564,35 @@ mod tests {
     fn test_profile_with_size() {
         let profile = Profile::default();
 
+        let top = profile.top_with_size((1.0, 1.0));
+        assert_approx_eq!(top.origin().x, 500.0 - profile.top.size.width / 2.0);
         assert_approx_eq!(
-            profile.top_with_size((1., 1.)).origin(),
-            Point::new(
-                500. - profile.top.size.width / 2.,
-                500. - profile.top.size.height / 2. + profile.top.y_offset,
-            )
+            top.origin().y,
+            500.0 - profile.top.size.height / 2.0 + profile.top.y_offset
         );
-        assert_approx_eq!(profile.top_with_size((1., 1.)).size(), profile.top.size);
-        assert_approx_eq!(
-            profile.bottom_with_size((1., 1.)).origin(),
-            Point::new(
-                500. - profile.bottom.size.width / 2.,
-                500. - profile.bottom.size.height / 2.
-            )
-        );
-        assert_approx_eq!(
-            profile.bottom_with_size((1., 1.)).size(),
-            profile.bottom.size
-        );
+        assert_approx_eq!(top.size().width, profile.top.size.width);
+        assert_approx_eq!(top.size().height, profile.top.size.height);
 
+        let bottom = profile.bottom_with_size((1.0, 1.0));
+        assert_approx_eq!(bottom.origin().x, 500.0 - profile.bottom.size.width / 2.0);
+        assert_approx_eq!(bottom.origin().y, 500.0 - profile.bottom.size.height / 2.0);
+        assert_approx_eq!(bottom.size().width, profile.bottom.size.width);
+        assert_approx_eq!(bottom.size().height, profile.bottom.size.height);
+
+        let top = profile.top_with_size((3.0, 2.0));
+        assert_approx_eq!(top.origin().x, 500.0 - profile.top.size.width / 2.0);
         assert_approx_eq!(
-            profile.top_with_size((3., 2.)).origin(),
-            Point::new(
-                500. - profile.top.size.width / 2.,
-                500. - profile.top.size.height / 2. + profile.top.y_offset,
-            )
+            top.origin().y,
+            500.0 - profile.top.size.height / 2.0 + profile.top.y_offset
         );
-        assert_approx_eq!(
-            profile.top_with_size((3., 2.)).size(),
-            profile.top.size + Size::new(2e3, 1e3)
-        );
-        assert_approx_eq!(
-            profile.bottom_with_size((3., 2.)).origin(),
-            Point::new(
-                500. - profile.bottom.size.width / 2.,
-                500. - profile.bottom.size.height / 2.
-            )
-        );
-        assert_approx_eq!(
-            profile.bottom_with_size((3., 2.)).size(),
-            profile.bottom.size + Size::new(2e3, 1e3)
-        );
+        assert_approx_eq!(top.size().width, profile.top.size.width + 2e3);
+        assert_approx_eq!(top.size().height, profile.top.size.height + 1e3);
+
+        let bottom = profile.bottom_with_size((3.0, 2.0));
+        assert_approx_eq!(bottom.origin().x, 500.0 - profile.bottom.size.width / 2.0);
+        assert_approx_eq!(bottom.origin().y, 500.0 - profile.bottom.size.height / 2.0);
+        assert_approx_eq!(bottom.size().width, profile.bottom.size.width + 2e3);
+        assert_approx_eq!(bottom.size().height, profile.bottom.size.height + 1e3);
     }
 
     #[test]
@@ -605,10 +601,12 @@ mod tests {
 
         assert_matches!(profile.typ, ProfileType::Cylindrical { depth } if depth == 1.);
 
-        assert_approx_eq!(profile.bottom.size, Size::new(950., 950.));
+        assert_approx_eq!(profile.bottom.size.width, 950.0);
+        assert_approx_eq!(profile.bottom.size.height, 950.0);
         assert_approx_eq!(profile.bottom.radius, 65.);
 
-        assert_approx_eq!(profile.top.size, Size::new(660., 735.));
+        assert_approx_eq!(profile.top.size.width, 660.0);
+        assert_approx_eq!(profile.top.size.height, 735.0);
         assert_approx_eq!(profile.top.radius, 65.);
         assert_approx_eq!(profile.top.y_offset, -77.5);
 
@@ -621,7 +619,8 @@ mod tests {
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = TextMargin::default();
         for (e, r) in expected.0.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.size(), r.size(), 0.5);
+            assert_approx_eq!(e.size().width, r.size().width, 0.5);
+            assert_approx_eq!(e.size().height, r.size().height, 0.5);
         }
     }
 }

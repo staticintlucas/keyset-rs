@@ -18,6 +18,7 @@ license.workspace = true
 color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0", features = ["rgb", "tiny-skia"] }
 geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
 key = { package = "keyset-key", path = "../keyset-key", version = "0.1.0", features = ["kle"] }
+profile = { package = "keyset-profile", path = "../keyset-profile", version = "0.1.0", features = ["toml"] }
 
 interp = { version = "1.0", features = ["interp_array"] }
 itertools = "0.10"

@@ -1,15 +1,19 @@
+mod error;
+
 use std::collections::HashMap;
 
 use geom::{Point, Rect, Size};
-use serde::de::{Error, Unexpected};
+use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use crate::profile::{BottomSurface, HomingProps, ProfileType, TextHeight, TextMargin};
+use crate::{BottomSurface, HomingProps, ProfileType, TextHeight, TextMargin};
 
 use super::{BarProps, BumpProps, Profile, TopSurface};
 
+pub use error::{Error, Result};
+
 impl<'de> Deserialize<'de> for BarProps {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -32,7 +36,7 @@ impl<'de> Deserialize<'de> for BarProps {
 }
 
 impl<'de> Deserialize<'de> for BumpProps {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -54,7 +58,7 @@ impl<'de> Deserialize<'de> for BumpProps {
 }
 
 impl<'de> Deserialize<'de> for TopSurface {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -79,7 +83,7 @@ impl<'de> Deserialize<'de> for TopSurface {
 }
 
 impl<'de> Deserialize<'de> for BottomSurface {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -120,7 +124,9 @@ impl LegendProps {
     }
 }
 
-fn deserialize_legend_map<'de, D>(deserializer: D) -> Result<HashMap<usize, LegendProps>, D::Error>
+fn deserialize_legend_map<'de, D>(
+    deserializer: D,
+) -> std::result::Result<HashMap<usize, LegendProps>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -138,11 +144,11 @@ where
             };
             Ok((i, p))
         })
-        .collect::<Result<_, _>>()
+        .collect()
 }
 
 impl<'de> Deserialize<'de> for Profile {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -183,44 +189,45 @@ impl<'de> Deserialize<'de> for Profile {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
-    use crate::utils::KurboAbs;
-
     use super::*;
 
     #[test]
-    fn test_deserialize_bar_props() {
+    fn deserialize_bar_props() {
         let bar_props: BarProps =
             toml::from_str("width = 3.85\nheight = 0.4\ny-offset = 5.05").unwrap();
 
-        assert_approx_eq!(bar_props.size, Size::new(202., 21.), 0.5);
-        assert_approx_eq!(bar_props.y_offset, 265., 0.5);
+        assert_approx_eq!(bar_props.size.width, 202.0, 0.5);
+        assert_approx_eq!(bar_props.size.height, 21.0, 0.5);
+        assert_approx_eq!(bar_props.y_offset, 265.0, 0.5);
     }
 
     #[test]
-    fn test_deserialize_bump_props() {
+    fn deserialize_bump_props() {
         let bar_props: BumpProps = toml::from_str("diameter = 0.4\ny-offset = -0.2").unwrap();
 
-        assert_approx_eq!(bar_props.diameter, 21., 0.5);
+        assert_approx_eq!(bar_props.diameter, 21.0, 0.5);
         assert_approx_eq!(bar_props.y_offset, -10.5, 0.5);
     }
 
     #[test]
-    fn test_deserialize_top_surface() {
+    fn deserialize_top_surface() {
         let surf: TopSurface =
             toml::from_str("width = 11.81\nheight = 13.91\nradius = 1.52\ny-offset = -1.62")
                 .unwrap();
 
-        assert_approx_eq!(surf.size, Size::new(620., 730.), 0.5);
-        assert_approx_eq!(surf.radius, 80., 0.5);
-        assert_approx_eq!(surf.y_offset, -85., 0.5);
+        assert_approx_eq!(surf.size.width, 620.0, 0.5);
+        assert_approx_eq!(surf.size.height, 730.0, 0.5);
+        assert_approx_eq!(surf.radius, 80.0, 0.5);
+        assert_approx_eq!(surf.y_offset, -85.0, 0.5);
     }
 
     #[test]
-    fn test_deserialize_bottom_surface() {
+    fn deserialize_bottom_surface() {
         let surf: BottomSurface =
             toml::from_str("width = 18.29\nheight = 18.29\nradius = 0.38").unwrap();
 
-        assert_approx_eq!(surf.size, Size::new(960., 960.), 0.5);
-        assert_approx_eq!(surf.radius, 20., 0.5);
+        assert_approx_eq!(surf.size.width, 960.0, 0.5);
+        assert_approx_eq!(surf.size.height, 960.0, 0.5);
+        assert_approx_eq!(surf.radius, 20.0, 0.5);
     }
 }

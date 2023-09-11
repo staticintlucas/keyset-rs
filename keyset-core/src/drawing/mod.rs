@@ -136,7 +136,7 @@ impl DrawingOptions {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
-    use crate::profile::Profile;
+    use profile::Profile;
 
     use super::*;
 

@@ -5,6 +5,7 @@ members = [
   "keyset-core",
   "keyset-geom",
   "keyset-key",
+  "keyset-profile",
 ]
 resolver = "2"
 

@@ -1,0 +1,38 @@
+[package]
+name = "keyset-profile"
+version = "0.1.0"
+description = "Profile type and functionality for keyset"
+
+# We don't  really care about SEO for this crate, but Clippy complains if we
+# leave these out altogether
+keywords = ["keyset"]
+categories = ["none"]
+
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[features]
+toml = ["serde", "dep:toml"]
+# json = ["serde", "serde_json"]
+
+[dependencies]
+color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0", features = ["rgb"] }
+geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
+key = { package = "keyset-key", path = "../keyset-key", version = "0.1.0" }
+
+interp = { version = "1.0", features = ["interp_array"] }
+itertools = "0.10"
+serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+# serde_json = { version = "1.0", optional = true }
+toml = { version = "0.7", default-features = false, features = ["parse"], optional = true }
+
+[dev-dependencies]
+assert_approx_eq = "1.1"
+assert_matches = "1.5"
+unindent = "0.2"
+
+[package.metadata.docs.rs]
+all-features = true

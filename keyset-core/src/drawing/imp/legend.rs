@@ -3,7 +3,7 @@ use itertools::Itertools;
 use log::warn;
 
 use crate::font::Font;
-use crate::profile::Profile;
+use profile::Profile;
 
 use super::Path;
 

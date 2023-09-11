@@ -21,7 +21,6 @@
 mod drawing;
 mod error;
 mod font;
-mod profile;
 mod utils;
 
 pub use drawing::{Drawing, DrawingOptions};
