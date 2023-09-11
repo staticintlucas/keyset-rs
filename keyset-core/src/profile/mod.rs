@@ -3,14 +3,13 @@ mod de;
 use std::collections::HashMap;
 use std::{array, iter};
 
+use geom::{Insets, Point, Rect, RoundRect, Size, Vec2};
 use interp::interp_array;
 use itertools::Itertools;
 use key::Homing;
-use kurbo::{Insets, Point, Rect, Size, Vec2};
 use serde::Deserialize;
 
 use crate::error::{Error, Result};
-use crate::utils::RoundRect;
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]

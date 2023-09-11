@@ -1,8 +1,7 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use kurbo::{Arc, BezPath, Circle, Point, Rect, Shape};
+use geom::{Arc, BezPath, Circle, Point, Rect, RoundRect, Shape};
 
-use crate::utils::RoundRect;
 use crate::{DrawingOptions, Profile};
 
 use super::{Outline, Path, ARC_TOL};

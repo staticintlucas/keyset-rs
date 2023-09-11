@@ -1,5 +1,5 @@
+use geom::{Affine, Rect, Shape, Vec2};
 use itertools::Itertools;
-use kurbo::{Affine, Rect, Shape, Vec2};
 use log::warn;
 
 use crate::font::Font;
@@ -76,7 +76,7 @@ pub(crate) fn draw(
 #[cfg(test)]
 mod tests {
     use assert_approx_eq::assert_approx_eq;
-    use kurbo::PathEl;
+    use geom::PathEl;
 
     use color::Color;
 

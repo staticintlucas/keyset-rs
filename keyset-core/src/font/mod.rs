@@ -3,8 +3,8 @@ mod kerning;
 
 use std::collections::HashMap;
 
+use geom::Shape;
 use itertools::Itertools;
-use kurbo::Shape;
 use log::warn;
 use ttf_parser::{cmap, name_id, Face, GlyphId};
 

@@ -1,4 +1,4 @@
-use kurbo::{Affine, PathEl};
+use geom::{Affine, PathEl};
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform};
 
 use crate::drawing::Drawing;

@@ -19,7 +19,7 @@ pub mod kle;
 
 pub use legend::{Legend, Legends};
 
-use kurbo::{Point, Rect, Size};
+use geom::{Point, Rect, Size};
 
 use color::Color;
 

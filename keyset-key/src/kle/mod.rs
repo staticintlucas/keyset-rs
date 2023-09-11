@@ -1,7 +1,7 @@
 mod error;
 
+use geom::{Point, Size};
 use kle_serial as kle;
-use kurbo::{Point, Size};
 
 use crate::{Homing, Key, Legend, Shape, Type};
 pub use error::{Error, Result};

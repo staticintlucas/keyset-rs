@@ -3,8 +3,8 @@ mod legend;
 
 use ::key::Key;
 use color::Color;
+use geom::{BezPath, Point, Shape, Vec2};
 use itertools::Itertools;
-use kurbo::{BezPath, Point, Shape, Vec2};
 
 use crate::DrawingOptions;
 

@@ -1,4 +1,4 @@
-use kurbo::{Affine, PathEl, Point};
+use geom::{Affine, PathEl, Point};
 use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
 use pdf_writer::{Content, Filter, Finish, PdfWriter, Rect, Ref, TextStr};
 

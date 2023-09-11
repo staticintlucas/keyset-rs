@@ -1,5 +1,5 @@
+use geom::{Affine, PathEl, Point};
 use itertools::Itertools;
-use kurbo::{Affine, PathEl, Point};
 use svg::node::element::{Group, Path as SvgPath};
 use svg::Document;
 

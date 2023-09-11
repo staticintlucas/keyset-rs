@@ -1,7 +1,3 @@
-mod round_rect;
-
-pub(crate) use round_rect::RoundRect;
-
 // Shim to allow us to use assert_approx_eq with Kurbo types
 #[cfg(test)]
 mod kurbo_shim {
@@ -9,13 +5,13 @@ mod kurbo_shim {
         fn abs(&self) -> f64;
     }
 
-    impl KurboAbs for kurbo::Vec2 {
+    impl KurboAbs for geom::Vec2 {
         fn abs(&self) -> f64 {
             self.length()
         }
     }
 
-    impl KurboAbs for kurbo::Size {
+    impl KurboAbs for geom::Size {
         fn abs(&self) -> f64 {
             self.to_vec2().length()
         }
@@ -30,7 +26,7 @@ mod tests {
     use std::f64::consts::SQRT_2;
 
     use assert_approx_eq::assert_approx_eq;
-    use kurbo::{Size, Vec2};
+    use geom::{Size, Vec2};
 
     use super::*;
 

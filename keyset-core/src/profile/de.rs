@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use kurbo::{Point, Rect, Size};
+use geom::{Point, Rect, Size};
 use serde::de::{Error, Unexpected};
 use serde::{Deserialize, Deserializer};
 

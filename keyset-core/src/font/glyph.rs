@@ -1,4 +1,4 @@
-use kurbo::{Affine, BezPath, Point};
+use geom::{Affine, BezPath, Point};
 use ttf_parser::{Face, GlyphId, OutlineBuilder};
 
 #[derive(Clone, Debug)]
@@ -12,7 +12,7 @@ impl Glyph {
     pub fn new(face: &Face, gid: GlyphId) -> Option<Self> {
         let advance = f64::from(face.glyph_hor_advance(gid)?);
 
-        let mut path = KurboPathWrapper(BezPath::new());
+        let mut path = PathWrapper(BezPath::new());
         face.outline_glyph(gid, &mut path);
         let path = path.0;
 
@@ -67,21 +67,21 @@ impl Glyph {
     }
 }
 
-struct KurboPathWrapper(pub BezPath);
+struct PathWrapper(pub BezPath);
 
-impl From<BezPath> for KurboPathWrapper {
+impl From<BezPath> for PathWrapper {
     fn from(value: BezPath) -> Self {
         Self(value)
     }
 }
 
-impl From<KurboPathWrapper> for BezPath {
-    fn from(value: KurboPathWrapper) -> Self {
+impl From<PathWrapper> for BezPath {
+    fn from(value: PathWrapper) -> Self {
         value.0
     }
 }
 
-impl OutlineBuilder for KurboPathWrapper {
+impl OutlineBuilder for PathWrapper {
     fn move_to(&mut self, x: f32, y: f32) {
         // Y axis is flipped in fonts compared to SVGs
         self.0.move_to(Point::new(x.into(), (-y).into()));
@@ -118,8 +118,8 @@ impl OutlineBuilder for KurboPathWrapper {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
+    use geom::{PathEl, Shape, Size};
     use itertools::Itertools;
-    use kurbo::{PathEl, Shape, Size};
 
     use crate::utils::KurboAbs;
 
@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_outline_builder() {
-        let mut path: KurboPathWrapper = BezPath::new().into();
+        let mut path: PathWrapper = BezPath::new().into();
 
         path.move_to(0., 0.);
         path.line_to(1., 1.);

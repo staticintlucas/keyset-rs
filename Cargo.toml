@@ -3,6 +3,7 @@ members = [
   "keyset",
   "keyset-color",
   "keyset-core",
+  "keyset-geom",
   "keyset-key",
 ]
 resolver = "2"

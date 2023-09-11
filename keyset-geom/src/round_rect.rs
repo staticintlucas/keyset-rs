@@ -3,6 +3,8 @@ use std::ops::{Add, Sub};
 
 use kurbo::{Arc, ArcAppendIter, Ellipse, PathEl, Point, Rect, Shape, Size, Vec2};
 
+/// A rectangle with rounded corners. Unlike [`kurbo::RoundedRect`] this has one set of radii
+/// shared between all corners, but it does support elliptical corners.
 #[derive(Debug, Clone, Copy)]
 pub struct RoundRect {
     rect: Rect,
@@ -10,12 +12,16 @@ pub struct RoundRect {
 }
 
 impl RoundRect {
+    /// Create a new rounded rectangle from minimum and maximum coordinates.
     #[inline]
+    #[must_use]
     pub fn new(x0: f64, y0: f64, x1: f64, y1: f64, rx: f64, ry: f64) -> Self {
         Self::from_rect(Rect::new(x0, y0, x1, y1), Vec2::new(rx, ry))
     }
 
+    /// Create a new rounded rectangle from a [`kurbo::Rect`] and its radii.
     #[inline]
+    #[must_use]
     pub fn from_rect(rect: Rect, radii: impl Into<Vec2>) -> Self {
         let rect = rect.abs();
         let radii = radii.into();
@@ -27,12 +33,16 @@ impl RoundRect {
         Self { rect, radii }
     }
 
+    /// Create a new rounded rectangle from two points and its radii.
     #[inline]
+    #[must_use]
     pub fn from_points(p0: impl Into<Point>, p1: impl Into<Point>, radii: impl Into<Vec2>) -> Self {
         Self::from_rect(Rect::from_points(p0, p1), radii)
     }
 
+    /// Create a new rounded rectangle from its origin point, size, and radii.
     #[inline]
+    #[must_use]
     pub fn from_origin_size(
         origin: impl Into<Point>,
         size: impl Into<Size>,
@@ -41,7 +51,9 @@ impl RoundRect {
         Self::from_rect(Rect::from_origin_size(origin, size), radii)
     }
 
+    /// Create a new rounded rectangle from its center point, size, and radii.
     #[inline]
+    #[must_use]
     pub fn from_center_size(
         origin: impl Into<Point>,
         size: impl Into<Size>,
@@ -50,58 +62,79 @@ impl RoundRect {
         Self::from_rect(Rect::from_center_size(origin, size), radii)
     }
 
+    /// Returns the width of the rounded rectangle
     #[inline]
+    #[must_use]
     pub fn width(&self) -> f64 {
         self.rect.width()
     }
 
+    /// Returns the height of the rounded rectangle
     #[inline]
+    #[must_use]
     pub fn height(&self) -> f64 {
         self.rect.height()
     }
 
+    /// Returns the radii of the rounded rectangle
     #[inline]
+    #[must_use]
     pub const fn radii(&self) -> Vec2 {
         self.radii
     }
 
+    /// Returns a rectangle with the same position and size as the rounded rectangle
     #[inline]
+    #[must_use]
     pub const fn rect(&self) -> Rect {
         self.rect
     }
 
+    /// Returns the origin point of the rounded rectangle
     #[inline]
+    #[must_use]
     pub fn origin(&self) -> Point {
         self.rect.origin()
     }
 
+    /// Returns the center point of the rounded rectangle
     #[inline]
+    #[must_use]
     pub fn center(&self) -> Point {
         self.rect.center()
     }
 
+    /// Returns the size of the rounded rectangle
     #[inline]
+    #[must_use]
     pub fn size(&self) -> Size {
         self.rect().size()
     }
 
+    /// Returns a copy of the rounded rectangle with a new origin point
     #[inline]
+    #[must_use]
     pub fn with_origin(self, origin: impl Into<Point>) -> Self {
         Self::from_origin_size(origin, self.size(), self.radii())
     }
 
+    /// Returns a copy of the rounded rectangle with a new size
     #[inline]
+    #[must_use]
     pub fn with_size(self, size: impl Into<Size>) -> Self {
         Self::from_origin_size(self.origin(), size, self.radii())
     }
 
+    /// Returns a copy of the rounded rectangle with new radii
     #[inline]
+    #[must_use]
     pub fn with_radii(self, radii: impl Into<Vec2>) -> Self {
         Self::from_origin_size(self.origin(), self.size(), radii)
     }
 }
 
 #[doc(hidden)]
+#[allow(clippy::module_name_repetitions)]
 pub struct RoundRectPathIter {
     idx: usize,
     rect: RectPathIter,

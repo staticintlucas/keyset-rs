@@ -3,8 +3,8 @@ mod pdf;
 mod png;
 mod svg;
 
+use geom::{Point, Rect, Size};
 use key::Key;
-use kurbo::{Point, Rect, Size};
 
 use crate::{Font, Profile};
 
