@@ -8,20 +8,17 @@ use geom::{Insets, Point, Rect, RoundRect, Size, Vec2};
 use interp::interp_array;
 use itertools::Itertools;
 use key::Homing;
-use serde::Deserialize;
 
-#[cfg(feature = "serde")]
-use de::{Error, Result};
-
-#[derive(Debug, Clone, Copy, Deserialize)]
-#[serde(tag = "type", rename_all = "kebab-case")]
-pub enum ProfileType {
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "type", rename_all = "kebab-case"))]
+pub enum Type {
     Cylindrical { depth: f64 },
     Spherical { depth: f64 },
     Flat,
 }
 
-impl ProfileType {
+impl Type {
     pub const fn depth(self) -> f64 {
         match self {
             Self::Cylindrical { depth } | Self::Spherical { depth } => depth,
@@ -30,14 +27,15 @@ impl ProfileType {
     }
 }
 
-impl Default for ProfileType {
+impl Default for Type {
     fn default() -> Self {
         // 1.0mm is approx the depth of OEM profile
         Self::Cylindrical { depth: 1.0 }
     }
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct ScoopProps {
     pub depth: f64,
 }
@@ -54,8 +52,8 @@ pub struct BumpProps {
     pub y_offset: f64,
 }
 
-#[derive(Deserialize)]
-#[serde(remote = "Homing", rename_all = "kebab-case")]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(remote = "Homing", rename_all = "kebab-case"))]
 pub enum HomingDef {
     #[serde(alias = "deep-dish", alias = "dish")]
     Scoop,
@@ -65,7 +63,8 @@ pub enum HomingDef {
     Bump,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct HomingProps {
     #[serde(with = "HomingDef")]
     pub default: Homing,
@@ -79,7 +78,7 @@ impl Default for HomingProps {
         Self {
             default: Homing::Bar,
             scoop: ScoopProps {
-                depth: 2. * ProfileType::default().depth(), // 2x the regular depth
+                depth: 2. * Type::default().depth(), // 2x the regular depth
             },
             bar: BarProps {
                 size: Size::new(3.81, 0.51), // = 0.15in, 0.02in
@@ -240,7 +239,7 @@ impl Default for BottomSurface {
 
 #[derive(Debug, Clone, Default)]
 pub struct Profile {
-    pub typ: ProfileType,
+    pub typ: Type,
     pub bottom: BottomSurface,
     pub top: TopSurface,
     pub text_margin: TextMargin,
@@ -250,8 +249,13 @@ pub struct Profile {
 
 impl Profile {
     #[cfg(feature = "toml")]
-    pub fn from_toml(s: &str) -> Result<Self> {
-        toml::from_str(s).map_err(Error::from)
+    pub fn from_toml(s: &str) -> de::Result<Self> {
+        toml::from_str(s).map_err(de::Error::from)
+    }
+
+    #[cfg(feature = "json")]
+    pub fn from_json(s: &str) -> de::Result<Self> {
+        serde_json::from_str(s).map_err(de::Error::from)
     }
 
     pub fn top_with_size(&self, size: impl Into<Size>) -> RoundRect {
@@ -275,14 +279,14 @@ mod tests {
 
     #[test]
     fn test_profile_type_depth() {
-        assert_eq!(ProfileType::Cylindrical { depth: 1. }.depth(), 1.);
-        assert_eq!(ProfileType::Spherical { depth: 0.5 }.depth(), 0.5);
-        assert_eq!(ProfileType::Flat.depth(), 0.);
+        assert_eq!(Type::Cylindrical { depth: 1. }.depth(), 1.);
+        assert_eq!(Type::Spherical { depth: 0.5 }.depth(), 0.5);
+        assert_eq!(Type::Flat.depth(), 0.);
     }
 
     #[test]
     fn test_profile_type_default() {
-        assert_matches!(ProfileType::default(), ProfileType::Cylindrical { depth } if depth == 1.);
+        assert_matches!(Type::default(), Type::Cylindrical { depth } if depth == 1.);
     }
 
     #[test]
@@ -456,6 +460,7 @@ mod tests {
         assert_eq!(surf.radius, 65.);
     }
 
+    #[cfg(feature = "toml")]
     #[test]
     fn test_profile_from_toml() {
         let profile = Profile::from_toml(&unindent(
@@ -501,9 +506,7 @@ mod tests {
         ))
         .unwrap();
 
-        assert!(
-            matches!(profile.typ, ProfileType::Cylindrical { depth } if f64::abs(depth - 0.5) < 1e-6)
-        );
+        assert!(matches!(profile.typ, Type::Cylindrical { depth } if f64::abs(depth - 0.5) < 1e-6));
 
         assert_approx_eq!(profile.bottom.size.width, 960.0, 0.5);
         assert_approx_eq!(profile.bottom.size.height, 960.0, 0.5);
@@ -560,6 +563,117 @@ mod tests {
         )
     }
 
+    #[cfg(feature = "json")]
+    #[test]
+    fn test_profile_from_json() {
+        let profile = Profile::from_json(&unindent(
+            r#"{
+                "type": "cylindrical",
+                "depth": 0.5,
+
+                "bottom": {
+                    "width": 18.29,
+                    "height": 18.29,
+                    "radius": 0.38
+                },
+
+                "top": {
+                    "width": 11.81,
+                    "height": 13.91,
+                    "radius": 1.52,
+                    "y-offset": -1.62
+                },
+
+                "legend": {
+                    "5": {
+                        "size": 4.84,
+                        "width": 9.45,
+                        "height": 11.54,
+                        "y-offset": 0
+                    },
+                    "4": {
+                        "size": 3.18,
+                        "width": 9.53,
+                        "height": 9.56,
+                        "y-offset": 0.40
+                    },
+                    "3": {
+                        "size": 2.28,
+                        "width": 9.45,
+                        "height": 11.30,
+                        "y-offset": -0.12
+                    }
+                },
+
+                "homing": {
+                    "default": "scoop",
+                    "scoop": {
+                        "depth": 1.5
+                    },
+                    "bar": {
+                        "width": 3.85,
+                        "height": 0.4,
+                        "y-offset": 5.05
+                    },
+                    "bump": {
+                        "diameter": 0.4,
+                        "y-offset": -0.2
+                    }
+                }
+            }"#,
+        ))
+        .unwrap();
+
+        assert!(matches!(profile.typ, Type::Cylindrical { depth } if f64::abs(depth - 0.5) < 1e-6));
+
+        assert_approx_eq!(profile.bottom.size.width, 960.0, 0.5);
+        assert_approx_eq!(profile.bottom.size.height, 960.0, 0.5);
+        assert_approx_eq!(profile.bottom.radius, 20.0, 0.5);
+
+        assert_approx_eq!(profile.top.size.width, 620.0, 0.5);
+        assert_approx_eq!(profile.top.size.height, 730.0, 0.5);
+        assert_approx_eq!(profile.top.radius, 80., 0.5);
+
+        assert_eq!(profile.text_height.0.len(), 10);
+        let expected = vec![0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
+        for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
+            assert_approx_eq!(e, r, 0.5);
+        }
+
+        assert_eq!(profile.text_margin.0.len(), 10);
+        let expected = vec![
+            Insets::new(-62., -62., -62., -75.),
+            Insets::new(-62., -62., -62., -75.),
+            Insets::new(-62., -62., -62., -75.),
+            Insets::new(-62., -62., -62., -75.),
+            Insets::new(-60., -135., -60., -93.),
+            Insets::new(-62., -62., -62., -62.),
+            Insets::new(-62., -62., -62., -62.),
+            Insets::new(-62., -62., -62., -62.),
+            Insets::new(-62., -62., -62., -62.),
+            Insets::new(-62., -62., -62., -62.),
+        ];
+        for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
+            assert_approx_eq!(e.size().width, r.size().width, 0.5);
+            assert_approx_eq!(e.size().height, r.size().height, 0.5);
+        }
+
+        assert_matches!(profile.homing.default, Homing::Scoop);
+        assert_approx_eq!(profile.homing.scoop.depth, 1.5);
+        assert_approx_eq!(profile.homing.bar.size.width, 202.0, 0.5);
+        assert_approx_eq!(profile.homing.bar.size.height, 21.0, 0.5);
+        assert_approx_eq!(profile.homing.bar.y_offset, 265., 0.5);
+        assert_approx_eq!(profile.homing.bump.diameter, 21., 0.5);
+        assert_approx_eq!(profile.homing.bump.y_offset, -10., 0.5);
+
+        let result = Profile::from_json("null");
+        assert!(result.is_err());
+        assert_eq!(
+            format!("{}", result.unwrap_err()),
+            "invalid type: null, expected struct RawProfileData at line 1 column 4"
+        )
+    }
+
     #[test]
     fn test_profile_with_size() {
         let profile = Profile::default();
@@ -599,7 +713,7 @@ mod tests {
     fn test_profile_default() {
         let profile = Profile::default();
 
-        assert_matches!(profile.typ, ProfileType::Cylindrical { depth } if depth == 1.);
+        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth == 1.);
 
         assert_approx_eq!(profile.bottom.size.width, 950.0);
         assert_approx_eq!(profile.bottom.size.height, 950.0);

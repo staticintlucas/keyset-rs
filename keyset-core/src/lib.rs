@@ -26,4 +26,3 @@ mod utils;
 pub use drawing::{Drawing, DrawingOptions};
 pub use error::{Error, Result};
 pub use font::{Font, Glyph, Kerning};
-pub use profile::Profile;

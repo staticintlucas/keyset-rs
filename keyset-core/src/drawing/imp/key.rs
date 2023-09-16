@@ -1,8 +1,9 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
 use geom::{Arc, BezPath, Circle, Point, Rect, RoundRect, Shape};
+use profile::Profile;
 
-use crate::{DrawingOptions, Profile};
+use crate::DrawingOptions;
 
 use super::{Outline, Path, ARC_TOL};
 

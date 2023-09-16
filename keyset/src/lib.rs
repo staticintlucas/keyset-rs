@@ -12,5 +12,6 @@
 
 pub use color;
 pub use key;
+pub use profile;
 
 pub use core::*;

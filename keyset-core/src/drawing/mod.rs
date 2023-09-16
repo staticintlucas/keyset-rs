@@ -5,8 +5,9 @@ mod svg;
 
 use geom::{Point, Rect, Size};
 use key::Key;
+use profile::Profile;
 
-use crate::{Font, Profile};
+use crate::Font;
 
 pub(crate) use imp::{KeyDrawing, Path};
 

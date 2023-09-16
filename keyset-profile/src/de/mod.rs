@@ -6,7 +6,7 @@ use geom::{Point, Rect, Size};
 use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use crate::{BottomSurface, HomingProps, ProfileType, TextHeight, TextMargin};
+use crate::{BottomSurface, HomingProps, TextHeight, TextMargin, Type};
 
 use super::{BarProps, BumpProps, Profile, TopSurface};
 
@@ -155,7 +155,7 @@ impl<'de> Deserialize<'de> for Profile {
         #[derive(Deserialize)]
         struct RawProfileData {
             #[serde(flatten)]
-            profile_type: ProfileType,
+            typ: Type,
             bottom: BottomSurface,
             top: TopSurface,
             #[serde(deserialize_with = "deserialize_legend_map")]
@@ -175,7 +175,7 @@ impl<'de> Deserialize<'de> for Profile {
             .unzip();
 
         Ok(Self {
-            typ: raw_data.profile_type,
+            typ: raw_data.typ,
             bottom: raw_data.bottom,
             top: raw_data.top,
             text_margin: TextMargin::new(&insets),
