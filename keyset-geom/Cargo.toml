@@ -3,7 +3,7 @@ name = "keyset-geom"
 version = "0.1.0"
 description = "Geometry types and conversions for keyset"
 
-# We don't  really care about SEO for this crate, but Clippy complains if we
+# We don't really care about SEO for this crate, but Clippy complains if we
 # leave these out altogether
 keywords = ["keyset"]
 categories = ["none"]

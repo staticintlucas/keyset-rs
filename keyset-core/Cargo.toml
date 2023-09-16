@@ -3,7 +3,7 @@ name = "keyset-core"
 version = "0.2.1"
 description = "A Rust tool to create pretty keyset layout diagrams using correct fonts and icons."
 
-# We don't  really care about SEO for this crate, but Clippy complains if we
+# We don't really care about SEO for this crate, but Clippy complains if we
 # leave these out altogether
 keywords = ["keyset"]
 categories = ["none"]

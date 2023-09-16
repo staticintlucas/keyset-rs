@@ -3,7 +3,7 @@ name = "keyset-profile"
 version = "0.1.0"
 description = "Profile type and functionality for keyset"
 
-# We don't  really care about SEO for this crate, but Clippy complains if we
+# We don't really care about SEO for this crate, but Clippy complains if we
 # leave these out altogether
 keywords = ["keyset"]
 categories = ["none"]
