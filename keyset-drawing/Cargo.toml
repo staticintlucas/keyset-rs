@@ -1,0 +1,40 @@
+[package]
+name = "keyset-drawing"
+version = "0.1.0"
+description = "Drawing output functionality for keyset"
+
+# We don't really care about SEO for this crate, but Clippy complains if we
+# leave these out altogether
+keywords = ["keyset"]
+categories = ["none"]
+
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[features]
+pdf = ["miniz_oxide", "pdf-writer"]
+png = ["tiny-skia"]
+svg = ["dep:svg"]
+
+[dependencies]
+color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0" }
+font = { package = "keyset-font", path = "../keyset-font", version = "0.1.0" }
+geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
+key = { package = "keyset-key", path = "../keyset-key", version = "0.1.0" }
+profile = { package = "keyset-profile", path = "../keyset-profile", version = "0.1.0" }
+
+log = "0.4"
+miniz_oxide = { version = "0.7", optional = true }
+pdf-writer = { version = "0.8", optional = true }
+tiny-skia = { version = "0.11", optional = true }
+svg = { version = "0.13", optional = true }
+
+[dev-dependencies]
+assert_approx_eq = "1.1"
+unindent = "0.2"
+
+[package.metadata.docs.rs]
+all-features = true

@@ -1,6 +1,9 @@
 mod imp;
+#[cfg(feature = "pdf")]
 mod pdf;
+#[cfg(feature = "png")]
 mod png;
+#[cfg(feature = "svg")]
 mod svg;
 
 use font::Font;
@@ -19,7 +22,7 @@ pub struct Drawing {
 
 impl Drawing {
     #[must_use]
-    pub fn new(keys: &[Key], options: &DrawingOptions) -> Self {
+    pub fn new(keys: &[Key], options: &Options) -> Self {
         let bounds = keys
             .iter()
             .map(|k| k.shape.bounds().with_origin(k.position))
@@ -40,21 +43,25 @@ impl Drawing {
         }
     }
 
+    #[cfg(feature = "pdf")]
     #[must_use]
     pub fn to_svg(&self) -> String {
         svg::draw(self)
     }
 
+    #[cfg(feature = "pdf")]
     #[must_use]
     pub fn to_png(&self, dpi: f64) -> Vec<u8> {
         png::draw(self, dpi)
     }
 
+    #[cfg(feature = "pdf")]
     #[must_use]
     pub fn to_pdf(&self) -> Vec<u8> {
         pdf::draw(self)
     }
 
+    #[cfg(feature = "pdf")]
     #[must_use]
     pub fn to_ai(&self) -> Vec<u8> {
         // An Illustrator file typically contains both an Illustrator-native and a PDF copy of an
@@ -68,7 +75,7 @@ impl Drawing {
 }
 
 #[derive(Debug, Clone)]
-pub struct DrawingOptions {
+pub struct Options {
     profile: Profile,
     font: Font,
     scale: f64,
@@ -77,7 +84,7 @@ pub struct DrawingOptions {
     show_margin: bool,
 }
 
-impl Default for DrawingOptions {
+impl Default for Options {
     fn default() -> Self {
         Self {
             profile: Profile::default(),
@@ -90,7 +97,7 @@ impl Default for DrawingOptions {
     }
 }
 
-impl DrawingOptions {
+impl Options {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -142,7 +149,7 @@ mod tests {
 
     #[test]
     fn test_drawing_options() {
-        let options = DrawingOptions::default();
+        let options = Options::default();
 
         assert_approx_eq!(options.scale, 1.);
         assert_eq!(options.font.glyphs.len(), 0);
@@ -152,7 +159,7 @@ mod tests {
             &std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap(),
         )
         .unwrap();
-        let mut options = DrawingOptions::new();
+        let mut options = Options::new();
         options
             .profile(profile)
             .font(font)
@@ -168,7 +175,7 @@ mod tests {
 
     #[test]
     fn test_drawing_options_draw() {
-        let options = DrawingOptions::new();
+        let options = Options::new();
         let keys = [Key::example()];
 
         let drawing = options.draw(&keys);

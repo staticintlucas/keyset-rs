@@ -1,11 +1,8 @@
 use geom::{Affine, PathEl, Point};
-use itertools::Itertools;
 use svg::node::element::{Group, Path as SvgPath};
 use svg::Document;
 
-use crate::drawing::Drawing;
-
-use super::{KeyDrawing, Path};
+use super::{Drawing, KeyDrawing, Path};
 
 macro_rules! fmt_num {
     ($fmt:literal, $($args:expr),*) => {
@@ -88,7 +85,7 @@ fn draw_path(path: &Path) -> SvgPath {
 
             Some(str)
         })
-        .join("");
+        .fold(String::new(), |str, el| str + &el);
 
     let fill = path
         .fill
@@ -109,11 +106,11 @@ mod tests {
     use key::Key;
     use unindent::unindent;
 
-    use crate::DrawingOptions;
+    use crate::Options;
 
     #[test]
     fn test_to_svg() {
-        let options = DrawingOptions {
+        let options = Options {
             show_margin: true,
             ..Default::default()
         };

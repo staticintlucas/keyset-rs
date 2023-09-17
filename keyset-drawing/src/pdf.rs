@@ -2,9 +2,7 @@ use geom::{Affine, PathEl, Point};
 use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
 use pdf_writer::{Content, Filter, Finish, PdfWriter, Rect, Ref, TextStr};
 
-use crate::drawing::Drawing;
-
-use super::{KeyDrawing, Path};
+use crate::{Drawing, KeyDrawing, Path};
 
 const PDF_DPI: f64 = 72.0; // PDF uses 72 dpi
 const COMPRESSION_LEVEL: u8 = CompressionLevel::DefaultLevel as u8;
@@ -170,11 +168,11 @@ fn draw_path(content: &mut Content, path: &Path, affine: &Affine) {
 mod tests {
     use key::Key;
 
-    use crate::DrawingOptions;
+    use crate::Options;
 
     #[test]
     fn test_to_svg() {
-        let options = DrawingOptions {
+        let options = Options {
             show_margin: true, // to give us an unfilled path
             ..Default::default()
         };

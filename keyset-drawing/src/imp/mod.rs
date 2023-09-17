@@ -1,12 +1,13 @@
 mod key;
 mod legend;
 
+use std::collections::HashSet;
+
 use ::key::Key;
 use color::Color;
 use geom::{BezPath, Point, Shape, Vec2};
-use itertools::Itertools;
 
-use crate::DrawingOptions;
+use crate::Options;
 
 // TODO move this somewhere?
 const ARC_TOL: f64 = 1.; // Tolerance for converting Arc->Bézier with Kurbo
@@ -31,7 +32,7 @@ pub(crate) struct KeyDrawing {
 }
 
 impl KeyDrawing {
-    pub fn new(key: &Key, options: &DrawingOptions) -> Self {
+    pub fn new(key: &Key, options: &Options) -> Self {
         let show_key = options.show_keys && !matches!(key.typ, ::key::Type::None);
 
         let bottom = show_key.then(|| key::bottom(key, options));
@@ -50,12 +51,10 @@ impl KeyDrawing {
         };
 
         let margin = options.show_margin.then(|| {
-            let path = key
-                .legends
-                .iter()
-                .flatten()
-                .map(|l| l.size_idx)
-                .unique()
+            // TODO get unique margins, not size_idx's. Currently impossible because Insets: !Hash
+            let sizes: HashSet<_> = key.legends.iter().flatten().map(|l| l.size_idx).collect();
+            let path = sizes
+                .into_iter()
                 .map(|s| (top_rect + options.profile.text_margin.get(s)).into_path(ARC_TOL))
                 .fold(BezPath::new(), |mut p, r| {
                     p.extend(r);
@@ -101,15 +100,13 @@ impl KeyDrawing {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
-    use crate::utils::KurboAbs;
-
     use super::*;
 
     #[test]
     fn test_key_drawing_new() {
         // Regular 1u
         let key = Key::example();
-        let options = DrawingOptions::default();
+        let options = Options::default();
         let drawing = KeyDrawing::new(&key, &options);
 
         assert_eq!(drawing.origin, key.position);
@@ -121,7 +118,7 @@ mod tests {
             key.shape = ::key::Shape::SteppedCaps;
             key
         };
-        let options = DrawingOptions::default();
+        let options = Options::default();
         let drawing = KeyDrawing::new(&key, &options);
 
         assert_eq!(drawing.origin, key.position);
@@ -133,21 +130,20 @@ mod tests {
             key.shape = ::key::Shape::IsoHorizontal;
             key
         };
-        let options = DrawingOptions {
+        let options = Options {
             show_margin: true,
-            ..DrawingOptions::default()
+            ..Options::default()
         };
         let drawing = KeyDrawing::new(&key, &options);
 
         assert_eq!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
+        let bounding_box = drawing.paths[2].path.bounding_box();
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = options.profile.top_with_size((1.5, 1.0)).rect()
             + options.profile.text_margin.get(font_size);
-        assert_approx_eq!(
-            drawing.paths[2].path.bounding_box().size(),
-            margin_rect.size()
-        );
+        assert_approx_eq!(bounding_box.size().width, margin_rect.size().width);
+        assert_approx_eq!(bounding_box.size().height, margin_rect.size().height);
 
         // ISO V
         let key = {
@@ -155,20 +151,19 @@ mod tests {
             key.shape = ::key::Shape::IsoVertical;
             key
         };
-        let options = DrawingOptions {
+        let options = Options {
             show_margin: true,
-            ..DrawingOptions::default()
+            ..Options::default()
         };
         let drawing = KeyDrawing::new(&key, &options);
 
         assert_eq!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
+        let bounding_box = drawing.paths[2].path.bounding_box();
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = options.profile.top_with_size((1.25, 2.0)).rect()
             + options.profile.text_margin.get(font_size);
-        assert_approx_eq!(
-            drawing.paths[2].path.bounding_box().size(),
-            margin_rect.size()
-        );
+        assert_approx_eq!(bounding_box.size().width, margin_rect.size().width);
+        assert_approx_eq!(bounding_box.size().height, margin_rect.size().height);
     }
 }

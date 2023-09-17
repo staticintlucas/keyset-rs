@@ -18,9 +18,7 @@
 // TODO add docs and don't allow these
 #![allow(missing_docs, clippy::missing_errors_doc)]
 
-mod drawing;
 mod error;
 mod utils;
 
-pub use drawing::{Drawing, DrawingOptions};
 pub use error::{Error, Result};

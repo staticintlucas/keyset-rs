@@ -3,11 +3,11 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use geom::{Arc, BezPath, Circle, Point, Rect, RoundRect, Shape};
 use profile::Profile;
 
-use crate::DrawingOptions;
+use crate::Options;
 
 use super::{Outline, Path, ARC_TOL};
 
-pub(crate) fn top(key: &key::Key, options: &DrawingOptions) -> Path {
+pub(crate) fn top(key: &key::Key, options: &Options) -> Path {
     let path = match key.shape {
         key::Shape::Normal(size) => options.profile.top_with_size(size).to_path(ARC_TOL),
         key::Shape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).to_path(ARC_TOL),
@@ -24,7 +24,7 @@ pub(crate) fn top(key: &key::Key, options: &DrawingOptions) -> Path {
     }
 }
 
-pub(crate) fn bottom(key: &key::Key, options: &DrawingOptions) -> Path {
+pub(crate) fn bottom(key: &key::Key, options: &Options) -> Path {
     let path = match key.shape {
         key::Shape::Normal(size) => options.profile.bottom_with_size(size).to_path(ARC_TOL),
         key::Shape::SteppedCaps => options
@@ -44,7 +44,7 @@ pub(crate) fn bottom(key: &key::Key, options: &DrawingOptions) -> Path {
     }
 }
 
-pub(crate) fn homing(key: &key::Key, options: &DrawingOptions) -> Option<Path> {
+pub(crate) fn homing(key: &key::Key, options: &Options) -> Option<Path> {
     let profile = &options.profile;
 
     let key::Type::Homing(homing) = key.typ else {
@@ -82,7 +82,7 @@ pub(crate) fn homing(key: &key::Key, options: &DrawingOptions) -> Option<Path> {
     })
 }
 
-pub(crate) fn step(key: &key::Key, options: &DrawingOptions) -> Option<Path> {
+pub(crate) fn step(key: &key::Key, options: &Options) -> Option<Path> {
     matches!(key.shape, key::Shape::SteppedCaps).then(|| {
         let profile = &options.profile;
 
@@ -345,13 +345,11 @@ fn step_path(rect: RoundRect) -> BezPath {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
-    use crate::utils::KurboAbs;
-
     use super::*;
 
     #[test]
     fn test_top() {
-        let options = DrawingOptions::default();
+        let options = Options::default();
 
         // Regular 1u key
         let key = key::Key::example();
@@ -361,14 +359,11 @@ mod tests {
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        assert_approx_eq!(
-            bounds.origin(),
-            options.profile.top_with_size((1., 1.)).origin()
-        );
-        assert_approx_eq!(
-            bounds.size(),
-            options.profile.top_with_size((1., 1.)).size()
-        );
+        let top_rect = options.profile.top_with_size((1., 1.));
+        assert_approx_eq!(bounds.origin().x, top_rect.origin().x);
+        assert_approx_eq!(bounds.origin().y, top_rect.origin().y);
+        assert_approx_eq!(bounds.size().width, top_rect.size().width);
+        assert_approx_eq!(bounds.size().height, top_rect.size().height);
 
         // Stepped caps
         let key = {
@@ -378,14 +373,11 @@ mod tests {
         };
         let path = top(&key, &options);
         let bounds = path.path.bounding_box();
-        assert_approx_eq!(
-            bounds.origin(),
-            options.profile.top_with_size((1.25, 1.)).origin()
-        );
-        assert_approx_eq!(
-            bounds.size(),
-            options.profile.top_with_size((1.25, 1.)).size()
-        );
+        let top_rect = options.profile.top_with_size((1.25, 1.));
+        assert_approx_eq!(bounds.origin().x, top_rect.origin().x);
+        assert_approx_eq!(bounds.origin().y, top_rect.origin().y);
+        assert_approx_eq!(bounds.size().width, top_rect.size().width);
+        assert_approx_eq!(bounds.size().height, top_rect.size().height);
 
         // ISO enter
         let key = {
@@ -395,20 +387,17 @@ mod tests {
         };
         let path = top(&key, &options);
         let bounds = path.path.bounding_box();
-        assert_approx_eq!(
-            bounds.origin(),
-            options.profile.top_with_size((1.5, 2.)).origin()
-        );
-        assert_approx_eq!(
-            bounds.size(),
-            options.profile.top_with_size((1.5, 2.)).size()
-        );
+        let top_rect = options.profile.top_with_size((1.5, 2.));
+        assert_approx_eq!(bounds.origin().x, top_rect.origin().x);
+        assert_approx_eq!(bounds.origin().y, top_rect.origin().y);
+        assert_approx_eq!(bounds.size().width, top_rect.size().width);
+        assert_approx_eq!(bounds.size().height, top_rect.size().height);
     }
 
     #[test]
     fn test_bottom() {
         let key = key::Key::example();
-        let options = DrawingOptions::default();
+        let options = Options::default();
 
         let path = bottom(&key, &options);
         let bounds = path.path.bounding_box();
@@ -416,14 +405,11 @@ mod tests {
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        assert_approx_eq!(
-            bounds.origin(),
-            options.profile.bottom_with_size((1., 1.)).origin()
-        );
-        assert_approx_eq!(
-            bounds.size(),
-            options.profile.bottom_with_size((1., 1.)).size()
-        );
+        let bottom_rect = options.profile.bottom_with_size((1., 1.));
+        assert_approx_eq!(bounds.origin().x, bottom_rect.origin().x);
+        assert_approx_eq!(bounds.origin().y, bottom_rect.origin().y);
+        assert_approx_eq!(bounds.size().width, bottom_rect.size().width);
+        assert_approx_eq!(bounds.size().height, bottom_rect.size().height);
 
         // Stepped caps
         let key = {
@@ -433,14 +419,11 @@ mod tests {
         };
         let path = bottom(&key, &options);
         let bounds = path.path.bounding_box();
-        assert_approx_eq!(
-            bounds.origin(),
-            options.profile.bottom_with_size((1.75, 1.)).origin()
-        );
-        assert_approx_eq!(
-            bounds.size(),
-            options.profile.bottom_with_size((1.75, 1.)).size()
-        );
+        let bottom_rect = options.profile.bottom_with_size((1.75, 1.));
+        assert_approx_eq!(bounds.origin().x, bottom_rect.origin().x);
+        assert_approx_eq!(bounds.origin().y, bottom_rect.origin().y);
+        assert_approx_eq!(bounds.size().width, bottom_rect.size().width);
+        assert_approx_eq!(bounds.size().height, bottom_rect.size().height);
 
         // ISO enter
         let key = {
@@ -450,19 +433,16 @@ mod tests {
         };
         let path = bottom(&key, &options);
         let bounds = path.path.bounding_box();
-        assert_approx_eq!(
-            bounds.origin(),
-            options.profile.bottom_with_size((1.5, 2.)).origin()
-        );
-        assert_approx_eq!(
-            bounds.size(),
-            options.profile.bottom_with_size((1.5, 2.)).size()
-        );
+        let bottom_rect = options.profile.bottom_with_size((1.5, 2.));
+        assert_approx_eq!(bounds.origin().x, bottom_rect.origin().x);
+        assert_approx_eq!(bounds.origin().y, bottom_rect.origin().y);
+        assert_approx_eq!(bounds.size().width, bottom_rect.size().width);
+        assert_approx_eq!(bounds.size().height, bottom_rect.size().height);
     }
 
     #[test]
     fn test_homing() {
-        let options = DrawingOptions::default();
+        let options = Options::default();
 
         // Scoop
         let scoop = {
@@ -489,12 +469,12 @@ mod tests {
         assert_eq!(path.fill.unwrap(), bar.color);
         assert_eq!(path.outline.unwrap().color, bar.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        assert_approx_eq!(
-            bounds.center(),
-            options.profile.top_with_size((1., 1.)).center()
-                + (0., options.profile.homing.bar.y_offset)
-        );
-        assert_approx_eq!(bounds.size(), options.profile.homing.bar.size);
+        let center = options.profile.top_with_size((1., 1.)).center()
+            + (0., options.profile.homing.bar.y_offset);
+        assert_approx_eq!(bounds.center().x, center.x);
+        assert_approx_eq!(bounds.center().y, center.y);
+        assert_approx_eq!(bounds.size().width, options.profile.homing.bar.size.width);
+        assert_approx_eq!(bounds.size().height, options.profile.homing.bar.size.height);
 
         // Bump
         let bump = {
@@ -511,11 +491,10 @@ mod tests {
         assert_eq!(path.fill.unwrap(), bump.color);
         assert_eq!(path.outline.unwrap().color, bump.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        assert_approx_eq!(
-            bounds.center(),
-            options.profile.top_with_size((1., 1.)).center()
-                + (0., options.profile.homing.bump.y_offset)
-        );
+        let center = options.profile.top_with_size((1., 1.)).center()
+            + (0., options.profile.homing.bump.y_offset);
+        assert_approx_eq!(bounds.center().x, center.x);
+        assert_approx_eq!(bounds.center().y, center.y);
         assert_approx_eq!(bounds.width(), options.profile.homing.bump.diameter);
         assert_approx_eq!(bounds.height(), options.profile.homing.bump.diameter);
 
@@ -533,7 +512,7 @@ mod tests {
             key.shape = key::Shape::SteppedCaps;
             key
         };
-        let options = DrawingOptions::default();
+        let options = Options::default();
 
         let path = step(&key, &options);
         assert!(path.is_some());
@@ -561,7 +540,9 @@ mod tests {
             .with_origin((1250. - rect.origin().x - rect.radii().x, rect.origin().y))
             .with_size((500. + rect.radii().x, rect.size().height));
 
-        assert_approx_eq!(bounds.origin(), rect.origin());
-        assert_approx_eq!(bounds.size(), rect.size());
+        assert_approx_eq!(bounds.origin().x, rect.origin().x);
+        assert_approx_eq!(bounds.origin().y, rect.origin().y);
+        assert_approx_eq!(bounds.size().width, rect.size().width);
+        assert_approx_eq!(bounds.size().height, rect.size().height);
     }
 }

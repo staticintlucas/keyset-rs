@@ -1,9 +1,7 @@
 use geom::{Affine, PathEl};
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform};
 
-use crate::drawing::Drawing;
-
-use super::{KeyDrawing, Path};
+use crate::{Drawing, KeyDrawing, Path};
 
 macro_rules! transform {
     ($p:expr, $affine:expr) => {{
@@ -120,14 +118,14 @@ mod tests {
     use key::Key;
     use tiny_skia::Pixmap;
 
-    use crate::DrawingOptions;
+    use crate::Options;
 
     #[test]
     fn test_to_png() {
         // It's pretty difficult to test this stuff without visually inspecting
         // the image, so we just test a few pixels
 
-        let options = DrawingOptions::default();
+        let options = Options::default();
         let keys = [Key::example()];
         let drawing = options.draw(&keys);
 

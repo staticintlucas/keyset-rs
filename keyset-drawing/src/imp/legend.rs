@@ -1,6 +1,5 @@
 use font::Font;
 use geom::{Affine, Rect, Shape, Vec2};
-use itertools::Itertools;
 use log::warn;
 use profile::Profile;
 
@@ -13,15 +12,16 @@ pub(crate) fn draw(
     top_rect: Rect,
     align: Vec2,
 ) -> Path {
-    let text = &legend.text;
-    let Some(first) = text.chars().next() else {
-        unreachable!()
+    let mut chars = legend.text.chars();
+    let Some(first) = chars.next() else {
+        unreachable!() // We should never have an empty legend here
     };
     let first = font.glyphs.get(&first).unwrap_or(&font.notdef);
 
-    let mut path = text
+    let mut path = legend
+        .text
         .chars()
-        .tuple_windows()
+        .zip(chars)
         .map(|(lhs, rhs)| {
             let glyph = font.glyphs.get(&rhs).unwrap_or(&font.notdef);
             let kern = font.kerning.get(lhs, rhs);
@@ -52,6 +52,7 @@ pub(crate) fn draw(
     // Check to ensure our legend fits
     let margin = top_rect + profile.text_margin.get(legend.size_idx);
     if bounds.width() > margin.width() {
+        let text = &legend.text;
         let percent = 100. * (bounds.width() / margin.width() - 1.);
         warn!(r#"legend "{text}" is {percent}% too wide; squishing legend to fit"#);
         path.apply_affine(Affine::scale_non_uniform(
