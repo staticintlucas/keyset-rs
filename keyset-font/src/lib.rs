@@ -1,15 +1,14 @@
+mod error;
 mod glyph;
 mod kerning;
 
 use std::collections::HashMap;
 
 use geom::Shape;
-use itertools::Itertools;
 use log::warn;
 use ttf_parser::{cmap, name_id, Face, GlyphId};
 
-use crate::error::Result;
-
+pub use self::error::{Error, Result};
 pub use self::glyph::Glyph;
 pub use self::kerning::Kerning;
 
@@ -93,7 +92,7 @@ impl Font {
                         codepoints
                     })
                     .filter_map(char::from_u32) // Convert to char, filtering out invalid
-                    .collect_vec()
+                    .collect()
             },
         );
 
@@ -124,20 +123,24 @@ impl Font {
 
         let kerning = face.tables().kern.map_or_else(Kerning::new, |kern| {
             let mut kerning = Kerning::new();
+
             // TODO this is slow AF
-            codepoints
+            let ch_gid = codepoints
                 .iter()
                 .copied()
-                .cartesian_product(codepoints.iter().copied())
-                .filter_map(|(l, r)| Some(((l, r), (face.glyph_index(l)?, face.glyph_index(r)?))))
-                .for_each(|((l, r), (gid_l, gid_r))| {
-                    let kern = kern
+                .filter_map(|cp| Some((cp, face.glyph_index(cp)?)));
+            for (l_ch, l_gid) in ch_gid.clone() {
+                for (r_ch, r_gid) in ch_gid.clone() {
+                    if let Some(kern) = kern
                         .subtables
                         .into_iter()
-                        .find_map(|st| st.glyphs_kerning(gid_l, gid_r))
-                        .unwrap_or(0);
-                    kerning.set(l, r, f64::from(kern));
-                });
+                        .find_map(|st| st.glyphs_kerning(l_gid, r_gid))
+                    {
+                        kerning.set(l_ch, r_ch, f64::from(kern));
+                    }
+                }
+            }
+
             kerning
         });
 

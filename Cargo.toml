@@ -3,6 +3,7 @@ members = [
   "keyset",
   "keyset-color",
   "keyset-core",
+  "keyset-font",
   "keyset-geom",
   "keyset-key",
   "keyset-profile",

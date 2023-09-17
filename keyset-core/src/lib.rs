@@ -20,9 +20,7 @@
 
 mod drawing;
 mod error;
-mod font;
 mod utils;
 
 pub use drawing::{Drawing, DrawingOptions};
 pub use error::{Error, Result};
-pub use font::{Font, Glyph, Kerning};

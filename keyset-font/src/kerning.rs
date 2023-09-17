@@ -19,10 +19,7 @@ impl Kerning {
     }
 
     pub fn set(&mut self, lhs: char, rhs: char, kern: f64) {
-        // Kern should be an integer here
-        if kern.abs() > 0.5 {
-            self.pairs.insert((lhs, rhs), kern);
-        }
+        self.pairs.insert((lhs, rhs), kern);
     }
 
     #[must_use]
@@ -44,14 +41,12 @@ impl Default for Kerning {
 
 #[cfg(test)]
 mod tests {
-    use maplit::hashmap;
-
     use super::*;
 
     #[test]
     fn test_get() {
         let kerning = Kerning {
-            pairs: hashmap! {('A', 'V') => -50.},
+            pairs: HashMap::from([(('A', 'V'), -50.0)]),
         };
 
         assert_eq!(kerning.get('A', 'V'), -50.);
@@ -62,10 +57,8 @@ mod tests {
     fn test_set() {
         let mut kerning = Kerning::new();
         kerning.set('A', 'V', -50.);
-        kerning.set('A', 'B', 0.);
 
         assert!(kerning.pairs.contains_key(&('A', 'V')));
-        assert!(!kerning.pairs.contains_key(&('A', 'B')));
     }
 
     #[test]
@@ -77,7 +70,7 @@ mod tests {
         kerning.set('A', 'V', -50.);
         kerning.set('A', 'B', 0.);
 
-        assert_eq!(kerning.len(), 1);
+        assert_eq!(kerning.len(), 2);
     }
 
     #[test]
@@ -95,6 +88,6 @@ mod tests {
     #[test]
     fn test_default() {
         let kerning = Kerning::default();
-        assert_eq!(kerning.pairs, hashmap! {});
+        assert_eq!(kerning.pairs, HashMap::new());
     }
 }

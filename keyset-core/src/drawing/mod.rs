@@ -3,11 +3,10 @@ mod pdf;
 mod png;
 mod svg;
 
+use font::Font;
 use geom::{Point, Rect, Size};
 use key::Key;
 use profile::Profile;
-
-use crate::Font;
 
 pub(crate) use imp::{KeyDrawing, Path};
 

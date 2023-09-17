@@ -1,0 +1,30 @@
+[package]
+name = "keyset-font"
+version = "0.1.0"
+description = "Font type and functionality for keyset"
+
+# We don't really care about SEO for this crate, but Clippy complains if we
+# leave these out altogether
+keywords = ["keyset"]
+categories = ["none"]
+
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[features]
+
+[dependencies]
+geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
+
+log = "0.4"
+ttf-parser = { version = "0.18", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+assert_approx_eq = "1.1"
+assert_matches = "1.5"
+
+[package.metadata.docs.rs]
+all-features = true

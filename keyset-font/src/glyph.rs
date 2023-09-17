@@ -118,10 +118,7 @@ impl OutlineBuilder for PathWrapper {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
-    use geom::{PathEl, Shape, Size};
-    use itertools::Itertools;
-
-    use crate::utils::KurboAbs;
+    use geom::{PathEl, Shape};
 
     use super::*;
 
@@ -133,7 +130,7 @@ mod tests {
 
         let a = Glyph::new(&demo, GlyphId(1)).unwrap();
         assert_approx_eq!(a.advance, 540.);
-        assert_eq!(a.path.into_iter().collect_vec().len(), 15);
+        assert_eq!(a.path.elements().len(), 15);
 
         let null =
             std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/null.ttf")).unwrap();
@@ -150,12 +147,15 @@ mod tests {
     fn test_notdef() {
         let notdef = Glyph::notdef(500., 0.);
 
-        assert_approx_eq!(notdef.path.bounding_box().origin(), Point::new(0., 0.));
-        assert_approx_eq!(notdef.path.bounding_box().size(), Size::new(325., 500.));
+        assert_approx_eq!(notdef.path.bounding_box().origin().x, 0.0);
+        assert_approx_eq!(notdef.path.bounding_box().origin().y, 0.0);
+        assert_approx_eq!(notdef.path.bounding_box().size().width, 325.0);
+        assert_approx_eq!(notdef.path.bounding_box().size().height, 500.0);
         assert_approx_eq!(notdef.advance, 325.);
 
         let notdef = Glyph::notdef(500., 45.);
-        assert_approx_eq!(notdef.path.bounding_box().size(), Size::new(825., 500.));
+        assert_approx_eq!(notdef.path.bounding_box().size().width, 825.0);
+        assert_approx_eq!(notdef.path.bounding_box().size().height, 500.0);
     }
 
     #[test]
@@ -169,7 +169,7 @@ mod tests {
         path.close();
 
         let bez_path: BezPath = path.into();
-        let els = bez_path.into_iter().collect_vec();
+        let els = bez_path.elements();
 
         assert_eq!(els.len(), 5);
         assert_matches!(els[0], PathEl::MoveTo(..));

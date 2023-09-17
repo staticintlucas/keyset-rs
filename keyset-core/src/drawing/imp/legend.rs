@@ -1,8 +1,7 @@
+use font::Font;
 use geom::{Affine, Rect, Shape, Vec2};
 use itertools::Itertools;
 use log::warn;
-
-use crate::font::Font;
 use profile::Profile;
 
 use super::Path;
