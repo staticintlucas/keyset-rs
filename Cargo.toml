@@ -2,7 +2,6 @@
 members = [
   "keyset",
   "keyset-color",
-  "keyset-core",
   "keyset-drawing",
   "keyset-font",
   "keyset-geom",

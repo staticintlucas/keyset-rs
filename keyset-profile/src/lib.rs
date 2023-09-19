@@ -55,18 +55,21 @@ pub struct BumpProps {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(remote = "Homing", rename_all = "kebab-case"))]
 pub enum HomingDef {
-    #[serde(alias = "deep-dish", alias = "dish")]
+    #[cfg_attr(feature = "serde", serde(alias = "deep-dish", alias = "dish"))]
     Scoop,
-    #[serde(alias = "line")]
+    #[cfg_attr(feature = "serde", serde(alias = "line"))]
     Bar,
-    #[serde(alias = "nub", alias = "dot", alias = "nipple")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(alias = "nub", alias = "dot", alias = "nipple")
+    )]
     Bump,
 }
 
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct HomingProps {
-    #[serde(with = "HomingDef")]
+    #[cfg_attr(feature = "serde", serde(with = "HomingDef"))]
     pub default: Homing,
     pub scoop: ScoopProps,
     pub bar: BarProps,
@@ -98,7 +101,7 @@ pub struct TextHeight([f64; Self::NUM_HEIGHTS]);
 impl TextHeight {
     const NUM_HEIGHTS: usize = 10;
 
-    fn new(heights: &HashMap<usize, f64>) -> Self {
+    pub fn new(heights: &HashMap<usize, f64>) -> Self {
         if heights.is_empty() {
             Self::default()
         } else {
@@ -141,7 +144,7 @@ pub struct TextMargin([Insets; Self::NUM_RECTS]);
 impl TextMargin {
     const NUM_RECTS: usize = 10;
 
-    fn new(insets: &HashMap<usize, Insets>) -> Self {
+    pub fn new(insets: &HashMap<usize, Insets>) -> Self {
         if insets.is_empty() {
             Self::default()
         } else {

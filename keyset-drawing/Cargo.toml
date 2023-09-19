@@ -16,7 +16,7 @@ license.workspace = true
 
 [features]
 pdf = ["miniz_oxide", "pdf-writer"]
-png = ["tiny-skia"]
+png = ["tiny-skia", "color/tiny-skia"]
 svg = ["dep:svg"]
 
 [dependencies]
