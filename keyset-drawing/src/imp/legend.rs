@@ -16,31 +16,31 @@ pub(crate) fn draw(
     let Some(first) = chars.next() else {
         unreachable!() // We should never have an empty legend here
     };
-    let first = font.glyphs.get(&first).unwrap_or(&font.notdef);
+    let first = font.glyphs().get(&first).unwrap_or(font.notdef());
 
     let mut path = legend
         .text
         .chars()
         .zip(chars)
         .map(|(lhs, rhs)| {
-            let glyph = font.glyphs.get(&rhs).unwrap_or(&font.notdef);
-            let kern = font.kerning.get(lhs, rhs);
+            let glyph = font.glyphs().get(&rhs).unwrap_or(font.notdef());
+            let kern = font.kerning().get(lhs, rhs);
             (glyph, kern)
         })
-        .scan(first.advance, |pos, (glyph, kern)| {
+        .scan(first.advance(), |pos, (glyph, kern)| {
             let result = Some((*pos + kern, glyph));
-            *pos += kern + glyph.advance;
+            *pos += kern + glyph.advance();
             result
         })
-        .fold(first.path.clone(), |mut path, (pos, glyph)| {
-            let mut p = glyph.path.clone();
+        .fold(first.path().clone(), |mut path, (pos, glyph)| {
+            let mut p = glyph.path().clone();
             p.apply_affine(Affine::translate((pos, 0.)));
             path.extend(p);
             path
         });
 
     let height = profile.text_height.get(legend.size_idx);
-    path.apply_affine(Affine::scale(height / font.cap_height)); // Scale to correct height
+    path.apply_affine(Affine::scale(height / font.cap_height())); // Scale to correct height
 
     // Calculate legend bounds. For x this is based on actual size while for y we use the base line
     // and text height so each character (especially symbols) are still aligned across keys
@@ -114,7 +114,7 @@ mod tests {
 
         assert_eq!(
             path.path.into_iter().count(),
-            font.notdef.path.iter().count()
+            font.notdef().path().iter().count()
         );
 
         let legend = ::key::Legend {

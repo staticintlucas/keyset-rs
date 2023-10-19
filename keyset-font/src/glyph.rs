@@ -3,8 +3,8 @@ use ttf_parser::{Face, GlyphId, OutlineBuilder};
 
 #[derive(Clone, Debug)]
 pub struct Glyph {
-    pub advance: f64,
-    pub path: BezPath,
+    advance: f64,
+    path: BezPath,
 }
 
 impl Glyph {
@@ -64,6 +64,14 @@ impl Glyph {
         let advance = scale * (650. + (1000. * skew_x).abs());
 
         Self { advance, path }
+    }
+
+    pub fn advance(&self) -> f64 {
+        self.advance
+    }
+
+    pub fn path(&self) -> &BezPath {
+        &self.path
     }
 }
 
@@ -129,8 +137,8 @@ mod tests {
         let demo = Face::parse(&demo, 0).unwrap();
 
         let a = Glyph::new(&demo, GlyphId(1)).unwrap();
-        assert_approx_eq!(a.advance, 540.);
-        assert_eq!(a.path.elements().len(), 15);
+        assert_approx_eq!(a.advance(), 540.);
+        assert_eq!(a.path().elements().len(), 15);
 
         let null =
             std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/null.ttf")).unwrap();
@@ -147,15 +155,15 @@ mod tests {
     fn test_notdef() {
         let notdef = Glyph::notdef(500., 0.);
 
-        assert_approx_eq!(notdef.path.bounding_box().origin().x, 0.0);
-        assert_approx_eq!(notdef.path.bounding_box().origin().y, 0.0);
-        assert_approx_eq!(notdef.path.bounding_box().size().width, 325.0);
-        assert_approx_eq!(notdef.path.bounding_box().size().height, 500.0);
-        assert_approx_eq!(notdef.advance, 325.);
+        assert_approx_eq!(notdef.path().bounding_box().origin().x, 0.0);
+        assert_approx_eq!(notdef.path().bounding_box().origin().y, 0.0);
+        assert_approx_eq!(notdef.path().bounding_box().size().width, 325.0);
+        assert_approx_eq!(notdef.path().bounding_box().size().height, 500.0);
+        assert_approx_eq!(notdef.advance(), 325.);
 
         let notdef = Glyph::notdef(500., 45.);
-        assert_approx_eq!(notdef.path.bounding_box().size().width, 825.0);
-        assert_approx_eq!(notdef.path.bounding_box().size().height, 500.0);
+        assert_approx_eq!(notdef.path().bounding_box().size().width, 825.0);
+        assert_approx_eq!(notdef.path().bounding_box().size().height, 500.0);
     }
 
     #[test]

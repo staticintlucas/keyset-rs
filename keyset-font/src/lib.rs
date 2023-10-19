@@ -14,17 +14,17 @@ pub use self::kerning::Kerning;
 
 #[derive(Clone, Debug)]
 pub struct Font {
-    pub name: String,
-    pub em_size: f64,
-    pub cap_height: f64,
-    pub x_height: f64,
-    pub ascent: f64,
-    pub descent: f64,
-    pub line_height: f64,
-    pub slope: f64,
-    pub glyphs: HashMap<char, Glyph>,
-    pub notdef: Glyph,
-    pub kerning: Kerning,
+    name: String,
+    em_size: f64,
+    cap_height: f64,
+    x_height: f64,
+    ascent: f64,
+    descent: f64,
+    line_height: f64,
+    slope: f64,
+    glyphs: HashMap<char, Glyph>,
+    notdef: Glyph,
+    kerning: Kerning,
 }
 
 impl Default for Font {
@@ -107,10 +107,10 @@ impl Font {
             .collect();
 
         let cap_height = cap_height
-            .or_else(|| Some(glyphs.get(&'X')?.path.bounding_box().size().height))
+            .or_else(|| Some(glyphs.get(&'X')?.path().bounding_box().size().height))
             .unwrap_or(0.6 * line_height); // TODO is there a better default?
         let x_height = x_height
-            .or_else(|| Some(glyphs.get(&'x')?.path.bounding_box().size().height))
+            .or_else(|| Some(glyphs.get(&'x')?.path().bounding_box().size().height))
             .unwrap_or(0.4 * line_height); // TODO is there a better default?
 
         let notdef = Glyph::new(&face, GlyphId(0)).map_or_else(
@@ -158,6 +158,50 @@ impl Font {
             kerning,
         })
     }
+
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
+    pub fn em_size(&self) -> f64 {
+        self.em_size
+    }
+
+    pub fn cap_height(&self) -> f64 {
+        self.cap_height
+    }
+
+    pub fn x_height(&self) -> f64 {
+        self.x_height
+    }
+
+    pub fn ascent(&self) -> f64 {
+        self.ascent
+    }
+
+    pub fn descent(&self) -> f64 {
+        self.descent
+    }
+
+    pub fn line_height(&self) -> f64 {
+        self.line_height
+    }
+
+    pub fn slope(&self) -> f64 {
+        self.slope
+    }
+
+    pub fn glyphs(&self) -> &HashMap<char, Glyph> {
+        &self.glyphs
+    }
+
+    pub fn notdef(&self) -> &Glyph {
+        &self.notdef
+    }
+
+    pub fn kerning(&self) -> &Kerning {
+        &self.kerning
+    }
 }
 
 #[cfg(test)]
@@ -170,16 +214,16 @@ mod tests {
     fn test_font_default() {
         let font = Font::default();
 
-        assert_eq!(font.name, "");
-        assert_approx_eq!(font.em_size, 1e3);
-        assert_approx_eq!(font.cap_height, 714.);
-        assert_approx_eq!(font.x_height, 523.);
-        assert_approx_eq!(font.ascent, 952.);
-        assert_approx_eq!(font.descent, 213.);
-        assert_approx_eq!(font.line_height, 1165.);
-        assert_approx_eq!(font.slope, 0.);
-        assert_eq!(font.glyphs.len(), 0);
-        assert_eq!(font.kerning.len(), 0);
+        assert_eq!(font.name(), "");
+        assert_approx_eq!(font.em_size(), 1e3);
+        assert_approx_eq!(font.cap_height(), 714.);
+        assert_approx_eq!(font.x_height(), 523.);
+        assert_approx_eq!(font.ascent(), 952.);
+        assert_approx_eq!(font.descent(), 213.);
+        assert_approx_eq!(font.line_height(), 1165.);
+        assert_approx_eq!(font.slope(), 0.);
+        assert_eq!(font.glyphs().len(), 0);
+        assert_eq!(font.kerning().len(), 0);
     }
 
     #[test]
@@ -188,34 +232,34 @@ mod tests {
             std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap();
         let font = Font::from_ttf(&data).unwrap();
 
-        assert_eq!(font.name, "demo");
-        assert_approx_eq!(font.em_size, 1e3);
-        assert_approx_eq!(font.cap_height, 650.);
-        assert_approx_eq!(font.x_height, 450.);
-        assert_approx_eq!(font.line_height, 1424.);
-        assert_approx_eq!(font.slope, 0.);
-        assert_eq!(font.glyphs.len(), 2);
+        assert_eq!(font.name(), "demo");
+        assert_approx_eq!(font.em_size(), 1e3);
+        assert_approx_eq!(font.cap_height(), 650.);
+        assert_approx_eq!(font.x_height(), 450.);
+        assert_approx_eq!(font.line_height(), 1424.);
+        assert_approx_eq!(font.slope(), 0.);
+        assert_eq!(font.glyphs().len(), 2);
         assert_ne!(
-            font.notdef.advance,
-            Glyph::notdef(font.cap_height, font.slope).advance
+            font.notdef.advance(),
+            Glyph::notdef(font.cap_height(), font.slope()).advance()
         );
-        assert_eq!(font.kerning.len(), 1);
+        assert_eq!(font.kerning().len(), 1);
 
         let data =
             std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/null.ttf")).unwrap();
         let null = Font::from_ttf(&data).unwrap();
 
-        assert_eq!(null.name, "unknown");
-        assert_approx_eq!(null.em_size, 1e3);
-        assert_approx_eq!(null.cap_height, 0.);
-        assert_approx_eq!(null.x_height, 0.);
-        assert_approx_eq!(null.line_height, 0.);
-        assert_approx_eq!(null.slope, 0.);
-        assert_eq!(null.glyphs.len(), 0);
+        assert_eq!(null.name(), "unknown");
+        assert_approx_eq!(null.em_size(), 1e3);
+        assert_approx_eq!(null.cap_height(), 0.);
+        assert_approx_eq!(null.x_height(), 0.);
+        assert_approx_eq!(null.line_height(), 0.);
+        assert_approx_eq!(null.slope(), 0.);
+        assert_eq!(null.glyphs().len(), 0);
         assert_eq!(
-            null.notdef.advance,
-            Glyph::notdef(null.cap_height, null.slope).advance
+            null.notdef.advance(),
+            Glyph::notdef(null.cap_height(), null.slope()).advance()
         );
-        assert_eq!(null.kerning.len(), 0);
+        assert_eq!(null.kerning().len(), 0);
     }
 }
