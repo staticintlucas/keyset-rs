@@ -1,6 +1,6 @@
 use geom::{Affine, PathEl, Point};
 use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
-use pdf_writer::{Content, Filter, Finish, PdfWriter, Rect, Ref, TextStr};
+use pdf_writer::{Content, Filter, Finish, Pdf, Rect, Ref, TextStr};
 
 use crate::{Drawing, KeyDrawing, Path};
 
@@ -48,7 +48,7 @@ pub(crate) fn draw(drawing: &Drawing) -> Vec<u8> {
 
     let mut ref_gen = RefGen::new();
 
-    let mut writer = PdfWriter::new();
+    let mut writer = Pdf::new();
     writer.set_version(1, 3);
 
     let catalog_id = ref_gen.next();

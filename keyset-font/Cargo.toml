@@ -20,7 +20,7 @@ license.workspace = true
 geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
 
 log = "0.4"
-ttf-parser = { version = "0.19", default-features = false, features = ["std"] }
+ttf-parser = { version = "0.20", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 assert_approx_eq = "1.1"
