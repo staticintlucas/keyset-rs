@@ -1,3 +1,4 @@
+mod default;
 mod error;
 mod glyph;
 mod kerning;
@@ -29,25 +30,7 @@ pub struct Font {
 
 impl Default for Font {
     fn default() -> Self {
-        let cap_height = 714.;
-        let x_height = 523.;
-        let ascent = 952.;
-        let descent = 213.;
-        let slope = 0.;
-
-        Self {
-            name: String::new(),
-            em_size: 1000.,
-            cap_height,
-            x_height,
-            ascent,
-            descent,
-            line_height: ascent + descent,
-            slope,
-            glyphs: HashMap::new(),
-            notdef: Glyph::notdef(cap_height, slope),
-            kerning: Kerning::new(),
-        }
+        Self::from_ttf(default::FONT).unwrap()
     }
 }
 

@@ -19,6 +19,7 @@ license.workspace = true
 [dependencies]
 geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
 
+byte-strings = "0.3"
 log = "0.4"
 ttf-parser = { version = "0.20", default-features = false, features = ["std"] }
 
