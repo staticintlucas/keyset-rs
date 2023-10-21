@@ -90,7 +90,7 @@ mod tests {
             color: Color::new(0.0, 0.0, 0.0),
         };
         let font = Font::from_ttf(
-            &std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap(),
+            std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap(),
         )
         .unwrap();
         let profile = Profile::default();

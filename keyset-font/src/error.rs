@@ -1,7 +1,9 @@
 use std::fmt;
 
+use owned_ttf_parser::FaceParsingError;
+
 #[derive(Debug)]
-pub struct Error(ttf_parser::FaceParsingError);
+pub struct Error(FaceParsingError);
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -15,8 +17,8 @@ impl std::error::Error for Error {
     }
 }
 
-impl From<ttf_parser::FaceParsingError> for Error {
-    fn from(error: ttf_parser::FaceParsingError) -> Self {
+impl From<FaceParsingError> for Error {
+    fn from(error: FaceParsingError) -> Self {
         Self(error)
     }
 }
@@ -27,18 +29,20 @@ pub type Result<T> = std::result::Result<T, Error>;
 mod tests {
     use std::error::Error as _;
 
+    use owned_ttf_parser::Face;
+
     use super::*;
 
     #[test]
     fn error_fmt() {
-        let error = crate::Font::from_ttf(b"invalid").unwrap_err();
+        let error = crate::Font::from_ttf(b"invalid".to_vec()).unwrap_err();
 
         assert_eq!(format!("{error}"), "unknown magic")
     }
 
     #[test]
     fn error_source() {
-        let error = crate::Font::from_ttf(b"invalid").unwrap_err();
+        let error = crate::Font::from_ttf(b"invalid".to_vec()).unwrap_err();
 
         assert!(error.source().is_some());
         assert_eq!(format!("{}", error.source().unwrap()), "unknown magic",)
@@ -46,7 +50,7 @@ mod tests {
 
     #[test]
     fn error_from() {
-        let result = ttf_parser::Face::parse(b"invalid", 0);
+        let result = Face::parse(b"invalid", 0);
         let error: Error = result.unwrap_err().into();
 
         assert_eq!(format!("{error}"), "unknown magic")

@@ -74,7 +74,7 @@ fn main() {
 
     let keys = key::kle::from_json(kle).unwrap();
     let profile = profile::Profile::from_toml(profile).unwrap();
-    let font = font::Font::from_ttf(&font).unwrap();
+    let font = font::Font::from_ttf(font).unwrap();
     let mut options = drawing::Options::new();
     options.profile(profile).font(font);
     let drawing = options.draw(&keys);

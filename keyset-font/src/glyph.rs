@@ -1,5 +1,5 @@
 use geom::{Affine, BezPath, Point};
-use ttf_parser::{Face, GlyphId, OutlineBuilder};
+use owned_ttf_parser::{Face, GlyphId, OutlineBuilder};
 
 #[derive(Clone, Debug)]
 pub struct Glyph {

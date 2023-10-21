@@ -156,7 +156,7 @@ mod tests {
 
         let profile = Profile::default();
         let font = Font::from_ttf(
-            &std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap(),
+            std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap(),
         )
         .unwrap();
         let mut options = Options::new();
