@@ -351,3 +351,15 @@ pub const FONT: &[u8] = const_concat_bytes!(
     maxp::TABLE,
     os2::TABLE,
 );
+
+pub fn cap_height() -> f64 {
+    f64::from(CAP_HEIGHT)
+}
+
+pub fn x_height() -> f64 {
+    f64::from(X_HEIGHT)
+}
+
+pub fn line_height() -> f64 {
+    f64::from(LINE_HEIGHT)
+}

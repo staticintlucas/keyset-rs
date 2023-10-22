@@ -17,13 +17,6 @@ pub use self::kerning::Kerning;
 pub struct Font {
     face: OwnedFace,
     name: String,
-    em_size: f64,
-    cap_height: f64,
-    x_height: f64,
-    ascent: f64,
-    descent: f64,
-    line_height: f64,
-    slope: f64,
     glyphs: HashMap<char, Glyph>,
     notdef: Glyph,
     kerning: Kerning,
@@ -36,13 +29,6 @@ impl Clone for Font {
             // successfully parsed already
             face: OwnedFace::from_vec(self.face.as_slice().to_owned(), 0).unwrap(),
             name: self.name.clone(),
-            em_size: self.em_size,
-            cap_height: self.cap_height,
-            x_height: self.x_height,
-            ascent: self.ascent,
-            descent: self.descent,
-            line_height: self.line_height,
-            slope: self.slope,
             glyphs: self.glyphs.clone(),
             notdef: self.notdef.clone(),
             kerning: self.kerning.clone(),
@@ -74,14 +60,6 @@ impl Font {
                 |name| name,
             );
 
-        let em_size = f64::from(face_ref.units_per_em());
-        let cap_height = face_ref.capital_height().map(f64::from);
-        let x_height = face_ref.x_height().map(f64::from);
-        let ascent = f64::from(face_ref.ascender());
-        let descent = f64::from(-face_ref.descender());
-        let line_height = ascent + descent + f64::from(face_ref.line_gap());
-        let slope = face_ref.italic_angle().map_or(0., f64::from);
-
         let codepoints = face_ref.tables().cmap.map_or_else(
             || {
                 warn!("no CMAP table in font {name:?}");
@@ -112,15 +90,18 @@ impl Font {
             .filter_map(|(cp, gid)| Some((cp, Glyph::new(face_ref, gid)?)))
             .collect();
 
-        let cap_height = cap_height
-            .or_else(|| Some(glyphs.get(&'X')?.path().bounding_box().size().height))
-            .unwrap_or(0.6 * line_height); // TODO is there a better default?
-        let x_height = x_height
-            .or_else(|| Some(glyphs.get(&'x')?.path().bounding_box().size().height))
-            .unwrap_or(0.4 * line_height); // TODO is there a better default?
-
         let notdef = Glyph::new(face_ref, GlyphId(0)).map_or_else(
             || {
+                let line_height = f64::from(face_ref.ascender()) - f64::from(face_ref.descender())
+                    + f64::from(face_ref.line_gap());
+                let cap_height = face_ref
+                    .capital_height()
+                    .map(f64::from)
+                    .or_else(|| glyphs.get(&'M').map(|g| g.path().bounding_box().height()))
+                    .unwrap_or_else(|| {
+                        default::cap_height() / default::line_height() * line_height
+                    });
+                let slope = face_ref.italic_angle().map_or(0.0, f64::from);
                 warn!("no valid outline for glyph .notdef in font {name:?}");
                 Glyph::notdef(cap_height, slope)
             },
@@ -153,13 +134,6 @@ impl Font {
         Ok(Self {
             face,
             name,
-            em_size,
-            cap_height,
-            x_height,
-            ascent,
-            descent,
-            line_height,
-            slope,
             glyphs,
             notdef,
             kerning,
@@ -171,31 +145,52 @@ impl Font {
     }
 
     pub fn em_size(&self) -> f64 {
-        self.em_size
+        f64::from(self.face.as_face_ref().units_per_em())
     }
 
     pub fn cap_height(&self) -> f64 {
-        self.cap_height
+        self.face
+            .as_face_ref()
+            .capital_height()
+            .map(f64::from)
+            .or_else(|| {
+                self.glyphs
+                    .get(&'M')
+                    .map(|g| g.path().bounding_box().height())
+            })
+            .unwrap_or_else(|| default::cap_height() / default::line_height() * self.line_height())
     }
 
     pub fn x_height(&self) -> f64 {
-        self.x_height
+        self.face
+            .as_face_ref()
+            .x_height()
+            .map(f64::from)
+            .or_else(|| {
+                self.glyphs
+                    .get(&'x')
+                    .map(|g| g.path().bounding_box().height())
+            })
+            .unwrap_or_else(|| default::x_height() / default::line_height() * self.line_height())
     }
 
     pub fn ascent(&self) -> f64 {
-        self.ascent
+        f64::from(self.face.as_face_ref().ascender())
     }
 
     pub fn descent(&self) -> f64 {
-        self.descent
+        -f64::from(self.face.as_face_ref().descender())
     }
 
     pub fn line_height(&self) -> f64 {
-        self.line_height
+        self.ascent() + self.descent() + f64::from(self.face.as_face_ref().line_gap())
     }
 
     pub fn slope(&self) -> f64 {
-        self.slope
+        self.face
+            .as_face_ref()
+            .italic_angle()
+            .map_or(0.0, f64::from)
     }
 
     pub fn glyphs(&self) -> &HashMap<char, Glyph> {
