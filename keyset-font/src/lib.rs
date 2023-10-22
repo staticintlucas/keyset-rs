@@ -216,7 +216,7 @@ mod tests {
     fn test_font_default() {
         let font = Font::default();
 
-        assert_eq!(font.name(), "");
+        assert_eq!(font.name(), "default");
         assert_approx_eq!(font.em_size(), 1e3);
         assert_approx_eq!(font.cap_height(), 714.);
         assert_approx_eq!(font.x_height(), 523.);

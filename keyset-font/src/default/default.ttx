@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00">
+
+  <GlyphOrder>
+    <GlyphID id="0" name=".notdef"/>
+  </GlyphOrder>
+
+  <name>
+    <namerecord nameID="1" platformID="0" platEncID="4" langID="0x0" unicode="True">
+      default
+    </namerecord>
+  </name>
+
+  <head>
+    <tableVersion value="1.0"/>
+    <fontRevision value="1.0"/>
+    <checkSumAdjustment value="0"/>
+    <magicNumber value="0x5f0f3cf5"/>
+    <flags value="00000000 00000011"/>
+    <unitsPerEm value="1000"/>
+    <created value="Fri Jan 1 00:00:00 1904"/>
+    <modified value="Fri Jan 1 00:00:00 1904"/>
+    <xMin value="43"/>
+    <yMin value="0"/>
+    <xMax value="507"/>
+    <yMax value="714"/>
+    <macStyle value="00000000 00000000"/>
+    <lowestRecPPEM value="8"/>
+    <fontDirectionHint value="2"/>
+    <indexToLocFormat value="0"/>
+    <glyphDataFormat value="0"/>
+  </head>
+
+  <hhea>
+    <tableVersion value="0x00010000"/>
+    <ascent value="952"/>
+    <descent value="-213"/>
+    <lineGap value="0"/>
+    <advanceWidthMax value="550"/>
+    <minLeftSideBearing value="43"/>
+    <minRightSideBearing value="43"/>
+    <xMaxExtent value="507"/>
+    <caretSlopeRise value="1"/>
+    <caretSlopeRun value="0"/>
+    <caretOffset value="0"/>
+    <reserved0 value="0"/>
+    <reserved1 value="0"/>
+    <reserved2 value="0"/>
+    <reserved3 value="0"/>
+    <metricDataFormat value="0"/>
+    <numberOfHMetrics value="1"/>
+  </hhea>
+
+  <maxp>
+    <tableVersion value="0x00010000"/>
+    <numGlyphs value="1"/>
+    <maxPoints value="16"/>
+    <maxContours value="5"/>
+    <maxCompositePoints value="0"/>
+    <maxCompositeContours value="0"/>
+    <maxZones value="1"/>
+    <maxTwilightPoints value="0"/>
+    <maxStorage value="0"/>
+    <maxFunctionDefs value="0"/>
+    <maxInstructionDefs value="0"/>
+    <maxStackElements value="0"/>
+    <maxSizeOfInstructions value="0"/>
+    <maxComponentElements value="0"/>
+    <maxComponentDepth value="0"/>
+  </maxp>
+
+  <OS_2>
+    <version value="4"/>
+    <xAvgCharWidth value="550"/>
+    <usWeightClass value="400"/>
+    <usWidthClass value="5"/>
+    <fsType value="00000000 00000000"/>
+    <ySubscriptXSize value="600"/>
+    <ySubscriptYSize value="600"/>
+    <ySubscriptXOffset value="0"/>
+    <ySubscriptYOffset value="150"/>
+    <ySuperscriptXSize value="600"/>
+    <ySuperscriptYSize value="600"/>
+    <ySuperscriptXOffset value="0"/>
+    <ySuperscriptYOffset value="510"/>
+    <yStrikeoutSize value="60"/>
+    <yStrikeoutPosition value="260"/>
+    <sFamilyClass value="0"/>
+    <panose>
+      <bFamilyType value="0"/>
+      <bSerifStyle value="0"/>
+      <bWeight value="0"/>
+      <bProportion value="0"/>
+      <bContrast value="0"/>
+      <bStrokeVariation value="0"/>
+      <bArmStyle value="0"/>
+      <bLetterForm value="0"/>
+      <bMidline value="0"/>
+      <bXHeight value="0"/>
+    </panose>
+    <ulUnicodeRange1 value="00000000 00000000 00000000 00000000"/>
+    <ulUnicodeRange2 value="00000000 00000000 00000000 00000000"/>
+    <ulUnicodeRange3 value="00000000 00000000 00000000 00000000"/>
+    <ulUnicodeRange4 value="00000000 00000000 00000000 00000000"/>
+    <achVendID value="keys"/>
+    <fsSelection value="00000000 11000000"/>
+    <usFirstCharIndex value="0"/>
+    <usLastCharIndex value="0"/>
+    <sTypoAscender value="952"/>
+    <sTypoDescender value="-213"/>
+    <sTypoLineGap value="0"/>
+    <usWinAscent value="952"/>
+    <usWinDescent value="213"/>
+    <ulCodePageRange1 value="00000000 00000000 00000000 00000000"/>
+    <ulCodePageRange2 value="00000000 00000000 00000000 00000000"/>
+    <sxHeight value="523"/>
+    <sCapHeight value="714"/>
+    <usDefaultChar value="0"/>
+    <usBreakChar value="32"/>
+    <usMaxContext value="1"/>
+  </OS_2>
+
+  <hmtx>
+    <mtx name=".notdef" width="550" lsb="43"/>
+  </hmtx>
+
+  <loca/><!-- Tag must be present for ttx to generate this -->
+
+  <glyf>
+    <TTGlyph name=".notdef" xMin="43" yMin="0" xMax="507" yMax="714">
+      <contour>
+        <pt x="43" y="0" on="1"/>
+        <pt x="43" y="714" on="1"/>
+        <pt x="507" y="714" on="1"/>
+        <pt x="507" y="0" on="1"/>
+      </contour>
+      <contour>
+        <pt x="100" y="107" on="1"/>
+        <pt x="236" y="357" on="1"/>
+        <pt x="100" y="607" on="1"/>
+      </contour>
+      <contour>
+        <pt x="132" y="657" on="1"/>
+        <pt x="275" y="400" on="1"/>
+        <pt x="418" y="657" on="1"/>
+      </contour>
+      <contour>
+        <pt x="450" y="607" on="1"/>
+        <pt x="314" y="357" on="1"/>
+        <pt x="450" y="107" on="1"/>
+      </contour>
+      <contour>
+        <pt x="418" y="57" on="1"/>
+        <pt x="275" y="314" on="1"/>
+        <pt x="132" y="57" on="1"/>
+      </contour>
+      <instructions/>
+    </TTGlyph>
+  </glyf>
+
+</ttFont>
