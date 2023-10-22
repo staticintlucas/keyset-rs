@@ -56,7 +56,7 @@ impl Glyph {
 
         let skew_x = slope.to_radians().tan();
         let scale = cap_height / 1e3;
-        let affine = Affine::skew(skew_x, 0.).pre_scale(scale);
+        let affine = Affine::skew(skew_x, 0.).pre_scale_non_uniform(scale, -scale);
 
         path.apply_affine(affine);
 
@@ -156,7 +156,7 @@ mod tests {
         let notdef = Glyph::notdef(500., 0.);
 
         assert_approx_eq!(notdef.path().bounding_box().origin().x, 0.0);
-        assert_approx_eq!(notdef.path().bounding_box().origin().y, 0.0);
+        assert_approx_eq!(notdef.path().bounding_box().origin().y, -500.0);
         assert_approx_eq!(notdef.path().bounding_box().size().width, 325.0);
         assert_approx_eq!(notdef.path().bounding_box().size().height, 500.0);
         assert_approx_eq!(notdef.advance(), 325.);
