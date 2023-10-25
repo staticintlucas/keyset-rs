@@ -89,10 +89,7 @@ mod tests {
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
-        let font = Font::from_ttf(
-            std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap(),
-        )
-        .unwrap();
+        let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
         let profile = Profile::default();
         let top_rect = profile.top_with_size((1., 1.)).rect();
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(0., 0.));

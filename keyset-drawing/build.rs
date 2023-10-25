@@ -13,7 +13,7 @@ fn main() {
     fs::create_dir_all(&out_dir)
         .unwrap_or_else(|err| panic!("failed to create directory {}: {err:?}", out_dir.display()));
 
-    let fonts = ["default", "demo", "null"];
+    let fonts = ["demo"];
 
     for font in fonts {
         let ttx = ttx_dir.join(format!("{font}.ttx"));

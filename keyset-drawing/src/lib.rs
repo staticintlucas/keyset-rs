@@ -155,10 +155,7 @@ mod tests {
         assert_eq!(options.font.glyphs().len(), 0);
 
         let profile = Profile::default();
-        let font = Font::from_ttf(
-            std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap(),
-        )
-        .unwrap();
+        let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
         let mut options = Options::new();
         options
             .profile(profile)

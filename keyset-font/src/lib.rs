@@ -230,8 +230,7 @@ mod tests {
 
     #[test]
     fn test_from_ttf() {
-        let data =
-            std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap();
+        let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
         assert_eq!(font.name(), "demo");
@@ -247,8 +246,7 @@ mod tests {
         );
         assert_eq!(font.kerning().len(), 1);
 
-        let data =
-            std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/null.ttf")).unwrap();
+        let data = std::fs::read(env!("NULL_TTF")).unwrap();
         let null = Font::from_ttf(data).unwrap();
 
         assert_eq!(null.name(), "unknown");

@@ -132,16 +132,14 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let demo =
-            std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/demo.ttf")).unwrap();
+        let demo = std::fs::read(env!("DEMO_TTF")).unwrap();
         let demo = Face::parse(&demo, 0).unwrap();
 
         let a = Glyph::new(&demo, GlyphId(1)).unwrap();
         assert_approx_eq!(a.advance(), 540.);
         assert_eq!(a.path().elements().len(), 15);
 
-        let null =
-            std::fs::read(concat!(env!("CARGO_WORKSPACE_DIR"), "tests/fonts/null.ttf")).unwrap();
+        let null = std::fs::read(env!("NULL_TTF")).unwrap();
         let null = Face::parse(&null, 0).unwrap();
 
         let a = Glyph::new(&null, GlyphId(1));
