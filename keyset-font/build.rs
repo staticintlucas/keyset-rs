@@ -7,10 +7,10 @@ use std::process::Command;
 use std::os::unix::process::ExitStatusExt;
 
 fn main() {
-    let ttx_dir = ["src", "default"].iter().collect::<PathBuf>();
+    let ttx_dir = ["resources", "fonts"].iter().collect::<PathBuf>();
     let ttx_path = ttx_dir.join("default.ttx");
 
-    let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR is not set"));
+    let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR is not set")).join(ttx_dir);
     let out_path = out_dir.join("default.ttf");
 
     let output = Command::new("ttx")
@@ -43,8 +43,10 @@ fn main() {
         output.stdout
     };
 
+    fs::create_dir_all(&out_dir)
+        .unwrap_or_else(|err| panic!("failed to create directory {}: {err:?}", out_dir.display()));
     fs::write(&out_path, output)
-        .unwrap_or_else(|err| panic!("failed to write to {}: {:?}", out_path.display(), err));
+        .unwrap_or_else(|err| panic!("failed to write to {}: {err:?}", out_path.display()));
 
     println!("cargo:rustc-env=DEFAULT_TTF={}", out_path.display());
 
