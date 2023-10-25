@@ -18,9 +18,13 @@ Current minimum supported Rust version is 1.66.0, although this is subject to ch
 
 ## Installation
 
+First, ensure you have [fontTools] installed and available on your `PATH`.
+
 ```sh
 cargo install keyset
 ```
+
+[fonttools]: https://fonttools.readthedocs.io/en/latest/
 
 ## Usage
 
