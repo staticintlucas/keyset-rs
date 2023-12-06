@@ -1,4 +1,4 @@
-use font::Font;
+use font::{Font, Glyph};
 use geom::{Affine, Rect, Shape, Vec2};
 use log::warn;
 use profile::Profile;
@@ -16,35 +16,22 @@ pub(crate) fn draw(
     let Some(first) = chars.next() else {
         unreachable!() // We should never have an empty legend here
     };
-    let first = font.glyphs().get(&first).unwrap_or(font.notdef());
+    let first = font.glyph_or_default(first);
+    let mut text_path = first.path;
+    let mut pos = first.advance;
 
-    let mut path = legend
-        .text
-        .chars()
-        .zip(chars)
-        .map(|(lhs, rhs)| {
-            let glyph = font.glyphs().get(&rhs).unwrap_or(font.notdef());
-            let kern = font.kerning().get(lhs, rhs);
-            (glyph, kern)
-        })
-        .scan(first.advance(), |pos, (glyph, kern)| {
-            let result = Some((*pos + kern, glyph));
-            *pos += kern + glyph.advance();
-            result
-        })
-        .fold(first.path().clone(), |mut path, (pos, glyph)| {
-            let mut p = glyph.path().clone();
-            p.apply_affine(Affine::translate((pos, 0.)));
-            path.extend(p);
-            path
-        });
+    for (lhs, rhs) in legend.text.chars().zip(chars) {
+        let Glyph { path, advance, .. } = font.glyph_or_default(rhs);
+        text_path.extend(Affine::translate((pos, 0.0)) * path);
+        pos += advance + font.kerning(lhs, rhs);
+    }
 
     let height = profile.text_height.get(legend.size_idx);
-    path.apply_affine(Affine::scale(height / font.cap_height())); // Scale to correct height
+    text_path.apply_affine(Affine::scale(height / font.cap_height())); // Scale to correct height
 
     // Calculate legend bounds. For x this is based on actual size while for y we use the base line
     // and text height so each character (especially symbols) are still aligned across keys
-    let bounds = path.bounding_box();
+    let bounds = text_path.bounding_box();
     let bounds = bounds
         .with_origin((bounds.origin().x, -height))
         .with_size((bounds.width(), height));
@@ -55,7 +42,7 @@ pub(crate) fn draw(
         let text = &legend.text;
         let percent = 100. * (bounds.width() / margin.width() - 1.);
         warn!(r#"legend "{text}" is {percent}% too wide; squishing legend to fit"#);
-        path.apply_affine(Affine::scale_non_uniform(
+        text_path.apply_affine(Affine::scale_non_uniform(
             margin.width() / bounds.width(),
             1.,
         ));
@@ -64,10 +51,10 @@ pub(crate) fn draw(
     // Align the legend within the margins
     let size = margin.size() - bounds.size();
     let point = margin.origin() + (align.x * size.width, align.y * size.height);
-    path.apply_affine(Affine::translate(point - bounds.origin()));
+    text_path.apply_affine(Affine::translate(point - bounds.origin()));
 
     Path {
-        path,
+        path: text_path,
         outline: None,
         fill: Some(legend.color),
     }
@@ -110,8 +97,8 @@ mod tests {
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(1., 1.));
 
         assert_eq!(
-            path.path.into_iter().count(),
-            font.notdef().path().iter().count()
+            path.path.elements().len(),
+            font.notdef().path.elements().len()
         );
 
         let legend = ::key::Legend {

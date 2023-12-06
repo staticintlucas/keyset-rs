@@ -9,6 +9,9 @@
     clippy::cargo,
     clippy::nursery
 )]
+#![allow(
+    clippy::multiple_crate_versions // TODO syn 1.0 through keyset-font > ourboros > proc-macro-error (which is unmaintained)
+)]
 
 pub use color;
 pub use drawing;

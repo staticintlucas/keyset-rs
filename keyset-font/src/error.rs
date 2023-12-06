@@ -1,6 +1,6 @@
 use std::fmt;
 
-use owned_ttf_parser::FaceParsingError;
+use ttf_parser::FaceParsingError;
 
 #[derive(Debug)]
 pub struct Error(FaceParsingError);
@@ -29,7 +29,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 mod tests {
     use std::error::Error as _;
 
-    use owned_ttf_parser::Face;
+    use ttf_parser::Face;
 
     use super::*;
 

@@ -26,9 +26,9 @@
   </head>
   <hhea>
     <tableVersion value="0x00010000"/>
-    <ascent value="0"/>
-    <descent value="0"/>
-    <lineGap value="0"/>
+    <ascent value="600"/>
+    <descent value="-400"/>
+    <lineGap value="200"/>
     <advanceWidthMax value="0"/>
     <minLeftSideBearing value="0"/>
     <minRightSideBearing value="0"/>

@@ -152,7 +152,7 @@ mod tests {
         let options = Options::default();
 
         assert_approx_eq!(options.scale, 1.);
-        assert_eq!(options.font.glyphs().len(), 0);
+        assert_eq!(options.font.num_glyphs(), 1); // .notdef
 
         let profile = Profile::default();
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
@@ -166,7 +166,7 @@ mod tests {
             .show_margin(true);
 
         assert_eq!(options.profile.typ.depth(), 1.0);
-        assert_eq!(options.font.glyphs().len(), 2);
+        assert_eq!(options.font.num_glyphs(), 3); // .notdef, A, V
         assert_eq!(options.scale, 2.);
     }
 
