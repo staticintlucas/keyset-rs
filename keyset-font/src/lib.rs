@@ -1,3 +1,7 @@
+//! This crate contains the font loading and parsing logic used internally by [keyset].
+//!
+//! [keyset]: https://crates.io/crates/keyset
+
 #![warn(
     missing_docs,
     clippy::all,
@@ -10,7 +14,6 @@
     clippy::cargo,
     clippy::nursery
 )]
-#![allow(missing_docs, clippy::missing_errors_doc, clippy::missing_panics_doc)] // TODO
 
 mod default;
 mod error;
@@ -27,11 +30,16 @@ use ttf_parser::GlyphId;
 pub use self::error::{Error, Result};
 use face::Face;
 
+/// A glyph loaded from a [`Font`]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct Glyph {
+    /// The outline of the glyph
     pub path: BezPath,
+    /// The bounds of the glyph's outline. The value of `glyph.bounds` is equivalent to the result
+    /// of `glyph.path.bounding_box()`
     pub bounds: Rect,
+    /// The glyphs horizontal advance
     pub advance: f64,
 }
 
@@ -94,6 +102,7 @@ impl Glyph {
     }
 }
 
+/// A parsed font
 pub struct Font {
     face: Face,
     family: OnceLock<String>,
@@ -133,6 +142,11 @@ impl Default for Font {
 }
 
 impl Font {
+    /// Parse a font from TrueType or OpenType format font data
+    ///
+    /// # Errors
+    ///
+    /// If there is an error parsing the font data
     pub fn from_ttf(data: Vec<u8>) -> Result<Self> {
         Ok(Self {
             face: Face::from_ttf(data)?,
@@ -146,6 +160,9 @@ impl Font {
         })
     }
 
+    /// The font family name
+    ///
+    /// Returns `"unknown"` if the font does not specify a family name
     pub fn family(&self) -> &String {
         self.family.get_or_init(|| {
             self.face
@@ -160,6 +177,9 @@ impl Font {
         })
     }
 
+    /// The font's full name
+    ///
+    /// Returns `"unknown"` if the font does not specify a full name
     pub fn name(&self) -> &String {
         self.name.get_or_init(|| {
             self.face
@@ -174,10 +194,15 @@ impl Font {
         })
     }
 
+    /// The number font units per EM
     pub fn em_size(&self) -> f64 {
         f64::from(self.face.units_per_em())
     }
 
+    /// The capital height in font units
+    ///
+    /// Measures the height of the uppercase `'M'` if it is not set. In case the font does not contain
+    /// an uppercase `'M'`, a default value is returned
     pub fn cap_height(&self) -> f64 {
         *self.cap_height.get_or_init(|| {
             self.face
@@ -190,6 +215,10 @@ impl Font {
         })
     }
 
+    /// The x-height in font units
+    ///
+    /// Measures the height of the lowercase `'x'` if it is not set. In case the font does not contain
+    /// a lowercase `'x'`, a default value is returned
     pub fn x_height(&self) -> f64 {
         *self.x_height.get_or_init(|| {
             self.face
@@ -202,30 +231,43 @@ impl Font {
         })
     }
 
-    pub fn ascent(&self) -> f64 {
+    /// The font's ascender in font units
+    pub fn ascender(&self) -> f64 {
         f64::from(self.face.ascender())
     }
 
-    pub fn descent(&self) -> f64 {
+    /// The font's descender in font units
+    pub fn descender(&self) -> f64 {
         -f64::from(self.face.descender())
     }
 
+    /// The font's line gap in font units
     pub fn line_gap(&self) -> f64 {
         f64::from(self.face.line_gap())
     }
 
+    /// The font's line height in font units
+    ///
+    /// This is equal to `self.ascender() + self.descender() + self.line_gap()`
     pub fn line_height(&self) -> f64 {
-        self.ascent() + self.descent() + self.line_gap()
+        self.ascender() + self.descender() + self.line_gap()
     }
 
+    /// The font's slope angle in clockwise degrees if specified
     pub fn slope(&self) -> Option<f64> {
-        self.face.italic_angle().map(f64::from)
+        self.face
+            .italic_angle()
+            .map(f64::from)
+            .map(std::ops::Neg::neg) // Negate so forward = positive
     }
 
+    /// The number of glyph outlines in the font
     pub fn num_glyphs(&self) -> usize {
         usize::from(self.face.number_of_glyphs())
     }
 
+    /// Returns the flyph for a given character if present in the font
+    #[allow(clippy::missing_panics_doc)] // Only unwrapping a mutex
     pub fn glyph(&self, char: char) -> Option<Glyph> {
         self.glyphs
             .write()
@@ -239,10 +281,12 @@ impl Font {
             .clone()
     }
 
+    /// Returns the glyph for a given character, or the default replacement character if not present
     pub fn glyph_or_default(&self, char: char) -> Glyph {
         self.glyph(char).unwrap_or_else(|| self.notdef())
     }
 
+    /// Returns the font's default replacement glyph, `.notdef`, or a builtin default if not present
     pub fn notdef(&self) -> Glyph {
         self.notdef
             .get_or_init(|| {
@@ -254,6 +298,9 @@ impl Font {
             .clone()
     }
 
+    /// Returns the kerning between two characters' glyphs, or 0 if no kerning is specified in the
+    /// font
+    #[allow(clippy::missing_panics_doc)] // Only unwrapping a mutex
     pub fn kerning(&self, left: char, right: char) -> f64 {
         *self
             .kerning
@@ -341,8 +388,8 @@ mod tests {
         assert_approx_eq!(font.em_size(), 1000.0);
         assert_approx_eq!(font.cap_height(), 650.0);
         assert_approx_eq!(font.x_height(), 450.0);
-        assert_approx_eq!(font.ascent(), 1024.0);
-        assert_approx_eq!(font.descent(), 400.0);
+        assert_approx_eq!(font.ascender(), 1024.0);
+        assert_approx_eq!(font.descender(), 400.0);
         assert_approx_eq!(font.line_gap(), 0.0);
         assert_approx_eq!(font.line_height(), 1424.0);
         assert_eq!(font.slope(), None);
@@ -357,8 +404,8 @@ mod tests {
         assert_approx_eq!(font.em_size(), 1000.0);
         assert_approx_eq!(font.cap_height(), default::cap_height() * line_scaling);
         assert_approx_eq!(font.x_height(), default::x_height() * line_scaling);
-        assert_approx_eq!(font.ascent(), 600.0);
-        assert_approx_eq!(font.descent(), 400.0);
+        assert_approx_eq!(font.ascender(), 600.0);
+        assert_approx_eq!(font.descender(), 400.0);
         assert_approx_eq!(font.line_gap(), 200.0);
         assert_approx_eq!(font.line_height(), 1200.0);
         assert_eq!(font.slope(), None);

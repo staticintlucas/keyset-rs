@@ -2,6 +2,7 @@ use std::fmt;
 
 use ttf_parser::FaceParsingError;
 
+/// A font error
 #[derive(Debug)]
 pub struct Error(FaceParsingError);
 
@@ -23,6 +24,7 @@ impl From<FaceParsingError> for Error {
     }
 }
 
+/// A [`Result`](std::result::Result) where the error type is [`Error`]
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[cfg(test)]
