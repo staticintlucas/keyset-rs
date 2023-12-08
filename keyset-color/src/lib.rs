@@ -43,7 +43,6 @@ mod rgb;
 
 use std::fmt::{Display, LowerHex, UpperHex};
 
-#[allow(clippy::doc_markdown)] // Otherwise it thinks sRGB need backticks
 /// sRGB Color type.
 ///
 /// Internally stores red, green, and blue components as [`f32`].
