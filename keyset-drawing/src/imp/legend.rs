@@ -5,7 +5,7 @@ use profile::Profile;
 
 use super::Path;
 
-pub(crate) fn draw(
+pub fn draw(
     legend: &::key::Legend,
     font: &Font,
     profile: &Profile,

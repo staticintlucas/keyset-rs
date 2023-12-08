@@ -7,7 +7,7 @@ use crate::Options;
 
 use super::{Outline, Path, ARC_TOL};
 
-pub(crate) fn top(key: &key::Key, options: &Options) -> Path {
+pub fn top(key: &key::Key, options: &Options) -> Path {
     let path = match key.shape {
         key::Shape::Normal(size) => options.profile.top_with_size(size).to_path(ARC_TOL),
         key::Shape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).to_path(ARC_TOL),
@@ -24,7 +24,7 @@ pub(crate) fn top(key: &key::Key, options: &Options) -> Path {
     }
 }
 
-pub(crate) fn bottom(key: &key::Key, options: &Options) -> Path {
+pub fn bottom(key: &key::Key, options: &Options) -> Path {
     let path = match key.shape {
         key::Shape::Normal(size) => options.profile.bottom_with_size(size).to_path(ARC_TOL),
         key::Shape::SteppedCaps => options
@@ -44,7 +44,7 @@ pub(crate) fn bottom(key: &key::Key, options: &Options) -> Path {
     }
 }
 
-pub(crate) fn homing(key: &key::Key, options: &Options) -> Option<Path> {
+pub fn homing(key: &key::Key, options: &Options) -> Option<Path> {
     let profile = &options.profile;
 
     let key::Type::Homing(homing) = key.typ else {
@@ -82,7 +82,7 @@ pub(crate) fn homing(key: &key::Key, options: &Options) -> Option<Path> {
     })
 }
 
-pub(crate) fn step(key: &key::Key, options: &Options) -> Option<Path> {
+pub fn step(key: &key::Key, options: &Options) -> Option<Path> {
     matches!(key.shape, key::Shape::SteppedCaps).then(|| {
         let profile = &options.profile;
 

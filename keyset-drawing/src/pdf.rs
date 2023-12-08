@@ -42,7 +42,7 @@ impl RefGen {
     }
 }
 
-pub(crate) fn draw(drawing: &Drawing) -> Vec<u8> {
+pub fn draw(drawing: &Drawing) -> Vec<u8> {
     let scale = drawing.scale * PDF_DPI * 0.75; // 0.75 in/key
     let size = drawing.bounds.size() * scale;
 

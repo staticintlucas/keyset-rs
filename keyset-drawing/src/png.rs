@@ -25,7 +25,7 @@ macro_rules! transform {
     }};
 }
 
-pub(crate) fn draw(drawing: &Drawing, dpi: f64) -> Vec<u8> {
+pub fn draw(drawing: &Drawing, dpi: f64) -> Vec<u8> {
     let scale = drawing.scale * dpi * 0.75; // 0.75 in/key
     let size = drawing.bounds.size() * scale;
 

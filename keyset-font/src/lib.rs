@@ -1,4 +1,5 @@
 #![warn(
+    missing_docs,
     clippy::all,
     clippy::correctness,
     clippy::suspicious,
@@ -9,7 +10,7 @@
     clippy::cargo,
     clippy::nursery
 )]
-#![allow(missing_docs, clippy::missing_errors_doc, clippy::missing_panics_doc)]
+#![allow(missing_docs, clippy::missing_errors_doc, clippy::missing_panics_doc)] // TODO
 
 mod default;
 mod error;

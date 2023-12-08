@@ -10,7 +10,7 @@
     clippy::cargo,
     clippy::nursery
 )]
-#![allow(missing_docs, clippy::missing_errors_doc)]
+#![allow(missing_docs, clippy::missing_errors_doc)] // TODO
 
 mod legend;
 

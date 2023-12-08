@@ -1,4 +1,5 @@
 #![warn(
+    missing_docs,
     clippy::all,
     clippy::correctness,
     clippy::suspicious,
@@ -10,6 +11,7 @@
     clippy::nursery
 )]
 #![allow(
+    missing_docs, // TODO
     clippy::multiple_crate_versions // TODO syn 1.0 through keyset-font > ourboros > proc-macro-error (which is unmaintained)
 )]
 

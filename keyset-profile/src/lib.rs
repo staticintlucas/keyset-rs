@@ -1,3 +1,22 @@
+#![warn(
+    missing_docs,
+    clippy::all,
+    clippy::correctness,
+    clippy::suspicious,
+    clippy::style,
+    clippy::complexity,
+    clippy::perf,
+    clippy::pedantic,
+    clippy::cargo,
+    clippy::nursery
+)]
+#![allow(
+    missing_docs, // TODO
+    clippy::missing_errors_doc, // TODO
+    clippy::missing_panics_doc, // TODO
+    clippy::suboptimal_flops // Optimiser is pretty good, and mul_add is pretty ugly
+)]
+
 #[cfg(feature = "serde")]
 mod de;
 
@@ -19,6 +38,7 @@ pub enum Type {
 }
 
 impl Type {
+    #[must_use]
     pub const fn depth(self) -> f64 {
         match self {
             Self::Cylindrical { depth } | Self::Spherical { depth } => depth,
@@ -101,6 +121,7 @@ pub struct TextHeight([f64; Self::NUM_HEIGHTS]);
 impl TextHeight {
     const NUM_HEIGHTS: usize = 10;
 
+    #[must_use]
     pub fn new(heights: &HashMap<usize, f64>) -> Self {
         if heights.is_empty() {
             Self::default()
@@ -108,6 +129,7 @@ impl TextHeight {
             let (index, height): (Vec<_>, Vec<_>) = {
                 iter::once((0., 0.))
                     .chain(
+                        #[allow(clippy::cast_precision_loss)]
                         heights
                             .iter()
                             .sorted_by_key(|(&i, _)| i)
@@ -115,11 +137,13 @@ impl TextHeight {
                     )
                     .unzip()
             };
+            #[allow(clippy::cast_precision_loss)]
             let all_indeces = array::from_fn(|i| i as f64);
             Self(interp_array(&index, &height, &all_indeces))
         }
     }
 
+    #[must_use]
     pub const fn get(&self, size_index: usize) -> f64 {
         if size_index < self.0.len() {
             self.0[size_index]
@@ -131,6 +155,7 @@ impl TextHeight {
 
 impl Default for TextHeight {
     fn default() -> Self {
+        #[allow(clippy::cast_precision_loss)]
         Self(array::from_fn(|i| {
             // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5b0a9cdfc7cc9bb225839192298d82a66d/kb.css#L113
             (6.0 + 2.0 * (i as f64)) * (1e3 / 72.)
@@ -144,6 +169,7 @@ pub struct TextMargin([Insets; Self::NUM_RECTS]);
 impl TextMargin {
     const NUM_RECTS: usize = 10;
 
+    #[must_use]
     pub fn new(insets: &HashMap<usize, Insets>) -> Self {
         if insets.is_empty() {
             Self::default()
@@ -172,6 +198,7 @@ impl TextMargin {
         }
     }
 
+    #[must_use]
     pub const fn get(&self, size_index: usize) -> Insets {
         if size_index < self.0.len() {
             self.0[size_index]

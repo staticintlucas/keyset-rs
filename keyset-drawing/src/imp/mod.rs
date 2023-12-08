@@ -13,20 +13,20 @@ use crate::Options;
 const ARC_TOL: f64 = 1.; // Tolerance for converting Arc->Bézier with Kurbo
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Outline {
+pub struct Outline {
     pub color: Color,
     pub width: f64,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Path {
+pub struct Path {
     pub path: BezPath,
     pub outline: Option<Outline>,
     pub fill: Option<Color>,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct KeyDrawing {
+pub struct KeyDrawing {
     pub origin: Point,
     pub paths: Vec<Path>,
 }
@@ -73,6 +73,7 @@ impl KeyDrawing {
 
         let legends = key.legends.iter().enumerate().filter_map(|(i, l)| {
             l.as_ref().map(|legend| {
+                #[allow(clippy::cast_precision_loss)]
                 let align = Vec2::new(((i % 3) as f64) / 2.0, ((i / 3) as f64) / 2.0);
                 legend::draw(legend, &options.font, &options.profile, top_rect, align)
             })
