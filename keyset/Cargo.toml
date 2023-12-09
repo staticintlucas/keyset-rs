@@ -5,6 +5,8 @@ description = "A Rust tool to create pretty keyset layout diagrams using correct
 keywords = ["keyboard", "keycap", "keyset", "layout", "diagram"]
 categories = ["command-line-utilities", "graphics", "multimedia::images", "rendering"]
 
+metadata.docs.rs.all-features = true
+
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true

@@ -8,6 +8,8 @@ description = "Drawing output functionality for keyset"
 keywords = ["keyset"]
 categories = ["none"]
 
+metadata.docs.rs.all-features = true
+
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -35,6 +37,3 @@ svg = { version = "0.14", optional = true }
 [dev-dependencies]
 assert_approx_eq = "1.1"
 unindent = "0.2"
-
-[package.metadata.docs.rs]
-all-features = true

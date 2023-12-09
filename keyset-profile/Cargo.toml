@@ -8,6 +8,8 @@ description = "Profile type and functionality for keyset"
 keywords = ["keyset"]
 categories = ["none"]
 
+metadata.docs.rs.all-features = true
+
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -33,6 +35,3 @@ toml = { version = "0.8", default-features = false, features = ["parse"], option
 assert_approx_eq = "1.1"
 assert_matches = "1.5"
 unindent = "0.2"
-
-[package.metadata.docs.rs]
-all-features = true

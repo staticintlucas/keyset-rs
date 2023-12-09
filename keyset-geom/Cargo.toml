@@ -8,6 +8,8 @@ description = "Geometry types and conversions for keyset"
 keywords = ["keyset"]
 categories = ["none"]
 
+metadata.docs.rs.all-features = true
+
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -19,6 +21,3 @@ kurbo = "0.10"
 
 [dev-dependencies]
 assert_approx_eq = "1.1"
-
-[package.metadata.docs.rs]
-all-features = true

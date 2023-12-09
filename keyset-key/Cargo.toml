@@ -8,6 +8,8 @@ description = "Key type and functionality for keyset"
 keywords = ["keyset"]
 categories = ["none"]
 
+metadata.docs.rs.all-features = true
+
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
