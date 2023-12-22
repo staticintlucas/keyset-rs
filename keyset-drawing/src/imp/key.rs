@@ -9,8 +9,12 @@ use super::{Outline, Path, ARC_TOL};
 
 pub fn top(key: &key::Key, options: &Options) -> Path {
     let path = match key.shape {
-        key::Shape::Normal(size) => options.profile.top_with_size(size).to_path(ARC_TOL),
-        key::Shape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).to_path(ARC_TOL),
+        key::Shape::None(..) => BezPath::new(),
+        key::Shape::Normal(size) | key::Shape::Space(size) => {
+            options.profile.top_with_size(size).to_path(ARC_TOL)
+        }
+        key::Shape::Homing(..) => options.profile.top_with_size((1.0, 1.0)).to_path(ARC_TOL),
+        key::Shape::SteppedCaps => options.profile.top_with_size((1.25, 1.0)).to_path(ARC_TOL),
         key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_top_path(&options.profile),
     };
 
@@ -26,7 +30,14 @@ pub fn top(key: &key::Key, options: &Options) -> Path {
 
 pub fn bottom(key: &key::Key, options: &Options) -> Path {
     let path = match key.shape {
-        key::Shape::Normal(size) => options.profile.bottom_with_size(size).to_path(ARC_TOL),
+        key::Shape::None(..) => BezPath::new(),
+        key::Shape::Normal(size) | key::Shape::Space(size) => {
+            options.profile.bottom_with_size(size).to_path(ARC_TOL)
+        }
+        key::Shape::Homing(..) => options
+            .profile
+            .bottom_with_size((1.0, 1.0))
+            .to_path(ARC_TOL),
         key::Shape::SteppedCaps => options
             .profile
             .bottom_with_size((1.75, 1.))
@@ -47,12 +58,14 @@ pub fn bottom(key: &key::Key, options: &Options) -> Path {
 pub fn homing(key: &key::Key, options: &Options) -> Option<Path> {
     let profile = &options.profile;
 
-    let key::Type::Homing(homing) = key.typ else {
+    let key::Shape::Homing(homing) = key.shape else {
         return None;
     };
     let homing = homing.unwrap_or(profile.homing.default);
 
-    let center = profile.top_with_size(key.shape.margin().size()).center();
+    let center = profile
+        .top_with_size(key.shape.inner_rect().size())
+        .center();
 
     let bez_path = match homing {
         key::Homing::Scoop => None,
@@ -447,7 +460,7 @@ mod tests {
         // Scoop
         let scoop = {
             let mut key = key::Key::example();
-            key.typ = key::Type::Homing(Some(key::Homing::Scoop));
+            key.shape = key::Shape::Homing(Some(key::Homing::Scoop));
             key
         };
 
@@ -457,7 +470,7 @@ mod tests {
         // Bar
         let bar = {
             let mut key = key::Key::example();
-            key.typ = key::Type::Homing(Some(key::Homing::Bar));
+            key.shape = key::Shape::Homing(Some(key::Homing::Bar));
             key
         };
 
@@ -479,7 +492,7 @@ mod tests {
         // Bump
         let bump = {
             let mut key = key::Key::example();
-            key.typ = key::Type::Homing(Some(key::Homing::Bump));
+            key.shape = key::Shape::Homing(Some(key::Homing::Bump));
             key
         };
 

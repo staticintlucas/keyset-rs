@@ -1,14 +1,23 @@
+/// An error parsing a KLE layout
 #[derive(Debug)]
 pub enum Error {
+    /// An error in parsing the KLE JSON file
+    JsonParseError(serde_json::Error),
+    /// A key size not supported by `keyset`
     UnsupportedKeySize {
+        /// The key's `w` value
         w: f64,
+        /// The key's `h` value
         h: f64,
+        /// The key's `x2` value
         x2: f64,
+        /// The key's `y2` value
         y2: f64,
+        /// The key's `w2` value
         w2: f64,
+        /// The key's `h2` value
         h2: f64,
     },
-    JsonParseError(serde_json::Error),
 }
 
 impl std::fmt::Display for Error {
@@ -47,6 +56,7 @@ impl From<serde_json::Error> for Error {
     }
 }
 
+/// A [`std::result::Result`] with [`Error`] as it's error type
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[cfg(test)]

@@ -293,6 +293,12 @@ impl Profile {
         top_rect.with_size(top_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
     }
 
+    pub fn top_with_rect(&self, rect: impl Into<Rect>) -> RoundRect {
+        let rect = rect.into();
+        let result = self.top_with_size(rect.size());
+        result.with_origin(result.origin() + 1e3 * rect.origin().to_vec2())
+    }
+
     pub fn bottom_with_size(&self, size: impl Into<Size>) -> RoundRect {
         let bottom_rect = self.bottom.round_rect();
         bottom_rect.with_size(bottom_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))

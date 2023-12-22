@@ -4,6 +4,7 @@ mod legend;
 use std::collections::HashSet;
 
 use ::key::Key;
+use ::key::Shape as KeyShape;
 use color::Color;
 use geom::{BezPath, Point, Shape, Vec2};
 
@@ -33,22 +34,14 @@ pub struct KeyDrawing {
 
 impl KeyDrawing {
     pub fn new(key: &Key, options: &Options) -> Self {
-        let show_key = options.show_keys && !matches!(key.typ, ::key::Type::None);
+        let show_key = options.show_keys && !matches!(key.shape, KeyShape::None(..));
 
         let bottom = show_key.then(|| key::bottom(key, options));
         let top = show_key.then(|| key::top(key, options));
         let step = show_key.then(|| key::step(key, options)).flatten();
         let homing = show_key.then(|| key::homing(key, options)).flatten();
 
-        let top_rect = match key.shape {
-            ::key::Shape::Normal(size) => options.profile.top_with_size(size).rect(),
-            ::key::Shape::SteppedCaps => options.profile.top_with_size((1.25, 1.)).rect(),
-            ::key::Shape::IsoHorizontal => options.profile.top_with_size((1.5, 1.)).rect(),
-            ::key::Shape::IsoVertical => {
-                let rect = options.profile.top_with_size((1.25, 2.)).rect();
-                rect.with_origin(rect.origin() + (250., 0.))
-            }
-        };
+        let top_rect = options.profile.top_with_rect(key.shape.inner_rect()).rect();
 
         let margin = options.show_margin.then(|| {
             // TODO get unique margins, not size_idx's. Currently impossible because Insets: !Hash

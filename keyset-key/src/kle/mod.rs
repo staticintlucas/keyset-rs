@@ -1,12 +1,18 @@
+//! Load KLE layouts from JSON files
+
 mod error;
 
 use geom::{Point, Size};
 use kle_serial as kle;
 
-use crate::{Homing, Key, Legend, Shape, Type};
+use crate::{Homing, Key, Legend, Shape};
 pub use error::{Error, Result};
 
 fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
+    const STEP_CAPS: [f64; 6] = [1.25, 1.0, 0.0, 0.0, 1.75, 1.0];
+    const ISO_VERT: [f64; 6] = [1.25, 2.0, -0.25, 0.0, 1.5, 1.0];
+    const ISO_HORIZ: [f64; 6] = [1.5, 1.0, 0.25, 0.0, 1.25, 2.0];
+
     fn is_close<const N: usize>(a: &[f64; N], b: &[f64; N]) -> bool {
         a.iter().zip(b).all(|(a, b)| (b - a).abs() < 1e-2)
     }
@@ -21,14 +27,31 @@ fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
         ..
     } = key;
 
-    if is_close(&[w, h, x2, y2, w2, h2], &[1.25, 1., 0., 0., 1.75, 1.]) {
-        Ok(Shape::SteppedCaps)
-    } else if is_close(&[w, h, x2, y2, w2, h2], &[1.25, 2., -0.25, 0., 1.5, 1.]) {
-        Ok(Shape::IsoVertical)
-    } else if is_close(&[w, h, x2, y2, w2, h2], &[1.5, 1., 0.25, 0., 1.25, 2.]) {
-        Ok(Shape::IsoHorizontal)
-    } else if is_close(&[x2, y2, w2, h2], &[0., 0., w, h]) {
+    let is_normal = is_close(&[x2, y2, w2, h2], &[0.0, 0.0, w, h]);
+    let is_1u = is_normal && is_close(&[w, h], &[1.0, 1.0]);
+
+    let dims = [w, h, x2, y2, w2, h2];
+
+    if is_1u && (key.profile.contains("scoop") || key.profile.contains("dish")) {
+        Ok(Shape::Homing(Some(Homing::Scoop)))
+    } else if is_1u && key.profile.contains("bar") {
+        Ok(Shape::Homing(Some(Homing::Bar)))
+    } else if is_1u && (key.profile.contains("bump") || key.profile.contains("dot")) {
+        Ok(Shape::Homing(Some(Homing::Bump)))
+    } else if is_normal && key.profile.contains("space") {
+        Ok(Shape::Space(Size::new(w, h)))
+    } else if is_1u && key.homing {
+        Ok(Shape::Homing(None))
+    } else if key.decal {
+        Ok(Shape::None(Size::new(w, h)))
+    } else if is_normal {
         Ok(Shape::Normal(Size::new(w, h)))
+    } else if is_close(&dims, &STEP_CAPS) {
+        Ok(Shape::SteppedCaps)
+    } else if is_close(&dims, &ISO_VERT) {
+        Ok(Shape::IsoVertical)
+    } else if is_close(&dims, &ISO_HORIZ) {
+        Ok(Shape::IsoHorizontal)
     } else {
         // TODO support all key shapes/sizes
         Err(Error::UnsupportedKeySize {
@@ -39,29 +62,6 @@ fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
             w2,
             h2,
         })
-    }
-}
-
-fn type_from_kle(key: &kle::Key) -> Type {
-    const SCOOP_KW: [&str; 2] = ["scoop", "dish"];
-    const BAR_KW: [&str; 2] = ["bar", "line"];
-    const BUMP_KW: [&str; 4] = ["bump", "dot", "nub", "nipple"];
-
-    // TODO support ghosted keys?
-    if SCOOP_KW.iter().any(|kw| key.profile.contains(kw)) {
-        Type::Homing(Some(Homing::Scoop))
-    } else if BAR_KW.iter().any(|kw| key.profile.contains(kw)) {
-        Type::Homing(Some(Homing::Bar))
-    } else if BUMP_KW.iter().any(|kw| key.profile.contains(kw)) {
-        Type::Homing(Some(Homing::Bump))
-    } else if key.profile.contains("space") {
-        Type::Space
-    } else if key.homing {
-        Type::Homing(None)
-    } else if key.decal {
-        Type::None
-    } else {
-        Type::Normal
     }
 }
 
@@ -82,7 +82,6 @@ impl TryFrom<kle::Key> for Key {
     fn try_from(mut key: kle::Key) -> Result<Self> {
         let position = Point::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.));
         let shape = shape_from_kle(&key)?;
-        let typ = type_from_kle(&key);
         let color = key.color.rgb().into();
         let legends = {
             let mut arr = <[Option<kle::Legend>; 9]>::default();
@@ -93,13 +92,17 @@ impl TryFrom<kle::Key> for Key {
         Ok(Self {
             position,
             shape,
-            typ,
             color,
             legends,
         })
     }
 }
 
+/// Loads a KLE layout from a JSON string into a [`Vec<Key>`]
+///
+/// # Errors
+///
+/// If an
 pub fn from_json(json: &str) -> Result<Vec<Key>> {
     let key_iter: kle::KeyIterator = serde_json::from_str(json)?;
     key_iter.map(Key::try_from).collect()
@@ -114,6 +117,37 @@ mod tests {
 
     #[test]
     fn key_shape_from_kle() {
+        let default_key = shape_from_kle(&kle::Key::default()).unwrap();
+        let decal = shape_from_kle(&kle::Key {
+            decal: true,
+            ..Default::default()
+        })
+        .unwrap();
+        let space = shape_from_kle(&kle::Key {
+            profile: "space".into(),
+            ..Default::default()
+        })
+        .unwrap();
+        let homing_default = shape_from_kle(&kle::Key {
+            homing: true,
+            ..Default::default()
+        })
+        .unwrap();
+        let homing_scoop = shape_from_kle(&kle::Key {
+            profile: "scoop".into(),
+            ..Default::default()
+        })
+        .unwrap();
+        let homing_bar = shape_from_kle(&kle::Key {
+            profile: "bar".into(),
+            ..Default::default()
+        })
+        .unwrap();
+        let homing_bump = shape_from_kle(&kle::Key {
+            profile: "bump".into(),
+            ..Default::default()
+        })
+        .unwrap();
         let regular_key = shape_from_kle(&kle::Key {
             width: 2.25,
             height: 1.,
@@ -155,7 +189,14 @@ mod tests {
         })
         .unwrap();
 
-        assert_matches!(regular_key, Shape::Normal(size) if size == Size::new(2.25, 1.));
+        assert_matches!(default_key, Shape::Normal(size) if size == Size::new(1.0, 1.0));
+        assert_matches!(regular_key, Shape::Normal(size) if size == Size::new(2.25, 1.0));
+        assert_matches!(decal, Shape::None(size) if size == Size::new(1.0, 1.0));
+        assert_matches!(space, Shape::Space(size) if size == Size::new(1.0, 1.0));
+        assert_matches!(homing_default, Shape::Homing(None));
+        assert_matches!(homing_scoop, Shape::Homing(Some(Homing::Scoop)));
+        assert_matches!(homing_bar, Shape::Homing(Some(Homing::Bar)));
+        assert_matches!(homing_bump, Shape::Homing(Some(Homing::Bump)));
         assert_matches!(iso_horiz, Shape::IsoHorizontal);
         assert_matches!(iso_vert, Shape::IsoVertical);
         assert_matches!(step_caps, Shape::SteppedCaps);
@@ -182,45 +223,6 @@ mod tests {
                 "are supported as special cases"
             ))
         );
-    }
-
-    #[test]
-    fn key_type_from_kle() {
-        let regular_key = type_from_kle(&kle::Key {
-            ..Default::default()
-        });
-        let decal = type_from_kle(&kle::Key {
-            decal: true,
-            ..Default::default()
-        });
-        let space = type_from_kle(&kle::Key {
-            profile: "space".into(),
-            ..Default::default()
-        });
-        let homing_default = type_from_kle(&kle::Key {
-            homing: true,
-            ..Default::default()
-        });
-        let homing_scoop = type_from_kle(&kle::Key {
-            profile: "scoop".into(),
-            ..Default::default()
-        });
-        let homing_bar = type_from_kle(&kle::Key {
-            profile: "bar".into(),
-            ..Default::default()
-        });
-        let homing_bump = type_from_kle(&kle::Key {
-            profile: "bump".into(),
-            ..Default::default()
-        });
-
-        assert_matches!(regular_key, Type::Normal);
-        assert_matches!(decal, Type::None);
-        assert_matches!(space, Type::Space);
-        assert_matches!(homing_default, Type::Homing(None));
-        assert_matches!(homing_scoop, Type::Homing(Some(Homing::Scoop)));
-        assert_matches!(homing_bar, Type::Homing(Some(Homing::Bar)));
-        assert_matches!(homing_bump, Type::Homing(Some(Homing::Bump)));
     }
 
     #[test]

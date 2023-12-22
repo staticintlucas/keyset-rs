@@ -2,14 +2,19 @@ use std::ops::{Index, IndexMut};
 
 use color::Color;
 
+/// A single legend
 #[derive(Debug, Clone, PartialEq)]
 pub struct Legend {
+    /// The legend text
     pub text: String,
+    /// The legend size
     pub size_idx: usize,
+    /// The legend colour
     pub color: Color,
 }
 
 impl Legend {
+    /// Create a new [`Legend`]
     pub fn new(text: impl Into<String>, size_idx: usize, color: Color) -> Self {
         Self {
             text: text.into(),
@@ -19,11 +24,12 @@ impl Legend {
     }
 }
 
+/// A set of legends for a key
 #[derive(Debug, Clone, Default)]
 pub struct Legends([Option<Legend>; 9]);
 
 impl Legends {
-    // Example non-blank key used in some of our tests
+    /// An example non-blank set of legends
     #[must_use]
     pub fn example() -> Self {
         Self([
@@ -39,18 +45,21 @@ impl Legends {
         ])
     }
 
+    /// Creates an iterator in a left-to-right, top-to-bottom order
     pub fn iter(&self) -> std::slice::Iter<Option<Legend>> {
         self.0.iter()
     }
 }
 
 impl From<[Option<Legend>; 9]> for Legends {
+    /// Converts from an array in left-to-right, top-to-bottom order
     fn from(value: [Option<Legend>; 9]) -> Self {
         Self(value)
     }
 }
 
 impl From<[[Option<Legend>; 3]; 3]> for Legends {
+    /// Converts from an array of arrays in row-major order
     fn from(mut value: [[Option<Legend>; 3]; 3]) -> Self {
         let mut arr = <[Option<Legend>; 9]>::default();
         arr[0..3].swap_with_slice(&mut value[0]);
@@ -64,6 +73,7 @@ impl IntoIterator for Legends {
     type Item = Option<Legend>;
     type IntoIter = <[Option<Legend>; 9] as IntoIterator>::IntoIter;
 
+    /// Creates an iterator in a left-to-right, top-to-bottom order
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }
@@ -72,12 +82,14 @@ impl IntoIterator for Legends {
 impl Index<usize> for Legends {
     type Output = Option<Legend>;
 
+    /// Indexes the legends arranged in left-to-right, top-to-bottom order
     fn index(&self, index: usize) -> &Self::Output {
         self.0.index(index)
     }
 }
 
 impl IndexMut<usize> for Legends {
+    /// Mutably indexes the legends arranged in left-to-right, top-to-bottom order
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         self.0.index_mut(index)
     }
@@ -86,12 +98,14 @@ impl IndexMut<usize> for Legends {
 impl Index<(usize, usize)> for Legends {
     type Output = Option<Legend>;
 
+    /// Indexes the legends using a `(column, row)` tuple
     fn index(&self, (column, row): (usize, usize)) -> &Self::Output {
         self.0.index(row * 3 + column)
     }
 }
 
 impl IndexMut<(usize, usize)> for Legends {
+    /// Mutably indexes the legends using a `(column, row)` tuple
     fn index_mut(&mut self, (column, row): (usize, usize)) -> &mut Self::Output {
         self.0.index_mut(row * 3 + column)
     }

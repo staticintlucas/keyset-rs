@@ -171,7 +171,7 @@ mod tests {
     use crate::Options;
 
     #[test]
-    fn test_to_svg() {
+    fn test_to_pdf() {
         let options = Options {
             show_margin: true, // to give us an unfilled path
             ..Default::default()
