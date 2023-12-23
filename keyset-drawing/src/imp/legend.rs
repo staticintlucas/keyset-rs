@@ -21,9 +21,10 @@ pub fn draw(
     let mut pos = first.advance;
 
     for (lhs, rhs) in legend.text.chars().zip(chars) {
+        pos += font.kerning(lhs, rhs);
         let Glyph { path, advance, .. } = font.glyph_or_default(rhs);
         text_path.extend(Affine::translate((pos, 0.0)) * path);
-        pos += advance + font.kerning(lhs, rhs);
+        pos += advance;
     }
 
     let height = profile.text_height.get(legend.size_idx);
