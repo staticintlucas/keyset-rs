@@ -19,10 +19,10 @@ mod default;
 mod error;
 mod face;
 
-use std::collections::HashMap;
 use std::fmt::Debug;
-use std::sync::{OnceLock, RwLock};
+use std::sync::OnceLock;
 
+use dashmap::DashMap;
 use geom::{BezPath, Rect, Shape};
 use log::warn;
 use ttf_parser::GlyphId;
@@ -103,6 +103,7 @@ impl Glyph {
 }
 
 /// A parsed font
+#[derive(Clone)]
 pub struct Font {
     face: Face,
     family: OnceLock<String>,
@@ -110,28 +111,13 @@ pub struct Font {
     cap_height: OnceLock<f64>,
     x_height: OnceLock<f64>,
     notdef: OnceLock<Glyph>,
-    glyphs: RwLock<HashMap<char, Option<Glyph>>>,
-    kerning: RwLock<HashMap<(char, char), f64>>,
+    glyphs: DashMap<char, Option<Glyph>>,
+    kerning: DashMap<(char, char), f64>,
 }
 
 impl Debug for Font {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Font").field(self.name()).finish()
-    }
-}
-
-impl Clone for Font {
-    fn clone(&self) -> Self {
-        Self {
-            face: self.face.clone(),
-            family: self.family.clone(),
-            name: self.name.clone(),
-            cap_height: self.cap_height.clone(),
-            x_height: self.x_height.clone(),
-            notdef: self.notdef.clone(),
-            glyphs: RwLock::new(self.glyphs.read().unwrap().clone()),
-            kerning: RwLock::new(self.kerning.read().unwrap().clone()),
-        }
     }
 }
 
@@ -155,8 +141,8 @@ impl Font {
             cap_height: OnceLock::new(),
             x_height: OnceLock::new(),
             notdef: OnceLock::new(),
-            glyphs: RwLock::new(HashMap::new()),
-            kerning: RwLock::new(HashMap::new()),
+            glyphs: DashMap::new(),
+            kerning: DashMap::new(),
         })
     }
 
@@ -270,8 +256,6 @@ impl Font {
     #[allow(clippy::missing_panics_doc)] // Only unwrapping a mutex
     pub fn glyph(&self, char: char) -> Option<Glyph> {
         self.glyphs
-            .write()
-            .unwrap()
             .entry(char)
             .or_insert_with(|| {
                 self.face
@@ -302,20 +286,15 @@ impl Font {
     /// font
     #[allow(clippy::missing_panics_doc)] // Only unwrapping a mutex
     pub fn kerning(&self, left: char, right: char) -> f64 {
-        *self
-            .kerning
-            .write()
-            .unwrap()
-            .entry((left, right))
-            .or_insert_with(|| {
-                if let (Some(lhs), Some(rhs)) =
-                    (self.face.glyph_index(left), self.face.glyph_index(right))
-                {
-                    self.face.glyphs_kerning(lhs, rhs).map_or(0.0, f64::from)
-                } else {
-                    0.0
-                }
-            })
+        *self.kerning.entry((left, right)).or_insert_with(|| {
+            if let (Some(lhs), Some(rhs)) =
+                (self.face.glyph_index(left), self.face.glyph_index(right))
+            {
+                self.face.glyphs_kerning(lhs, rhs).map_or(0.0, f64::from)
+            } else {
+                0.0
+            }
+        })
     }
 }
 
@@ -374,8 +353,8 @@ mod tests {
         assert!(font.cap_height.get().is_none());
         assert!(font.x_height.get().is_none());
         assert!(font.notdef.get().is_none());
-        assert_eq!(font.glyphs.read().unwrap().len(), 0);
-        assert_eq!(font.kerning.read().unwrap().len(), 0);
+        assert_eq!(font.glyphs.len(), 0);
+        assert_eq!(font.kerning.len(), 0);
     }
 
     #[test]

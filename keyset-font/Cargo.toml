@@ -22,6 +22,7 @@ license.workspace = true
 geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
 
 byte-strings = "0.3"
+dashmap = "5.1"
 log = "0.4"
 ouroboros = "0.18"
 ttf-parser = { version = "0.20", default-features = false, features = ["std"]}
