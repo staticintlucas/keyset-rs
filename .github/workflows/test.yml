@@ -80,6 +80,7 @@ jobs:
           --ignore-not-existing
           --output-path ./lcov.info
           --ignore '/*'
+          --ignore '**/build.rs'
           --excl-line '(^\s*#\[derive\([\w, ]*\)\]|unreachable!\(\))|GRCOV_EXCL_LINE'
           --excl-start 'GRCOV_EXCL_START'
           --excl-stop 'GRCOV_EXCL_STOP'
