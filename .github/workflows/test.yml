@@ -24,6 +24,8 @@ jobs:
           SKIP: cargo-test
       - name: Run cargo-deny
         uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          arguments: --workspace --all-features
 
   test:
     name: Build & Test

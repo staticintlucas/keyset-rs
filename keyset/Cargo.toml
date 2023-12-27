@@ -21,4 +21,4 @@ key = { package = "keyset-key", path = "../keyset-key", version = "0.1.0", featu
 profile = { package = "keyset-profile", path = "../keyset-profile", version = "0.1.0", features = ["toml"] }
 
 [dev-dependencies]
-fontdb = "0.15"
+fontdb = "0.16"
