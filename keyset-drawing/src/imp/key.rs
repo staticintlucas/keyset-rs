@@ -15,7 +15,7 @@ pub fn top(key: &key::Key, options: &Options) -> Path {
         }
         key::Shape::Homing(..) => options.profile.top_with_size((1.0, 1.0)).to_path(ARC_TOL),
         key::Shape::SteppedCaps => options.profile.top_with_size((1.25, 1.0)).to_path(ARC_TOL),
-        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_top_path(&options.profile),
+        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_top_path(options.profile),
     };
 
     Path {
@@ -42,7 +42,7 @@ pub fn bottom(key: &key::Key, options: &Options) -> Path {
             .profile
             .bottom_with_size((1.75, 1.))
             .to_path(ARC_TOL),
-        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_bottom_path(&options.profile),
+        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_bottom_path(options.profile),
     };
 
     Path {

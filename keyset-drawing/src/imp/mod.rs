@@ -68,7 +68,7 @@ impl KeyDrawing {
             l.as_ref().map(|legend| {
                 #[allow(clippy::cast_precision_loss)]
                 let align = Vec2::new(((i % 3) as f64) / 2.0, ((i / 3) as f64) / 2.0);
-                legend::draw(legend, &options.font, &options.profile, top_rect, align)
+                legend::draw(legend, options.font, options.profile, top_rect, align)
             })
         });
 

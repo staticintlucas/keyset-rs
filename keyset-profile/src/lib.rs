@@ -38,19 +38,21 @@ pub enum Type {
 }
 
 impl Type {
+    // 1.0mm is approx the depth of OEM profile
+    pub const DEFAULT: Self = Self::Cylindrical { depth: 1.0 };
+
     #[must_use]
     pub const fn depth(self) -> f64 {
         match self {
             Self::Cylindrical { depth } | Self::Spherical { depth } => depth,
-            Self::Flat => 0.,
+            Self::Flat => 0.0,
         }
     }
 }
 
 impl Default for Type {
     fn default() -> Self {
-        // 1.0mm is approx the depth of OEM profile
-        Self::Cylindrical { depth: 1.0 }
+        Self::DEFAULT
     }
 }
 
@@ -96,22 +98,26 @@ pub struct HomingProps {
     pub bump: BumpProps,
 }
 
+impl HomingProps {
+    pub const DEFAULT: Self = Self {
+        default: Homing::Bar,
+        scoop: ScoopProps {
+            depth: 2.0 * Type::DEFAULT.depth(), // 2x the regular depth
+        },
+        bar: BarProps {
+            size: Size::new(3.81, 0.51), // = 0.15in, 0.02in
+            y_offset: 6.35,              // = 0.25in
+        },
+        bump: BumpProps {
+            diameter: 0.51, // = 0.02in
+            y_offset: 0.0,
+        },
+    };
+}
+
 impl Default for HomingProps {
     fn default() -> Self {
-        Self {
-            default: Homing::Bar,
-            scoop: ScoopProps {
-                depth: 2. * Type::default().depth(), // 2x the regular depth
-            },
-            bar: BarProps {
-                size: Size::new(3.81, 0.51), // = 0.15in, 0.02in
-                y_offset: 6.35,              // = 0.25in
-            },
-            bump: BumpProps {
-                diameter: 0.51, // = 0.02in
-                y_offset: 0.,
-            },
-        }
+        Self::DEFAULT
     }
 }
 
@@ -120,6 +126,21 @@ pub struct TextHeight([f64; Self::NUM_HEIGHTS]);
 
 impl TextHeight {
     const NUM_HEIGHTS: usize = 10;
+
+    // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5b0a9cdfc7cc9bb225839192298d82a66d/kb.css#L113
+    // TODO (6.0 + 2.0 * (i as f64)) * (1e3 / 72.)
+    pub const DEFAULT: Self = Self([
+        83.333_333_333,
+        111.111_111_111,
+        138.888_888_889,
+        166.666_666_667,
+        194.444_444_444,
+        222.222_222_222,
+        250.0,
+        277.777_777_778,
+        305.555_555_556,
+        333.333_333_333,
+    ]);
 
     #[must_use]
     pub fn new(heights: &HashMap<usize, f64>) -> Self {
@@ -155,11 +176,7 @@ impl TextHeight {
 
 impl Default for TextHeight {
     fn default() -> Self {
-        #[allow(clippy::cast_precision_loss)]
-        Self(array::from_fn(|i| {
-            // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5b0a9cdfc7cc9bb225839192298d82a66d/kb.css#L113
-            (6.0 + 2.0 * (i as f64)) * (1e3 / 72.)
-        }))
+        Self::DEFAULT
     }
 }
 
@@ -168,6 +185,8 @@ pub struct TextMargin([Insets; Self::NUM_RECTS]);
 
 impl TextMargin {
     const NUM_RECTS: usize = 10;
+
+    pub const DEFAULT: Self = Self([Insets::uniform(-50.0); Self::NUM_RECTS]);
 
     #[must_use]
     pub fn new(insets: &HashMap<usize, Insets>) -> Self {
@@ -210,8 +229,7 @@ impl TextMargin {
 
 impl Default for TextMargin {
     fn default() -> Self {
-        let insets = Insets::uniform(-50.);
-        Self([insets; Self::NUM_RECTS])
+        Self::DEFAULT
     }
 }
 
@@ -223,6 +241,12 @@ pub struct TopSurface {
 }
 
 impl TopSurface {
+    pub const DEFAULT: Self = Self {
+        size: Size::new(660.0, 735.0),
+        radius: 65.0,
+        y_offset: -77.5,
+    };
+
     pub(crate) fn rect(&self) -> Rect {
         Rect::from_center_size(Point::new(500., 500. + self.y_offset), self.size)
     }
@@ -234,11 +258,7 @@ impl TopSurface {
 
 impl Default for TopSurface {
     fn default() -> Self {
-        Self {
-            size: Size::new(660., 735.),
-            radius: 65.,
-            y_offset: -77.5,
-        }
+        Self::DEFAULT
     }
 }
 
@@ -249,6 +269,11 @@ pub struct BottomSurface {
 }
 
 impl BottomSurface {
+    pub const DEFAULT: Self = Self {
+        size: Size::new(950.0, 950.0),
+        radius: 65.0,
+    };
+
     pub(crate) fn rect(&self) -> Rect {
         Rect::from_center_size(Point::new(500., 500.), self.size)
     }
@@ -260,14 +285,11 @@ impl BottomSurface {
 
 impl Default for BottomSurface {
     fn default() -> Self {
-        Self {
-            size: Size::new(950., 950.),
-            radius: 65.,
-        }
+        Self::DEFAULT
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Profile {
     pub typ: Type,
     pub bottom: BottomSurface,
@@ -278,6 +300,15 @@ pub struct Profile {
 }
 
 impl Profile {
+    pub const DEFAULT: Self = Self {
+        typ: Type::DEFAULT,
+        bottom: BottomSurface::DEFAULT,
+        top: TopSurface::DEFAULT,
+        text_margin: TextMargin::DEFAULT,
+        text_height: TextHeight::DEFAULT,
+        homing: HomingProps::DEFAULT,
+    };
+
     #[cfg(feature = "toml")]
     pub fn from_toml(s: &str) -> de::Result<Self> {
         toml::from_str(s).map_err(de::Error::from)
@@ -302,6 +333,12 @@ impl Profile {
     pub fn bottom_with_size(&self, size: impl Into<Size>) -> RoundRect {
         let bottom_rect = self.bottom.round_rect();
         bottom_rect.with_size(bottom_rect.size() + 1e3 * (size.into() - Size::new(1., 1.)))
+    }
+}
+
+impl Default for Profile {
+    fn default() -> Self {
+        Self::DEFAULT
     }
 }
 

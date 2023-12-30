@@ -123,11 +123,20 @@ impl Debug for Font {
 
 impl Default for Font {
     fn default() -> Self {
-        default::font().clone()
+        Self::default_ref().clone()
     }
 }
 
 impl Font {
+    /// Returns a static reference to the default font
+    ///
+    /// This is equivalent to calling [`Default::default`] but returns a reference and avoids
+    /// cloning any internal data
+    #[must_use]
+    pub fn default_ref() -> &'static Self {
+        default::font()
+    }
+
     /// Parse a font from TrueType or OpenType format font data
     ///
     /// # Errors

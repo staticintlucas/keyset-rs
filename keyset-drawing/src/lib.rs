@@ -91,62 +91,68 @@ impl Drawing {
 }
 
 #[derive(Debug, Clone)]
-pub struct Options {
-    profile: Profile,
-    font: Font,
+pub struct Options<'a> {
+    profile: &'a Profile,
+    font: &'a Font,
     scale: f64,
     outline_width: f64,
     show_keys: bool,
     show_margin: bool,
 }
 
-impl Default for Options {
+impl<'a> Default for Options<'a> {
     fn default() -> Self {
         Self {
-            profile: Profile::default(),
-            font: Font::default(),
-            scale: 1.,
-            outline_width: 10.,
+            profile: &Profile::DEFAULT,
+            font: Font::default_ref(),
+            scale: 1.0,
+            outline_width: 10.0,
             show_keys: true,
             show_margin: false,
         }
     }
 }
 
-impl Options {
+impl<'a> Options<'a> {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn profile(&mut self, profile: Profile) -> &mut Self {
-        self.profile = profile;
-        self
+    #[must_use]
+    pub const fn profile(self, profile: &'a Profile) -> Self {
+        Self { profile, ..self }
     }
 
-    pub fn font(&mut self, font: Font) -> &mut Self {
-        self.font = font;
-        self
+    #[must_use]
+    pub const fn font(self, font: &'a Font) -> Self {
+        Self { font, ..self }
     }
 
-    pub fn scale(&mut self, scale: f64) -> &mut Self {
-        self.scale = scale;
-        self
+    #[must_use]
+    pub const fn scale(self, scale: f64) -> Self {
+        Self { scale, ..self }
     }
 
-    pub fn outline_width(&mut self, outline_width: f64) -> &mut Self {
-        self.outline_width = outline_width;
-        self
+    #[must_use]
+    pub const fn outline_width(self, outline_width: f64) -> Self {
+        Self {
+            outline_width,
+            ..self
+        }
     }
 
-    pub fn show_keys(&mut self, show_keys: bool) -> &mut Self {
-        self.show_keys = show_keys;
-        self
+    #[must_use]
+    pub const fn show_keys(self, show_keys: bool) -> Self {
+        Self { show_keys, ..self }
     }
 
-    pub fn show_margin(&mut self, show_margin: bool) -> &mut Self {
-        self.show_margin = show_margin;
-        self
+    #[must_use]
+    pub const fn show_margin(self, show_margin: bool) -> Self {
+        Self {
+            show_margin,
+            ..self
+        }
     }
 
     #[must_use]
@@ -172,10 +178,9 @@ mod tests {
 
         let profile = Profile::default();
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
-        let mut options = Options::new();
-        options
-            .profile(profile)
-            .font(font)
+        let options = Options::new()
+            .profile(&profile)
+            .font(&font)
             .scale(2.)
             .outline_width(20.)
             .show_keys(false)
@@ -183,7 +188,7 @@ mod tests {
 
         assert_eq!(options.profile.typ.depth(), 1.0);
         assert_eq!(options.font.num_glyphs(), 3); // .notdef, A, V
-        assert_eq!(options.scale, 2.);
+        assert_eq!(options.scale, 2.0);
     }
 
     #[test]
