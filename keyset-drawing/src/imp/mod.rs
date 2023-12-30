@@ -21,7 +21,7 @@ pub struct Outline {
 
 #[derive(Debug, Clone)]
 pub struct Path {
-    pub path: BezPath,
+    pub data: BezPath,
     pub outline: Option<Outline>,
     pub fill: Option<Color>,
 }
@@ -55,7 +55,7 @@ impl KeyDrawing {
                 });
 
             Path {
-                path,
+                data: path,
                 outline: Some(Outline {
                     color: Color::new(1.0, 0.0, 0.0),
                     width: 5.,
@@ -132,7 +132,7 @@ mod tests {
 
         assert_eq!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
-        let bounding_box = drawing.paths[2].path.bounding_box();
+        let bounding_box = drawing.paths[2].data.bounding_box();
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = options.profile.top_with_size((1.5, 1.0)).rect()
             + options.profile.text_margin.get(font_size);
@@ -153,7 +153,7 @@ mod tests {
 
         assert_eq!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
-        let bounding_box = drawing.paths[2].path.bounding_box();
+        let bounding_box = drawing.paths[2].data.bounding_box();
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = options.profile.top_with_size((1.25, 2.0)).rect()
             + options.profile.text_margin.get(font_size);

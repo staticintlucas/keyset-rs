@@ -19,7 +19,7 @@ pub fn top(key: &key::Key, options: &Options) -> Path {
     };
 
     Path {
-        path,
+        data: path,
         fill: Some(key.color),
         outline: Some(Outline {
             color: key.color.highlight(0.15),
@@ -46,7 +46,7 @@ pub fn bottom(key: &key::Key, options: &Options) -> Path {
     };
 
     Path {
-        path,
+        data: path,
         fill: Some(key.color),
         outline: Some(Outline {
             color: key.color.highlight(0.15),
@@ -86,7 +86,7 @@ pub fn homing(key: &key::Key, options: &Options) -> Option<Path> {
     };
 
     bez_path.map(|path| Path {
-        path,
+        data: path,
         fill: Some(key.color),
         outline: Some(Outline {
             color: key.color.highlight(0.15),
@@ -111,7 +111,7 @@ pub fn step(key: &key::Key, options: &Options) -> Option<Path> {
         };
 
         Path {
-            path: step_path(rect),
+            data: step_path(rect),
             fill: Some(key.color),
             outline: Some(Outline {
                 color: key.color.highlight(0.15),
@@ -367,7 +367,7 @@ mod tests {
         // Regular 1u key
         let key = key::Key::example();
         let path = top(&key, &options);
-        let bounds = path.path.bounding_box();
+        let bounds = path.data.bounding_box();
 
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
@@ -385,7 +385,7 @@ mod tests {
             key
         };
         let path = top(&key, &options);
-        let bounds = path.path.bounding_box();
+        let bounds = path.data.bounding_box();
         let top_rect = options.profile.top_with_size((1.25, 1.));
         assert_approx_eq!(bounds.origin().x, top_rect.origin().x);
         assert_approx_eq!(bounds.origin().y, top_rect.origin().y);
@@ -399,7 +399,7 @@ mod tests {
             key
         };
         let path = top(&key, &options);
-        let bounds = path.path.bounding_box();
+        let bounds = path.data.bounding_box();
         let top_rect = options.profile.top_with_size((1.5, 2.));
         assert_approx_eq!(bounds.origin().x, top_rect.origin().x);
         assert_approx_eq!(bounds.origin().y, top_rect.origin().y);
@@ -413,7 +413,7 @@ mod tests {
         let options = Options::default();
 
         let path = bottom(&key, &options);
-        let bounds = path.path.bounding_box();
+        let bounds = path.data.bounding_box();
 
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
@@ -431,7 +431,7 @@ mod tests {
             key
         };
         let path = bottom(&key, &options);
-        let bounds = path.path.bounding_box();
+        let bounds = path.data.bounding_box();
         let bottom_rect = options.profile.bottom_with_size((1.75, 1.));
         assert_approx_eq!(bounds.origin().x, bottom_rect.origin().x);
         assert_approx_eq!(bounds.origin().y, bottom_rect.origin().y);
@@ -445,7 +445,7 @@ mod tests {
             key
         };
         let path = bottom(&key, &options);
-        let bounds = path.path.bounding_box();
+        let bounds = path.data.bounding_box();
         let bottom_rect = options.profile.bottom_with_size((1.5, 2.));
         assert_approx_eq!(bounds.origin().x, bottom_rect.origin().x);
         assert_approx_eq!(bounds.origin().y, bottom_rect.origin().y);
@@ -477,7 +477,7 @@ mod tests {
         let path = homing(&bar, &options);
         assert!(path.is_some());
         let path = path.unwrap();
-        let bounds = path.path.bounding_box();
+        let bounds = path.data.bounding_box();
 
         assert_eq!(path.fill.unwrap(), bar.color);
         assert_eq!(path.outline.unwrap().color, bar.color.highlight(0.15));
@@ -499,7 +499,7 @@ mod tests {
         let path = homing(&bump, &options);
         assert!(path.is_some());
         let path = path.unwrap();
-        let bounds = path.path.bounding_box();
+        let bounds = path.data.bounding_box();
 
         assert_eq!(path.fill.unwrap(), bump.color);
         assert_eq!(path.outline.unwrap().color, bump.color.highlight(0.15));
@@ -530,7 +530,7 @@ mod tests {
         let path = step(&key, &options);
         assert!(path.is_some());
         let path = path.unwrap();
-        let bounds = path.path.bounding_box();
+        let bounds = path.data.bounding_box();
 
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));

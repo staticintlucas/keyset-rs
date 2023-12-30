@@ -55,7 +55,7 @@ pub fn draw(
     text_path.apply_affine(Affine::translate(point - bounds.origin()));
 
     Path {
-        path: text_path,
+        data: text_path,
         outline: None,
         fill: Some(legend.color),
     }
@@ -83,7 +83,7 @@ mod tests {
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(0., 0.));
 
         assert_eq!(
-            path.path
+            path.data
                 .into_iter()
                 .filter(|el| matches!(el, PathEl::MoveTo(..)))
                 .count(),
@@ -98,7 +98,7 @@ mod tests {
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(1., 1.));
 
         assert_eq!(
-            path.path.elements().len(),
+            path.data.elements().len(),
             font.notdef().path.elements().len()
         );
 
@@ -110,7 +110,7 @@ mod tests {
         let path = draw(&legend, &font, &profile, top_rect, Vec2::new(1., 1.));
 
         assert_approx_eq!(
-            path.path.bounding_box().width(),
+            path.data.bounding_box().width(),
             (profile.top_with_size((1., 1.)).rect() + profile.text_margin.get(5)).width()
         );
     }

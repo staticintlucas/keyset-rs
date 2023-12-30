@@ -56,7 +56,7 @@ fn draw_key(pixmap: &mut Pixmap, key: &KeyDrawing, affine: &Affine) {
 
 fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
     let mut path_builder = PathBuilder::new();
-    for el in &path.path {
+    for el in &path.data {
         match el {
             PathEl::MoveTo(p) => {
                 let (x, y) = transform!(p, *affine);

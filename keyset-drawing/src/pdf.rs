@@ -104,7 +104,7 @@ fn draw_path(content: &mut Content, path: &Path, affine: &Affine) {
     let mut origin = Point::ORIGIN;
     let mut p0 = Point::ORIGIN;
 
-    for el in &path.path {
+    for el in &path.data {
         match el {
             PathEl::MoveTo(p) => {
                 origin = p;

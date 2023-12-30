@@ -48,7 +48,7 @@ fn draw_key(key: &KeyDrawing) -> Group {
 
 fn draw_path(path: &Path) -> SvgPath {
     let data = path
-        .path
+        .data
         .iter()
         .scan((Point::ORIGIN, Point::ORIGIN), |(origin, point), el| {
             let str = match el {

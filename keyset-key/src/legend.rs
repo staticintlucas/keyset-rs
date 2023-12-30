@@ -79,6 +79,16 @@ impl IntoIterator for Legends {
     }
 }
 
+impl<'a> IntoIterator for &'a Legends {
+    type Item = &'a Option<Legend>;
+    type IntoIter = <&'a [Option<Legend>; 9] as IntoIterator>::IntoIter;
+
+    /// Creates an iterator in a left-to-right, top-to-bottom order
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
 impl Index<usize> for Legends {
     type Output = Option<Legend>;
 
