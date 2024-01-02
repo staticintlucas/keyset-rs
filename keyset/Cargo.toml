@@ -1,12 +1,12 @@
 [package]
 name = "keyset"
-version = "0.2.1"
 description = "A Rust tool to create pretty keyset layout diagrams using correct fonts and icons."
 keywords = ["keyboard", "keycap", "keyset", "layout", "diagram"]
 categories = ["command-line-utilities", "graphics", "multimedia::images", "rendering"]
 
 metadata.docs.rs.all-features = true
 
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -14,11 +14,11 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
-color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0" }
-drawing = { package = "keyset-drawing", path = "../keyset-drawing", version = "0.1.0", features = ["pdf", "png", "svg"] }
-font = { package = "keyset-font", path = "../keyset-font", version = "0.1.0" }
-key = { package = "keyset-key", path = "../keyset-key", version = "0.1.0", features = ["kle"] }
-profile = { package = "keyset-profile", path = "../keyset-profile", version = "0.1.0", features = ["toml"] }
+color = { package = "keyset-color", path = "../keyset-color", version = "0.2.1" }
+drawing = { package = "keyset-drawing", path = "../keyset-drawing", version = "0.2.1", features = ["pdf", "png", "svg"] }
+font = { package = "keyset-font", path = "../keyset-font", version = "0.2.1" }
+key = { package = "keyset-key", path = "../keyset-key", version = "0.2.1", features = ["kle"] }
+profile = { package = "keyset-profile", path = "../keyset-profile", version = "0.2.1", features = ["toml"] }
 
 [dev-dependencies]
 fontdb = "0.16"

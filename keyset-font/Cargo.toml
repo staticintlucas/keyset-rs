@@ -1,6 +1,5 @@
 [package]
 name = "keyset-font"
-version = "0.1.0"
 description = "Font type and functionality for keyset"
 
 # We don't really care about SEO for this crate, but Clippy complains if we
@@ -10,6 +9,7 @@ categories = ["none"]
 
 metadata.docs.rs.all-features = true
 
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -19,7 +19,7 @@ license.workspace = true
 [features]
 
 [dependencies]
-geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
+geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.2.1" }
 
 byte-strings = "0.3"
 dashmap = "5.1"

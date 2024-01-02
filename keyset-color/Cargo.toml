@@ -1,6 +1,5 @@
 [package]
 name = "keyset-color"
-version = "0.1.0"
 description = "Color type and conversions for keyset"
 
 # We don't really care about SEO for this crate, but Clippy complains if we
@@ -10,6 +9,7 @@ categories = ["none"]
 
 metadata.docs.rs.all-features = true
 
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true

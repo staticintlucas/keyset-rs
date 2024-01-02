@@ -1,6 +1,5 @@
 [package]
 name = "keyset-key"
-version = "0.1.0"
 description = "Key type and functionality for keyset"
 
 # We don't really care about SEO for this crate, but Clippy complains if we
@@ -10,6 +9,7 @@ categories = ["none"]
 
 metadata.docs.rs.all-features = true
 
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -20,8 +20,8 @@ license.workspace = true
 kle = ["kle-serial", "serde_json"]
 
 [dependencies]
-color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0", features = ["rgb"] }
-geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
+color = { package = "keyset-color", path = "../keyset-color", version = "0.2.1", features = ["rgb"] }
+geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.2.1" }
 
 kle-serial = { version = "0.3", optional = true }
 serde_json = { version = "1.0", optional = true }

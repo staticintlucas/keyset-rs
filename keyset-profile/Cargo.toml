@@ -1,6 +1,5 @@
 [package]
 name = "keyset-profile"
-version = "0.1.0"
 description = "Profile type and functionality for keyset"
 
 # We don't really care about SEO for this crate, but Clippy complains if we
@@ -10,6 +9,7 @@ categories = ["none"]
 
 metadata.docs.rs.all-features = true
 
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -21,9 +21,9 @@ toml = ["serde", "dep:toml"]
 json = ["serde", "serde_json"]
 
 [dependencies]
-color = { package = "keyset-color", path = "../keyset-color", version = "0.1.0", features = ["rgb"] }
-geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.1.0" }
-key = { package = "keyset-key", path = "../keyset-key", version = "0.1.0" }
+color = { package = "keyset-color", path = "../keyset-color", version = "0.2.1", features = ["rgb"] }
+geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.2.1" }
+key = { package = "keyset-key", path = "../keyset-key", version = "0.2.1" }
 
 interp = { version = "1.0", features = ["interp_array"] }
 itertools = "0.12"
