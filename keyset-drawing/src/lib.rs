@@ -27,12 +27,14 @@ use geom::{Point, Rect, Size};
 use key::Key;
 use profile::Profile;
 
+#[allow(unused_imports)] // Path is unused if no format is enabled, but who would do that?
 pub(crate) use imp::{KeyDrawing, Path};
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // Struct fields are unused if no format is enabled, but who would do that?
 pub struct Drawing {
     bounds: Rect,
-    keys: Vec<imp::KeyDrawing>,
+    keys: Vec<KeyDrawing>,
     scale: f64,
 }
 
@@ -49,7 +51,7 @@ impl Drawing {
 
         let keys = keys
             .iter()
-            .map(|key| imp::KeyDrawing::new(key, options))
+            .map(|key| KeyDrawing::new(key, options))
             .collect();
 
         Self {
