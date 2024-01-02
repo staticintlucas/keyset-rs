@@ -1,5 +1,20 @@
 # Change Log
 
+## [v0.3.0](https://github.com/staticintlucas/keyset-rs/releases/tag/v0.3.0)
+
+### Changes
+
+* Expose `Glyph` and `Kerning` types from `keyset-font`
+* Refactor of `Font` and `Glyph` types, allow for lazy font parsing for improved performance
+* Store references in `drawing::Options` instead of cloning data internally
+* `Color` now uses `f32` internally rather than `u16`
+* Added new `Legends` type to wrap around previous `[[Option<Legend>; 3]; 3]` arrays and allow for
+  easier conversion to `[Option<Legend>; 9]`, etc
+* Added JSON profile file support
+* Improve documentation for large parts of the public API (still incomplete though)
+* Major internal refactoring, by moving to a workspace-based structure and splitting this crate into
+  multiple smaller subcrates
+
 ## [v0.2.1](https://github.com/staticintlucas/keyset-rs/releases/tag/v0.2.1)
 
 ### Changes
