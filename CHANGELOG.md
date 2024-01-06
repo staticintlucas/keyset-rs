@@ -1,5 +1,11 @@
 # Change Log
 
+## [v0.3.1](https://github.com/staticintlucas/keyset-rs/releases/tag/v0.3.1)
+
+### Fixes
+
+* Fix documentation build failures in Docs.rs's environment
+
 ## [v0.3.0](https://github.com/staticintlucas/keyset-rs/releases/tag/v0.3.0)
 
 ### Changes

@@ -22,11 +22,11 @@ png = ["tiny-skia", "color/tiny-skia"]
 svg = ["dep:svg"]
 
 [dependencies]
-color = { package = "keyset-color", path = "../keyset-color", version = "0.3.0" }
-font = { package = "keyset-font", path = "../keyset-font", version = "0.3.0" }
-geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.3.0" }
-key = { package = "keyset-key", path = "../keyset-key", version = "0.3.0" }
-profile = { package = "keyset-profile", path = "../keyset-profile", version = "0.3.0" }
+color = { package = "keyset-color", path = "../keyset-color", version = "0.3.1" }
+font = { package = "keyset-font", path = "../keyset-font", version = "0.3.1" }
+geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.3.1" }
+key = { package = "keyset-key", path = "../keyset-key", version = "0.3.1" }
+profile = { package = "keyset-profile", path = "../keyset-profile", version = "0.3.1" }
 
 log = "0.4"
 miniz_oxide = { version = "0.7", optional = true }
