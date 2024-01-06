@@ -19,7 +19,11 @@ fn main() {
         let ttx = ttx_dir.join(format!("{font}.ttx"));
         let ttf = out_dir.join(format!("{font}.ttf"));
 
-        let contents = ttx_to_ttf(&ttx);
+        let contents = if std::env::var("DOCS_RS").is_ok() {
+            vec![] // We can't install fonttools/ttx in docs.rs's environment
+        } else {
+            ttx_to_ttf(&ttx)
+        };
         fs::write(&ttf, contents)
             .unwrap_or_else(|err| panic!("failed to write to {}: {err:?}", ttf.display()));
 
@@ -33,6 +37,7 @@ fn main() {
 
     // Rerun if a different ttx is on PATH (e.g. one from a virtualenv)
     println!("cargo:rerun-if-env-changed=PATH");
+    println!("cargo:rerun-if-env-changed=DOCS_RS");
 }
 
 fn ttx_to_ttf(path: impl AsRef<Path>) -> Vec<u8> {
