@@ -1,5 +1,11 @@
 # Change Log
 
+## [v0.3.2](https://github.com/staticintlucas/keyset-rs/releases/tag/v0.3.2)
+
+### Fixes
+
+* Remove erroneous core::* reexport
+
 ## [v0.3.1](https://github.com/staticintlucas/keyset-rs/releases/tag/v0.3.1)
 
 ### Fixes

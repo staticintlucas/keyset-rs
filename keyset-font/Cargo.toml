@@ -19,7 +19,7 @@ license.workspace = true
 [features]
 
 [dependencies]
-geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.3.1" }
+geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.3.2" }
 
 byte-strings = "0.3"
 dashmap = "5.1"
