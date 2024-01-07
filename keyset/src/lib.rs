@@ -19,5 +19,3 @@ pub use drawing;
 pub use font;
 pub use key;
 pub use profile;
-
-pub use core::*;
