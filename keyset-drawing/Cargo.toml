@@ -37,3 +37,6 @@ svg = { version = "0.14", optional = true }
 [dev-dependencies]
 assert_approx_eq = "1.1"
 unindent = "0.2"
+
+[build-dependencies]
+which = "6.0"

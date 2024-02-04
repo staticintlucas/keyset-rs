@@ -1,74 +1,115 @@
 use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
+use std::process::Stdio;
 
-#[cfg(unix)]
-use std::os::unix::process::ExitStatusExt;
+const FONTS: [&str; 3] = ["default", "demo", "null"];
 
-fn main() {
-    let ttx_dir = ["resources", "fonts"].iter().collect::<PathBuf>();
-    let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR is not set")).join(&ttx_dir);
-
-    fs::create_dir_all(&out_dir)
-        .unwrap_or_else(|err| panic!("failed to create directory {}: {err:?}", out_dir.display()));
-
-    let fonts = ["default", "demo", "null"];
-
-    for font in fonts {
-        let ttx = ttx_dir.join(format!("{font}.ttx"));
-        let ttf = out_dir.join(format!("{font}.ttf"));
-
-        let contents = if std::env::var("DOCS_RS").is_ok() {
-            vec![] // We can't install fonttools/ttx in docs.rs's environment
-        } else {
-            ttx_to_ttf(&ttx)
-        };
-        fs::write(&ttf, contents)
-            .unwrap_or_else(|err| panic!("failed to write to {}: {err:?}", ttf.display()));
-
-        println!(
-            "cargo:rustc-env={}_TTF={}",
-            font.to_uppercase(),
-            ttf.display()
-        );
-        println!("cargo:rerun-if-changed={}", ttx.display());
-    }
-
-    // Rerun if a different ttx is on PATH (e.g. one from a virtualenv)
-    println!("cargo:rerun-if-env-changed=PATH");
+pub struct VirtualEnv {
+    path: PathBuf,
 }
 
-fn ttx_to_ttf(path: impl AsRef<Path>) -> Vec<u8> {
-    let path = path.as_ref();
+impl VirtualEnv {
+    pub fn new(path: PathBuf) -> Self {
+        let system_python = ["python3", "python", "py"]
+            .into_iter()
+            .find_map(|py| which::which_global(py).ok())
+            .expect("python not found");
 
-    let output = Command::new("ttx")
-        .args(["-o", "-"]) // Output to stdout (which we capture)
-        .arg(path)
-        .output()
-        .expect("failed to run ttx");
+        let venv = ["virtualenv", "venv"]
+            .into_iter()
+            .find(|module| {
+                Command::new(&system_python)
+                    .args(["-m", module, "--help"])
+                    .stdout(Stdio::null()) // Prevent stdout going to Cargo
+                    .status()
+                    .is_ok_and(|status| status.success())
+            })
+            .expect("python module virtualenv or venv not found");
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        let code = output.status.code();
-        #[cfg(unix)]
-        let code = code.or(output.status.signal());
-        let code = code.map(|i| i.to_string()).unwrap_or("unknown".to_string());
+        let path = path.join(".venv");
+        let success = Command::new(&system_python)
+            .args(["-m", venv])
+            .arg(&path)
+            .stdout(Stdio::null()) // Prevent stdout going to Cargo
+            .status()
+            .is_ok_and(|status| status.success());
+        if !success {
+            panic!("failed to create virtual environment")
+        }
 
-        panic!("{stderr}\nttx failed with exit status {code}");
+        Self { path }
     }
 
-    if output.stdout.is_empty() {
-        // Work around bug (?) in older TTX where it writes to a file called "-". (I'm calling it a
-        // bug because --help says it should write to stdout, although there doesn't seem to be any
-        // code to actually handle this prior to 4.39)
-        if let Ok(output) = fs::read("-") {
-            let _ = fs::remove_file("-");
-            output
-        } else {
-            panic!("failed to capture output from ttx");
+    pub fn python(&self) -> Command {
+        let bin_dir = self.path.join("bin");
+        let mut command = Command::new(bin_dir.join("python3"));
+        command.env("PATH", bin_dir).env("VIRTUAL_ENV", &self.path);
+        command
+    }
+}
+
+fn main() {
+    let manifest_dir =
+        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
+    let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR not set"));
+
+    let ttx_src = manifest_dir.join("resources").join("fonts");
+    let ttf_dst = out_dir.join("resources").join("fonts");
+    fs::create_dir_all(&ttf_dst)
+        .unwrap_or_else(|err| panic!("failed to create directory {}: {err:?}", out_dir.display()));
+
+    if std::env::var("DOCS_RS").is_ok() {
+        // In docs.rs' environment we have no network access to install fonttools, so just write
+        // blank files (which is sufficient for docs anyway)
+        for font in FONTS {
+            let ttf = ttf_dst.join(format!("{font}.ttf"));
+            fs::File::create(&ttf).expect("failed to create file");
+            println!(
+                "cargo:rustc-env={}_TTF={}",
+                font.to_uppercase(),
+                ttf.display()
+            );
         }
     } else {
-        output.stdout
+        let requirements = manifest_dir.join("requirements.txt");
+        println!("cargo:rerun-if-changed={}", requirements.display());
+
+        let venv = VirtualEnv::new(out_dir);
+        let success = venv
+            .python()
+            .args(["-m", "pip", "install", "-Ur"])
+            .arg(requirements)
+            .stdout(Stdio::null()) // Prevent stdout going to Cargo
+            .status()
+            .is_ok_and(|status| status.success());
+        if !success {
+            panic!("failed to install requirements in virtual environment");
+        }
+
+        for font in FONTS {
+            let ttx = ttx_src.join(format!("{font}.ttx"));
+            let ttf = ttf_dst.join(format!("{font}.ttf"));
+
+            let success = venv
+                .python()
+                .args(["-m", "fontTools.ttx"])
+                .arg("-o")
+                .args([&ttf, &ttx])
+                .stdout(Stdio::null()) // Prevent stdout going to Cargo
+                .status()
+                .is_ok_and(|status| status.success());
+            if !success {
+                panic!("failed to run ttx");
+            }
+
+            println!(
+                "cargo:rustc-env={}_TTF={}",
+                font.to_uppercase(),
+                ttf.display()
+            );
+            println!("cargo:rerun-if-changed={}", ttx.display());
+        }
     }
 }

@@ -30,3 +30,6 @@ ttf-parser = { version = "0.20", default-features = false, features = ["std"]}
 [dev-dependencies]
 assert_approx_eq = "1.1"
 assert_matches = "1.5"
+
+[build-dependencies]
+which = "6.0"
