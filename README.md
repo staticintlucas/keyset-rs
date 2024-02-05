@@ -18,14 +18,12 @@ Current minimum supported Rust version is 1.70.0, although this is subject to ch
 
 ## Installation
 
-First, ensure you have [fontTools] installed on your system and added to your `PATH` environment variable.
-This can be removed afterwards, it is only needed as a build-time dependency.
+The build requires that Python is installed, with either the `virtualenv` or `venv` package available.
+All other build dependencies will be downloaded automatically.
 
 ```sh
 cargo install keyset
 ```
-
-[fonttools]: https://fonttools.readthedocs.io/en/latest/
 
 ## Usage
 
