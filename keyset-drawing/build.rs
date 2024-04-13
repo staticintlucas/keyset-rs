@@ -41,7 +41,12 @@ fn main() {
 
         assert!(
             ttf_mtime >= ttx_mtime,
-            "TTF file {ttf:?} is out of date!\n\n Please run `ttx -o {ttf:?} {ttx:?}`"
+            "TTF file {ttf:?} is out of date!
+
+Please run `ttx -o {ttf:?} {ttx:?}`
+
+{ttf:?}: {ttf_mtime:?}
+{ttx:?}: {ttx_mtime:?}"
         );
 
         println!("cargo:rustc-env={env_var}={}", ttf.display());
