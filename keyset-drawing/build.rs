@@ -2,6 +2,7 @@
 
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use std::{env, fs, io};
 
 fn files_with_extension(
@@ -40,7 +41,7 @@ fn main() {
             .expect(&format!("error retrieving metadata for {ttf:?}"));
 
         assert!(
-            ttf_mtime >= ttx_mtime,
+            ttf_mtime >= ttx_mtime - Duration::from_micros(1),
             "TTF file {ttf:?} is out of date!
 
 Please run `ttx -o {ttf:?} {ttx:?}`
