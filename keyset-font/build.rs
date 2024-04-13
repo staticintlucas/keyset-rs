@@ -1,115 +1,50 @@
-use std::env;
-use std::fs;
-use std::path::PathBuf;
-use std::process::Command;
-use std::process::Stdio;
+#![allow(clippy::expect_fun_call)]
 
-const FONTS: [&str; 3] = ["default", "demo", "null"];
+use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
+use std::{env, fs, io};
 
-pub struct VirtualEnv {
-    path: PathBuf,
-}
-
-impl VirtualEnv {
-    pub fn new(path: PathBuf) -> Self {
-        let system_python = ["python3", "python", "py"]
-            .into_iter()
-            .find_map(|py| which::which_global(py).ok())
-            .expect("python not found");
-
-        let venv = ["virtualenv", "venv"]
-            .into_iter()
-            .find(|module| {
-                Command::new(&system_python)
-                    .args(["-m", module, "--help"])
-                    .stdout(Stdio::null()) // Prevent stdout going to Cargo
-                    .status()
-                    .is_ok_and(|status| status.success())
-            })
-            .expect("python module virtualenv or venv not found");
-
-        let path = path.join(".venv");
-        let success = Command::new(&system_python)
-            .args(["-m", venv])
-            .arg(&path)
-            .stdout(Stdio::null()) // Prevent stdout going to Cargo
-            .status()
-            .is_ok_and(|status| status.success());
-        if !success {
-            panic!("failed to create virtual environment")
-        }
-
-        Self { path }
-    }
-
-    pub fn python(&self) -> Command {
-        let bin_dir = self.path.join("bin");
-        let mut command = Command::new(bin_dir.join("python3"));
-        command.env("PATH", bin_dir).env("VIRTUAL_ENV", &self.path);
-        command
-    }
+fn files_with_extension(
+    path: impl AsRef<Path>,
+    extension: impl AsRef<OsStr>,
+) -> io::Result<impl Iterator<Item = PathBuf>> {
+    Ok(fs::read_dir(path.as_ref())?
+        .filter_map(|r| r.map(|f| f.path()).ok())
+        .filter(move |p| matches!(p.extension(), Some(e) if e == extension.as_ref())))
 }
 
 fn main() {
     let manifest_dir =
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
-    let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR not set"));
+    let font_dir = manifest_dir.join("resources").join("fonts");
+    let ttx_files = files_with_extension(&font_dir, "ttx")
+        .expect(&format!("failed to list files in {font_dir:?}"));
 
-    let ttx_src = manifest_dir.join("resources").join("fonts");
-    let ttf_dst = out_dir.join("resources").join("fonts");
-    fs::create_dir_all(&ttf_dst)
-        .unwrap_or_else(|err| panic!("failed to create directory {}: {err:?}", out_dir.display()));
+    for ttx in ttx_files {
+        let name = ttx.file_stem().unwrap();
+        let env_var = name.to_string_lossy().to_uppercase() + "_TTF";
+        let ttf = ttx.with_extension("ttf");
 
-    if std::env::var("DOCS_RS").is_ok() {
-        // In docs.rs' environment we have no network access to install fonttools, so just write
-        // blank files (which is sufficient for docs anyway)
-        for font in FONTS {
-            let ttf = ttf_dst.join(format!("{font}.ttf"));
-            fs::File::create(&ttf).expect("failed to create file");
-            println!(
-                "cargo:rustc-env={}_TTF={}",
-                font.to_uppercase(),
-                ttf.display()
-            );
-        }
-    } else {
-        let requirements = manifest_dir.join("requirements.txt");
-        println!("cargo:rerun-if-changed={}", requirements.display());
+        assert!(
+            ttf.exists(),
+            "TTF file {ttf:?} not found!\n\nPlease run `ttx -o {ttf:?} {ttx:?}`"
+        );
 
-        let venv = VirtualEnv::new(out_dir);
-        let success = venv
-            .python()
-            .args(["-m", "pip", "install", "-Ur"])
-            .arg(requirements)
-            .stdout(Stdio::null()) // Prevent stdout going to Cargo
-            .status()
-            .is_ok_and(|status| status.success());
-        if !success {
-            panic!("failed to install requirements in virtual environment");
-        }
+        let ttx_mtime = ttx
+            .metadata()
+            .and_then(|m| m.modified())
+            .expect(&format!("error retrieving metadata for {ttx:?}"));
+        let ttf_mtime = ttf
+            .metadata()
+            .and_then(|m| m.modified())
+            .expect(&format!("error retrieving metadata for {ttf:?}"));
 
-        for font in FONTS {
-            let ttx = ttx_src.join(format!("{font}.ttx"));
-            let ttf = ttf_dst.join(format!("{font}.ttf"));
+        assert!(
+            ttf_mtime >= ttx_mtime,
+            "TTF file {ttf:?} is out of date!\n\n Please run `ttx -o {ttf:?} {ttx:?}`"
+        );
 
-            let success = venv
-                .python()
-                .args(["-m", "fontTools.ttx"])
-                .arg("-o")
-                .args([&ttf, &ttx])
-                .stdout(Stdio::null()) // Prevent stdout going to Cargo
-                .status()
-                .is_ok_and(|status| status.success());
-            if !success {
-                panic!("failed to run ttx");
-            }
-
-            println!(
-                "cargo:rustc-env={}_TTF={}",
-                font.to_uppercase(),
-                ttf.display()
-            );
-            println!("cargo:rerun-if-changed={}", ttx.display());
-        }
+        println!("cargo:rustc-env={env_var}={}", ttf.display());
+        println!("cargo:rerun-if-changed={}", ttx.display());
     }
 }

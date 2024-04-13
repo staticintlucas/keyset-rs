@@ -4,7 +4,7 @@
 
 ### Fixes
 
-* Remove erroneous core::* reexport
+* Remove erroneous `core::*` reexport
 
 ## [v0.3.1](https://github.com/staticintlucas/keyset-rs/releases/tag/v0.3.1)
 
