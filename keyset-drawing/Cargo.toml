@@ -32,7 +32,7 @@ log = "0.4"
 miniz_oxide = { version = "0.7", optional = true }
 pdf-writer = { version = "0.9", optional = true }
 tiny-skia = { version = "0.11", optional = true }
-svg = { version = "0.14", optional = true }
+svg = { version = "0.16", optional = true }
 
 [dev-dependencies]
 assert_approx_eq = "1.1"

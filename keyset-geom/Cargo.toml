@@ -17,7 +17,7 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
-kurbo = "0.10"
+kurbo = "0.11"
 
 [dev-dependencies]
 assert_approx_eq = "1.1"
