@@ -15,39 +15,43 @@ fn files_with_extension(
 }
 
 fn main() {
+    let workspace_dir =
+        PathBuf::from(env::var_os("CARGO_WORKSPACE_DIR").expect("CARGO_WORKSPACE_DIR not set"));
     let manifest_dir =
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
+
     let font_dir = manifest_dir.join("resources").join("fonts");
     let ttx_files = files_with_extension(&font_dir, "ttx")
         .expect(&format!("failed to list files in {font_dir:?}"));
 
     for ttx in ttx_files {
-        let name = ttx.file_stem().unwrap();
-        let env_var = name.to_string_lossy().to_uppercase() + "_TTF";
+        let env_var = ttx.file_stem().unwrap().to_string_lossy().to_uppercase() + "_TTF";
         let ttf = ttx.with_extension("ttf");
+
+        let ttx_str = ttx.strip_prefix(&workspace_dir).unwrap().to_string_lossy();
+        let ttf_str = ttf.strip_prefix(&workspace_dir).unwrap().to_string_lossy();
 
         assert!(
             ttf.exists(),
-            "TTF file {ttf:?} not found!\n\nPlease run `ttx -o {ttf:?} {ttx:?}`"
+            "Font {ttf_str} not found!\n\nPlease run `ttx -o {ttf_str} {ttx_str}`"
         );
 
         let ttx_mtime = ttx
             .metadata()
             .and_then(|m| m.modified())
-            .expect(&format!("error retrieving metadata for {ttx:?}"));
+            .expect(&format!("error retrieving metadata for {ttx_str}"));
         let ttf_mtime = ttf
             .metadata()
             .and_then(|m| m.modified())
-            .expect(&format!("error retrieving metadata for {ttf:?}"));
+            .expect(&format!("error retrieving metadata for {ttf_str}"));
 
+        // rather than just checking if the TTF is newer than the TTX, use a 10ms tolerance so
+        // if the TTF is created first by `git clone` it won't error out
+        let tolerance = Duration::from_millis(10);
         assert!(
-            ttf_mtime >= ttx_mtime - Duration::from_micros(1),
-            "TTF file {ttf:?} is out of date!
-
-Please run `ttx -o {ttf:?} {ttx:?}`
-
-{ttf:?}: {ttf_mtime:?}
-{ttx:?}: {ttx_mtime:?}"
+            ttf_mtime >= ttx_mtime - tolerance,
+            "Font {ttf_str} is out of date!\n\nPlease run `ttx -o {ttf_str} {ttx_str}`\n\n\
+            ttf: {ttf_mtime:?}\nttx: {ttx_mtime:?}"
         );
 
         println!("cargo:rustc-env={env_var}={}", ttf.display());
