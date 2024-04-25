@@ -318,7 +318,7 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        assert_eq!(format!("{:?}", font), r#"Font("demo regular")"#);
+        assert_eq!(format!("{font:?}"), r#"Font("demo regular")"#);
     }
 
     #[test]
@@ -326,6 +326,7 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
+        #[allow(clippy::redundant_clone)]
         let _ = font.clone(); // Shouldn't panic
     }
 
@@ -407,12 +408,12 @@ mod tests {
 
         let a_eq = a
             .data
-            .into_iter()
+            .iter()
             .zip(notdef.data.iter())
             .all(|(a, n)| a.approx_eq(n));
         let b_eq = b
             .data
-            .into_iter()
+            .iter()
             .zip(notdef.data.iter())
             .all(|(b, n)| b.approx_eq(n));
 

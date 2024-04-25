@@ -493,7 +493,8 @@ mod tests {
         cross.abs_move(Point::new(0., 1.));
         cross.abs_line(Point::new(1., 0.));
 
-        let params = vec![
+        #[allow(clippy::redundant_clone)]
+        let params = [
             (empty.clone(), empty.clone(), empty.clone()),
             (line1.clone(), empty.clone(), line1.clone()),
             (empty.clone(), line1.clone(), line1.clone()),

@@ -98,6 +98,8 @@ impl<U> RoundRect<U> {
 
 #[cfg(test)]
 mod tests {
+    use assert_approx_eq::assert_approx_eq;
+
     use super::*;
 
     #[test]
@@ -105,11 +107,11 @@ mod tests {
         let rect =
             RoundRect::<()>::new(Point::new(1.0, 2.0), Point::new(3.0, 5.0), Length::new(0.5));
 
-        assert_eq!(rect.min.x, 1.0);
-        assert_eq!(rect.min.y, 2.0);
-        assert_eq!(rect.max.x, 3.0);
-        assert_eq!(rect.max.y, 5.0);
-        assert_eq!(rect.radius.0, 0.5);
+        assert_approx_eq!(rect.min.x, 1.0);
+        assert_approx_eq!(rect.min.y, 2.0);
+        assert_approx_eq!(rect.max.x, 3.0);
+        assert_approx_eq!(rect.max.y, 5.0);
+        assert_approx_eq!(rect.radius.0, 0.5);
     }
 
     #[test]
@@ -119,11 +121,11 @@ mod tests {
             Length::new(0.5),
         );
 
-        assert_eq!(rect.min.x, 1.0);
-        assert_eq!(rect.min.y, 2.0);
-        assert_eq!(rect.max.x, 3.0);
-        assert_eq!(rect.max.y, 5.0);
-        assert_eq!(rect.radius.0, 0.5);
+        assert_approx_eq!(rect.min.x, 1.0);
+        assert_approx_eq!(rect.min.y, 2.0);
+        assert_approx_eq!(rect.max.x, 3.0);
+        assert_approx_eq!(rect.max.y, 5.0);
+        assert_approx_eq!(rect.radius.0, 0.5);
     }
 
     #[test]
@@ -134,11 +136,11 @@ mod tests {
             Length::new(0.5),
         );
 
-        assert_eq!(rect.min.x, 1.0);
-        assert_eq!(rect.min.y, 2.0);
-        assert_eq!(rect.max.x, 3.0);
-        assert_eq!(rect.max.y, 5.0);
-        assert_eq!(rect.radius.0, 0.5);
+        assert_approx_eq!(rect.min.x, 1.0);
+        assert_approx_eq!(rect.min.y, 2.0);
+        assert_approx_eq!(rect.max.x, 3.0);
+        assert_approx_eq!(rect.max.y, 5.0);
+        assert_approx_eq!(rect.radius.0, 0.5);
     }
 
     #[test]
@@ -149,11 +151,11 @@ mod tests {
             Length::new(0.5),
         );
 
-        assert_eq!(rect.min.x, 1.0);
-        assert_eq!(rect.min.y, 2.0);
-        assert_eq!(rect.max.x, 3.0);
-        assert_eq!(rect.max.y, 5.0);
-        assert_eq!(rect.radius.0, 0.5);
+        assert_approx_eq!(rect.min.x, 1.0);
+        assert_approx_eq!(rect.min.y, 2.0);
+        assert_approx_eq!(rect.max.x, 3.0);
+        assert_approx_eq!(rect.max.y, 5.0);
+        assert_approx_eq!(rect.radius.0, 0.5);
     }
 
     #[test]
@@ -161,7 +163,7 @@ mod tests {
         let rect =
             RoundRect::<()>::new(Point::new(1.0, 2.0), Point::new(3.0, 5.0), Length::new(0.5));
 
-        assert_eq!(rect.width(), 2.0);
+        assert_approx_eq!(rect.width(), 2.0);
     }
 
     #[test]
@@ -169,7 +171,7 @@ mod tests {
         let rect =
             RoundRect::<()>::new(Point::new(1.0, 2.0), Point::new(3.0, 5.0), Length::new(0.5));
 
-        assert_eq!(rect.height(), 3.0);
+        assert_approx_eq!(rect.height(), 3.0);
     }
 
     #[test]

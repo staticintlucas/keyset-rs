@@ -112,6 +112,7 @@ mod tests {
 
     use assert_approx_eq::assert_approx_eq;
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn test_arc_to_bezier() {
         struct Params {
@@ -254,15 +255,15 @@ mod tests {
 
     #[test]
     fn test_get_center() {
-        struct Params<U> {
-            r: Vector<U>,
+        struct Params {
+            r: Vector<()>,
             laf: bool,
             sf: bool,
-            d: Vector<U>,
-            exp: Vector<U>,
+            d: Vector<()>,
+            exp: Vector<()>,
         }
         let params = vec![
-            Params::<()> {
+            Params {
                 r: Vector::new(1., 1.),
                 laf: false,
                 sf: false,
@@ -306,17 +307,18 @@ mod tests {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn test_create_arc() {
-        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).radians.tan();
-        struct Params<U> {
-            r: Vector<U>,
+        struct Params {
+            r: Vector<()>,
             phi0: Angle,
             dphi: Angle,
-            p: (Vector<U>, Vector<U>, Vector<U>),
+            p: (Vector<()>, Vector<()>, Vector<()>),
         }
+        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).radians.tan();
         let params = vec![
-            Params::<()> {
+            Params {
                 r: Vector::new(1., 1.),
                 phi0: Angle::zero(),
                 dphi: Angle::frac_pi_2(),

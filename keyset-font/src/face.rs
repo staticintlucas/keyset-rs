@@ -141,6 +141,7 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let face = Face::from_ttf(data).unwrap();
 
+        #[allow(clippy::redundant_clone)]
         let _ = face.clone(); // Shouldn't panic
     }
 
@@ -149,7 +150,7 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let face = Face::from_ttf(data).unwrap();
 
-        assert_eq!(format!("{:?}", face), "Face");
+        assert_eq!(format!("{face:?}"), "Face");
     }
 
     #[test]

@@ -364,34 +364,40 @@ impl Default for Profile {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
+    use geom::ApproxEq;
     use unindent::unindent;
 
     use super::*;
 
     #[test]
     fn test_profile_type_depth() {
-        assert_eq!(Type::Cylindrical { depth: 1. }.depth(), 1.);
-        assert_eq!(Type::Spherical { depth: 0.5 }.depth(), 0.5);
-        assert_eq!(Type::Flat.depth(), 0.);
+        assert_approx_eq!(Type::Cylindrical { depth: 1.0 }.depth(), 1.0);
+        assert_approx_eq!(Type::Spherical { depth: 0.5 }.depth(), 0.5);
+        assert_approx_eq!(Type::Flat.depth(), 0.0);
     }
 
     #[test]
     fn test_profile_type_default() {
-        assert_matches!(Type::default(), Type::Cylindrical { depth } if depth == 1.);
+        assert_matches!(Type::default(), Type::Cylindrical { depth } if depth.approx_eq(&1.0));
     }
 
     #[test]
     fn test_homing_props_default() {
         assert_matches!(HomingProps::default().default, Homing::Bar);
-        assert_eq!(HomingProps::default().scoop.depth.0, 2.);
-        assert_eq!(HomingProps::default().bar.size, Size::new(3.81, 0.51));
-        assert_eq!(HomingProps::default().bar.y_offset.0, 6.35);
-        assert_eq!(HomingProps::default().bump.diameter.0, 0.51);
-        assert_eq!(HomingProps::default().bump.y_offset.0, 0.);
+        assert_approx_eq!(HomingProps::default().scoop.depth.0, 2.0);
+        assert!(HomingProps::default()
+            .bar
+            .size
+            .to_vector()
+            .approx_eq(&Vector::new(3.81, 0.51)));
+        assert_approx_eq!(HomingProps::default().bar.y_offset.0, 6.35);
+        assert_approx_eq!(HomingProps::default().bump.diameter.0, 0.51);
+        assert_approx_eq!(HomingProps::default().bump.y_offset.0, 0.0);
     }
 
     #[test]
     fn test_text_height_new() {
+        #[allow(clippy::cast_precision_loss)]
         let expected: [_; 10] =
             array::from_fn(|i| (6.0 + 2.0 * (i as f32)) / 72.0 * DOT_PER_UNIT.get());
         let result = TextHeight::new(&HashMap::new()).0;
@@ -436,6 +442,7 @@ mod tests {
     fn test_text_height_default() {
         let heights = TextHeight::default();
 
+        #[allow(clippy::cast_precision_loss)]
         for (i, h) in heights.0.into_iter().enumerate() {
             assert_approx_eq!(h, (6.0 + 2.0 * (i as f32)) / 72.0 * DOT_PER_UNIT.get());
         }
@@ -443,7 +450,7 @@ mod tests {
 
     #[test]
     fn test_text_margin_new() {
-        let expected = vec![SideOffsets::<()>::new_all_same(50.0); 10];
+        let expected = [SideOffsets::<()>::new_all_same(50.0); 10];
         let result = TextMargin::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
@@ -453,7 +460,7 @@ mod tests {
             assert_approx_eq!(e.vertical(), r.vertical());
         }
 
-        let expected = vec![
+        let expected = [
             SideOffsets::<()>::new_all_same(0.),
             SideOffsets::new_all_same(0.),
             SideOffsets::new_all_same(0.),
@@ -501,7 +508,7 @@ mod tests {
     fn test_text_margin_default() {
         let margin = TextMargin::default();
 
-        for offsets in margin.0.into_iter() {
+        for offsets in margin.0 {
             assert_approx_eq!(offsets.horizontal(), 100.0);
             assert_approx_eq!(offsets.vertical(), 100.0);
         }
@@ -526,8 +533,8 @@ mod tests {
     fn test_top_surface_default() {
         let surf = TopSurface::default();
         assert_eq!(surf.size, Size::new(660., 735.));
-        assert_eq!(surf.radius.0, 65.);
-        assert_eq!(surf.y_offset.0, -77.5);
+        assert_approx_eq!(surf.radius.0, 65.0);
+        assert_approx_eq!(surf.y_offset.0, -77.5);
     }
 
     #[test]
@@ -556,7 +563,7 @@ mod tests {
     #[test]
     fn test_profile_from_toml() {
         let profile = Profile::from_toml(&unindent(
-            r#"
+            "
             type = 'cylindrical'
             depth = 0.5
 
@@ -594,7 +601,7 @@ mod tests {
             scoop = { depth = 1.5 }
             bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
             bump = { diameter = 0.4, y-offset = -0.2 }
-        "#,
+        ",
         ))
         .unwrap();
 
@@ -609,13 +616,13 @@ mod tests {
         assert_approx_eq!(profile.top.radius.0, 80., 0.5);
 
         assert_eq!(profile.text_height.0.len(), 10);
-        let expected = vec![0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
+        let expected = [0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
         for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
             assert_approx_eq!(e, r, 0.5);
         }
 
         assert_eq!(profile.text_margin.0.len(), 10);
-        let expected = vec![
+        let expected = [
             SideOffsets::<()>::new(62.0, 62.0, 75.0, 62.0),
             SideOffsets::new(62.0, 62.0, 75.0, 62.0),
             SideOffsets::new(62.0, 62.0, 75.0, 62.0),
@@ -639,20 +646,24 @@ mod tests {
         assert_approx_eq!(profile.homing.bar.y_offset.0, 5.05);
         assert_approx_eq!(profile.homing.bump.diameter.0, 0.4);
         assert_approx_eq!(profile.homing.bump.y_offset.0, -0.2);
+    }
 
+    #[cfg(feature = "toml")]
+    #[test]
+    fn test_profile_from_invalid_toml() {
         let result = Profile::from_toml("null");
         assert!(result.is_err());
         assert_eq!(
             format!("{}", result.unwrap_err()),
             unindent(
-                r#"TOML parse error at line 1, column 5
+                "TOML parse error at line 1, column 5
                   |
                 1 | null
                   |     ^
                 expected `.`, `=`
-                "#
-            ),
-        )
+                "
+            )
+        );
     }
 
     #[cfg(feature = "json")]
@@ -729,13 +740,13 @@ mod tests {
         assert_approx_eq!(profile.top.radius.0, 80., 0.5);
 
         assert_eq!(profile.text_height.0.len(), 10);
-        let expected = vec![0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
+        let expected = [0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
         for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
             assert_approx_eq!(e, r, 0.5);
         }
 
         assert_eq!(profile.text_margin.0.len(), 10);
-        let expected = vec![
+        let expected = [
             SideOffsets::<()>::new(62.0, 62.0, 75.0, 62.0),
             SideOffsets::new(62.0, 62.0, 75.0, 62.0),
             SideOffsets::new(62.0, 62.0, 75.0, 62.0),
@@ -759,13 +770,17 @@ mod tests {
         assert_approx_eq!(profile.homing.bar.y_offset.0, 265. / DOT_PER_MM.0, 0.5);
         assert_approx_eq!(profile.homing.bump.diameter.0, 21. / DOT_PER_MM.0, 0.5);
         assert_approx_eq!(profile.homing.bump.y_offset.0, -10. / DOT_PER_MM.0, 0.5);
+    }
 
+    #[cfg(feature = "json")]
+    #[test]
+    fn test_profile_from_invalid_json() {
         let result = Profile::from_json("null");
         assert!(result.is_err());
         assert_eq!(
             format!("{}", result.unwrap_err()),
             "invalid type: null, expected struct RawProfileData at line 1 column 4"
-        )
+        );
     }
 
     #[test]
@@ -807,7 +822,7 @@ mod tests {
     fn test_profile_default() {
         let profile = Profile::default();
 
-        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth == 1.);
+        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth.approx_eq(&1.0));
 
         assert_approx_eq!(profile.bottom.size.width, 950.0);
         assert_approx_eq!(profile.bottom.size.height, 950.0);

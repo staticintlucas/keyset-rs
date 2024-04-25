@@ -39,7 +39,7 @@ mod tests {
     fn error_fmt() {
         let error = crate::Font::from_ttf(b"invalid".to_vec()).unwrap_err();
 
-        assert_eq!(format!("{error}"), "unknown magic")
+        assert_eq!(format!("{error}"), "unknown magic");
     }
 
     #[test]
@@ -47,7 +47,7 @@ mod tests {
         let error = crate::Font::from_ttf(b"invalid".to_vec()).unwrap_err();
 
         assert!(error.source().is_some());
-        assert_eq!(format!("{}", error.source().unwrap()), "unknown magic",)
+        assert_eq!(format!("{}", error.source().unwrap()), "unknown magic");
     }
 
     #[test]
@@ -55,6 +55,6 @@ mod tests {
         let result = Face::parse(b"invalid", 0);
         let error: Error = result.unwrap_err().into();
 
-        assert_eq!(format!("{error}"), "unknown magic")
+        assert_eq!(format!("{error}"), "unknown magic");
     }
 }

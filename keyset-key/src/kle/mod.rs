@@ -110,6 +110,7 @@ pub fn from_json(json: &str) -> Result<Vec<Key>> {
 
 #[cfg(test)]
 mod tests {
+    use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
     use unindent::unindent;
 
@@ -253,10 +254,10 @@ mod tests {
         .unwrap();
 
         assert_eq!(result1.len(), 4);
-        assert_eq!(result1[0].position.x, 0.0);
-        assert_eq!(result1[1].position.x, 1.0);
-        assert_eq!(result1[2].position.x, 1.5);
-        assert_eq!(result1[3].position.x, 0.0);
+        assert_approx_eq!(result1[0].position.x, 0.0);
+        assert_approx_eq!(result1[1].position.x, 1.0);
+        assert_approx_eq!(result1[2].position.x, 1.5);
+        assert_approx_eq!(result1[3].position.x, 0.0);
 
         let result2: Vec<_> = from_json(&unindent(
             r#"[

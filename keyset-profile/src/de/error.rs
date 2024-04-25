@@ -65,14 +65,14 @@ mod tests {
             assert_eq!(
                 format!("{error}"),
                 unindent::unindent(
-                    r#"TOML parse error at line 1, column 5
+                    "TOML parse error at line 1, column 5
                       |
                     1 | null
                       |     ^
                     expected `.`, `=`
-                    "#
-                ),
-            )
+                    "
+                )
+            );
         }
         #[cfg(feature = "json")]
         {
@@ -81,7 +81,7 @@ mod tests {
             assert_eq!(
                 format!("{error}"),
                 "invalid type: null, expected struct RawProfileData at line 1 column 4"
-            )
+            );
         }
     }
 
@@ -95,14 +95,14 @@ mod tests {
             assert_eq!(
                 format!("{}", error.source().unwrap()),
                 unindent::unindent(
-                    r#"TOML parse error at line 1, column 5
+                    "TOML parse error at line 1, column 5
                       |
                     1 | null
                       |     ^
                     expected `.`, `=`
-                    "#
-                ),
-            )
+                    "
+                )
+            );
         }
         #[cfg(feature = "json")]
         {
@@ -112,7 +112,7 @@ mod tests {
             assert_eq!(
                 format!("{}", error.source().unwrap()),
                 "invalid type: null, expected struct RawProfileData at line 1 column 4"
-            )
+            );
         }
     }
 
@@ -123,14 +123,14 @@ mod tests {
             let result: std::result::Result<i32, toml::de::Error> = toml::from_str("null");
             let error: Error = result.unwrap_err().into();
 
-            assert_matches!(error, Error::TomlParseError(..))
+            assert_matches!(error, Error::TomlParseError(..));
         }
         #[cfg(feature = "json")]
         {
             let result: std::result::Result<i32, serde_json::Error> = serde_json::from_str("null");
             let error: Error = result.unwrap_err().into();
 
-            assert_matches!(error, Error::JsonParseError(..))
+            assert_matches!(error, Error::JsonParseError(..));
         }
     }
 }

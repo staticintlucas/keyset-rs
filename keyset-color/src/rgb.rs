@@ -92,9 +92,9 @@ mod tests {
         let rgb = RGBf32::new(0.2, 0.4, 0.6);
         let color = Color::from(rgb);
 
-        assert_eq!(color.0[0], 0.2);
-        assert_eq!(color.0[1], 0.4);
-        assert_eq!(color.0[2], 0.6);
+        assert_approx_eq!(color.0[0], 0.2);
+        assert_approx_eq!(color.0[1], 0.4);
+        assert_approx_eq!(color.0[2], 0.6);
     }
 
     #[test]
@@ -102,8 +102,8 @@ mod tests {
         let color = Color::new(0.2, 0.4, 0.6);
         let rgb: RGBf32 = color.into();
 
-        assert_eq!(rgb.r, 0.2);
-        assert_eq!(rgb.g, 0.4);
-        assert_eq!(rgb.b, 0.6);
+        assert_approx_eq!(rgb.r, 0.2);
+        assert_approx_eq!(rgb.g, 0.4);
+        assert_approx_eq!(rgb.b, 0.6);
     }
 }

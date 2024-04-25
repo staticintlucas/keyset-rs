@@ -166,6 +166,8 @@ impl<'a> Options<'a> {
 
 #[cfg(test)]
 mod tests {
+    use assert_approx_eq::assert_approx_eq;
+
     use geom::ApproxEq;
     use profile::Profile;
 
@@ -188,7 +190,7 @@ mod tests {
             .show_keys(false)
             .show_margin(true);
 
-        assert_eq!(options.profile.typ.depth(), 1.0);
+        assert_approx_eq!(options.profile.typ.depth(), 1.0);
         assert_eq!(options.font.num_glyphs(), 3); // .notdef, A, V
         assert!(options.scale.approx_eq(&2.0));
     }
@@ -200,9 +202,9 @@ mod tests {
 
         let drawing = options.draw(&keys);
 
-        assert_eq!(drawing.bounds.width(), 1.);
-        assert_eq!(drawing.bounds.height(), 1.);
+        assert_approx_eq!(drawing.bounds.width(), 1.);
+        assert_approx_eq!(drawing.bounds.height(), 1.);
         assert_eq!(drawing.keys.len(), 1);
-        assert_eq!(drawing.scale, options.scale);
+        assert_approx_eq!(drawing.scale, options.scale);
     }
 }

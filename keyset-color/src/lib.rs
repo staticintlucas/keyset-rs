@@ -276,27 +276,27 @@ mod tests {
     #[test]
     fn new() {
         let color = Color::new(0.2, 0.4, 0.6);
-        assert_eq!(color.0[0], 0.2);
-        assert_eq!(color.0[1], 0.4);
-        assert_eq!(color.0[2], 0.6);
+        assert_approx_eq!(color.0[0], 0.2);
+        assert_approx_eq!(color.0[1], 0.4);
+        assert_approx_eq!(color.0[2], 0.6);
     }
 
     #[test]
     fn r() {
         let color = Color::new(0.2, 0.4, 0.6);
-        assert_eq!(color.r(), 0.2);
+        assert_approx_eq!(color.r(), 0.2);
     }
 
     #[test]
     fn g() {
         let color = Color::new(0.2, 0.4, 0.6);
-        assert_eq!(color.g(), 0.4);
+        assert_approx_eq!(color.g(), 0.4);
     }
 
     #[test]
     fn b() {
         let color = Color::new(0.2, 0.4, 0.6);
-        assert_eq!(color.b(), 0.6);
+        assert_approx_eq!(color.b(), 0.6);
     }
 
     #[test]
@@ -376,9 +376,9 @@ mod tests {
         let slice = color.as_slice();
 
         assert_eq!(slice.len(), 3);
-        assert_eq!(slice[0], 0.2);
-        assert_eq!(slice[1], 0.4);
-        assert_eq!(slice[2], 0.6);
+        assert_approx_eq!(slice[0], 0.2);
+        assert_approx_eq!(slice[1], 0.4);
+        assert_approx_eq!(slice[2], 0.6);
     }
 
     #[test]
@@ -392,9 +392,9 @@ mod tests {
         slice[1] = 0.6;
         slice[2] = 0.4;
 
-        assert_eq!(color.0[0], 0.8);
-        assert_eq!(color.0[1], 0.6);
-        assert_eq!(color.0[2], 0.4);
+        assert_approx_eq!(color.0[0], 0.8);
+        assert_approx_eq!(color.0[1], 0.6);
+        assert_approx_eq!(color.0[2], 0.4);
     }
 
     #[test]
@@ -404,9 +404,9 @@ mod tests {
         let vec: Vec<_> = iter.collect();
 
         assert_eq!(vec.len(), 3);
-        assert_eq!(vec[0], 0.2);
-        assert_eq!(vec[1], 0.4);
-        assert_eq!(vec[2], 0.6);
+        assert_approx_eq!(vec[0], 0.2);
+        assert_approx_eq!(vec[1], 0.4);
+        assert_approx_eq!(vec[2], 0.6);
     }
 
     #[test]
@@ -421,9 +421,9 @@ mod tests {
             array[2] = 0.4;
         }
 
-        assert_eq!(color.0[0], 0.8);
-        assert_eq!(color.0[1], 0.6);
-        assert_eq!(color.0[2], 0.4);
+        assert_approx_eq!(color.0[0], 0.8);
+        assert_approx_eq!(color.0[1], 0.6);
+        assert_approx_eq!(color.0[2], 0.4);
 
         {
             let slice: &mut [f32] = color.as_mut();
@@ -433,9 +433,9 @@ mod tests {
             slice[2] = 0.6;
         }
 
-        assert_eq!(color.0[0], 0.2);
-        assert_eq!(color.0[1], 0.4);
-        assert_eq!(color.0[2], 0.6);
+        assert_approx_eq!(color.0[0], 0.2);
+        assert_approx_eq!(color.0[1], 0.4);
+        assert_approx_eq!(color.0[2], 0.6);
     }
 
     #[test]
@@ -445,16 +445,16 @@ mod tests {
         let array: &[f32; 3] = color.as_ref();
 
         assert_eq!(array.len(), 3);
-        assert_eq!(array[0], 0.2);
-        assert_eq!(array[1], 0.4);
-        assert_eq!(array[2], 0.6);
+        assert_approx_eq!(array[0], 0.2);
+        assert_approx_eq!(array[1], 0.4);
+        assert_approx_eq!(array[2], 0.6);
 
         let slice: &[f32] = color.as_ref();
 
         assert_eq!(slice.len(), 3);
-        assert_eq!(slice[0], 0.2);
-        assert_eq!(slice[1], 0.4);
-        assert_eq!(slice[2], 0.6);
+        assert_approx_eq!(slice[0], 0.2);
+        assert_approx_eq!(slice[1], 0.4);
+        assert_approx_eq!(slice[2], 0.6);
     }
 
     #[test]
@@ -473,9 +473,9 @@ mod tests {
         let array = [0.2, 0.4, 0.6];
         let color = Color::from(array);
 
-        assert_eq!(color.0[0], 0.2);
-        assert_eq!(color.0[1], 0.4);
-        assert_eq!(color.0[2], 0.6);
+        assert_approx_eq!(color.0[0], 0.2);
+        assert_approx_eq!(color.0[1], 0.4);
+        assert_approx_eq!(color.0[2], 0.6);
     }
 
     #[test]
@@ -483,9 +483,9 @@ mod tests {
         let tuple = (0.2, 0.4, 0.6);
         let color = Color::from(tuple);
 
-        assert_eq!(color.0[0], 0.2);
-        assert_eq!(color.0[1], 0.4);
-        assert_eq!(color.0[2], 0.6);
+        assert_approx_eq!(color.0[0], 0.2);
+        assert_approx_eq!(color.0[1], 0.4);
+        assert_approx_eq!(color.0[2], 0.6);
     }
 
     #[test]
@@ -494,9 +494,9 @@ mod tests {
         let array = <[f32; 3]>::from(color);
 
         assert_eq!(array.len(), 3);
-        assert_eq!(array[0], 0.2);
-        assert_eq!(array[1], 0.4);
-        assert_eq!(array[2], 0.6);
+        assert_approx_eq!(array[0], 0.2);
+        assert_approx_eq!(array[1], 0.4);
+        assert_approx_eq!(array[2], 0.6);
     }
 
     #[test]
@@ -504,9 +504,9 @@ mod tests {
         let color = Color::new(0.2, 0.4, 0.6);
         let tuple = <(f32, f32, f32)>::from(color);
 
-        assert_eq!(tuple.0, 0.2);
-        assert_eq!(tuple.1, 0.4);
-        assert_eq!(tuple.2, 0.6);
+        assert_approx_eq!(tuple.0, 0.2);
+        assert_approx_eq!(tuple.1, 0.4);
+        assert_approx_eq!(tuple.2, 0.6);
     }
 
     #[test]

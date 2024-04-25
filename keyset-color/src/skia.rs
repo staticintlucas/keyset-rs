@@ -19,6 +19,8 @@ impl From<SkiaColor> for Color {
 
 #[cfg(test)]
 mod tests {
+    use assert_approx_eq::assert_approx_eq;
+
     use super::*;
 
     #[test]
@@ -26,9 +28,9 @@ mod tests {
         let skia = SkiaColor::from_rgba(0.2, 0.4, 0.6, 1.0).unwrap();
         let color = Color::from(skia);
 
-        assert_eq!(color.0[0], 0.2);
-        assert_eq!(color.0[1], 0.4);
-        assert_eq!(color.0[2], 0.6);
+        assert_approx_eq!(color.0[0], 0.2);
+        assert_approx_eq!(color.0[1], 0.4);
+        assert_approx_eq!(color.0[2], 0.6);
     }
 
     #[test]
@@ -36,9 +38,9 @@ mod tests {
         let color = Color::new(0.2, 0.4, 0.6);
         let skia: SkiaColor = color.into();
 
-        assert_eq!(skia.red(), 0.2);
-        assert_eq!(skia.green(), 0.4);
-        assert_eq!(skia.blue(), 0.6);
-        assert_eq!(skia.alpha(), 1.0);
+        assert_approx_eq!(skia.red(), 0.2);
+        assert_approx_eq!(skia.green(), 0.4);
+        assert_approx_eq!(skia.blue(), 0.6);
+        assert_approx_eq!(skia.alpha(), 1.0);
     }
 }
