@@ -3,17 +3,17 @@
 mod error;
 
 use geom::{Point, Size};
-use kle_serial as kle;
+use kle_serial::f32 as kle;
 
 use crate::{Homing, Key, Legend, Shape};
 pub use error::{Error, Result};
 
 fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
-    const STEP_CAPS: [f64; 6] = [1.25, 1.0, 0.0, 0.0, 1.75, 1.0];
-    const ISO_VERT: [f64; 6] = [1.25, 2.0, -0.25, 0.0, 1.5, 1.0];
-    const ISO_HORIZ: [f64; 6] = [1.5, 1.0, 0.25, 0.0, 1.25, 2.0];
+    const STEP_CAPS: [f32; 6] = [1.25, 1.0, 0.0, 0.0, 1.75, 1.0];
+    const ISO_VERT: [f32; 6] = [1.25, 2.0, -0.25, 0.0, 1.5, 1.0];
+    const ISO_HORIZ: [f32; 6] = [1.5, 1.0, 0.25, 0.0, 1.25, 2.0];
 
-    fn is_close<const N: usize>(a: &[f64; N], b: &[f64; N]) -> bool {
+    fn is_close<const N: usize>(a: &[f32; N], b: &[f32; N]) -> bool {
         a.iter().zip(b).all(|(a, b)| (b - a).abs() < 1e-2)
     }
 
@@ -53,7 +53,7 @@ fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
     } else if is_close(&dims, &ISO_HORIZ) {
         Ok(Shape::IsoHorizontal)
     } else {
-        // TODO support all key shapes/sizes
+        // TODO arbitrary key shapes/sizes
         Err(Error::UnsupportedKeySize {
             w,
             h,

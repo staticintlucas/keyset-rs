@@ -6,17 +6,17 @@ pub enum Error {
     /// A key size not supported by `keyset`
     UnsupportedKeySize {
         /// The key's `w` value
-        w: f64,
+        w: f32,
         /// The key's `h` value
-        h: f64,
+        h: f32,
         /// The key's `x2` value
-        x2: f64,
+        x2: f32,
         /// The key's `y2` value
-        y2: f64,
+        y2: f32,
         /// The key's `w2` value
-        w2: f64,
+        w2: f32,
         /// The key's `h2` value
-        h2: f64,
+        h2: f32,
     },
 }
 

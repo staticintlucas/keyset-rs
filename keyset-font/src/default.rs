@@ -1,8 +1,9 @@
 use std::sync::OnceLock;
 
+use geom::Length;
 use ttf_parser::GlyphId;
 
-use crate::{Font, Glyph};
+use crate::{Font, FontUnit, Glyph};
 
 const FONT_TTF: &[u8] = include_bytes!(env!("DEFAULT_TTF"));
 static FONT: OnceLock<Font> = OnceLock::new();
@@ -15,27 +16,34 @@ pub fn notdef() -> Glyph {
     Glyph::parse_from(&font().face, GlyphId(0)).expect("default font is tested")
 }
 
-pub fn cap_height() -> f64 {
-    f64::from(
+pub fn cap_height() -> Length<FontUnit> {
+    Length::new(
         font()
             .face
             .capital_height()
-            .expect("default font is tested"),
+            .expect("default font is tested")
+            .into(),
     )
 }
 
-pub fn x_height() -> f64 {
-    f64::from(font().face.x_height().expect("default font is tested"))
+pub fn x_height() -> Length<FontUnit> {
+    Length::new(
+        font()
+            .face
+            .x_height()
+            .expect("default font is tested")
+            .into(),
+    )
 }
 
-pub fn line_height() -> f64 {
-    f64::from(font().face.ascender()) - f64::from(font().face.descender())
-        + f64::from(font().face.line_gap())
+pub fn line_height() -> Length<FontUnit> {
+    Length::new(font().face.ascender().into()) - Length::new(font().face.descender().into())
+        + Length::new(font().face.line_gap().into())
 }
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
+    use geom::{ApproxEq, Length};
 
     use super::*;
 
@@ -51,23 +59,22 @@ mod tests {
     fn default_notdef() {
         let notdef = notdef();
 
-        eprintln!("{:?}", notdef.path.elements());
-        assert_eq!(notdef.path.elements().len(), 26);
-        assert_approx_eq!(notdef.advance, 550.0);
+        assert_eq!(notdef.path.data.len(), 26);
+        assert!(notdef.advance.approx_eq(&Length::new(550.0)));
     }
 
     #[test]
     fn default_cap_height() {
-        assert_approx_eq!(cap_height(), 714.0);
+        assert!(cap_height().approx_eq(&Length::new(714.0)));
     }
 
     #[test]
     fn default_x_height() {
-        assert_approx_eq!(x_height(), 523.0);
+        assert!(x_height().approx_eq(&Length::new(523.0)));
     }
 
     #[test]
     fn default_line_height() {
-        assert_approx_eq!(line_height(), 1165.0);
+        assert!(line_height().approx_eq(&Length::new(1165.0)));
     }
 }

@@ -6,30 +6,28 @@ use std::collections::HashSet;
 use ::key::Key;
 use ::key::Shape as KeyShape;
 use color::Color;
-use geom::{BezPath, Point, Shape, Vec2};
+use geom::{Dot, Length, ToPath, Unit, Vector};
+use geom::{Path, Point};
 
 use crate::Options;
-
-// TODO move this somewhere?
-const ARC_TOL: f64 = 1.; // Tolerance for converting Arc->Bézier with Kurbo
 
 #[derive(Debug, Clone, Copy)]
 pub struct Outline {
     pub color: Color,
-    pub width: f64,
+    pub width: Length<Dot>,
 }
 
 #[derive(Debug, Clone)]
-pub struct Path {
-    pub data: BezPath,
+pub struct KeyPath {
+    pub data: Path<Dot>,
     pub outline: Option<Outline>,
     pub fill: Option<Color>,
 }
 
 #[derive(Debug, Clone)]
 pub struct KeyDrawing {
-    pub origin: Point,
-    pub paths: Vec<Path>,
+    pub origin: Point<Unit>,
+    pub paths: Vec<KeyPath>,
 }
 
 impl KeyDrawing {
@@ -44,21 +42,23 @@ impl KeyDrawing {
         let top_rect = options.profile.top_with_rect(key.shape.inner_rect()).rect();
 
         let margin = options.show_margin.then(|| {
-            // TODO get unique margins, not size_idx's. Currently impossible because Insets: !Hash
+            // TODO get unique margins, not size_idx's. Currently impossible because SideOffsets: !Hash
             let sizes: HashSet<_> = key.legends.iter().flatten().map(|l| l.size_idx).collect();
-            let path = sizes
+            let paths: Vec<_> = sizes
                 .into_iter()
-                .map(|s| (top_rect + options.profile.text_margin.get(s)).into_path(ARC_TOL))
-                .fold(BezPath::new(), |mut p, r| {
-                    p.extend(r);
-                    p
-                });
+                .map(|s| {
+                    top_rect
+                        .inner_box(options.profile.text_margin.get(s))
+                        .to_path()
+                })
+                .collect();
+            let path = Path::from_slice(&paths);
 
-            Path {
+            KeyPath {
                 data: path,
                 outline: Some(Outline {
                     color: Color::new(1.0, 0.0, 0.0),
-                    width: 5.,
+                    width: Length::new(5.0),
                 }),
                 fill: None,
             }
@@ -67,7 +67,7 @@ impl KeyDrawing {
         let legends = key.legends.iter().enumerate().filter_map(|(i, l)| {
             l.as_ref().map(|legend| {
                 #[allow(clippy::cast_precision_loss)]
-                let align = Vec2::new(((i % 3) as f64) / 2.0, ((i / 3) as f64) / 2.0);
+                let align = Vector::new(((i % 3) as f32) / 2.0, ((i / 3) as f32) / 2.0);
                 legend::draw(legend, options.font, options.profile, top_rect, align)
             })
         });
@@ -93,6 +93,7 @@ impl KeyDrawing {
 #[cfg(test)]
 mod tests {
     use assert_approx_eq::assert_approx_eq;
+    use geom::Size;
 
     use super::*;
 
@@ -132,10 +133,13 @@ mod tests {
 
         assert_eq!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
-        let bounding_box = drawing.paths[2].data.bounding_box();
+        let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
-        let margin_rect = options.profile.top_with_size((1.5, 1.0)).rect()
-            + options.profile.text_margin.get(font_size);
+        let margin_rect = options
+            .profile
+            .top_with_size(Size::new(1.5, 1.0))
+            .rect()
+            .inner_box(options.profile.text_margin.get(font_size));
         assert_approx_eq!(bounding_box.size().width, margin_rect.size().width);
         assert_approx_eq!(bounding_box.size().height, margin_rect.size().height);
 
@@ -153,10 +157,13 @@ mod tests {
 
         assert_eq!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
-        let bounding_box = drawing.paths[2].data.bounding_box();
+        let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
-        let margin_rect = options.profile.top_with_size((1.25, 2.0)).rect()
-            + options.profile.text_margin.get(font_size);
+        let margin_rect = options
+            .profile
+            .top_with_size(Size::new(1.25, 2.0))
+            .rect()
+            .inner_box(options.profile.text_margin.get(font_size));
         assert_approx_eq!(bounding_box.size().width, margin_rect.size().width);
         assert_approx_eq!(bounding_box.size().height, margin_rect.size().height);
     }

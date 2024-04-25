@@ -23,82 +23,65 @@ use std::fmt::Debug;
 use std::sync::OnceLock;
 
 use dashmap::DashMap;
-use geom::{BezPath, Rect, Shape};
+use geom::{Angle, Length, Path, PathBuilder, Point};
 use log::warn;
 use ttf_parser::GlyphId;
 
 pub use self::error::{Error, Result};
 use face::Face;
 
+/// Unit within a font
+#[derive(Debug, Clone, Copy)]
+pub struct FontUnit;
+
 /// A glyph loaded from a [`Font`]
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct Glyph {
     /// The outline of the glyph
-    pub path: BezPath,
-    /// The bounds of the glyph's outline. The value of `glyph.bounds` is equivalent to the result
-    /// of `glyph.path.bounding_box()`
-    pub bounds: Rect,
+    pub path: Path<FontUnit>,
     /// The glyphs horizontal advance
-    pub advance: f64,
+    pub advance: Length<FontUnit>,
 }
 
 impl Glyph {
     fn parse_from(face: &Face, gid: GlyphId) -> Option<Self> {
-        struct BezPathBuilder(BezPath);
+        struct PathBuilderWrapper(PathBuilder<FontUnit>);
 
         // GRCOV_EXCL_START // TODO these are pretty trivial but we could cover them in tests
-        impl ttf_parser::OutlineBuilder for BezPathBuilder {
+        impl ttf_parser::OutlineBuilder for PathBuilderWrapper {
             fn move_to(&mut self, x: f32, y: f32) {
-                // Y axis is flipped in fonts compared to SVGs
-                self.0.move_to((x.into(), (-y).into()));
+                self.0.abs_move(Point::new(x, y));
             }
 
             fn line_to(&mut self, x: f32, y: f32) {
-                // Y axis is flipped in fonts compared to SVGs
-                self.0.line_to((x.into(), (-y).into()));
+                self.0.abs_line(Point::new(x, y));
             }
 
             fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
-                // Y axis is flipped in fonts compared to SVGs
                 self.0
-                    .quad_to((x1.into(), (-y1).into()), (x.into(), (-y).into()));
+                    .abs_quadratic_bezier(Point::new(x1, y1), Point::new(x, y));
             }
 
             fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
-                // Y axis is flipped in fonts compared to SVGs
-                self.0.curve_to(
-                    (x1.into(), (-y1).into()),
-                    (x2.into(), (-y2).into()),
-                    (x.into(), (-y).into()),
-                );
+                self.0
+                    .abs_cubic_bezier(Point::new(x1, y1), Point::new(x2, y2), Point::new(x, y));
             }
 
             fn close(&mut self) {
-                self.0.close_path();
+                self.0.close();
             }
         }
         // GRCOV_EXCL_STOP
 
-        let mut builder = BezPathBuilder(BezPath::new());
+        let mut builder = PathBuilderWrapper(Path::builder());
 
-        let bounds = face.outline_glyph(gid, &mut builder)?;
-        let path = builder.0;
+        let _ = face.outline_glyph(gid, &mut builder);
+        let path = builder.0.build();
 
-        let bounds = Rect::new(
-            f64::from(bounds.x_min),
-            f64::from(bounds.y_min),
-            f64::from(bounds.x_max),
-            f64::from(bounds.y_max),
-        );
+        let advance = Length::new(face.glyph_hor_advance(gid)?.into());
 
-        let advance = f64::from(face.glyph_hor_advance(gid)?);
-
-        Some(Self {
-            path,
-            bounds,
-            advance,
-        })
+        Some(Self { path, advance })
     }
 }
 
@@ -108,11 +91,11 @@ pub struct Font {
     face: Face,
     family: OnceLock<String>,
     name: OnceLock<String>,
-    cap_height: OnceLock<f64>,
-    x_height: OnceLock<f64>,
+    cap_height: OnceLock<Length<FontUnit>>,
+    x_height: OnceLock<Length<FontUnit>>,
     notdef: OnceLock<Glyph>,
     glyphs: DashMap<char, Option<Glyph>>,
-    kerning: DashMap<(char, char), f64>,
+    kerning: DashMap<(char, char), Length<FontUnit>>,
 }
 
 impl Debug for Font {
@@ -190,23 +173,24 @@ impl Font {
     }
 
     /// The number font units per EM
-    pub fn em_size(&self) -> f64 {
-        f64::from(self.face.units_per_em())
+    pub fn em_size(&self) -> Length<FontUnit> {
+        Length::new(self.face.units_per_em().into())
     }
 
     /// The capital height in font units
     ///
     /// Measures the height of the uppercase `'M'` if it is not set. In case the font does not contain
     /// an uppercase `'M'`, a default value is returned
-    pub fn cap_height(&self) -> f64 {
+    pub fn cap_height(&self) -> Length<FontUnit> {
         *self.cap_height.get_or_init(|| {
             self.face
                 .capital_height()
-                .map(f64::from)
-                .or_else(|| self.glyph('M').map(|g| g.path.bounding_box().height()))
-                .unwrap_or_else(|| {
-                    default::cap_height() / default::line_height() * self.line_height()
-                })
+                .map(Into::into)
+                .or_else(|| self.glyph('M').map(|g| g.path.bounds.height()))
+                .map_or_else(
+                    || default::cap_height() * (self.line_height() / default::line_height()),
+                    Length::new,
+                )
         })
     }
 
@@ -214,51 +198,49 @@ impl Font {
     ///
     /// Measures the height of the lowercase `'x'` if it is not set. In case the font does not contain
     /// a lowercase `'x'`, a default value is returned
-    pub fn x_height(&self) -> f64 {
+    pub fn x_height(&self) -> Length<FontUnit> {
         *self.x_height.get_or_init(|| {
             self.face
                 .x_height()
-                .map(f64::from)
-                .or_else(|| self.glyph('x').map(|g| g.path.bounding_box().height()))
-                .unwrap_or_else(|| {
-                    default::x_height() / default::line_height() * self.line_height()
-                })
+                .map(Into::into)
+                .or_else(|| self.glyph('x').map(|g| g.path.bounds.height()))
+                .map_or_else(
+                    || default::x_height() * (self.line_height() / default::line_height()),
+                    Length::new,
+                )
         })
     }
 
     /// The font's ascender in font units
-    pub fn ascender(&self) -> f64 {
-        f64::from(self.face.ascender())
+    pub fn ascender(&self) -> Length<FontUnit> {
+        Length::new(self.face.ascender().into())
     }
 
     /// The font's descender in font units
-    pub fn descender(&self) -> f64 {
-        -f64::from(self.face.descender())
+    pub fn descender(&self) -> Length<FontUnit> {
+        Length::new((-self.face.descender()).into())
     }
 
     /// The font's line gap in font units
-    pub fn line_gap(&self) -> f64 {
-        f64::from(self.face.line_gap())
+    pub fn line_gap(&self) -> Length<FontUnit> {
+        Length::new(self.face.line_gap().into())
     }
 
     /// The font's line height in font units
     ///
     /// This is equal to `self.ascender() + self.descender() + self.line_gap()`
-    pub fn line_height(&self) -> f64 {
+    pub fn line_height(&self) -> Length<FontUnit> {
         self.ascender() + self.descender() + self.line_gap()
     }
 
-    /// The font's slope angle in clockwise degrees if specified
-    pub fn slope(&self) -> Option<f64> {
-        self.face
-            .italic_angle()
-            .map(f64::from)
-            .map(std::ops::Neg::neg) // Negate so forward = positive
+    /// The font's slope angle, anticlockwise being positive
+    pub fn slope(&self) -> Option<Angle> {
+        self.face.italic_angle().map(Angle::degrees) // Negate so forward = positive
     }
 
     /// The number of glyph outlines in the font
     pub fn num_glyphs(&self) -> usize {
-        usize::from(self.face.number_of_glyphs())
+        self.face.number_of_glyphs().into()
     }
 
     /// Returns the flyph for a given character if present in the font
@@ -294,14 +276,14 @@ impl Font {
     /// Returns the kerning between two characters' glyphs, or 0 if no kerning is specified in the
     /// font
     #[allow(clippy::missing_panics_doc)] // Only unwrapping a mutex
-    pub fn kerning(&self, left: char, right: char) -> f64 {
+    pub fn kerning(&self, left: char, right: char) -> Length<FontUnit> {
         *self.kerning.entry((left, right)).or_insert_with(|| {
             if let (Some(lhs), Some(rhs)) =
                 (self.face.glyph_index(left), self.face.glyph_index(right))
             {
-                self.face.glyphs_kerning(lhs, rhs).map_or(0.0, f64::from)
+                Length::new(self.face.glyphs_kerning(lhs, rhs).map_or(0.0, Into::into))
             } else {
-                0.0
+                Length::new(0.0)
             }
         })
     }
@@ -311,6 +293,7 @@ impl Font {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
+    use geom::ApproxEq;
 
     use super::*;
 
@@ -320,14 +303,14 @@ mod tests {
         let face = Face::from_ttf(data).unwrap();
 
         let a = Glyph::parse_from(&face, GlyphId(1)).unwrap();
-        assert_approx_eq!(a.advance, 540.0);
-        assert_approx_eq!(a.bounds.width(), 535.0);
-        assert_approx_eq!(a.bounds.height(), 656.0);
+        assert!(a.advance.approx_eq(&Length::new(540.0)));
+        assert_approx_eq!(a.path.bounds.width(), 535.0);
+        assert_approx_eq!(a.path.bounds.height(), 656.0);
 
         let v = Glyph::parse_from(&face, GlyphId(2)).unwrap();
-        assert_approx_eq!(v.advance, 540.0);
-        assert_approx_eq!(v.bounds.width(), 535.0);
-        assert_approx_eq!(v.bounds.height(), 656.0);
+        assert!(v.advance.approx_eq(&Length::new(540.0)));
+        assert_approx_eq!(v.path.bounds.width(), 535.0);
+        assert_approx_eq!(v.path.bounds.height(), 656.0);
     }
 
     #[test]
@@ -373,13 +356,13 @@ mod tests {
 
         assert_eq!(font.family(), "demo");
         assert_eq!(font.name(), "demo regular");
-        assert_approx_eq!(font.em_size(), 1000.0);
-        assert_approx_eq!(font.cap_height(), 650.0);
-        assert_approx_eq!(font.x_height(), 450.0);
-        assert_approx_eq!(font.ascender(), 1024.0);
-        assert_approx_eq!(font.descender(), 400.0);
-        assert_approx_eq!(font.line_gap(), 0.0);
-        assert_approx_eq!(font.line_height(), 1424.0);
+        assert!(font.em_size().approx_eq(&Length::new(1000.0)));
+        assert!(font.cap_height().approx_eq(&Length::new(650.0)));
+        assert!(font.x_height().approx_eq(&Length::new(450.0)));
+        assert!(font.ascender().approx_eq(&Length::new(1024.0)));
+        assert!(font.descender().approx_eq(&Length::new(400.0)));
+        assert!(font.line_gap().approx_eq(&Length::new(0.0)));
+        assert!(font.line_height().approx_eq(&Length::new(1424.0)));
         assert_eq!(font.slope(), None);
         assert_eq!(font.num_glyphs(), 3);
 
@@ -389,13 +372,17 @@ mod tests {
         let line_scaling = font.line_height() / default::line_height();
         assert_eq!(font.family(), "unknown");
         assert_eq!(font.name(), "unknown");
-        assert_approx_eq!(font.em_size(), 1000.0);
-        assert_approx_eq!(font.cap_height(), default::cap_height() * line_scaling);
-        assert_approx_eq!(font.x_height(), default::x_height() * line_scaling);
-        assert_approx_eq!(font.ascender(), 600.0);
-        assert_approx_eq!(font.descender(), 400.0);
-        assert_approx_eq!(font.line_gap(), 200.0);
-        assert_approx_eq!(font.line_height(), 1200.0);
+        assert!(font.em_size().approx_eq(&Length::new(1000.0)));
+        assert!(font
+            .cap_height()
+            .approx_eq(&(default::cap_height() * line_scaling)));
+        assert!(font
+            .x_height()
+            .approx_eq(&(default::x_height() * line_scaling)));
+        assert!(font.ascender().approx_eq(&Length::new(600.0)));
+        assert!(font.descender().approx_eq(&Length::new(400.0)));
+        assert!(font.line_gap().approx_eq(&Length::new(200.0)));
+        assert!(font.line_height().approx_eq(&Length::new(1200.0)));
         assert_eq!(font.slope(), None);
         assert_eq!(font.num_glyphs(), 1); // Just .notdef
     }
@@ -414,8 +401,23 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        assert_ne!(font.glyph_or_default('A').path, font.notdef().path);
-        assert_eq!(font.glyph_or_default('B').path, font.notdef().path);
+        let a = font.glyph_or_default('A').path;
+        let b = font.glyph_or_default('B').path;
+        let notdef = font.notdef().path;
+
+        let a_eq = a
+            .data
+            .into_iter()
+            .zip(notdef.data.iter())
+            .all(|(a, n)| a.approx_eq(n));
+        let b_eq = b
+            .data
+            .into_iter()
+            .zip(notdef.data.iter())
+            .all(|(b, n)| b.approx_eq(n));
+
+        assert!(!a_eq);
+        assert!(b_eq);
     }
 
     #[test]
@@ -423,12 +425,12 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        assert_eq!(font.notdef().path.elements().len(), 12);
+        assert_eq!(font.notdef().path.data.len(), 12);
 
         let data = std::fs::read(env!("NULL_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        assert_eq!(font.notdef().path.elements().len(), 26);
+        assert_eq!(font.notdef().path.data.len(), 26);
     }
 
     #[test]
@@ -436,7 +438,7 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        assert_approx_eq!(font.kerning('A', 'V'), -70.0);
-        assert_approx_eq!(font.kerning('A', 'B'), 0.0);
+        assert!(font.kerning('A', 'V').approx_eq(&Length::new(-70.0)));
+        assert!(font.kerning('A', 'B').approx_eq(&Length::new(0.0)));
     }
 }

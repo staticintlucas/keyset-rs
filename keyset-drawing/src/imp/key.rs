@@ -1,24 +1,28 @@
-use std::f64::consts::{FRAC_PI_2, PI};
-
-use geom::{Arc, BezPath, Circle, Point, Rect, RoundRect, Shape};
+use geom::{
+    Angle, Circle, Dot, ExtRect, ExtVec, Length, Path, Point, Rect, RoundRect, Size, ToPath,
+    Vector, DOT_PER_MM, DOT_PER_UNIT,
+};
 use profile::Profile;
 
 use crate::Options;
 
-use super::{Outline, Path, ARC_TOL};
+use super::{KeyPath, Outline};
 
-pub fn top(key: &key::Key, options: &Options) -> Path {
+pub fn top(key: &key::Key, options: &Options) -> KeyPath {
     let path = match key.shape {
-        key::Shape::None(..) => BezPath::new(),
+        key::Shape::None(..) => Path::empty(),
         key::Shape::Normal(size) | key::Shape::Space(size) => {
-            options.profile.top_with_size(size).to_path(ARC_TOL)
+            options.profile.top_with_size(size).to_path()
         }
-        key::Shape::Homing(..) => options.profile.top_with_size((1.0, 1.0)).to_path(ARC_TOL),
-        key::Shape::SteppedCaps => options.profile.top_with_size((1.25, 1.0)).to_path(ARC_TOL),
+        key::Shape::Homing(..) => options.profile.top_with_size(Size::new(1.0, 1.0)).to_path(),
+        key::Shape::SteppedCaps => options
+            .profile
+            .top_with_size(Size::new(1.25, 1.0))
+            .to_path(),
         key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_top_path(options.profile),
     };
 
-    Path {
+    KeyPath {
         data: path,
         fill: Some(key.color),
         outline: Some(Outline {
@@ -28,24 +32,24 @@ pub fn top(key: &key::Key, options: &Options) -> Path {
     }
 }
 
-pub fn bottom(key: &key::Key, options: &Options) -> Path {
+pub fn bottom(key: &key::Key, options: &Options) -> KeyPath {
     let path = match key.shape {
-        key::Shape::None(..) => BezPath::new(),
+        key::Shape::None(..) => Path::empty(),
         key::Shape::Normal(size) | key::Shape::Space(size) => {
-            options.profile.bottom_with_size(size).to_path(ARC_TOL)
+            options.profile.bottom_with_size(size).to_path()
         }
         key::Shape::Homing(..) => options
             .profile
-            .bottom_with_size((1.0, 1.0))
-            .to_path(ARC_TOL),
+            .bottom_with_size(Size::new(1.0, 1.0))
+            .to_path(),
         key::Shape::SteppedCaps => options
             .profile
-            .bottom_with_size((1.75, 1.))
-            .to_path(ARC_TOL),
+            .bottom_with_size(Size::new(1.75, 1.0))
+            .to_path(),
         key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_bottom_path(options.profile),
     };
 
-    Path {
+    KeyPath {
         data: path,
         fill: Some(key.color),
         outline: Some(Outline {
@@ -55,7 +59,7 @@ pub fn bottom(key: &key::Key, options: &Options) -> Path {
     }
 }
 
-pub fn homing(key: &key::Key, options: &Options) -> Option<Path> {
+pub fn homing(key: &key::Key, options: &Options) -> Option<KeyPath> {
     let profile = &options.profile;
 
     let key::Shape::Homing(homing) = key.shape else {
@@ -70,22 +74,22 @@ pub fn homing(key: &key::Key, options: &Options) -> Option<Path> {
     let bez_path = match homing {
         key::Homing::Scoop => None,
         key::Homing::Bar => Some(
-            Rect::from_center_size(
-                center + (0., profile.homing.bar.y_offset),
-                profile.homing.bar.size,
+            Rect::from_center_and_size(
+                center + Size::new(0.0, (profile.homing.bar.y_offset * DOT_PER_MM).get()),
+                profile.homing.bar.size * DOT_PER_MM,
             )
-            .into_path(ARC_TOL),
+            .to_path(),
         ),
         key::Homing::Bump => Some(
-            Circle::new(
-                center + (0., profile.homing.bump.y_offset),
-                profile.homing.bump.diameter / 2.,
+            Circle::from_center_and_diameter(
+                center + Size::new(0.0, (profile.homing.bump.y_offset * DOT_PER_MM).get()),
+                profile.homing.bump.diameter * DOT_PER_MM,
             )
-            .into_path(ARC_TOL),
+            .to_path(),
         ),
     };
 
-    bez_path.map(|path| Path {
+    bez_path.map(|path| KeyPath {
         data: path,
         fill: Some(key.color),
         outline: Some(Outline {
@@ -95,22 +99,23 @@ pub fn homing(key: &key::Key, options: &Options) -> Option<Path> {
     })
 }
 
-pub fn step(key: &key::Key, options: &Options) -> Option<Path> {
+pub fn step(key: &key::Key, options: &Options) -> Option<KeyPath> {
     matches!(key.shape, key::Shape::SteppedCaps).then(|| {
         let profile = &options.profile;
 
         // Take average dimensions of top and bottom
         let rect = {
-            let top = profile.top_with_size((1., 1.));
-            let btm = profile.bottom_with_size((1., 1.));
-            RoundRect::from_origin_size(
-                ((top.origin().to_vec2() + btm.origin().to_vec2()) / 2.).to_point(),
-                (top.size() + btm.size()) / 2.,
-                (top.radii() + btm.radii()) / 2.,
+            let frac = 0.5; // TODO make this configurable?
+            let top = profile.top_with_size(Size::new(1.0, 1.0));
+            let btm = profile.bottom_with_size(Size::new(1.0, 1.0));
+            RoundRect::new(
+                Point::lerp(top.min, btm.min, frac),
+                Point::lerp(top.max, btm.max, frac),
+                Length::lerp(top.radius, btm.radius, frac),
             )
         };
 
-        Path {
+        KeyPath {
             data: step_path(rect),
             fill: Some(key.color),
             outline: Some(Outline {
@@ -121,262 +126,99 @@ pub fn step(key: &key::Key, options: &Options) -> Option<Path> {
     })
 }
 
-fn iso_bottom_path(profile: &Profile) -> BezPath {
-    let rect150 = profile.bottom_with_size((1.5, 1.)).rect();
-    let (rect125, radii) = {
-        let rect = profile.bottom_with_size((1.25, 2.));
-        (
-            rect.with_origin(rect.origin() + (250., 0.)).rect(),
-            rect.radii(),
-        )
-    };
+fn iso_bottom_path(profile: &Profile) -> Path<Dot> {
+    let rect150 = profile.bottom_with_size(Size::new(1.5, 1.0)).rect();
+    let rect125 = profile
+        .bottom_with_rect(Rect::new(Point::new(0.25, 0.0), Point::new(1.5, 2.0)))
+        .rect();
+    let radii = Vector::splat(profile.bottom.radius.get());
 
-    // TODO ensure Arc is transformed to single PathEl::CurveTo. Then we can avoid using
-    // extend and use [PathEl].into_iter().collect() and avoid reallocations.
-    let mut path = BezPath::new();
-    path.move_to(rect150.origin() + (0., radii.y));
-    path.extend(
-        Arc::new(
-            rect150.origin() + (radii.x, radii.y),
-            radii,
-            PI,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect150.origin() + (rect150.width() - radii.x, 0.));
-    path.extend(
-        Arc::new(
-            rect150.origin() + (rect150.width() - radii.x, radii.y),
-            radii,
-            -FRAC_PI_2,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect125.origin() + (rect125.width(), rect125.height() - radii.y));
-    path.extend(
-        Arc::new(
-            rect125.origin() + (rect125.width() - radii.x, rect125.height() - radii.y),
-            radii,
-            0.,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect125.origin() + (radii.x, rect125.height()));
-    path.extend(
-        Arc::new(
-            rect125.origin() + (radii.x, rect125.height() - radii.y),
-            radii,
-            FRAC_PI_2,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(
-        Point::new(rect125.origin().x, rect150.origin().y) + (0., rect150.height() + radii.y),
-    );
-    path.extend(
-        Arc::new(
-            Point::new(rect125.origin().x, rect150.origin().y)
-                + (-radii.x, rect150.height() + radii.y),
-            radii,
-            0.,
-            -FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect150.origin() + (radii.x, rect150.height()));
-    path.extend(
-        Arc::new(
-            rect150.origin() + (radii.x, rect150.height() - radii.y),
-            radii,
-            FRAC_PI_2,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect150.origin() + (0., radii.y));
-    path.close_path();
+    let mut path = Path::builder();
+    path.abs_move(rect150.min + Size::new(0.0, radii.x));
+    path.rel_arc(radii, Angle::zero(), false, false, radii.neg_y());
+    path.abs_horiz_line(Length::new(rect150.max.x - radii.x));
+    path.rel_arc(radii, Angle::zero(), false, false, radii);
+    path.abs_vert_line(Length::new(rect125.max.y - radii.y));
+    path.rel_arc(radii, Angle::zero(), false, false, radii.neg_x());
+    path.abs_horiz_line(Length::new(rect125.min.x + radii.x));
+    path.rel_arc(radii, Angle::zero(), false, false, -radii);
+    path.abs_vert_line(Length::new(rect150.max.y + radii.y));
+    path.rel_arc(radii, Angle::zero(), false, false, -radii);
+    path.abs_horiz_line(Length::new(rect150.min.x + radii.x));
+    path.rel_arc(radii, Angle::zero(), false, false, -radii);
+    path.close();
 
-    path
+    path.build()
 }
 
-fn iso_top_path(profile: &Profile) -> BezPath {
-    let rect150 = profile.top_with_size((1.5, 1.)).rect();
-    let (rect125, radii) = {
-        let rect = profile.top_with_size((1.25, 2.));
-        (
-            rect.with_origin(rect.origin() + (250., 0.)).rect(),
-            rect.radii(),
-        )
-    };
+fn iso_top_path(profile: &Profile) -> Path<Dot> {
+    let rect150 = profile.top_with_size(Size::new(1.5, 1.0)).rect();
+    let rect125 = profile
+        .top_with_rect(Rect::new(Point::new(0.25, 0.0), Point::new(1.5, 2.0)))
+        .rect();
+    let radii = Vector::splat(profile.top.radius.get());
 
-    // TODO ensure Arc is transformed to single PathEl::CurveTo. Then we can avoid using
-    // extend and use [PathEl].into_iter().collect() and avoid reallocations.
-    let mut path = BezPath::new();
-    path.move_to(rect150.origin() + (0., radii.y));
-    path.extend(
-        Arc::new(
-            rect150.origin() + (radii.x, radii.y),
-            radii,
-            PI,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect150.origin() + (rect150.width() - radii.x, 0.));
-    path.extend(
-        Arc::new(
-            rect150.origin() + (rect150.width() - radii.x, radii.y),
-            radii,
-            -FRAC_PI_2,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect125.origin() + (rect125.width(), rect125.height() - radii.y));
-    path.extend(
-        Arc::new(
-            rect125.origin() + (rect125.width() - radii.x, rect125.height() - radii.y),
-            radii,
-            0.,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect125.origin() + (radii.x, rect125.height()));
-    path.extend(
-        Arc::new(
-            rect125.origin() + (radii.x, rect125.height() - radii.y),
-            radii,
-            FRAC_PI_2,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(
-        Point::new(rect125.origin().x, rect150.origin().y) + (0., rect150.height() + radii.y),
-    );
-    path.extend(
-        Arc::new(
-            Point::new(rect125.origin().x, rect150.origin().y)
-                + (-radii.x, rect150.height() + radii.y),
-            radii,
-            0.,
-            -FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect150.origin() + (radii.x, rect150.height()));
-    path.extend(
-        Arc::new(
-            rect150.origin() + (radii.x, rect150.height() - radii.y),
-            radii,
-            FRAC_PI_2,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect150.origin() + (0., radii.y));
-    path.close_path();
+    let mut path = Path::builder();
+    path.abs_move(rect150.min + Size::new(0.0, radii.x));
+    path.rel_arc(radii, Angle::zero(), false, true, radii.neg_y());
+    path.abs_horiz_line(Length::new(rect150.max.x - radii.x));
+    path.rel_arc(radii, Angle::zero(), false, true, radii);
+    path.abs_vert_line(Length::new(rect125.max.y - radii.y));
+    path.rel_arc(radii, Angle::zero(), false, true, radii.neg_x());
+    path.abs_horiz_line(Length::new(rect125.min.x + radii.x));
+    path.rel_arc(radii, Angle::zero(), false, true, -radii);
+    path.abs_vert_line(Length::new(rect150.max.y + radii.y));
+    path.rel_arc(radii, Angle::zero(), false, false, -radii);
+    path.abs_horiz_line(Length::new(rect150.min.x + radii.x));
+    path.rel_arc(radii, Angle::zero(), false, true, -radii);
+    path.close();
 
-    path
+    path.build()
 }
 
-fn step_path(rect: RoundRect) -> BezPath {
-    let rect = rect
-        .with_origin((1250. - rect.origin().x, rect.origin().y))
-        .with_size((500., rect.height()));
-    let radii = rect.radii();
+fn step_path(rect: RoundRect<Dot>) -> Path<Dot> {
+    let radii = Vector::splat(rect.radius.get());
+    let rect = Rect::from_origin_and_size(
+        Point::new(1.25 * DOT_PER_UNIT.get() - rect.min.x, rect.min.y),
+        Size::new(0.5 * DOT_PER_UNIT.get(), rect.height()),
+    );
 
-    let mut path = BezPath::new();
-    path.move_to(rect.origin() + (0., radii.y));
-    path.extend(
-        Arc::new(
-            rect.origin() + (-radii.x, radii.y),
-            radii,
-            0.,
-            -FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect.origin() + (rect.width() - radii.x, 0.));
-    path.extend(
-        Arc::new(
-            rect.origin() + (rect.width() - radii.x, radii.y),
-            radii,
-            -FRAC_PI_2,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect.origin() + (rect.width(), rect.height() - radii.y));
-    path.extend(
-        Arc::new(
-            rect.origin() + (rect.width() - radii.x, rect.height() - radii.y),
-            radii,
-            0.,
-            FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect.origin() + (-radii.x, rect.height()));
-    path.extend(
-        Arc::new(
-            rect.origin() + (-radii.x, rect.height() - radii.y),
-            radii,
-            FRAC_PI_2,
-            -FRAC_PI_2,
-            0.,
-        )
-        .append_iter(ARC_TOL),
-    );
-    path.line_to(rect.origin() + (0., radii.y));
-    path.close_path();
+    let mut path = Path::builder();
+    path.abs_move(rect.min + Size::new(0.0, radii.y));
+    path.rel_arc(radii, Angle::zero(), false, false, -radii);
+    path.abs_horiz_line(Length::new(rect.max.x - radii.x));
+    path.rel_arc(radii, Angle::zero(), false, false, radii);
+    path.abs_vert_line(Length::new(rect.max.y - radii.y));
+    path.rel_arc(radii, Angle::zero(), false, false, radii.neg_x());
+    path.abs_horiz_line(Length::new(rect.min.x - radii.x));
+    path.rel_arc(radii, Angle::zero(), false, false, radii.neg_y());
+    path.close();
 
-    path
+    path.build()
 }
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
+    use geom::ApproxEq;
 
     use super::*;
 
     #[test]
     fn test_top() {
+        let eps = Point::splat(1e-5);
         let options = Options::default();
 
         // Regular 1u key
         let key = key::Key::example();
         let path = top(&key, &options);
-        let bounds = path.data.bounding_box();
+        let bounds = path.data.bounds;
 
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        let top_rect = options.profile.top_with_size((1., 1.));
-        assert_approx_eq!(bounds.origin().x, top_rect.origin().x);
-        assert_approx_eq!(bounds.origin().y, top_rect.origin().y);
-        assert_approx_eq!(bounds.size().width, top_rect.size().width);
-        assert_approx_eq!(bounds.size().height, top_rect.size().height);
+        let top_rect = options.profile.top_with_size(Size::new(1.0, 1.0));
+        assert!(bounds.min.approx_eq_eps(&top_rect.min, &eps));
+        assert!(bounds.max.approx_eq_eps(&top_rect.max, &eps));
 
         // Stepped caps
         let key = {
@@ -385,12 +227,10 @@ mod tests {
             key
         };
         let path = top(&key, &options);
-        let bounds = path.data.bounding_box();
-        let top_rect = options.profile.top_with_size((1.25, 1.));
-        assert_approx_eq!(bounds.origin().x, top_rect.origin().x);
-        assert_approx_eq!(bounds.origin().y, top_rect.origin().y);
-        assert_approx_eq!(bounds.size().width, top_rect.size().width);
-        assert_approx_eq!(bounds.size().height, top_rect.size().height);
+        let bounds = path.data.bounds;
+        let top_rect = options.profile.top_with_size(Size::new(1.25, 1.0));
+        assert!(bounds.min.approx_eq_eps(&top_rect.min, &eps));
+        assert!(bounds.max.approx_eq_eps(&top_rect.max, &eps));
 
         // ISO enter
         let key = {
@@ -399,30 +239,27 @@ mod tests {
             key
         };
         let path = top(&key, &options);
-        let bounds = path.data.bounding_box();
-        let top_rect = options.profile.top_with_size((1.5, 2.));
-        assert_approx_eq!(bounds.origin().x, top_rect.origin().x);
-        assert_approx_eq!(bounds.origin().y, top_rect.origin().y);
-        assert_approx_eq!(bounds.size().width, top_rect.size().width);
-        assert_approx_eq!(bounds.size().height, top_rect.size().height);
+        let bounds = path.data.bounds;
+        let top_rect = options.profile.top_with_size(Size::new(1.5, 2.0));
+        assert!(bounds.min.approx_eq_eps(&top_rect.min, &eps));
+        assert!(bounds.max.approx_eq_eps(&top_rect.max, &eps));
     }
 
     #[test]
     fn test_bottom() {
+        let eps = Point::splat(1e-5);
         let key = key::Key::example();
         let options = Options::default();
 
         let path = bottom(&key, &options);
-        let bounds = path.data.bounding_box();
+        let bounds = path.data.bounds;
 
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        let bottom_rect = options.profile.bottom_with_size((1., 1.));
-        assert_approx_eq!(bounds.origin().x, bottom_rect.origin().x);
-        assert_approx_eq!(bounds.origin().y, bottom_rect.origin().y);
-        assert_approx_eq!(bounds.size().width, bottom_rect.size().width);
-        assert_approx_eq!(bounds.size().height, bottom_rect.size().height);
+        let bottom_rect = options.profile.bottom_with_size(Size::new(1.0, 1.0));
+        assert!(bounds.min.approx_eq_eps(&bottom_rect.min, &eps));
+        assert!(bounds.max.approx_eq_eps(&bottom_rect.max, &eps));
 
         // Stepped caps
         let key = {
@@ -431,12 +268,10 @@ mod tests {
             key
         };
         let path = bottom(&key, &options);
-        let bounds = path.data.bounding_box();
-        let bottom_rect = options.profile.bottom_with_size((1.75, 1.));
-        assert_approx_eq!(bounds.origin().x, bottom_rect.origin().x);
-        assert_approx_eq!(bounds.origin().y, bottom_rect.origin().y);
-        assert_approx_eq!(bounds.size().width, bottom_rect.size().width);
-        assert_approx_eq!(bounds.size().height, bottom_rect.size().height);
+        let bounds = path.data.bounds;
+        let bottom_rect = options.profile.bottom_with_size(Size::new(1.75, 1.0));
+        assert!(bounds.min.approx_eq_eps(&bottom_rect.min, &eps));
+        assert!(bounds.max.approx_eq_eps(&bottom_rect.max, &eps));
 
         // ISO enter
         let key = {
@@ -445,16 +280,15 @@ mod tests {
             key
         };
         let path = bottom(&key, &options);
-        let bounds = path.data.bounding_box();
-        let bottom_rect = options.profile.bottom_with_size((1.5, 2.));
-        assert_approx_eq!(bounds.origin().x, bottom_rect.origin().x);
-        assert_approx_eq!(bounds.origin().y, bottom_rect.origin().y);
-        assert_approx_eq!(bounds.size().width, bottom_rect.size().width);
-        assert_approx_eq!(bounds.size().height, bottom_rect.size().height);
+        let bounds = path.data.bounds;
+        let bottom_rect = options.profile.bottom_with_size(Size::new(1.5, 2.0));
+        assert!(bounds.min.approx_eq_eps(&bottom_rect.min, &eps));
+        assert!(bounds.max.approx_eq_eps(&bottom_rect.max, &eps));
     }
 
     #[test]
     fn test_homing() {
+        let eps = Vector::splat(5e-5);
         let options = Options::default();
 
         // Scoop
@@ -477,17 +311,21 @@ mod tests {
         let path = homing(&bar, &options);
         assert!(path.is_some());
         let path = path.unwrap();
-        let bounds = path.data.bounding_box();
+        let bounds = path.data.bounds;
 
         assert_eq!(path.fill.unwrap(), bar.color);
         assert_eq!(path.outline.unwrap().color, bar.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        let center = options.profile.top_with_size((1., 1.)).center()
-            + (0., options.profile.homing.bar.y_offset);
-        assert_approx_eq!(bounds.center().x, center.x);
-        assert_approx_eq!(bounds.center().y, center.y);
-        assert_approx_eq!(bounds.size().width, options.profile.homing.bar.size.width);
-        assert_approx_eq!(bounds.size().height, options.profile.homing.bar.size.height);
+        let center = options.profile.top_with_size(Size::new(1.0, 1.0)).center()
+            + Vector::new(
+                0.0,
+                (options.profile.homing.bar.y_offset * DOT_PER_MM).get(),
+            );
+        assert!(bounds.center().approx_eq(&center));
+        assert!(bounds.size().to_vector().approx_eq_eps(
+            &(options.profile.homing.bar.size * DOT_PER_MM).to_vector(),
+            &eps
+        ));
 
         // Bump
         let bump = {
@@ -499,17 +337,18 @@ mod tests {
         let path = homing(&bump, &options);
         assert!(path.is_some());
         let path = path.unwrap();
-        let bounds = path.data.bounding_box();
+        let bounds = path.data.bounds;
 
         assert_eq!(path.fill.unwrap(), bump.color);
         assert_eq!(path.outline.unwrap().color, bump.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
-        let center = options.profile.top_with_size((1., 1.)).center()
-            + (0., options.profile.homing.bump.y_offset);
-        assert_approx_eq!(bounds.center().x, center.x);
-        assert_approx_eq!(bounds.center().y, center.y);
-        assert_approx_eq!(bounds.width(), options.profile.homing.bump.diameter);
-        assert_approx_eq!(bounds.height(), options.profile.homing.bump.diameter);
+        let center = options.profile.top_with_size(Size::new(1.0, 1.0)).center()
+            + Vector::new(0.0, options.profile.homing.bump.y_offset.get());
+        assert!(bounds.center().approx_eq_eps(&center, &eps.to_point()));
+        assert!(bounds.size().to_vector().approx_eq_eps(
+            &Vector::splat((options.profile.homing.bump.diameter * DOT_PER_MM).get()),
+            &eps
+        ));
 
         // Non-homing key
         let none = key::Key::example();
@@ -530,32 +369,25 @@ mod tests {
         let path = step(&key, &options);
         assert!(path.is_some());
         let path = path.unwrap();
-        let bounds = path.data.bounding_box();
+        let bounds = path.data.bounds;
 
         assert_eq!(path.fill.unwrap(), key.color);
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
 
-        let rect = RoundRect::from_origin_size(
-            options
-                .profile
-                .top_with_size((1., 1.))
-                .origin()
-                .midpoint(options.profile.bottom_with_size((1., 1.)).origin()),
-            (options.profile.top_with_size((1., 1.)).size()
-                + options.profile.bottom_with_size((1., 1.)).size())
-                / 2.,
-            (options.profile.top_with_size((1., 1.)).radii()
-                + options.profile.bottom_with_size((1., 1.)).radii())
-                / 2.,
+        let top_rect = options.profile.top_with_size(Size::splat(1.0));
+        let bottom_rect = options.profile.bottom_with_size(Size::splat(1.0));
+        let rect = RoundRect::new(
+            (top_rect.min + bottom_rect.min.to_vector()) / 2.0,
+            (top_rect.max + bottom_rect.max.to_vector()) / 2.0,
+            (top_rect.radius + bottom_rect.radius) / 2.0,
         );
-        let rect = rect
-            .with_origin((1250. - rect.origin().x - rect.radii().x, rect.origin().y))
-            .with_size((500. + rect.radii().x, rect.size().height));
+        let rect = Rect::new(
+            Point::new(1250.0 - rect.min.x - rect.radius.get(), rect.min.y),
+            Point::new(1750.0 - rect.min.x, rect.max.y),
+        );
 
-        assert_approx_eq!(bounds.origin().x, rect.origin().x);
-        assert_approx_eq!(bounds.origin().y, rect.origin().y);
-        assert_approx_eq!(bounds.size().width, rect.size().width);
-        assert_approx_eq!(bounds.size().height, rect.size().height);
+        assert!(bounds.min.approx_eq(&rect.min));
+        assert!(bounds.max.approx_eq(&rect.max));
     }
 }

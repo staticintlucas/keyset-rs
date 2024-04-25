@@ -1,84 +1,91 @@
-use geom::{Affine, PathEl};
-use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform};
+use geom::{
+    Dot, Inch, PathSegment, Point, Scale, ToTransform, Transform, DOT_PER_INCH, DOT_PER_UNIT,
+};
+use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform as SkiaTransform};
 
-use crate::{Drawing, KeyDrawing, Path};
+use crate::{Drawing, KeyDrawing, KeyPath};
 
-macro_rules! transform {
-    ($p:expr, $affine:expr) => {{
-        let p = $affine * $p;
-        (p.x as f32, p.y as f32)
-    }};
-    ($p1:expr, $p:expr, $affine:expr) => {{
-        let (p1, p) = ($affine * $p1, $affine * $p);
-        (p1.x as f32, p1.y as f32, p.x as f32, p.y as f32)
-    }};
-    ($p1:expr, $p2:expr, $p:expr, $affine:expr) => {{
-        let (p1, p2, p) = ($affine * $p1, $affine * $p2, $affine * $p);
-        (
-            p1.x as f32,
-            p1.y as f32,
-            p2.x as f32,
-            p2.y as f32,
-            p.x as f32,
-            p.y as f32,
-        )
-    }};
+#[derive(Debug, Clone, Copy)]
+pub struct Pixel;
+
+fn png_scale(ppi: Scale<Inch, Pixel>) -> Scale<Dot, Pixel> {
+    DOT_PER_INCH.inverse() * ppi
 }
 
-pub fn draw(drawing: &Drawing, dpi: f64) -> Vec<u8> {
-    let scale = drawing.scale * dpi * 0.75; // 0.75 in/key
-    let size = drawing.bounds.size() * scale;
+pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Vec<u8> {
+    let scale = png_scale(ppi) * Scale::<Pixel, Pixel>::new(drawing.scale); // 0.75 in/key
+    let size = drawing.bounds.size() * DOT_PER_UNIT * scale;
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let (width, height) = (size.width.ceil() as u32, size.height.ceil() as u32);
 
-    // Will panic if width/height = 0 which we prevent with max, or if width/height are too large
-    // in which case we'll likely end up with OOM aborts here anyway
+    // Will panic if width/height = 0 (which we prevent with .max(1))
+    // TODO Will also panic if width/height are too large
     let mut pixmap = Pixmap::new(width.max(1), height.max(1)).unwrap();
 
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
 
-    let affine = Affine::scale(scale);
+    let transform = scale.to_transform();
     for key in &drawing.keys {
-        draw_key(&mut pixmap, key, &affine);
+        draw_key(&mut pixmap, key, transform);
     }
 
     // Will panic for an IO error, but writing to a Vec<_> is infallible
     pixmap.encode_png().unwrap()
 }
 
-fn draw_key(pixmap: &mut Pixmap, key: &KeyDrawing, affine: &Affine) {
-    let affine = *affine * Affine::scale(1e-3).then_translate(key.origin.to_vec2());
+fn draw_key(pixmap: &mut Pixmap, key: &KeyDrawing, transform: Transform<Dot, Pixel>) {
+    let transform = (key.origin.to_vector() * DOT_PER_UNIT)
+        .to_transform()
+        .then(&transform);
     for path in &key.paths {
-        draw_path(pixmap, path, &affine);
+        draw_path(pixmap, path, transform);
     }
 }
 
-fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
-    let mut path_builder = PathBuilder::new();
-    for el in &path.data {
-        match el {
-            PathEl::MoveTo(p) => {
-                let (x, y) = transform!(p, *affine);
-                path_builder.move_to(x, y);
+fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixel>) {
+    let path_builder = {
+        let mut builder = PathBuilder::new();
+
+        // origin needed for close; previous point needed for distance => point conversion
+        let mut point = Point::zero();
+        let mut origin = Point::zero();
+
+        for &el in &path.data {
+            let el = el * transform;
+            match el {
+                PathSegment::Move(p) => {
+                    builder.move_to(p.x, p.y);
+                    origin = p;
+                    point = p;
+                }
+                PathSegment::Line(d) => {
+                    let p = point + d;
+                    builder.line_to(p.x, p.y);
+                    point = p;
+                }
+                PathSegment::CubicBezier(d1, d2, d) => {
+                    let (p1, p2, p) = (point + d1, point + d2, point + d);
+                    builder.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
+                    point = p;
+                }
+                // GRCOV_EXCL_START - no quads in example
+                PathSegment::QuadraticBezier(d1, d) => {
+                    let (p1, p) = (point + d1, point + d);
+                    builder.quad_to(p1.x, p1.y, p.x, p.y);
+                    point = p;
+                }
+                // GRCOV_EXCL_STOP
+                PathSegment::Close => {
+                    builder.close();
+                    point = origin;
+                }
             }
-            PathEl::LineTo(p) => {
-                let (x, y) = transform!(p, *affine);
-                path_builder.line_to(x, y);
-            }
-            PathEl::CurveTo(p1, p2, p) => {
-                let (x1, y1, x2, y2, x, y) = transform!(p1, p2, p, *affine);
-                path_builder.cubic_to(x1, y1, x2, y2, x, y);
-            }
-            // GRCOV_EXCL_START - no quads in example
-            PathEl::QuadTo(p1, p) => {
-                let (x1, y1, x, y) = transform!(p1, p, *affine);
-                path_builder.quad_to(x1, y1, x, y);
-            }
-            // GRCOV_EXCL_STOP
-            PathEl::ClosePath => path_builder.close(),
         }
-    }
+
+        builder
+    };
+
     let Some(skia_path) = path_builder.finish() else {
         return; // GRCOV_EXCL_LINE
     };
@@ -93,7 +100,7 @@ fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
             &skia_path,
             &paint,
             FillRule::EvenOdd,
-            Transform::default(),
+            SkiaTransform::default(),
             None,
         );
     }
@@ -104,12 +111,15 @@ fn draw_path(pixmap: &mut Pixmap, path: &Path, affine: &Affine) {
             anti_alias: true,
             ..Default::default()
         };
-        #[allow(clippy::cast_possible_truncation)]
+        let scale = Scale::<Dot, Pixel>::new(
+            (f32::hypot(transform.m11, transform.m21) + f32::hypot(transform.m12, transform.m22))
+                / 2.0,
+        );
         let stroke = Stroke {
-            width: (outline.width * affine.as_coeffs()[0]) as f32,
+            width: (outline.width * scale).get(),
             ..Default::default()
         };
-        pixmap.stroke_path(&skia_path, &paint, &stroke, Transform::default(), None);
+        pixmap.stroke_path(&skia_path, &paint, &stroke, SkiaTransform::default(), None);
     }
 }
 

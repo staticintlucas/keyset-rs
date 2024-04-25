@@ -11,6 +11,7 @@
     clippy::nursery
 )]
 #![allow(
+    clippy::suboptimal_flops, // Optimiser is pretty good, and mul_add is pretty ugly
     missing_docs, // TODO
 )]
 
@@ -23,19 +24,19 @@ mod png;
 mod svg;
 
 use font::Font;
-use geom::{Point, Rect, Size};
+use geom::{Dot, Inch, Length, Point, Rect, Scale, Size, Unit};
 use key::Key;
 use profile::Profile;
 
 #[allow(unused_imports)] // Path is unused if no format is enabled, but who would do that?
-pub(crate) use imp::{KeyDrawing, Path};
+pub(crate) use imp::{KeyDrawing, KeyPath};
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)] // Struct fields are unused if no format is enabled, but who would do that?
 pub struct Drawing {
-    bounds: Rect,
+    bounds: Rect<Unit>,
     keys: Vec<KeyDrawing>,
-    scale: f64,
+    scale: f32,
 }
 
 impl Drawing {
@@ -43,10 +44,10 @@ impl Drawing {
     pub fn new(keys: &[Key], options: &Options) -> Self {
         let bounds = keys
             .iter()
-            .map(|k| k.shape.outer_rect().with_origin(k.position))
+            .map(|k| k.shape.outer_rect().translate(k.position.to_vector()))
             .fold(
-                Rect::from_origin_size(Point::ORIGIN, Size::new(1., 1.)),
-                |rect, key| rect.union(key),
+                Rect::from_origin_and_size(Point::origin(), Size::new(1.0, 1.0)),
+                |rect, key| rect.union(&key),
             );
 
         let keys = keys
@@ -69,8 +70,8 @@ impl Drawing {
 
     #[cfg(feature = "pdf")]
     #[must_use]
-    pub fn to_png(&self, dpi: f64) -> Vec<u8> {
-        png::draw(self, dpi)
+    pub fn to_png(&self, ppi: f32) -> Vec<u8> {
+        png::draw(self, Scale::<Inch, png::Pixel>::new(ppi))
     }
 
     #[cfg(feature = "pdf")]
@@ -96,8 +97,8 @@ impl Drawing {
 pub struct Options<'a> {
     profile: &'a Profile,
     font: &'a Font,
-    scale: f64,
-    outline_width: f64,
+    scale: f32,
+    outline_width: Length<Dot>,
     show_keys: bool,
     show_margin: bool,
 }
@@ -108,7 +109,7 @@ impl<'a> Default for Options<'a> {
             profile: &Profile::DEFAULT,
             font: Font::default_ref(),
             scale: 1.0,
-            outline_width: 10.0,
+            outline_width: Length::new(10.0),
             show_keys: true,
             show_margin: false,
         }
@@ -132,12 +133,12 @@ impl<'a> Options<'a> {
     }
 
     #[must_use]
-    pub const fn scale(self, scale: f64) -> Self {
+    pub const fn scale(self, scale: f32) -> Self {
         Self { scale, ..self }
     }
 
     #[must_use]
-    pub const fn outline_width(self, outline_width: f64) -> Self {
+    pub const fn outline_width(self, outline_width: Length<Dot>) -> Self {
         Self {
             outline_width,
             ..self
@@ -165,8 +166,7 @@ impl<'a> Options<'a> {
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
-
+    use geom::ApproxEq;
     use profile::Profile;
 
     use super::*;
@@ -175,7 +175,7 @@ mod tests {
     fn test_drawing_options() {
         let options = Options::default();
 
-        assert_approx_eq!(options.scale, 1.);
+        assert!(options.scale.approx_eq(&1.0));
         assert_eq!(options.font.num_glyphs(), 1); // .notdef
 
         let profile = Profile::default();
@@ -183,14 +183,14 @@ mod tests {
         let options = Options::new()
             .profile(&profile)
             .font(&font)
-            .scale(2.)
-            .outline_width(20.)
+            .scale(2.0)
+            .outline_width(Length::new(20.0))
             .show_keys(false)
             .show_margin(true);
 
         assert_eq!(options.profile.typ.depth(), 1.0);
         assert_eq!(options.font.num_glyphs(), 3); // .notdef, A, V
-        assert_eq!(options.scale, 2.0);
+        assert!(options.scale.approx_eq(&2.0));
     }
 
     #[test]

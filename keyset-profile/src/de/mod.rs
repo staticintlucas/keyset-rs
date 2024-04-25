@@ -2,15 +2,35 @@ mod error;
 
 use std::collections::HashMap;
 
-use geom::{Point, Rect, Size};
+use geom::{Dot, ExtRect, Length, Mm, Point, Rect, SideOffsets, Size, DOT_PER_MM};
 use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use crate::{BottomSurface, HomingProps, TextHeight, TextMargin, Type};
+use crate::{BottomSurface, HomingProps, ScoopProps, TextHeight, TextMargin, Type};
 
 use super::{BarProps, BumpProps, Profile, TopSurface};
 
 pub use error::{Error, Result};
+
+impl<'de> Deserialize<'de> for ScoopProps {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "kebab-case")]
+        struct RawScoopProps {
+            depth: f32,
+        }
+
+        RawScoopProps::deserialize(deserializer).map(|props| {
+            // Convert to Length
+            Self {
+                depth: Length::<Mm>::new(props.depth),
+            }
+        })
+    }
+}
 
 impl<'de> Deserialize<'de> for BarProps {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
@@ -20,16 +40,16 @@ impl<'de> Deserialize<'de> for BarProps {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawBarProps {
-            width: f64,
-            height: f64,
-            y_offset: f64,
+            width: f32,
+            height: f32,
+            y_offset: f32,
         }
 
         RawBarProps::deserialize(deserializer).map(|props| {
-            // Convert mm to milli units
+            // Convert to Length
             Self {
-                size: Size::new(props.width, props.height) * (1e3 / 19.05),
-                y_offset: props.y_offset * (1000. / 19.05),
+                size: Size::<Mm>::new(props.width, props.height),
+                y_offset: Length::<Mm>::new(props.y_offset),
             }
         })
     }
@@ -43,15 +63,15 @@ impl<'de> Deserialize<'de> for BumpProps {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawBumpProps {
-            diameter: f64,
-            y_offset: f64,
+            diameter: f32,
+            y_offset: f32,
         }
 
         RawBumpProps::deserialize(deserializer).map(|props| {
-            // Convert mm to milli units
+            // Convert to Length
             Self {
-                diameter: props.diameter * (1000. / 19.05),
-                y_offset: props.y_offset * (1000. / 19.05),
+                diameter: Length::<Mm>::new(props.diameter),
+                y_offset: Length::<Mm>::new(props.y_offset),
             }
         })
     }
@@ -65,18 +85,18 @@ impl<'de> Deserialize<'de> for TopSurface {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawTopSurface {
-            width: f64,
-            height: f64,
-            radius: f64,
-            y_offset: f64,
+            width: f32,
+            height: f32,
+            radius: f32,
+            y_offset: f32,
         }
 
         RawTopSurface::deserialize(deserializer).map(|surface| {
-            // Convert mm to milli units
+            // Convert to Length
             Self {
-                size: Size::new(surface.width, surface.height) * (1000. / 19.05),
-                radius: surface.radius * (1000. / 19.05),
-                y_offset: surface.y_offset * (1000. / 19.05),
+                size: Size::<Mm>::new(surface.width, surface.height) * DOT_PER_MM,
+                radius: Length::<Mm>::new(surface.radius) * DOT_PER_MM,
+                y_offset: Length::<Mm>::new(surface.y_offset) * DOT_PER_MM,
             }
         })
     }
@@ -90,16 +110,16 @@ impl<'de> Deserialize<'de> for BottomSurface {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawBottomSurface {
-            width: f64,
-            height: f64,
-            radius: f64,
+            width: f32,
+            height: f32,
+            radius: f32,
         }
 
         RawBottomSurface::deserialize(deserializer).map(|surface| {
-            // Convert mm to milli units
+            // Convert to Length
             Self {
-                size: Size::new(surface.width, surface.height) * (1000. / 19.05),
-                radius: surface.radius * (1000. / 19.05),
+                size: Size::<Mm>::new(surface.width, surface.height) * DOT_PER_MM,
+                radius: Length::<Mm>::new(surface.radius) * DOT_PER_MM,
             }
         })
     }
@@ -108,17 +128,17 @@ impl<'de> Deserialize<'de> for BottomSurface {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 struct LegendProps {
-    size: f64,
-    width: f64,
-    height: f64,
+    size: f32,
+    width: f32,
+    height: f32,
     #[serde(default)]
-    y_offset: f64,
+    y_offset: f32,
 }
 
 impl LegendProps {
-    fn rect(&self, top_offset: f64) -> Rect {
-        Rect::from_center_size(
-            Point::new(500., 500. + top_offset + self.y_offset),
+    fn rect(&self, top_offset: Length<Dot>) -> Rect<Dot> {
+        Rect::from_center_and_size(
+            Point::new(500., 500. + top_offset.get() + self.y_offset),
             Size::new(self.width, self.height),
         )
     }
@@ -165,12 +185,21 @@ impl<'de> Deserialize<'de> for Profile {
 
         let raw_data: RawProfileData = RawProfileData::deserialize(deserializer)?;
 
-        let (heights, insets): (HashMap<_, _>, HashMap<_, _>) = raw_data
+        let (heights, offsets): (HashMap<_, _>, HashMap<_, _>) = raw_data
             .legend
             .into_iter()
             .map(|(i, props)| {
-                let inset = props.rect(raw_data.top.y_offset) - raw_data.top.rect();
-                ((i, props.size), (i, inset))
+                let Rect {
+                    min: props_min,
+                    max: props_max,
+                } = props.rect(raw_data.top.y_offset);
+                let Rect {
+                    min: raw_min,
+                    max: raw_max,
+                } = raw_data.top.rect();
+                let offsets =
+                    SideOffsets::from_vectors_inner(props_min - raw_min, props_max - raw_max);
+                ((i, props.size), (i, offsets))
             })
             .unzip();
 
@@ -178,7 +207,7 @@ impl<'de> Deserialize<'de> for Profile {
             typ: raw_data.typ,
             bottom: raw_data.bottom,
             top: raw_data.top,
-            text_margin: TextMargin::new(&insets),
+            text_margin: TextMargin::new(&offsets),
             text_height: TextHeight::new(&heights),
             homing: raw_data.homing,
         })
@@ -196,17 +225,17 @@ mod tests {
         let bar_props: BarProps =
             toml::from_str("width = 3.85\nheight = 0.4\ny-offset = 5.05").unwrap();
 
-        assert_approx_eq!(bar_props.size.width, 202.0, 0.5);
-        assert_approx_eq!(bar_props.size.height, 21.0, 0.5);
-        assert_approx_eq!(bar_props.y_offset, 265.0, 0.5);
+        assert_approx_eq!(bar_props.size.width, 3.85);
+        assert_approx_eq!(bar_props.size.height, 0.4);
+        assert_approx_eq!(bar_props.y_offset.0, 5.05);
     }
 
     #[test]
     fn deserialize_bump_props() {
         let bar_props: BumpProps = toml::from_str("diameter = 0.4\ny-offset = -0.2").unwrap();
 
-        assert_approx_eq!(bar_props.diameter, 21.0, 0.5);
-        assert_approx_eq!(bar_props.y_offset, -10.5, 0.5);
+        assert_approx_eq!(bar_props.diameter.get(), 0.4);
+        assert_approx_eq!(bar_props.y_offset.get(), -0.2, 0.5);
     }
 
     #[test]
@@ -217,8 +246,8 @@ mod tests {
 
         assert_approx_eq!(surf.size.width, 620.0, 0.5);
         assert_approx_eq!(surf.size.height, 730.0, 0.5);
-        assert_approx_eq!(surf.radius, 80.0, 0.5);
-        assert_approx_eq!(surf.y_offset, -85.0, 0.5);
+        assert_approx_eq!(surf.radius.0, 80.0, 0.5);
+        assert_approx_eq!(surf.y_offset.0, -85.0, 0.5);
     }
 
     #[test]
@@ -228,6 +257,6 @@ mod tests {
 
         assert_approx_eq!(surf.size.width, 960.0, 0.5);
         assert_approx_eq!(surf.size.height, 960.0, 0.5);
-        assert_approx_eq!(surf.radius, 20.0, 0.5);
+        assert_approx_eq!(surf.radius.0, 20.0, 0.5);
     }
 }
