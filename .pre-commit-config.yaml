@@ -22,7 +22,7 @@ repos:
     pass_filenames: false
   - id: cargo-check
   - id: clippy
-    args: [--tests, --, -D, warnings]
+    args: [--all-targets, --, -D, warnings]
 - repo: local
   hooks:
   - id: cargo-test
