@@ -1,1 +1,2 @@
+allowed-duplicate-crates = ["bitflags"]
 doc-valid-idents = ["sRGB", "OpenType", ".."]
