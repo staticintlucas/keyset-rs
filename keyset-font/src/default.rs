@@ -43,7 +43,8 @@ pub fn line_height() -> Length<FontUnit> {
 
 #[cfg(test)]
 mod tests {
-    use geom::{ApproxEq, Length};
+    use geom::Length;
+    use isclose::assert_is_close;
 
     use super::*;
 
@@ -59,22 +60,22 @@ mod tests {
     fn default_notdef() {
         let notdef = notdef();
 
-        assert_eq!(notdef.path.data.len(), 26);
-        assert!(notdef.advance.approx_eq(&Length::new(550.0)));
+        assert_eq!(notdef.path.len(), 26);
+        assert_is_close!(notdef.advance, Length::new(550.0));
     }
 
     #[test]
     fn default_cap_height() {
-        assert!(cap_height().approx_eq(&Length::new(714.0)));
+        assert_is_close!(cap_height(), Length::new(714.0));
     }
 
     #[test]
     fn default_x_height() {
-        assert!(x_height().approx_eq(&Length::new(523.0)));
+        assert_is_close!(x_height(), Length::new(523.0));
     }
 
     #[test]
     fn default_line_height() {
-        assert!(line_height().approx_eq(&Length::new(1165.0)));
+        assert_is_close!(line_height(), Length::new(1165.0));
     }
 }

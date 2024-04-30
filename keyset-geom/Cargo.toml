@@ -18,6 +18,6 @@ license.workspace = true
 
 [dependencies]
 euclid = "0.22"
+isclose = { git = "https://github.com/staticintlucas/isclose", branch = "main", features = ["euclid"] }
 
 [dev-dependencies]
-assert_approx_eq = "1.1"

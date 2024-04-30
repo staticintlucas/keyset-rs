@@ -199,13 +199,12 @@ fn step_path(rect: RoundRect<Dot>) -> Path<Dot> {
 
 #[cfg(test)]
 mod tests {
-    use geom::ApproxEq;
+    use isclose::assert_is_close;
 
     use super::*;
 
     #[test]
     fn test_top() {
-        let eps = Point::splat(1e-5);
         let options = Options::default();
 
         // Regular 1u key
@@ -217,8 +216,7 @@ mod tests {
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
         let top_rect = options.profile.top_with_size(Size::new(1.0, 1.0));
-        assert!(bounds.min.approx_eq_eps(&top_rect.min, &eps));
-        assert!(bounds.max.approx_eq_eps(&top_rect.max, &eps));
+        assert_is_close!(bounds, top_rect.rect());
 
         // Stepped caps
         let key = {
@@ -229,8 +227,7 @@ mod tests {
         let path = top(&key, &options);
         let bounds = path.data.bounds;
         let top_rect = options.profile.top_with_size(Size::new(1.25, 1.0));
-        assert!(bounds.min.approx_eq_eps(&top_rect.min, &eps));
-        assert!(bounds.max.approx_eq_eps(&top_rect.max, &eps));
+        assert_is_close!(bounds, top_rect.rect());
 
         // ISO enter
         let key = {
@@ -241,13 +238,11 @@ mod tests {
         let path = top(&key, &options);
         let bounds = path.data.bounds;
         let top_rect = options.profile.top_with_size(Size::new(1.5, 2.0));
-        assert!(bounds.min.approx_eq_eps(&top_rect.min, &eps));
-        assert!(bounds.max.approx_eq_eps(&top_rect.max, &eps));
+        assert_is_close!(bounds, top_rect.rect());
     }
 
     #[test]
     fn test_bottom() {
-        let eps = Point::splat(1e-5);
         let key = key::Key::example();
         let options = Options::default();
 
@@ -258,8 +253,7 @@ mod tests {
         assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_eq!(path.outline.unwrap().width, options.outline_width);
         let bottom_rect = options.profile.bottom_with_size(Size::new(1.0, 1.0));
-        assert!(bounds.min.approx_eq_eps(&bottom_rect.min, &eps));
-        assert!(bounds.max.approx_eq_eps(&bottom_rect.max, &eps));
+        assert_is_close!(bounds, bottom_rect.rect());
 
         // Stepped caps
         let key = {
@@ -270,8 +264,7 @@ mod tests {
         let path = bottom(&key, &options);
         let bounds = path.data.bounds;
         let bottom_rect = options.profile.bottom_with_size(Size::new(1.75, 1.0));
-        assert!(bounds.min.approx_eq_eps(&bottom_rect.min, &eps));
-        assert!(bounds.max.approx_eq_eps(&bottom_rect.max, &eps));
+        assert_is_close!(bounds, bottom_rect.rect());
 
         // ISO enter
         let key = {
@@ -282,13 +275,11 @@ mod tests {
         let path = bottom(&key, &options);
         let bounds = path.data.bounds;
         let bottom_rect = options.profile.bottom_with_size(Size::new(1.5, 2.0));
-        assert!(bounds.min.approx_eq_eps(&bottom_rect.min, &eps));
-        assert!(bounds.max.approx_eq_eps(&bottom_rect.max, &eps));
+        assert_is_close!(bounds, bottom_rect.rect());
     }
 
     #[test]
     fn test_homing() {
-        let eps = Vector::splat(5e-5);
         let options = Options::default();
 
         // Scoop
@@ -321,11 +312,11 @@ mod tests {
                 0.0,
                 (options.profile.homing.bar.y_offset * DOT_PER_MM).get(),
             );
-        assert!(bounds.center().approx_eq(&center));
-        assert!(bounds.size().to_vector().approx_eq_eps(
-            &(options.profile.homing.bar.size * DOT_PER_MM).to_vector(),
-            &eps
-        ));
+        assert_is_close!(bounds.center(), center);
+        assert_is_close!(
+            bounds.size().to_vector(),
+            (options.profile.homing.bar.size * DOT_PER_MM).to_vector()
+        );
 
         // Bump
         let bump = {
@@ -344,11 +335,11 @@ mod tests {
         assert_eq!(path.outline.unwrap().width, options.outline_width);
         let center = options.profile.top_with_size(Size::new(1.0, 1.0)).center()
             + Vector::new(0.0, options.profile.homing.bump.y_offset.get());
-        assert!(bounds.center().approx_eq_eps(&center, &eps.to_point()));
-        assert!(bounds.size().to_vector().approx_eq_eps(
-            &Vector::splat((options.profile.homing.bump.diameter * DOT_PER_MM).get()),
-            &eps
-        ));
+        assert_is_close!(bounds.center(), center);
+        assert_is_close!(
+            bounds.size(),
+            Size::splat((options.profile.homing.bump.diameter * DOT_PER_MM).get())
+        );
 
         // Non-homing key
         let none = key::Key::example();
@@ -387,7 +378,6 @@ mod tests {
             Point::new(1750.0 - rect.min.x, rect.max.y),
         );
 
-        assert!(bounds.min.approx_eq(&rect.min));
-        assert!(bounds.max.approx_eq(&rect.max));
+        assert_is_close!(bounds, rect);
     }
 }

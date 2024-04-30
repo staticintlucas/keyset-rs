@@ -1,8 +1,12 @@
-use std::ops::{Div, DivAssign, Mul, MulAssign};
+use std::{
+    borrow::Borrow,
+    ops::{Div, DivAssign, Mul, MulAssign},
+};
 
+use isclose::IsClose;
 use PathSegment::{Close, CubicBezier, Line, Move, QuadraticBezier};
 
-use crate::{ApproxEq, Point, Scale, Transform, Vector};
+use crate::{Point, Scale, Transform, Vector};
 
 /// Enum representing a path segment
 #[allow(clippy::module_name_repetitions)] // rust-lang/rust-clippy#8524
@@ -29,22 +33,29 @@ impl<U> Clone for PathSegment<U> {
 
 impl<U> Copy for PathSegment<U> {}
 
-impl<U> ApproxEq<Vector<U>> for PathSegment<U> {
-    fn approx_epsilon() -> Vector<U> {
-        Vector::<U>::approx_epsilon()
-    }
+impl<U> IsClose<f32> for PathSegment<U> {
+    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
+    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
 
-    fn approx_eq_eps(&self, other: &Self, approx_epsilon: &Vector<U>) -> bool {
+    fn is_close_tol(
+        &self,
+        other: impl Borrow<Self>,
+        rel_tol: impl Borrow<f32>,
+        abs_tol: impl Borrow<f32>,
+    ) -> bool {
+        // TODO need type hints here to help rust-analyzer
+        let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
+            (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
         match (self, other) {
-            (Move(s), Move(o)) => s.approx_eq_eps(o, &approx_epsilon.to_point()),
-            (Line(s), Line(o)) => s.approx_eq_eps(o, approx_epsilon),
+            (Move(s), Move(o)) => s.is_close_tol(o, rel_tol, abs_tol),
+            (Line(s), Line(o)) => s.is_close_tol(o, rel_tol, abs_tol),
             (CubicBezier(s1, s2, s), CubicBezier(o1, o2, o)) => {
-                s1.approx_eq_eps(o1, approx_epsilon)
-                    && s2.approx_eq_eps(o2, approx_epsilon)
-                    && s.approx_eq_eps(o, approx_epsilon)
+                s1.is_close_tol(o1, rel_tol, abs_tol)
+                    && s2.is_close_tol(o2, rel_tol, abs_tol)
+                    && s.is_close_tol(o, rel_tol, abs_tol)
             }
             (QuadraticBezier(s1, s), QuadraticBezier(o1, o)) => {
-                s1.approx_eq_eps(o1, approx_epsilon) && s.approx_eq_eps(o, approx_epsilon)
+                s1.is_close_tol(o1, rel_tol, abs_tol) && s.is_close_tol(o, rel_tol, abs_tol)
             }
             (Close, Close) => true,
             _ => false,
@@ -195,6 +206,8 @@ impl<U> DivAssign<Scale<U, U>> for PathSegment<U> {
 
 #[cfg(test)]
 mod tests {
+    use isclose::assert_is_close;
+
     use super::*;
 
     #[test]
@@ -225,7 +238,7 @@ mod tests {
         assert_eq!(input.len(), expected.len());
         for (inp, exp) in input.into_iter().zip(expected) {
             let res = inp.translate(Vector::new(1.0, 1.0));
-            assert!(res.approx_eq(&exp));
+            assert_is_close!(res, exp);
         }
     }
 }

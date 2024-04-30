@@ -67,7 +67,7 @@ impl<U> Path<U> {
         let capacity = slice
             .iter()
             .map(|el| {
-                el.data.len() + usize::from(!matches!(el.data.first(), Some(PathSegment::Move(..))))
+                el.len() + usize::from(!matches!(el.data.first(), Some(PathSegment::Move(..))))
             })
             .sum();
 
@@ -453,9 +453,11 @@ fn calculate_bounds<U>(data: &[PathSegment<U>]) -> Rect<U> {
 
 #[cfg(test)]
 mod tests {
+    use isclose::assert_is_close;
+
     use super::*;
 
-    use crate::{Angle, ApproxEq};
+    use crate::{Angle, Size};
 
     #[test]
     fn test_path_new() {
@@ -463,10 +465,9 @@ mod tests {
 
         for path in paths {
             assert!(path.data.is_empty());
-            assert!(path.start.approx_eq(&Point::origin()));
-            assert!(path.point.approx_eq(&Point::origin()));
-            assert!(path.bounds.min.approx_eq(&Point::zero()));
-            assert!(path.bounds.max.approx_eq(&Point::zero()));
+            assert_is_close!(path.start, Point::origin());
+            assert_is_close!(path.point, Point::origin());
+            assert_is_close!(path.bounds, Rect::zero());
         }
     }
 
@@ -506,10 +507,9 @@ mod tests {
             let result = first.add(second);
 
             assert_eq!(result.data.len(), expected.data.len());
-            assert!(result.start.approx_eq(&expected.start));
-            assert!(result.point.approx_eq(&expected.point));
-            assert!(result.bounds.min.approx_eq(&expected.bounds.min));
-            assert!(result.bounds.max.approx_eq(&expected.bounds.max));
+            assert_is_close!(result.start, expected.start);
+            assert_is_close!(result.point, expected.point);
+            assert_is_close!(result.bounds, expected.bounds);
         }
     }
 
@@ -584,30 +584,7 @@ mod tests {
         ];
 
         for path in params {
-            assert!(path.bounds.min.approx_eq(&Point::zero()));
-            assert!(path.bounds.max.approx_eq(&Point::new(2.0, 2.0)));
+            assert_is_close!(path.bounds, Rect::from_size(Size::splat(2.0)));
         }
     }
-
-    // #[test]
-    // fn test_translate() {
-    //     let mut path = PathBuilder::<()>::new();
-    //     path.abs_move(Point::zero());
-    //     path.rel_line(Vector::new(1., 1.));
-    //     path.rel_cubic_bezier(
-    //         Vector::new(0.5, 0.5),
-    //         Vector::new(1.5, 0.5),
-    //         Vector::new(2., 0.),
-    //     );
-    //     path.rel_quadratic_bezier(Vector::new(0.5, -0.5), Vector::new(1., 0.));
-    //     path.close();
-
-    //     let mut translate = path.clone();
-    //     translate.translate(Vector::new(2., 1.));
-
-    //     assert!(path.bounds.min.approx_eq(&Point::origin()));
-    //     assert!(path.bounds.max.approx_eq(&Point::new(4.0, 1.0)));
-    //     assert!(translate.bounds.min.approx_eq(&Point::new(2.0, 1.0)));
-    //     assert!(translate.bounds.max.approx_eq(&Point::new(4.0, 1.0)));
-    // }
 }

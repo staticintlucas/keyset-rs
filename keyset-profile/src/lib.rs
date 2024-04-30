@@ -362,37 +362,32 @@ impl Default for Profile {
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
-    use geom::ApproxEq;
+    use isclose::{assert_is_close, IsClose};
     use unindent::unindent;
 
     use super::*;
 
     #[test]
     fn test_profile_type_depth() {
-        assert_approx_eq!(Type::Cylindrical { depth: 1.0 }.depth(), 1.0);
-        assert_approx_eq!(Type::Spherical { depth: 0.5 }.depth(), 0.5);
-        assert_approx_eq!(Type::Flat.depth(), 0.0);
+        assert_is_close!(Type::Cylindrical { depth: 1.0 }.depth(), 1.0);
+        assert_is_close!(Type::Spherical { depth: 0.5 }.depth(), 0.5);
+        assert_is_close!(Type::Flat.depth(), 0.0);
     }
 
     #[test]
     fn test_profile_type_default() {
-        assert_matches!(Type::default(), Type::Cylindrical { depth } if depth.approx_eq(&1.0));
+        assert_matches!(Type::default(), Type::Cylindrical { depth } if depth.is_close(1.0));
     }
 
     #[test]
     fn test_homing_props_default() {
         assert_matches!(HomingProps::default().default, Homing::Bar);
-        assert_approx_eq!(HomingProps::default().scoop.depth.0, 2.0);
-        assert!(HomingProps::default()
-            .bar
-            .size
-            .to_vector()
-            .approx_eq(&Vector::new(3.81, 0.51)));
-        assert_approx_eq!(HomingProps::default().bar.y_offset.0, 6.35);
-        assert_approx_eq!(HomingProps::default().bump.diameter.0, 0.51);
-        assert_approx_eq!(HomingProps::default().bump.y_offset.0, 0.0);
+        assert_is_close!(HomingProps::default().scoop.depth, Length::new(2.0));
+        assert_is_close!(HomingProps::default().bar.size, Size::new(3.81, 0.51));
+        assert_is_close!(HomingProps::default().bar.y_offset, Length::new(6.35));
+        assert_is_close!(HomingProps::default().bump.diameter, Length::new(0.51));
+        assert_is_close!(HomingProps::default().bump.y_offset, Length::new(0.0));
     }
 
     #[test]
@@ -405,7 +400,7 @@ mod tests {
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e, r);
+            assert_is_close!(e, r);
         }
 
         let expected = [0., 60., 120., 180., 190., 210., 230., 280., 330., 380.];
@@ -421,7 +416,7 @@ mod tests {
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e, r);
+            assert_is_close!(e, r);
         }
     }
 
@@ -434,8 +429,8 @@ mod tests {
             (6, 11.5),
             (9, 19.0),
         ]));
-        assert_approx_eq!(heights.get(5), 10.5);
-        assert_approx_eq!(heights.get(23), 19.);
+        assert_is_close!(heights.get(5), 10.5);
+        assert_is_close!(heights.get(23), 19.0);
     }
 
     #[test]
@@ -444,24 +439,23 @@ mod tests {
 
         #[allow(clippy::cast_precision_loss)]
         for (i, h) in heights.0.into_iter().enumerate() {
-            assert_approx_eq!(h, (6.0 + 2.0 * (i as f32)) / 72.0 * DOT_PER_UNIT.get());
+            assert_is_close!(h, (6.0 + 2.0 * (i as f32)) / 72.0 * DOT_PER_UNIT.get());
         }
     }
 
     #[test]
     fn test_text_margin_new() {
-        let expected = [SideOffsets::<()>::new_all_same(50.0); 10];
+        let expected = [SideOffsets::new_all_same(50.0); 10];
         let result = TextMargin::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.horizontal(), r.horizontal());
-            assert_approx_eq!(e.vertical(), r.vertical());
+            assert_is_close!(e, r);
         }
 
         let expected = [
-            SideOffsets::<()>::new_all_same(0.),
+            SideOffsets::new_all_same(0.),
             SideOffsets::new_all_same(0.),
             SideOffsets::new_all_same(0.),
             SideOffsets::new_all_same(-50.),
@@ -482,8 +476,7 @@ mod tests {
         assert_eq!(expected.len(), result.len());
 
         for (e, r) in expected.iter().zip(result.iter()) {
-            assert_approx_eq!(e.horizontal(), r.horizontal());
-            assert_approx_eq!(e.vertical(), r.vertical());
+            assert_is_close!(e, r);
         }
     }
 
@@ -496,12 +489,10 @@ mod tests {
         ]));
 
         let offsets = margin.get(2);
-        assert_approx_eq!(offsets.horizontal(), 0.0);
-        assert_approx_eq!(offsets.vertical(), 0.0);
+        assert_is_close!(offsets, SideOffsets::zero());
 
         let offsets = margin.get(62);
-        assert_approx_eq!(offsets.horizontal(), -200.0);
-        assert_approx_eq!(offsets.vertical(), -200.0);
+        assert_is_close!(offsets, SideOffsets::new_all_same(-100.0));
     }
 
     #[test]
@@ -509,59 +500,74 @@ mod tests {
         let margin = TextMargin::default();
 
         for offsets in margin.0 {
-            assert_approx_eq!(offsets.horizontal(), 100.0);
-            assert_approx_eq!(offsets.vertical(), 100.0);
+            assert_is_close!(offsets, SideOffsets::new_all_same(50.0));
         }
     }
 
     #[test]
     fn test_top_surface_rect() {
         let surf = TopSurface::default();
-        assert_eq!(surf.rect().min, Point::new(170., 55.),);
-        assert_eq!(surf.rect().size(), Size::new(660., 735.),);
+        assert_is_close!(
+            surf.rect(),
+            Rect::from_origin_and_size(Point::new(170., 55.), Size::new(660., 735.))
+        );
     }
 
     #[test]
     fn test_top_surface_round_rect() {
         let surf = TopSurface::default();
-        assert_eq!(surf.round_rect().min, Point::new(170., 55.),);
-        assert_eq!(surf.round_rect().size(), Size::new(660., 735.),);
-        assert_eq!(surf.round_rect().radius, Length::new(65.),);
+        assert_is_close!(
+            surf.round_rect(),
+            RoundRect::new(
+                Point::new(170.0, 55.0),
+                Point::new(830.0, 790.0),
+                Length::new(65.0)
+            )
+        );
     }
 
     #[test]
     fn test_top_surface_default() {
         let surf = TopSurface::default();
-        assert_eq!(surf.size, Size::new(660., 735.));
-        assert_approx_eq!(surf.radius.0, 65.0);
-        assert_approx_eq!(surf.y_offset.0, -77.5);
+        assert_is_close!(surf.size, Size::new(660.0, 735.0));
+        assert_is_close!(surf.radius, Length::new(65.0));
+        assert_is_close!(surf.y_offset, Length::new(-77.5));
     }
 
     #[test]
     fn test_bottom_surface_rect() {
         let surf = BottomSurface::default();
-        assert_eq!(surf.rect().min, Point::new(25., 25.),);
-        assert_eq!(surf.rect().size(), Size::new(950., 950.),);
+        assert_is_close!(
+            surf.rect(),
+            Rect::new(Point::new(25.0, 25.0), Point::new(975.0, 975.0))
+        );
     }
 
     #[test]
     fn test_bottom_surface_round_rect() {
         let surf = BottomSurface::default();
-        assert_eq!(surf.round_rect().min, Point::new(25., 25.),);
-        assert_eq!(surf.round_rect().size(), Size::new(950., 950.),);
-        assert_eq!(surf.round_rect().radius, Length::new(65.),);
+        assert_is_close!(
+            surf.round_rect(),
+            RoundRect::new(
+                Point::new(25.0, 25.0),
+                Point::new(975.0, 975.0),
+                Length::new(65.0)
+            )
+        );
     }
 
     #[test]
     fn test_bottom_surface_default() {
         let surf = BottomSurface::default();
-        assert_eq!(surf.size, Size::new(950., 950.));
-        assert_eq!(surf.radius, Length::new(65.));
+        assert_is_close!(surf.size, Size::new(950.0, 950.0));
+        assert_is_close!(surf.radius, Length::new(65.0));
     }
 
     #[cfg(feature = "toml")]
     #[test]
     fn test_profile_from_toml() {
+        use geom::DOT_PER_MM;
+
         let profile = Profile::from_toml(&unindent(
             "
             type = 'cylindrical'
@@ -605,47 +611,48 @@ mod tests {
         ))
         .unwrap();
 
-        assert!(matches!(profile.typ, Type::Cylindrical { depth } if (depth - 0.5).abs() < 1e-6));
+        assert!(matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(0.5)));
 
-        assert_approx_eq!(profile.bottom.size.width, 960.0, 0.5);
-        assert_approx_eq!(profile.bottom.size.height, 960.0, 0.5);
-        assert_approx_eq!(profile.bottom.radius.0, 20.0, 0.5);
+        assert_is_close!(profile.bottom.size, Size::splat(18.29) * DOT_PER_MM);
+        assert_is_close!(profile.bottom.radius, Length::new(0.38) * DOT_PER_MM);
 
-        assert_approx_eq!(profile.top.size.width, 620.0, 0.5);
-        assert_approx_eq!(profile.top.size.height, 730.0, 0.5);
-        assert_approx_eq!(profile.top.radius.0, 80., 0.5);
+        assert_is_close!(profile.top.size, Size::new(11.81, 13.91) * DOT_PER_MM);
+        assert_is_close!(profile.top.radius, Length::new(1.52) * DOT_PER_MM);
+        assert_is_close!(profile.top.y_offset, Length::new(-1.62) * DOT_PER_MM);
 
         assert_eq!(profile.text_height.0.len(), 10);
-        let expected = [0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
+        let expected = [
+            0.0, 0.76, 1.52, 2.28, 3.18, 4.84, 6.5, 8.16, 9.82, 11.48, 13.14,
+        ]
+        .map(|e| e * DOT_PER_MM.0);
         for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
-            assert_approx_eq!(e, r, 0.5);
+            assert_is_close!(e, r);
         }
 
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = [
-            SideOffsets::<()>::new(62.0, 62.0, 75.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 75.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 75.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 75.0, 62.0),
-            SideOffsets::new(135.0, 60.0, 93.0, 60.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-        ];
+            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
+            SideOffsets::new(2.575, 1.14, 1.775, 1.14),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+        ]
+        .map(|e| e * DOT_PER_MM.0);
         for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.horizontal(), r.horizontal(), 0.5);
-            assert_approx_eq!(e.vertical(), r.vertical(), 0.5);
+            assert_is_close!(e, r);
         }
 
         assert_matches!(profile.homing.default, Homing::Scoop);
-        assert_approx_eq!(profile.homing.scoop.depth.0, 1.5);
-        assert_approx_eq!(profile.homing.bar.size.width, 3.85);
-        assert_approx_eq!(profile.homing.bar.size.height, 0.4);
-        assert_approx_eq!(profile.homing.bar.y_offset.0, 5.05);
-        assert_approx_eq!(profile.homing.bump.diameter.0, 0.4);
-        assert_approx_eq!(profile.homing.bump.y_offset.0, -0.2);
+        assert_is_close!(profile.homing.scoop.depth, Length::<Mm>::new(1.5));
+        assert_is_close!(profile.homing.bar.size, Size::<Mm>::new(3.85, 0.4));
+        assert_is_close!(profile.homing.bar.y_offset, Length::<Mm>::new(5.05));
+        assert_is_close!(profile.homing.bump.diameter, Length::<Mm>::new(0.4));
+        assert_is_close!(profile.homing.bump.y_offset, Length::<Mm>::new(-0.2));
     }
 
     #[cfg(feature = "toml")]
@@ -729,47 +736,48 @@ mod tests {
         ))
         .unwrap();
 
-        assert!(matches!(profile.typ, Type::Cylindrical { depth } if (depth - 0.5).abs() < 1e-6));
+        assert!(matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(0.5)));
 
-        assert_approx_eq!(profile.bottom.size.width, 960.0, 0.5);
-        assert_approx_eq!(profile.bottom.size.height, 960.0, 0.5);
-        assert_approx_eq!(profile.bottom.radius.0, 20.0, 0.5);
+        assert_is_close!(profile.bottom.size, Size::splat(18.29) * DOT_PER_MM);
+        assert_is_close!(profile.bottom.radius, Length::new(0.38) * DOT_PER_MM);
 
-        assert_approx_eq!(profile.top.size.width, 620.0, 0.5);
-        assert_approx_eq!(profile.top.size.height, 730.0, 0.5);
-        assert_approx_eq!(profile.top.radius.0, 80., 0.5);
+        assert_is_close!(profile.top.size, Size::new(11.81, 13.91) * DOT_PER_MM);
+        assert_is_close!(profile.top.radius, Length::new(1.52) * DOT_PER_MM);
+        assert_is_close!(profile.top.y_offset, Length::new(-1.62) * DOT_PER_MM);
 
         assert_eq!(profile.text_height.0.len(), 10);
-        let expected = [0., 40., 80., 120., 167., 254., 341., 428., 515., 603., 690.];
+        let expected = [
+            0.0, 0.76, 1.52, 2.28, 3.18, 4.84, 6.5, 8.16, 9.82, 11.48, 13.14,
+        ]
+        .map(|e| e * DOT_PER_MM.0);
         for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
-            assert_approx_eq!(e, r, 0.5);
+            assert_is_close!(e, r);
         }
 
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = [
-            SideOffsets::<()>::new(62.0, 62.0, 75.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 75.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 75.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 75.0, 62.0),
-            SideOffsets::new(135.0, 60.0, 93.0, 60.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-            SideOffsets::new(62.0, 62.0, 62.0, 62.0),
-        ];
+            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
+            SideOffsets::new(2.575, 1.14, 1.775, 1.14),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+        ]
+        .map(|e| e * DOT_PER_MM.0);
         for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.horizontal(), r.horizontal(), 0.5);
-            assert_approx_eq!(e.vertical(), r.vertical(), 0.5);
+            assert_is_close!(e, r);
         }
 
         assert_matches!(profile.homing.default, Homing::Scoop);
-        assert_approx_eq!(profile.homing.scoop.depth.0, 1.5);
-        assert_approx_eq!(profile.homing.bar.size.width, 202.0 / DOT_PER_MM.0, 0.5);
-        assert_approx_eq!(profile.homing.bar.size.height, 21.0 / DOT_PER_MM.0, 0.5);
-        assert_approx_eq!(profile.homing.bar.y_offset.0, 265. / DOT_PER_MM.0, 0.5);
-        assert_approx_eq!(profile.homing.bump.diameter.0, 21. / DOT_PER_MM.0, 0.5);
-        assert_approx_eq!(profile.homing.bump.y_offset.0, -10. / DOT_PER_MM.0, 0.5);
+        assert_is_close!(profile.homing.scoop.depth, Length::<Mm>::new(1.5));
+        assert_is_close!(profile.homing.bar.size, Size::<Mm>::new(3.85, 0.4));
+        assert_is_close!(profile.homing.bar.y_offset, Length::<Mm>::new(5.05));
+        assert_is_close!(profile.homing.bump.diameter, Length::<Mm>::new(0.4));
+        assert_is_close!(profile.homing.bump.y_offset, Length::<Mm>::new(-0.2));
     }
 
     #[cfg(feature = "json")]
@@ -788,62 +796,61 @@ mod tests {
         let profile = Profile::default();
 
         let top = profile.top_with_size(Size::new(1.0, 1.0));
-        assert_approx_eq!(top.min.x, 500.0 - profile.top.size.width / 2.0);
-        assert_approx_eq!(
-            top.min.y,
-            500.0 - profile.top.size.height / 2.0 + profile.top.y_offset.0
+        let exp = RoundRect::from_center_and_size(
+            Point::splat(0.5) * DOT_PER_UNIT + Vector::new(0.0, profile.top.y_offset.0),
+            profile.top.size,
+            profile.top.radius,
         );
-        assert_approx_eq!(top.size().width, profile.top.size.width);
-        assert_approx_eq!(top.size().height, profile.top.size.height);
+        assert_is_close!(top, exp);
 
         let bottom = profile.bottom_with_size(Size::new(1.0, 1.0));
-        assert_approx_eq!(bottom.min.x, 500.0 - profile.bottom.size.width / 2.0);
-        assert_approx_eq!(bottom.min.y, 500.0 - profile.bottom.size.height / 2.0);
-        assert_approx_eq!(bottom.size().width, profile.bottom.size.width);
-        assert_approx_eq!(bottom.size().height, profile.bottom.size.height);
+        let exp = RoundRect::from_center_and_size(
+            Point::splat(0.5) * DOT_PER_UNIT,
+            profile.bottom.size,
+            profile.bottom.radius,
+        );
+        assert_is_close!(bottom, exp);
 
         let top = profile.top_with_size(Size::new(3.0, 2.0));
-        assert_approx_eq!(top.min.x, 500.0 - profile.top.size.width / 2.0);
-        assert_approx_eq!(
-            top.min.y,
-            500.0 - profile.top.size.height / 2.0 + profile.top.y_offset.0
+        let exp = RoundRect::from_center_and_size(
+            Point::new(1.5, 1.0) * DOT_PER_UNIT + Vector::new(0.0, profile.top.y_offset.0),
+            profile.top.size + Size::new(2.0, 1.0) * DOT_PER_UNIT,
+            profile.top.radius,
         );
-        assert_approx_eq!(top.size().width, profile.top.size.width + 2e3);
-        assert_approx_eq!(top.size().height, profile.top.size.height + 1e3);
+        assert_is_close!(top, exp);
 
         let bottom = profile.bottom_with_size(Size::new(3.0, 2.0));
-        assert_approx_eq!(bottom.min.x, 500.0 - profile.bottom.size.width / 2.0);
-        assert_approx_eq!(bottom.min.y, 500.0 - profile.bottom.size.height / 2.0);
-        assert_approx_eq!(bottom.size().width, profile.bottom.size.width + 2e3);
-        assert_approx_eq!(bottom.size().height, profile.bottom.size.height + 1e3);
+        let exp = RoundRect::from_center_and_size(
+            Point::new(1.5, 1.0) * DOT_PER_UNIT,
+            profile.bottom.size + Size::new(2.0, 1.0) * DOT_PER_UNIT,
+            profile.bottom.radius,
+        );
+        assert_is_close!(bottom, exp);
     }
 
     #[test]
     fn test_profile_default() {
         let profile = Profile::default();
 
-        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth.approx_eq(&1.0));
+        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(1.0));
 
-        assert_approx_eq!(profile.bottom.size.width, 950.0);
-        assert_approx_eq!(profile.bottom.size.height, 950.0);
-        assert_approx_eq!(profile.bottom.radius.0, 65.);
+        assert_is_close!(profile.bottom.size, Size::splat(950.0));
+        assert_is_close!(profile.bottom.radius, Length::new(65.0));
 
-        assert_approx_eq!(profile.top.size.width, 660.0);
-        assert_approx_eq!(profile.top.size.height, 735.0);
-        assert_approx_eq!(profile.top.radius.0, 65.);
-        assert_approx_eq!(profile.top.y_offset.0, -77.5);
+        assert_is_close!(profile.top.size, Size::new(660.0, 735.0));
+        assert_is_close!(profile.top.radius, Length::new(65.0));
+        assert_is_close!(profile.top.y_offset, Length::new(-77.5));
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = TextHeight::default();
         for (e, r) in expected.0.iter().zip(profile.text_height.0.iter()) {
-            assert_approx_eq!(e, r);
+            assert_is_close!(e, r);
         }
 
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = TextMargin::default();
         for (e, r) in expected.0.iter().zip(profile.text_margin.0.iter()) {
-            assert_approx_eq!(e.horizontal(), r.horizontal(), 0.5);
-            assert_approx_eq!(e.vertical(), r.vertical(), 0.5);
+            assert_is_close!(e, r);
         }
     }
 }

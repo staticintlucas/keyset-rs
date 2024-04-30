@@ -28,8 +28,8 @@ ouroboros = "0.18"
 ttf-parser = { version = "0.20", default-features = false, features = ["std"]}
 
 [dev-dependencies]
-assert_approx_eq = "1.1"
 assert_matches = "1.5"
+isclose = { git = "https://github.com/staticintlucas/isclose", branch = "main", features = ["euclid"] }
 
 [build-dependencies]
 which = "6.0"

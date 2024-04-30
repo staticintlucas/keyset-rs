@@ -291,9 +291,9 @@ impl Font {
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
     use assert_matches::assert_matches;
-    use geom::ApproxEq;
+    use geom::Rect;
+    use isclose::assert_is_close;
 
     use super::*;
 
@@ -303,14 +303,18 @@ mod tests {
         let face = Face::from_ttf(data).unwrap();
 
         let a = Glyph::parse_from(&face, GlyphId(1)).unwrap();
-        assert!(a.advance.approx_eq(&Length::new(540.0)));
-        assert_approx_eq!(a.path.bounds.width(), 535.0);
-        assert_approx_eq!(a.path.bounds.height(), 656.0);
+        assert_is_close!(a.advance, Length::new(540.0));
+        assert_is_close!(
+            a.path.bounds,
+            Rect::new(Point::new(6.0, 0.0), Point::new(541.0, 656.0))
+        );
 
         let v = Glyph::parse_from(&face, GlyphId(2)).unwrap();
-        assert!(v.advance.approx_eq(&Length::new(540.0)));
-        assert_approx_eq!(v.path.bounds.width(), 535.0);
-        assert_approx_eq!(v.path.bounds.height(), 656.0);
+        assert_is_close!(v.advance, Length::new(540.0));
+        assert_is_close!(
+            v.path.bounds,
+            Rect::new(Point::new(6.0, 0.0), Point::new(541.0, 656.0))
+        );
     }
 
     #[test]
@@ -352,18 +356,20 @@ mod tests {
 
     #[test]
     fn font_properties() {
+        type Length = geom::Length<FontUnit>;
+
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
         assert_eq!(font.family(), "demo");
         assert_eq!(font.name(), "demo regular");
-        assert!(font.em_size().approx_eq(&Length::new(1000.0)));
-        assert!(font.cap_height().approx_eq(&Length::new(650.0)));
-        assert!(font.x_height().approx_eq(&Length::new(450.0)));
-        assert!(font.ascender().approx_eq(&Length::new(1024.0)));
-        assert!(font.descender().approx_eq(&Length::new(400.0)));
-        assert!(font.line_gap().approx_eq(&Length::new(0.0)));
-        assert!(font.line_height().approx_eq(&Length::new(1424.0)));
+        assert_is_close!(font.em_size(), Length::new(1000.0));
+        assert_is_close!(font.cap_height(), Length::new(650.0));
+        assert_is_close!(font.x_height(), Length::new(450.0));
+        assert_is_close!(font.ascender(), Length::new(1024.0));
+        assert_is_close!(font.descender(), Length::new(400.0));
+        assert_is_close!(font.line_gap(), Length::new(0.0));
+        assert_is_close!(font.line_height(), Length::new(1424.0));
         assert_eq!(font.slope(), None);
         assert_eq!(font.num_glyphs(), 3);
 
@@ -373,17 +379,13 @@ mod tests {
         let line_scaling = font.line_height() / default::line_height();
         assert_eq!(font.family(), "unknown");
         assert_eq!(font.name(), "unknown");
-        assert!(font.em_size().approx_eq(&Length::new(1000.0)));
-        assert!(font
-            .cap_height()
-            .approx_eq(&(default::cap_height() * line_scaling)));
-        assert!(font
-            .x_height()
-            .approx_eq(&(default::x_height() * line_scaling)));
-        assert!(font.ascender().approx_eq(&Length::new(600.0)));
-        assert!(font.descender().approx_eq(&Length::new(400.0)));
-        assert!(font.line_gap().approx_eq(&Length::new(200.0)));
-        assert!(font.line_height().approx_eq(&Length::new(1200.0)));
+        assert_is_close!(font.em_size(), Length::new(1000.0));
+        assert_is_close!(font.cap_height(), default::cap_height() * line_scaling);
+        assert_is_close!(font.x_height(), default::x_height() * line_scaling);
+        assert_is_close!(font.ascender(), Length::new(600.0));
+        assert_is_close!(font.descender(), Length::new(400.0));
+        assert_is_close!(font.line_gap(), Length::new(200.0));
+        assert_is_close!(font.line_height(), Length::new(1200.0));
         assert_eq!(font.slope(), None);
         assert_eq!(font.num_glyphs(), 1); // Just .notdef
     }
@@ -406,19 +408,11 @@ mod tests {
         let b = font.glyph_or_default('B').path;
         let notdef = font.notdef().path;
 
-        let a_eq = a
-            .data
-            .iter()
-            .zip(notdef.data.iter())
-            .all(|(a, n)| a.approx_eq(n));
-        let b_eq = b
-            .data
-            .iter()
-            .zip(notdef.data.iter())
-            .all(|(b, n)| b.approx_eq(n));
-
-        assert!(!a_eq);
-        assert!(b_eq);
+        assert_ne!(a.len(), notdef.len());
+        assert_eq!(b.len(), notdef.len());
+        for (b_seg, notdef_seg) in b.data.iter().zip(notdef.data.iter()) {
+            assert_is_close!(b_seg, notdef_seg);
+        }
     }
 
     #[test]
@@ -426,20 +420,22 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        assert_eq!(font.notdef().path.data.len(), 12);
+        assert_eq!(font.notdef().path.len(), 12);
 
         let data = std::fs::read(env!("NULL_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        assert_eq!(font.notdef().path.data.len(), 26);
+        assert_eq!(font.notdef().path.len(), 26);
     }
 
     #[test]
     fn font_kerning() {
+        type Length = geom::Length<FontUnit>;
+
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        assert!(font.kerning('A', 'V').approx_eq(&Length::new(-70.0)));
-        assert!(font.kerning('A', 'B').approx_eq(&Length::new(0.0)));
+        assert_is_close!(font.kerning('A', 'V'), Length::new(-70.0));
+        assert_is_close!(font.kerning('A', 'B'), Length::new(0.0));
     }
 }

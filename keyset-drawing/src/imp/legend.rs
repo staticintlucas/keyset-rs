@@ -68,7 +68,8 @@ pub fn draw(
 #[cfg(test)]
 mod tests {
     use color::Color;
-    use geom::{ApproxEq, PathSegment, Size};
+    use geom::{PathSegment, Size};
+    use isclose::assert_is_close;
 
     use super::*;
 
@@ -99,7 +100,7 @@ mod tests {
         };
         let path = draw(&legend, &font, &profile, top_rect, Vector::new(1.0, 1.0));
 
-        assert_eq!(path.data.len(), font.notdef().path.data.len());
+        assert_eq!(path.data.len(), font.notdef().path.len());
 
         let legend = ::key::Legend {
             text: "Some really long legend that will totally need to be squished".into(),
@@ -108,12 +109,13 @@ mod tests {
         };
         let path = draw(&legend, &font, &profile, top_rect, Vector::new(1.0, 1.0));
 
-        assert!(path.data.bounds.width().approx_eq(
-            &(profile
+        assert_is_close!(
+            path.data.bounds.width(),
+            (profile
                 .top_with_size(Size::new(1.0, 1.0))
                 .rect()
                 .inner_box(profile.text_margin.get(5)))
             .width()
-        ));
+        );
     }
 }

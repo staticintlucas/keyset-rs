@@ -43,6 +43,8 @@ mod rgb;
 
 use std::fmt::{Display, LowerHex, UpperHex};
 
+use isclose::IsClose;
+
 /// sRGB Color type.
 ///
 /// Internally stores red, green, and blue components as [`f32`].
@@ -267,36 +269,54 @@ impl Color {
     }
 }
 
+impl IsClose<f32> for Color {
+    const ABS_TOL: f32 = f32::ABS_TOL;
+    const REL_TOL: f32 = f32::REL_TOL;
+
+    fn is_close_tol(
+        &self,
+        other: impl std::borrow::Borrow<Self>,
+        rel_tol: impl std::borrow::Borrow<f32>,
+        abs_tol: impl std::borrow::Borrow<f32>,
+    ) -> bool {
+        let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
+            (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
+        self.r().is_close_tol(other.r(), rel_tol, abs_tol)
+            && self.g().is_close_tol(other.g(), rel_tol, abs_tol)
+            && self.b().is_close_tol(other.b(), rel_tol, abs_tol)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
+    use isclose::assert_is_close;
 
     use super::*;
 
     #[test]
     fn new() {
         let color = Color::new(0.2, 0.4, 0.6);
-        assert_approx_eq!(color.0[0], 0.2);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.6);
+        assert_is_close!(color.0[0], 0.2);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.6);
     }
 
     #[test]
     fn r() {
         let color = Color::new(0.2, 0.4, 0.6);
-        assert_approx_eq!(color.r(), 0.2);
+        assert_is_close!(color.r(), 0.2);
     }
 
     #[test]
     fn g() {
         let color = Color::new(0.2, 0.4, 0.6);
-        assert_approx_eq!(color.g(), 0.4);
+        assert_is_close!(color.g(), 0.4);
     }
 
     #[test]
     fn b() {
         let color = Color::new(0.2, 0.4, 0.6);
-        assert_approx_eq!(color.b(), 0.6);
+        assert_is_close!(color.b(), 0.6);
     }
 
     #[test]
@@ -316,18 +336,18 @@ mod tests {
         let iter = color.iter_mut();
         iter.for_each(|c| *c = 1.0 - *c);
 
-        assert_approx_eq!(color.0[0], 0.8);
-        assert_approx_eq!(color.0[1], 0.6);
-        assert_approx_eq!(color.0[2], 0.4);
+        assert_is_close!(color.0[0], 0.8);
+        assert_is_close!(color.0[1], 0.6);
+        assert_is_close!(color.0[2], 0.4);
     }
 
     #[test]
     fn map() {
         let color = Color::new(0.2, 0.4, 0.6).map(|c| 1.0 - c);
 
-        assert_approx_eq!(color.0[0], 0.8);
-        assert_approx_eq!(color.0[1], 0.6);
-        assert_approx_eq!(color.0[2], 0.4);
+        assert_is_close!(color.0[0], 0.8);
+        assert_is_close!(color.0[1], 0.6);
+        assert_is_close!(color.0[2], 0.4);
     }
 
     #[test]
@@ -355,9 +375,9 @@ mod tests {
         let rgb = (0x33, 0x66, 0x99);
         let color = Color::from_rgb8(rgb);
 
-        assert_approx_eq!(color.0[0], 0.2);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.6);
+        assert_is_close!(color.0[0], 0.2);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.6);
     }
 
     #[test]
@@ -365,9 +385,9 @@ mod tests {
         let rgb = (0x3333, 0x6666, 0x9999);
         let color = Color::from_rgb16(rgb);
 
-        assert_approx_eq!(color.0[0], 0.2);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.6);
+        assert_is_close!(color.0[0], 0.2);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.6);
     }
 
     #[test]
@@ -376,9 +396,9 @@ mod tests {
         let slice = color.as_slice();
 
         assert_eq!(slice.len(), 3);
-        assert_approx_eq!(slice[0], 0.2);
-        assert_approx_eq!(slice[1], 0.4);
-        assert_approx_eq!(slice[2], 0.6);
+        assert_is_close!(slice[0], 0.2);
+        assert_is_close!(slice[1], 0.4);
+        assert_is_close!(slice[2], 0.6);
     }
 
     #[test]
@@ -392,9 +412,9 @@ mod tests {
         slice[1] = 0.6;
         slice[2] = 0.4;
 
-        assert_approx_eq!(color.0[0], 0.8);
-        assert_approx_eq!(color.0[1], 0.6);
-        assert_approx_eq!(color.0[2], 0.4);
+        assert_is_close!(color.0[0], 0.8);
+        assert_is_close!(color.0[1], 0.6);
+        assert_is_close!(color.0[2], 0.4);
     }
 
     #[test]
@@ -404,9 +424,9 @@ mod tests {
         let vec: Vec<_> = iter.collect();
 
         assert_eq!(vec.len(), 3);
-        assert_approx_eq!(vec[0], 0.2);
-        assert_approx_eq!(vec[1], 0.4);
-        assert_approx_eq!(vec[2], 0.6);
+        assert_is_close!(vec[0], 0.2);
+        assert_is_close!(vec[1], 0.4);
+        assert_is_close!(vec[2], 0.6);
     }
 
     #[test]
@@ -421,9 +441,9 @@ mod tests {
             array[2] = 0.4;
         }
 
-        assert_approx_eq!(color.0[0], 0.8);
-        assert_approx_eq!(color.0[1], 0.6);
-        assert_approx_eq!(color.0[2], 0.4);
+        assert_is_close!(color.0[0], 0.8);
+        assert_is_close!(color.0[1], 0.6);
+        assert_is_close!(color.0[2], 0.4);
 
         {
             let slice: &mut [f32] = color.as_mut();
@@ -433,9 +453,9 @@ mod tests {
             slice[2] = 0.6;
         }
 
-        assert_approx_eq!(color.0[0], 0.2);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.6);
+        assert_is_close!(color.0[0], 0.2);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.6);
     }
 
     #[test]
@@ -445,16 +465,16 @@ mod tests {
         let array: &[f32; 3] = color.as_ref();
 
         assert_eq!(array.len(), 3);
-        assert_approx_eq!(array[0], 0.2);
-        assert_approx_eq!(array[1], 0.4);
-        assert_approx_eq!(array[2], 0.6);
+        assert_is_close!(array[0], 0.2);
+        assert_is_close!(array[1], 0.4);
+        assert_is_close!(array[2], 0.6);
 
         let slice: &[f32] = color.as_ref();
 
         assert_eq!(slice.len(), 3);
-        assert_approx_eq!(slice[0], 0.2);
-        assert_approx_eq!(slice[1], 0.4);
-        assert_approx_eq!(slice[2], 0.6);
+        assert_is_close!(slice[0], 0.2);
+        assert_is_close!(slice[1], 0.4);
+        assert_is_close!(slice[2], 0.6);
     }
 
     #[test]
@@ -473,9 +493,9 @@ mod tests {
         let array = [0.2, 0.4, 0.6];
         let color = Color::from(array);
 
-        assert_approx_eq!(color.0[0], 0.2);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.6);
+        assert_is_close!(color.0[0], 0.2);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.6);
     }
 
     #[test]
@@ -483,9 +503,9 @@ mod tests {
         let tuple = (0.2, 0.4, 0.6);
         let color = Color::from(tuple);
 
-        assert_approx_eq!(color.0[0], 0.2);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.6);
+        assert_is_close!(color.0[0], 0.2);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.6);
     }
 
     #[test]
@@ -494,9 +514,9 @@ mod tests {
         let array = <[f32; 3]>::from(color);
 
         assert_eq!(array.len(), 3);
-        assert_approx_eq!(array[0], 0.2);
-        assert_approx_eq!(array[1], 0.4);
-        assert_approx_eq!(array[2], 0.6);
+        assert_is_close!(array[0], 0.2);
+        assert_is_close!(array[1], 0.4);
+        assert_is_close!(array[2], 0.6);
     }
 
     #[test]
@@ -504,41 +524,41 @@ mod tests {
         let color = Color::new(0.2, 0.4, 0.6);
         let tuple = <(f32, f32, f32)>::from(color);
 
-        assert_approx_eq!(tuple.0, 0.2);
-        assert_approx_eq!(tuple.1, 0.4);
-        assert_approx_eq!(tuple.2, 0.6);
+        assert_is_close!(tuple.0, 0.2);
+        assert_is_close!(tuple.1, 0.4);
+        assert_is_close!(tuple.2, 0.6);
     }
 
     #[test]
     fn lighter() {
         let color = Color::new(0.2, 0.4, 0.6).lighter(0.5);
 
-        assert_approx_eq!(color.0[0], 0.6);
-        assert_approx_eq!(color.0[1], 0.7);
-        assert_approx_eq!(color.0[2], 0.8);
+        assert_is_close!(color.0[0], 0.6);
+        assert_is_close!(color.0[1], 0.7);
+        assert_is_close!(color.0[2], 0.8);
     }
 
     #[test]
     fn darker() {
         let color = Color::new(0.6, 0.8, 1.0).darker(0.5);
 
-        assert_approx_eq!(color.0[0], 0.3);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.5);
+        assert_is_close!(color.0[0], 0.3);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.5);
     }
 
     #[test]
     fn highlight() {
         let color = Color::new(0.6, 0.8, 1.0).highlight(0.5);
 
-        assert_approx_eq!(color.0[0], 0.3);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.5);
+        assert_is_close!(color.0[0], 0.3);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.5);
 
         let color = Color::new(0.2, 0.4, 0.6).highlight(0.5);
 
-        assert_approx_eq!(color.0[0], 0.6);
-        assert_approx_eq!(color.0[1], 0.7);
-        assert_approx_eq!(color.0[2], 0.8);
+        assert_is_close!(color.0[0], 0.6);
+        assert_is_close!(color.0[1], 0.7);
+        assert_is_close!(color.0[2], 0.8);
     }
 }

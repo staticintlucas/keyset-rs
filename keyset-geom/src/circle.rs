@@ -1,3 +1,7 @@
+use std::borrow::Borrow;
+
+use isclose::IsClose;
+
 use crate::{Length, Point};
 
 /// A circle
@@ -34,9 +38,26 @@ impl<U> Circle<U> {
     }
 }
 
+impl<U> IsClose<f32> for Circle<U> {
+    const ABS_TOL: f32 = f32::ABS_TOL;
+    const REL_TOL: f32 = f32::REL_TOL;
+
+    fn is_close_tol(
+        &self,
+        other: impl Borrow<Self>,
+        rel_tol: impl Borrow<f32>,
+        abs_tol: impl Borrow<f32>,
+    ) -> bool {
+        let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
+            (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
+        self.center.is_close_tol(other.center, rel_tol, abs_tol)
+            && self.radius.is_close_tol(other.radius, rel_tol, abs_tol)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use euclid::{approxeq::ApproxEq, Length};
+    use isclose::assert_is_close;
 
     use super::*;
 
@@ -44,15 +65,15 @@ mod tests {
     fn circle_new() {
         let circle = Circle::<()>::new(Point::new(1.0, 2.0), Length::new(0.5));
 
-        assert!(circle.center.approx_eq(&Point::new(1.0, 2.0)));
-        assert!(circle.radius.approx_eq(&Length::new(0.5)));
+        assert_is_close!(circle.center, Point::<()>::new(1.0, 2.0));
+        assert_is_close!(circle.radius, Length::<()>::new(0.5));
     }
 
     #[test]
     fn circle_from_center_and_diameter() {
         let circle = Circle::<()>::from_center_and_diameter(Point::new(1.0, 2.0), Length::new(2.0));
 
-        assert!(circle.center.approx_eq(&Point::new(1.0, 2.0)));
-        assert!(circle.radius.approx_eq(&Length::new(1.0)));
+        assert_is_close!(circle.center, Point::<()>::new(1.0, 2.0));
+        assert_is_close!(circle.radius, Length::<()>::new(1.0));
     }
 }

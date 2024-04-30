@@ -43,7 +43,7 @@ impl From<Color> for RGBf32 {
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
+    use isclose::assert_is_close;
 
     use super::*;
 
@@ -52,9 +52,9 @@ mod tests {
         let rgb = RGB16::new(0x3333, 0x6666, 0x9999);
         let color = Color::from(rgb);
 
-        assert_approx_eq!(color.0[0], 0.2);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.6);
+        assert_is_close!(color.0[0], 0.2);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.6);
     }
 
     #[test]
@@ -72,9 +72,9 @@ mod tests {
         let rgb = RGB8::new(0x33, 0x66, 0x99);
         let color = Color::from(rgb);
 
-        assert_approx_eq!(color.0[0], 0.2);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.6);
+        assert_is_close!(color.0[0], 0.2);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.6);
     }
 
     #[test]
@@ -92,9 +92,9 @@ mod tests {
         let rgb = RGBf32::new(0.2, 0.4, 0.6);
         let color = Color::from(rgb);
 
-        assert_approx_eq!(color.0[0], 0.2);
-        assert_approx_eq!(color.0[1], 0.4);
-        assert_approx_eq!(color.0[2], 0.6);
+        assert_is_close!(color.0[0], 0.2);
+        assert_is_close!(color.0[1], 0.4);
+        assert_is_close!(color.0[2], 0.6);
     }
 
     #[test]
@@ -102,8 +102,8 @@ mod tests {
         let color = Color::new(0.2, 0.4, 0.6);
         let rgb: RGBf32 = color.into();
 
-        assert_approx_eq!(rgb.r, 0.2);
-        assert_approx_eq!(rgb.g, 0.4);
-        assert_approx_eq!(rgb.b, 0.6);
+        assert_is_close!(rgb.r, 0.2);
+        assert_is_close!(rgb.g, 0.4);
+        assert_is_close!(rgb.b, 0.6);
     }
 }

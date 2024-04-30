@@ -35,7 +35,7 @@ tiny-skia = { version = "0.11", optional = true }
 svg = { version = "0.16", optional = true }
 
 [dev-dependencies]
-assert_approx_eq = "1.1"
+isclose = { git = "https://github.com/staticintlucas/isclose", branch = "main", features = ["euclid"] }
 unindent = "0.2"
 
 [build-dependencies]

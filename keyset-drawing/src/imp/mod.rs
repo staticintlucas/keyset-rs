@@ -92,8 +92,8 @@ impl KeyDrawing {
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
     use geom::Size;
+    use isclose::assert_is_close;
 
     use super::*;
 
@@ -104,7 +104,7 @@ mod tests {
         let options = Options::default();
         let drawing = KeyDrawing::new(&key, &options);
 
-        assert_eq!(drawing.origin, key.position);
+        assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 6); // top, bottom, 4x legends
 
         // Stepped caps
@@ -116,7 +116,7 @@ mod tests {
         let options = Options::default();
         let drawing = KeyDrawing::new(&key, &options);
 
-        assert_eq!(drawing.origin, key.position);
+        assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, step, 4x legends
 
         // ISO H
@@ -131,7 +131,7 @@ mod tests {
         };
         let drawing = KeyDrawing::new(&key, &options);
 
-        assert_eq!(drawing.origin, key.position);
+        assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
         let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
@@ -140,8 +140,7 @@ mod tests {
             .top_with_size(Size::new(1.5, 1.0))
             .rect()
             .inner_box(options.profile.text_margin.get(font_size));
-        assert_approx_eq!(bounding_box.size().width, margin_rect.size().width);
-        assert_approx_eq!(bounding_box.size().height, margin_rect.size().height);
+        assert_is_close!(bounding_box, margin_rect);
 
         // ISO V
         let key = {
@@ -155,7 +154,7 @@ mod tests {
         };
         let drawing = KeyDrawing::new(&key, &options);
 
-        assert_eq!(drawing.origin, key.position);
+        assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
         let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
@@ -163,8 +162,8 @@ mod tests {
             .profile
             .top_with_size(Size::new(1.25, 2.0))
             .rect()
+            .translate(Vector::new(250.0, 0.0))
             .inner_box(options.profile.text_margin.get(font_size));
-        assert_approx_eq!(bounding_box.size().width, margin_rect.size().width);
-        assert_approx_eq!(bounding_box.size().height, margin_rect.size().height);
+        assert_is_close!(bounding_box, margin_rect);
     }
 }

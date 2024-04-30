@@ -1,4 +1,6 @@
-use crate::{Angle, ApproxEq, ExtVec, Vector};
+use isclose::IsClose;
+
+use crate::{Angle, ExtVec, Vector};
 
 pub fn arc_to_bezier<U>(
     r: Vector<U>,
@@ -10,7 +12,7 @@ pub fn arc_to_bezier<U>(
     // Ensure our radii are large enough
     // If either radius is 0 we just return a straight line
     let r = r.abs();
-    if d.length().approx_eq(&0.0) || r.x.approx_eq(&0.0) || r.y.approx_eq(&0.0) {
+    if d.length().is_close(0.0) || r.x.is_close(0.0) || r.y.is_close(0.0) {
         return vec![(d / 3.0, d * (2.0 / 3.0), d)];
     }
 
@@ -52,8 +54,8 @@ pub fn arc_to_bezier<U>(
         (true, true) => debug_assert!((Angle::pi()..=Angle::two_pi()).contains(&dphi)),
     }
 
-    // Subtract eps so 90.0001 deg doesn't become 2 segs
-    let segments = ((dphi / Angle::frac_pi_2()).abs() - f32::approx_epsilon()).ceil();
+    // Subtract f32::TOLERANCE so 90.0001 deg doesn't become 2 segs
+    let segments = ((dphi / Angle::frac_pi_2()).abs() - f32::ABS_TOL).ceil();
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let i_segments = segments as u8; // u8 is fine since segments <= 4
     let dphi = dphi / segments;
@@ -78,7 +80,7 @@ fn get_center<U>(r: Vector<U>, laf: bool, sf: bool, d: Vector<U>) -> Vector<U> {
     let expr = (r.x * d_2.y).powi(2) + (r.y * d_2.x).powi(2);
     let v = ((r.x * r.y).powi(2) - expr) / expr;
 
-    let co = if v.approx_eq(&0.0) {
+    let co = if v.is_close(0.0) {
         0.0
     } else {
         sign * v.sqrt()
@@ -106,11 +108,11 @@ fn create_arc<U>(r: Vector<U>, phi0: Angle, dphi: Angle) -> (Vector<U>, Vector<U
 
 #[cfg(test)]
 mod tests {
+    use isclose::assert_is_close;
+
     use super::*;
 
     use std::f32::consts::SQRT_2;
-
-    use assert_approx_eq::assert_approx_eq;
 
     #[allow(clippy::too_many_lines)]
     #[test]
@@ -248,7 +250,7 @@ mod tests {
 
             assert_eq!(points.len(), exp.len());
             for (pnt, exp) in points.zip(exp) {
-                assert!(pnt.approx_eq(&exp));
+                assert_is_close!(pnt, exp);
             }
         }
     }
@@ -302,8 +304,7 @@ mod tests {
 
         for Params { r, laf, sf, d, exp } in params {
             let point = get_center(r, laf, sf, d);
-            assert_approx_eq!(point.x, exp.x);
-            assert_approx_eq!(point.y, exp.y);
+            assert_is_close!(point, exp);
         }
     }
 
@@ -413,12 +414,9 @@ mod tests {
         for Params { r, phi0, dphi, p } in params {
             let points = create_arc(r, phi0, dphi);
 
-            assert_approx_eq!(p.0.x, points.0.x);
-            assert_approx_eq!(p.0.y, points.0.y);
-            assert_approx_eq!(p.1.x, points.1.x);
-            assert_approx_eq!(p.1.y, points.1.y);
-            assert_approx_eq!(p.2.x, points.2.x);
-            assert_approx_eq!(p.2.y, points.2.y);
+            assert_is_close!(p.0, points.0);
+            assert_is_close!(p.1, points.1);
+            assert_is_close!(p.2, points.2);
         }
     }
 }

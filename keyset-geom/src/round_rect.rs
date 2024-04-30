@@ -1,3 +1,7 @@
+use std::borrow::Borrow;
+
+use isclose::IsClose;
+
 use crate::{ExtRect, Length, Point, Rect, Size};
 
 /// A rectangle with rounded corners. Unlike [`kurbo::RoundedRect`] this has one set of radii
@@ -96,9 +100,27 @@ impl<U> RoundRect<U> {
     }
 }
 
+impl<U> IsClose<f32> for RoundRect<U> {
+    const ABS_TOL: f32 = f32::ABS_TOL;
+    const REL_TOL: f32 = f32::REL_TOL;
+
+    fn is_close_tol(
+        &self,
+        other: impl Borrow<Self>,
+        rel_tol: impl Borrow<f32>,
+        abs_tol: impl Borrow<f32>,
+    ) -> bool {
+        let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
+            (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
+        self.min.is_close_tol(other.min, rel_tol, abs_tol)
+            && self.max.is_close_tol(other.max, rel_tol, abs_tol)
+            && self.radius.is_close_tol(other.radius, rel_tol, abs_tol)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
+    use isclose::assert_is_close;
 
     use super::*;
 
@@ -107,11 +129,11 @@ mod tests {
         let rect =
             RoundRect::<()>::new(Point::new(1.0, 2.0), Point::new(3.0, 5.0), Length::new(0.5));
 
-        assert_approx_eq!(rect.min.x, 1.0);
-        assert_approx_eq!(rect.min.y, 2.0);
-        assert_approx_eq!(rect.max.x, 3.0);
-        assert_approx_eq!(rect.max.y, 5.0);
-        assert_approx_eq!(rect.radius.0, 0.5);
+        assert_is_close!(rect.min.x, 1.0);
+        assert_is_close!(rect.min.y, 2.0);
+        assert_is_close!(rect.max.x, 3.0);
+        assert_is_close!(rect.max.y, 5.0);
+        assert_is_close!(rect.radius.0, 0.5);
     }
 
     #[test]
@@ -121,11 +143,11 @@ mod tests {
             Length::new(0.5),
         );
 
-        assert_approx_eq!(rect.min.x, 1.0);
-        assert_approx_eq!(rect.min.y, 2.0);
-        assert_approx_eq!(rect.max.x, 3.0);
-        assert_approx_eq!(rect.max.y, 5.0);
-        assert_approx_eq!(rect.radius.0, 0.5);
+        assert_is_close!(rect.min.x, 1.0);
+        assert_is_close!(rect.min.y, 2.0);
+        assert_is_close!(rect.max.x, 3.0);
+        assert_is_close!(rect.max.y, 5.0);
+        assert_is_close!(rect.radius.0, 0.5);
     }
 
     #[test]
@@ -136,11 +158,11 @@ mod tests {
             Length::new(0.5),
         );
 
-        assert_approx_eq!(rect.min.x, 1.0);
-        assert_approx_eq!(rect.min.y, 2.0);
-        assert_approx_eq!(rect.max.x, 3.0);
-        assert_approx_eq!(rect.max.y, 5.0);
-        assert_approx_eq!(rect.radius.0, 0.5);
+        assert_is_close!(rect.min.x, 1.0);
+        assert_is_close!(rect.min.y, 2.0);
+        assert_is_close!(rect.max.x, 3.0);
+        assert_is_close!(rect.max.y, 5.0);
+        assert_is_close!(rect.radius.0, 0.5);
     }
 
     #[test]
@@ -151,11 +173,11 @@ mod tests {
             Length::new(0.5),
         );
 
-        assert_approx_eq!(rect.min.x, 1.0);
-        assert_approx_eq!(rect.min.y, 2.0);
-        assert_approx_eq!(rect.max.x, 3.0);
-        assert_approx_eq!(rect.max.y, 5.0);
-        assert_approx_eq!(rect.radius.0, 0.5);
+        assert_is_close!(rect.min.x, 1.0);
+        assert_is_close!(rect.min.y, 2.0);
+        assert_is_close!(rect.max.x, 3.0);
+        assert_is_close!(rect.max.y, 5.0);
+        assert_is_close!(rect.radius.0, 0.5);
     }
 
     #[test]
@@ -163,7 +185,7 @@ mod tests {
         let rect =
             RoundRect::<()>::new(Point::new(1.0, 2.0), Point::new(3.0, 5.0), Length::new(0.5));
 
-        assert_approx_eq!(rect.width(), 2.0);
+        assert_is_close!(rect.width(), 2.0);
     }
 
     #[test]
@@ -171,7 +193,7 @@ mod tests {
         let rect =
             RoundRect::<()>::new(Point::new(1.0, 2.0), Point::new(3.0, 5.0), Length::new(0.5));
 
-        assert_approx_eq!(rect.height(), 3.0);
+        assert_is_close!(rect.height(), 3.0);
     }
 
     #[test]

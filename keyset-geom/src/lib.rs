@@ -34,8 +34,6 @@ pub use unit::{
     MM_PER_UNIT,
 };
 
-pub use euclid::approxeq::ApproxEq;
-
 /// An angle in radians
 pub type Angle = euclid::Angle<f32>;
 

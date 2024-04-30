@@ -216,7 +216,7 @@ impl<'de> Deserialize<'de> for Profile {
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
+    use isclose::assert_is_close;
 
     use super::*;
 
@@ -225,17 +225,16 @@ mod tests {
         let bar_props: BarProps =
             toml::from_str("width = 3.85\nheight = 0.4\ny-offset = 5.05").unwrap();
 
-        assert_approx_eq!(bar_props.size.width, 3.85);
-        assert_approx_eq!(bar_props.size.height, 0.4);
-        assert_approx_eq!(bar_props.y_offset.0, 5.05);
+        assert_is_close!(bar_props.size, Size::<Mm>::new(3.85, 0.4));
+        assert_is_close!(bar_props.y_offset, Length::<Mm>::new(5.05));
     }
 
     #[test]
     fn deserialize_bump_props() {
         let bar_props: BumpProps = toml::from_str("diameter = 0.4\ny-offset = -0.2").unwrap();
 
-        assert_approx_eq!(bar_props.diameter.get(), 0.4);
-        assert_approx_eq!(bar_props.y_offset.get(), -0.2, 0.5);
+        assert_is_close!(bar_props.diameter, Length::<Mm>::new(0.4));
+        assert_is_close!(bar_props.y_offset, Length::<Mm>::new(-0.2));
     }
 
     #[test]
@@ -244,10 +243,9 @@ mod tests {
             toml::from_str("width = 11.81\nheight = 13.91\nradius = 1.52\ny-offset = -1.62")
                 .unwrap();
 
-        assert_approx_eq!(surf.size.width, 620.0, 0.5);
-        assert_approx_eq!(surf.size.height, 730.0, 0.5);
-        assert_approx_eq!(surf.radius.0, 80.0, 0.5);
-        assert_approx_eq!(surf.y_offset.0, -85.0, 0.5);
+        assert_is_close!(surf.size, Size::new(11.81, 13.91) * DOT_PER_MM);
+        assert_is_close!(surf.radius, Length::new(1.52) * DOT_PER_MM);
+        assert_is_close!(surf.y_offset, Length::new(-1.62) * DOT_PER_MM);
     }
 
     #[test]
@@ -255,8 +253,7 @@ mod tests {
         let surf: BottomSurface =
             toml::from_str("width = 18.29\nheight = 18.29\nradius = 0.38").unwrap();
 
-        assert_approx_eq!(surf.size.width, 960.0, 0.5);
-        assert_approx_eq!(surf.size.height, 960.0, 0.5);
-        assert_approx_eq!(surf.radius.0, 20.0, 0.5);
+        assert_is_close!(surf.size, Size::splat(18.29) * DOT_PER_MM);
+        assert_is_close!(surf.radius, Length::new(0.38) * DOT_PER_MM);
     }
 }

@@ -123,6 +123,8 @@ impl IndexMut<(usize, usize)> for Legends {
 
 #[cfg(test)]
 pub mod tests {
+    use isclose::assert_is_close;
+
     use super::*;
 
     #[test]
@@ -131,7 +133,7 @@ pub mod tests {
 
         assert_eq!(legend.text, "test");
         assert_eq!(legend.size_idx, 4);
-        assert_eq!(legend.color, Color::new(0.0, 0.2, 0.4));
+        assert_is_close!(legend.color, Color::new(0.0, 0.2, 0.4));
     }
 
     #[test]
