@@ -212,9 +212,9 @@ mod tests {
         let path = top(&key, &options);
         let bounds = path.data.bounds;
 
-        assert_eq!(path.fill.unwrap(), key.color);
-        assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_eq!(path.outline.unwrap().width, options.outline_width);
+        assert_is_close!(path.fill.unwrap(), key.color);
+        assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
+        assert_is_close!(path.outline.unwrap().width, options.outline_width);
         let top_rect = options.profile.top_with_size(Size::new(1.0, 1.0));
         assert_is_close!(bounds, top_rect.rect());
 
@@ -249,9 +249,9 @@ mod tests {
         let path = bottom(&key, &options);
         let bounds = path.data.bounds;
 
-        assert_eq!(path.fill.unwrap(), key.color);
-        assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_eq!(path.outline.unwrap().width, options.outline_width);
+        assert_is_close!(path.fill.unwrap(), key.color);
+        assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
+        assert_is_close!(path.outline.unwrap().width, options.outline_width);
         let bottom_rect = options.profile.bottom_with_size(Size::new(1.0, 1.0));
         assert_is_close!(bounds, bottom_rect.rect());
 
@@ -304,19 +304,18 @@ mod tests {
         let path = path.unwrap();
         let bounds = path.data.bounds;
 
-        assert_eq!(path.fill.unwrap(), bar.color);
-        assert_eq!(path.outline.unwrap().color, bar.color.highlight(0.15));
-        assert_eq!(path.outline.unwrap().width, options.outline_width);
-        let center = options.profile.top_with_size(Size::new(1.0, 1.0)).center()
-            + Vector::new(
-                0.0,
-                (options.profile.homing.bar.y_offset * DOT_PER_MM).get(),
-            );
-        assert_is_close!(bounds.center(), center);
-        assert_is_close!(
-            bounds.size().to_vector(),
-            (options.profile.homing.bar.size * DOT_PER_MM).to_vector()
-        );
+        assert_is_close!(path.fill.unwrap(), bar.color);
+        assert_is_close!(path.outline.unwrap().color, bar.color.highlight(0.15));
+        assert_is_close!(path.outline.unwrap().width, options.outline_width);
+        let expected = Rect::from_center_and_size(
+            options.profile.top_with_size(Size::splat(1.0)).center(),
+            options.profile.homing.bar.size * DOT_PER_MM,
+        )
+        .translate(Vector::new(
+            0.0,
+            (options.profile.homing.bar.y_offset * DOT_PER_MM).get(),
+        ));
+        assert_is_close!(bounds, expected);
 
         // Bump
         let bump = {
@@ -330,16 +329,18 @@ mod tests {
         let path = path.unwrap();
         let bounds = path.data.bounds;
 
-        assert_eq!(path.fill.unwrap(), bump.color);
-        assert_eq!(path.outline.unwrap().color, bump.color.highlight(0.15));
-        assert_eq!(path.outline.unwrap().width, options.outline_width);
-        let center = options.profile.top_with_size(Size::new(1.0, 1.0)).center()
-            + Vector::new(0.0, options.profile.homing.bump.y_offset.get());
-        assert_is_close!(bounds.center(), center);
-        assert_is_close!(
-            bounds.size(),
-            Size::splat((options.profile.homing.bump.diameter * DOT_PER_MM).get())
-        );
+        assert_is_close!(path.fill.unwrap(), bump.color);
+        assert_is_close!(path.outline.unwrap().color, bump.color.highlight(0.15));
+        assert_is_close!(path.outline.unwrap().width, options.outline_width);
+        let expected = Rect::from_center_and_size(
+            options.profile.top_with_size(Size::splat(1.0)).center(),
+            Size::splat(options.profile.homing.bump.diameter.get()) * DOT_PER_MM,
+        )
+        .translate(Vector::new(
+            0.0,
+            (options.profile.homing.bump.y_offset * DOT_PER_MM).get(),
+        ));
+        assert_is_close!(bounds, expected);
 
         // Non-homing key
         let none = key::Key::example();
@@ -362,9 +363,9 @@ mod tests {
         let path = path.unwrap();
         let bounds = path.data.bounds;
 
-        assert_eq!(path.fill.unwrap(), key.color);
-        assert_eq!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_eq!(path.outline.unwrap().width, options.outline_width);
+        assert_is_close!(path.fill.unwrap(), key.color);
+        assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
+        assert_is_close!(path.outline.unwrap().width, options.outline_width);
 
         let top_rect = options.profile.top_with_size(Size::splat(1.0));
         let bottom_rect = options.profile.bottom_with_size(Size::splat(1.0));
@@ -374,8 +375,11 @@ mod tests {
             (top_rect.radius + bottom_rect.radius) / 2.0,
         );
         let rect = Rect::new(
-            Point::new(1250.0 - rect.min.x - rect.radius.get(), rect.min.y),
-            Point::new(1750.0 - rect.min.x, rect.max.y),
+            Point::new(
+                1.25 * DOT_PER_UNIT.0 - rect.min.x - rect.radius.get(),
+                rect.min.y,
+            ),
+            Point::new(1.75 * DOT_PER_UNIT.0 - rect.min.x, rect.max.y),
         );
 
         assert_is_close!(bounds, rect);

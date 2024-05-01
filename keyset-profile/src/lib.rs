@@ -189,7 +189,14 @@ impl TextMargin {
     const NUM_RECTS: usize = 10;
 
     // Need to use SideOffsets::new() here because SideOffsets::new_all_same() isn't const
-    pub const DEFAULT: Self = Self([SideOffsets::new(50.0, 50.0, 50.0, 50.0); Self::NUM_RECTS]);
+    pub const DEFAULT: Self = Self(
+        [SideOffsets::new(
+            0.05 * DOT_PER_UNIT.0,
+            0.05 * DOT_PER_UNIT.0,
+            0.05 * DOT_PER_UNIT.0,
+            0.05 * DOT_PER_UNIT.0,
+        ); Self::NUM_RECTS],
+    );
 
     #[must_use]
     pub fn new(offsets: &HashMap<usize, SideOffsets<Dot>>) -> Self {
@@ -246,13 +253,16 @@ pub struct TopSurface {
 
 impl TopSurface {
     pub const DEFAULT: Self = Self {
-        size: Size::new(660.0, 735.0),
-        radius: Length::new(65.0),
-        y_offset: Length::new(-77.5),
+        size: Size::new(0.660 * DOT_PER_UNIT.0, 0.735 * DOT_PER_UNIT.0),
+        radius: Length::new(0.065 * DOT_PER_UNIT.0),
+        y_offset: Length::new(-0.0775 * DOT_PER_UNIT.0),
     };
 
     pub(crate) fn rect(&self) -> Rect<Dot> {
-        Rect::from_center_and_size(Point::new(500.0, 500.0 + self.y_offset.get()), self.size)
+        Rect::from_center_and_size(
+            (Point::new(0.5, 0.5) * DOT_PER_UNIT) + Vector::new(0.0, self.y_offset.get()),
+            self.size,
+        )
     }
 
     pub(crate) fn round_rect(&self) -> RoundRect<Dot> {
@@ -447,7 +457,7 @@ mod tests {
 
     #[test]
     fn test_text_margin_new() {
-        let expected = [SideOffsets::new_all_same(50.0); 10];
+        let expected = [SideOffsets::new_all_same(0.05) * DOT_PER_UNIT; 10];
         let result = TextMargin::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
@@ -502,7 +512,7 @@ mod tests {
         let margin = TextMargin::default();
 
         for offsets in margin.0 {
-            assert_is_close!(offsets, SideOffsets::new_all_same(50.0));
+            assert_is_close!(offsets, SideOffsets::new_all_same(0.05) * DOT_PER_UNIT);
         }
     }
 
@@ -511,7 +521,8 @@ mod tests {
         let surf = TopSurface::default();
         assert_is_close!(
             surf.rect(),
-            Rect::from_origin_and_size(Point::new(170.0, 55.0), Size::new(660.0, 735.0))
+            Rect::from_origin_and_size(Point::new(0.170, 0.055), Size::new(0.660, 0.735))
+                * DOT_PER_UNIT
         );
     }
 
@@ -521,9 +532,9 @@ mod tests {
         assert_is_close!(
             surf.round_rect(),
             RoundRect::new(
-                Point::new(170.0, 55.0),
-                Point::new(830.0, 790.0),
-                Length::new(65.0)
+                Point::new(0.170, 0.055) * DOT_PER_UNIT,
+                Point::new(0.830, 0.790) * DOT_PER_UNIT,
+                Length::new(0.065) * DOT_PER_UNIT
             )
         );
     }
@@ -531,9 +542,9 @@ mod tests {
     #[test]
     fn test_top_surface_default() {
         let surf = TopSurface::default();
-        assert_is_close!(surf.size, Size::new(660.0, 735.0));
-        assert_is_close!(surf.radius, Length::new(65.0));
-        assert_is_close!(surf.y_offset, Length::new(-77.5));
+        assert_is_close!(surf.size, Size::new(0.660, 0.735) * DOT_PER_UNIT);
+        assert_is_close!(surf.radius, Length::new(0.065) * DOT_PER_UNIT);
+        assert_is_close!(surf.y_offset, Length::new(-0.0775) * DOT_PER_UNIT);
     }
 
     #[test]
@@ -541,7 +552,7 @@ mod tests {
         let surf = BottomSurface::default();
         assert_is_close!(
             surf.rect(),
-            Rect::new(Point::new(25.0, 25.0), Point::new(975.0, 975.0))
+            Rect::new(Point::new(0.025, 0.025), Point::new(0.975, 0.975)) * DOT_PER_UNIT
         );
     }
 
@@ -551,9 +562,9 @@ mod tests {
         assert_is_close!(
             surf.round_rect(),
             RoundRect::new(
-                Point::new(25.0, 25.0),
-                Point::new(975.0, 975.0),
-                Length::new(65.0)
+                Point::new(0.025, 0.025) * DOT_PER_UNIT,
+                Point::new(0.975, 0.975) * DOT_PER_UNIT,
+                Length::new(0.065) * DOT_PER_UNIT
             )
         );
     }
@@ -561,8 +572,8 @@ mod tests {
     #[test]
     fn test_bottom_surface_default() {
         let surf = BottomSurface::default();
-        assert_is_close!(surf.size, Size::new(950.0, 950.0));
-        assert_is_close!(surf.radius, Length::new(65.0));
+        assert_is_close!(surf.size, Size::new(0.950, 0.950) * DOT_PER_UNIT);
+        assert_is_close!(surf.radius, Length::new(0.065) * DOT_PER_UNIT);
     }
 
     #[cfg(feature = "toml")]
@@ -836,12 +847,12 @@ mod tests {
 
         assert_matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(1.0));
 
-        assert_is_close!(profile.bottom.size, Size::splat(950.0));
-        assert_is_close!(profile.bottom.radius, Length::new(65.0));
+        assert_is_close!(profile.bottom.size, Size::splat(0.950) * DOT_PER_UNIT);
+        assert_is_close!(profile.bottom.radius, Length::new(0.065) * DOT_PER_UNIT);
 
-        assert_is_close!(profile.top.size, Size::new(660.0, 735.0));
-        assert_is_close!(profile.top.radius, Length::new(65.0));
-        assert_is_close!(profile.top.y_offset, Length::new(-77.5));
+        assert_is_close!(profile.top.size, Size::new(0.660, 0.735) * DOT_PER_UNIT);
+        assert_is_close!(profile.top.radius, Length::new(0.065) * DOT_PER_UNIT);
+        assert_is_close!(profile.top.y_offset, Length::new(-0.0775) * DOT_PER_UNIT);
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = TextHeight::default();

@@ -2,7 +2,9 @@ mod error;
 
 use std::collections::HashMap;
 
-use geom::{Dot, ExtRect, Length, Mm, Point, Rect, SideOffsets, Size, DOT_PER_MM};
+use geom::{
+    Dot, ExtRect, Length, Mm, Point, Rect, SideOffsets, Size, Vector, DOT_PER_MM, DOT_PER_UNIT,
+};
 use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
@@ -138,7 +140,8 @@ struct LegendProps {
 impl LegendProps {
     fn rect(&self, top_offset: Length<Dot>) -> Rect<Dot> {
         Rect::from_center_and_size(
-            Point::new(500.0, 500.0 + top_offset.get() + self.y_offset),
+            Point::new(0.5, 0.5) * DOT_PER_UNIT
+                + Vector::new(0.0, top_offset.get() + self.y_offset),
             Size::new(self.width, self.height),
         )
     }
@@ -157,10 +160,10 @@ where
                 .parse()
                 .map_err(|_| D::Error::invalid_value(Unexpected::Str(&s), &"an integer"))?;
             let p = LegendProps {
-                size: p.size * (1000.0 / 19.05),
-                width: p.width * (1000.0 / 19.05),
-                height: p.height * (1000.0 / 19.05),
-                y_offset: p.y_offset * (1000.0 / 19.05),
+                size: p.size * DOT_PER_MM.0,
+                width: p.width * DOT_PER_MM.0,
+                height: p.height * DOT_PER_MM.0,
+                y_offset: p.y_offset * DOT_PER_MM.0,
             };
             Ok((i, p))
         })

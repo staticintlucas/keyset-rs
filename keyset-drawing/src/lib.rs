@@ -24,7 +24,7 @@ mod png;
 mod svg;
 
 use font::Font;
-use geom::{Dot, Inch, Length, Point, Rect, Scale, Size, Unit};
+use geom::{Dot, Inch, Length, Point, Rect, Scale, Size, Unit, DOT_PER_UNIT};
 use key::Key;
 use profile::Profile;
 
@@ -109,7 +109,7 @@ impl<'a> Default for Options<'a> {
             profile: &Profile::DEFAULT,
             font: Font::default_ref(),
             scale: 1.0,
-            outline_width: Length::new(10.0),
+            outline_width: Length::new(0.01) * DOT_PER_UNIT,
             show_keys: true,
             show_margin: false,
         }

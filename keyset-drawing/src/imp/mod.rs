@@ -92,7 +92,7 @@ impl KeyDrawing {
 
 #[cfg(test)]
 mod tests {
-    use geom::Size;
+    use geom::{Size, DOT_PER_UNIT};
     use isclose::assert_is_close;
 
     use super::*;
@@ -140,6 +140,10 @@ mod tests {
             .top_with_size(Size::new(1.5, 1.0))
             .rect()
             .inner_box(options.profile.text_margin.get(font_size));
+        dbg!(
+            options.profile.top_with_size(Size::new(1.5, 1.0)).rect(),
+            options.profile.text_margin.get(font_size)
+        );
         assert_is_close!(bounding_box, margin_rect);
 
         // ISO V
@@ -162,7 +166,7 @@ mod tests {
             .profile
             .top_with_size(Size::new(1.25, 2.0))
             .rect()
-            .translate(Vector::new(250.0, 0.0))
+            .translate(Vector::new(0.25, 0.0) * DOT_PER_UNIT)
             .inner_box(options.profile.text_margin.get(font_size));
         assert_is_close!(bounding_box, margin_rect);
     }
