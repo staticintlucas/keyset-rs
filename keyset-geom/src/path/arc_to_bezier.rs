@@ -57,7 +57,7 @@ pub fn arc_to_bezier<U>(
     // Subtract f32::TOLERANCE so 90.0001 deg doesn't become 2 segs
     let segments = ((dphi / Angle::frac_pi_2()).abs() - f32::ABS_TOL).ceil();
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let i_segments = segments as u8; // u8 is fine since segments <= 4
+    let i_segments = segments as u8; // 0 < segments <= 4 so this will never truncate
     let dphi = dphi / segments;
 
     (0..i_segments)

@@ -243,8 +243,7 @@ impl Font {
         self.face.number_of_glyphs().into()
     }
 
-    /// Returns the flyph for a given character if present in the font
-    #[allow(clippy::missing_panics_doc)] // Only unwrapping a mutex
+    /// Returns the glyph for a given character if present in the font
     pub fn glyph(&self, char: char) -> Option<Glyph> {
         self.glyphs
             .entry(char)
@@ -275,7 +274,6 @@ impl Font {
 
     /// Returns the kerning between two characters' glyphs, or 0 if no kerning is specified in the
     /// font
-    #[allow(clippy::missing_panics_doc)] // Only unwrapping a mutex
     pub fn kerning(&self, left: char, right: char) -> Length<FontUnit> {
         *self.kerning.entry((left, right)).or_insert_with(|| {
             if let (Some(lhs), Some(rhs)) =

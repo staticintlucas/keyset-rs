@@ -66,6 +66,7 @@ impl KeyDrawing {
 
         let legends = key.legends.iter().enumerate().filter_map(|(i, l)| {
             l.as_ref().map(|legend| {
+                // `i` will never be anywhere big enough lose precision
                 #[allow(clippy::cast_precision_loss)]
                 let align = Vector::new(((i % 3) as f32) / 2.0, ((i / 3) as f32) / 2.0);
                 legend::draw(legend, options.font, options.profile, top_rect, align)

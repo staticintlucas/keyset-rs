@@ -8,15 +8,11 @@ use crate::{Drawing, KeyDrawing, KeyPath};
 #[derive(Debug, Clone, Copy)]
 pub struct Pixel;
 
-fn png_scale(ppi: Scale<Inch, Pixel>) -> Scale<Dot, Pixel> {
-    DOT_PER_INCH.inverse() * ppi
-}
-
 pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Vec<u8> {
-    let scale = png_scale(ppi) * Scale::<Pixel, Pixel>::new(drawing.scale); // 0.75 in/key
+    let scale = (DOT_PER_INCH.inverse() * ppi) * Scale::<Pixel, Pixel>::new(drawing.scale);
     let size = drawing.bounds.size() * DOT_PER_UNIT * scale;
 
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // We want truncation
     let (width, height) = (size.width.ceil() as u32, size.height.ceil() as u32);
 
     // Will panic if width/height = 0 (which we prevent with .max(1))

@@ -2,11 +2,14 @@ use super::Color;
 
 use tiny_skia::Color as SkiaColor;
 
-#[allow(clippy::fallible_impl_from)] // It's not really fallible due to the clamp
 impl From<Color> for SkiaColor {
     fn from(value: Color) -> Self {
-        let (r, g, b) = value.map(|c| c.clamp(0.0, 1.0)).into();
-        Self::from_rgba(r, g, b, 1.0).unwrap()
+        // Use set_* here rather than Self::from_rgba to avoid clippy::fallible_impl_from
+        let mut result = Self::BLACK;
+        result.set_red(value.r());
+        result.set_green(value.g());
+        result.set_blue(value.b());
+        result
     }
 }
 

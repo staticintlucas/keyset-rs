@@ -152,7 +152,7 @@ impl TextHeight {
             let (index, height): (Vec<_>, Vec<_>) = {
                 iter::once((0.0, 0.0))
                     .chain(
-                        #[allow(clippy::cast_precision_loss)]
+                        #[allow(clippy::cast_precision_loss)] // `i` will never be that big
                         heights
                             .iter()
                             .sorted_by_key(|(&i, _)| i)
@@ -160,7 +160,7 @@ impl TextHeight {
                     )
                     .unzip()
             };
-            #[allow(clippy::cast_precision_loss)]
+            #[allow(clippy::cast_precision_loss)] // `i` will never be that big
             let all_indeces = array::from_fn(|i| i as f32);
             Self(interp_array(&index, &height, &all_indeces))
         }
@@ -402,7 +402,7 @@ mod tests {
 
     #[test]
     fn test_text_height_new() {
-        #[allow(clippy::cast_precision_loss)]
+        #[allow(clippy::cast_precision_loss)] // `i` will never be that big
         let expected: [_; 10] =
             array::from_fn(|i| (6.0 + 2.0 * (i as f32)) / 72.0 * DOT_PER_UNIT.get());
         let result = TextHeight::new(&HashMap::new()).0;
@@ -449,7 +449,7 @@ mod tests {
     fn test_text_height_default() {
         let heights = TextHeight::default();
 
-        #[allow(clippy::cast_precision_loss)]
+        #[allow(clippy::cast_precision_loss)] // `i` will never be that big
         for (i, h) in heights.0.into_iter().enumerate() {
             assert_is_close!(h, (6.0 + 2.0 * (i as f32)) / 72.0 * DOT_PER_UNIT.get());
         }

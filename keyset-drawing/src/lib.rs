@@ -24,15 +24,15 @@ mod png;
 mod svg;
 
 use font::Font;
-use geom::{Dot, Inch, Length, Point, Rect, Scale, Size, Unit, DOT_PER_UNIT};
+use geom::{Dot, Length, Point, Rect, Size, Unit, DOT_PER_UNIT};
 use key::Key;
 use profile::Profile;
 
-#[allow(unused_imports)] // Path is unused if no format is enabled, but who would do that?
+#[allow(unused_imports)] // KeyPath is unused if no format is enabled, but who would do that?
 pub(crate) use imp::{KeyDrawing, KeyPath};
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // Struct fields are unused if no format is enabled, but who would do that?
+#[allow(dead_code)] // Struct fields are unused if no features are enabled, but who would do that?
 pub struct Drawing {
     bounds: Rect<Unit>,
     keys: Vec<KeyDrawing>,
@@ -71,7 +71,7 @@ impl Drawing {
     #[cfg(feature = "pdf")]
     #[must_use]
     pub fn to_png(&self, ppi: f32) -> Vec<u8> {
-        png::draw(self, Scale::<Inch, png::Pixel>::new(ppi))
+        png::draw(self, geom::Scale::new(ppi))
     }
 
     #[cfg(feature = "pdf")]

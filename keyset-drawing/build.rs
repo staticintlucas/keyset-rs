@@ -1,5 +1,3 @@
-#![allow(clippy::expect_fun_call)]
-
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -22,7 +20,7 @@ fn main() {
 
     let font_dir = manifest_dir.join("resources").join("fonts");
     let ttx_files = files_with_extension(&font_dir, "ttx")
-        .expect(&format!("failed to list files in {font_dir:?}"));
+        .unwrap_or_else(|e| panic!("failed to list files in {font_dir:?}: {e:?}"));
 
     for ttx in ttx_files {
         let env_var = ttx.file_stem().unwrap().to_string_lossy().to_uppercase() + "_TTF";
@@ -39,11 +37,11 @@ fn main() {
         let ttx_mtime = ttx
             .metadata()
             .and_then(|m| m.modified())
-            .expect(&format!("error retrieving metadata for {ttx_str}"));
+            .unwrap_or_else(|e| panic!("error retrieving metadata for {ttx_str}: {e:?}"));
         let ttf_mtime = ttf
             .metadata()
             .and_then(|m| m.modified())
-            .expect(&format!("error retrieving metadata for {ttf_str}"));
+            .unwrap_or_else(|e| panic!("error retrieving metadata for {ttf_str}: {e:?}"));
 
         // rather than just checking if the TTF is newer than the TTX, use a 10ms tolerance so
         // if the TTF is created first by `git clone` it won't error out

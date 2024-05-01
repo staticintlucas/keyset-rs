@@ -43,7 +43,6 @@ pub fn draw(drawing: &Drawing) -> Vec<u8> {
     writer.catalog(catalog_id).pages(tree_id);
     writer.pages(tree_id).kids([page_id]).count(1);
 
-    #[allow(clippy::cast_possible_truncation)]
     writer
         .page(page_id)
         .media_box(Rect::new(0.0, 0.0, size.width, size.height))
