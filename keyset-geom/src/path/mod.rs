@@ -475,24 +475,24 @@ mod tests {
     fn test_path_add() {
         let empty = PathBuilder::<()>::new();
         let mut line1 = PathBuilder::new();
-        line1.abs_line(Point::new(1., 1.));
+        line1.abs_line(Point::new(1.0, 1.0));
 
         let mut line2 = PathBuilder::new();
-        line2.abs_line(Point::new(1., 0.));
+        line2.abs_line(Point::new(1.0, 0.0));
 
         let mut line3 = PathBuilder::new();
-        line3.abs_move(Point::new(0., 1.));
-        line3.abs_line(Point::new(1., 0.));
+        line3.abs_move(Point::new(0.0, 1.0));
+        line3.abs_line(Point::new(1.0, 0.0));
 
         let mut angle = PathBuilder::new();
-        angle.abs_line(Point::new(1., 1.));
+        angle.abs_line(Point::new(1.0, 1.0));
         angle.abs_move(Point::zero());
-        angle.abs_line(Point::new(1., 0.));
+        angle.abs_line(Point::new(1.0, 0.0));
 
         let mut cross = PathBuilder::new();
-        cross.abs_line(Point::new(1., 1.));
-        cross.abs_move(Point::new(0., 1.));
-        cross.abs_line(Point::new(1., 0.));
+        cross.abs_line(Point::new(1.0, 1.0));
+        cross.abs_move(Point::new(0.0, 1.0));
+        cross.abs_line(Point::new(1.0, 0.0));
 
         #[allow(clippy::redundant_clone)]
         let params = [
@@ -517,66 +517,70 @@ mod tests {
     fn test_commands() {
         let mut mov = PathBuilder::<()>::new();
         mov.abs_move(Point::origin());
-        mov.rel_move(Vector::new(2., 2.));
+        mov.rel_move(Vector::new(2.0, 2.0));
         mov.close();
 
         let mut line = PathBuilder::new();
-        line.abs_line(Point::new(1., 1.));
-        line.rel_line(Vector::new(1., 1.));
+        line.abs_line(Point::new(1.0, 1.0));
+        line.rel_line(Vector::new(1.0, 1.0));
         line.close();
 
         let mut vert_horiz = PathBuilder::new();
-        vert_horiz.abs_vert_line(Length::new(2.));
-        vert_horiz.rel_horiz_line(Length::new(2.));
+        vert_horiz.abs_vert_line(Length::new(2.0));
+        vert_horiz.rel_horiz_line(Length::new(2.0));
         vert_horiz.close();
 
         let mut horiz_vert = PathBuilder::new();
-        horiz_vert.abs_horiz_line(Length::new(2.));
-        horiz_vert.rel_vert_line(Length::new(2.));
+        horiz_vert.abs_horiz_line(Length::new(2.0));
+        horiz_vert.rel_vert_line(Length::new(2.0));
         horiz_vert.close();
 
         let mut curve1 = PathBuilder::new();
-        curve1.abs_cubic_bezier(Point::new(0., 0.5), Point::new(0.5, 1.), Point::new(1., 1.));
-        curve1.rel_smooth_quadratic_bezier(Vector::new(1., 1.));
+        curve1.abs_cubic_bezier(
+            Point::new(0.0, 0.5),
+            Point::new(0.5, 1.0),
+            Point::new(1.0, 1.0),
+        );
+        curve1.rel_smooth_quadratic_bezier(Vector::new(1.0, 1.0));
 
         let mut curve2 = PathBuilder::new();
-        curve2.abs_quadratic_bezier(Point::new(0., 1.), Point::new(1., 1.));
-        curve2.rel_smooth_cubic_bezier(Vector::new(1., 0.5), Vector::new(1., 1.));
+        curve2.abs_quadratic_bezier(Point::new(0.0, 1.0), Point::new(1.0, 1.0));
+        curve2.rel_smooth_cubic_bezier(Vector::new(1.0, 0.5), Vector::new(1.0, 1.0));
 
         let mut curve3 = PathBuilder::new();
         curve3.rel_cubic_bezier(
-            Vector::new(0., 0.5),
-            Vector::new(0.5, 1.),
-            Vector::new(1., 1.),
+            Vector::new(0.0, 0.5),
+            Vector::new(0.5, 1.0),
+            Vector::new(1.0, 1.0),
         );
-        curve3.abs_smooth_cubic_bezier(Point::new(2., 1.5), Point::new(2., 2.));
+        curve3.abs_smooth_cubic_bezier(Point::new(2.0, 1.5), Point::new(2.0, 2.0));
         curve3.close();
 
         let mut curve4 = PathBuilder::new();
-        curve4.rel_quadratic_bezier(Vector::new(0., 1.), Vector::new(1., 1.));
-        curve4.abs_smooth_quadratic_bezier(Point::new(2., 2.));
+        curve4.rel_quadratic_bezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0));
+        curve4.abs_smooth_quadratic_bezier(Point::new(2.0, 2.0));
         curve4.close();
 
         let mut curve5 = PathBuilder::new();
-        curve5.abs_smooth_cubic_bezier(Point::new(0., 2.), Point::new(2., 2.));
+        curve5.abs_smooth_cubic_bezier(Point::new(0.0, 2.0), Point::new(2.0, 2.0));
 
         let mut curve6 = PathBuilder::new();
-        curve6.abs_smooth_quadratic_bezier(Point::new(2., 2.));
+        curve6.abs_smooth_quadratic_bezier(Point::new(2.0, 2.0));
 
         let mut arc = PathBuilder::new();
         arc.abs_arc(
-            Vector::new(1., 1.),
+            Vector::new(1.0, 1.0),
             Angle::zero(),
             false,
             false,
-            Point::new(1., 1.),
+            Point::new(1.0, 1.0),
         );
         arc.rel_arc(
-            Vector::new(1., 1.),
+            Vector::new(1.0, 1.0),
             Angle::zero(),
             false,
             true,
-            Vector::new(1., 1.),
+            Vector::new(1.0, 1.0),
         );
 
         let params = vec![

@@ -46,7 +46,7 @@ pub fn draw(
     let margin = top_rect.inner_box(profile.text_margin.get(legend.size_idx));
     let text_path = if bounds.width() > margin.width() {
         let text = &legend.text;
-        let percent = 100. * (bounds.width() / margin.width() - 1.);
+        let percent = 100.0 * (bounds.width() / margin.width() - 1.0);
         warn!(r#"legend "{text}" is {percent}% too wide; squishing legend to fit"#);
         text_path.scale(margin.width() / bounds.width(), 1.0)
     } else {

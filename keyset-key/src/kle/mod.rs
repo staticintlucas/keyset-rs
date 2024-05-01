@@ -80,7 +80,7 @@ impl TryFrom<kle::Key> for Key {
     type Error = Error;
 
     fn try_from(mut key: kle::Key) -> Result<Self> {
-        let position = Point::new(key.x + key.x2.min(0.), key.y + key.y2.min(0.));
+        let position = Point::new(key.x + key.x2.min(0.0), key.y + key.y2.min(0.0));
         let shape = shape_from_kle(&key)?;
         let color = key.color.rgb().into();
         let legends = {
@@ -151,41 +151,41 @@ mod tests {
         .unwrap();
         let regular_key = shape_from_kle(&kle::Key {
             width: 2.25,
-            height: 1.,
-            x2: 0.,
-            y2: 0.,
+            height: 1.0,
+            x2: 0.0,
+            y2: 0.0,
             width2: 2.25,
-            height2: 1.,
+            height2: 1.0,
             ..Default::default()
         })
         .unwrap();
         let iso_horiz = shape_from_kle(&kle::Key {
             width: 1.5,
-            height: 1.,
+            height: 1.0,
             x2: 0.25,
-            y2: 0.,
+            y2: 0.0,
             width2: 1.25,
-            height2: 2.,
+            height2: 2.0,
             ..Default::default()
         })
         .unwrap();
         let iso_vert = shape_from_kle(&kle::Key {
             width: 1.25,
-            height: 2.,
+            height: 2.0,
             x2: -0.25,
-            y2: 0.,
+            y2: 0.0,
             width2: 1.5,
-            height2: 1.,
+            height2: 1.0,
             ..Default::default()
         })
         .unwrap();
         let step_caps = shape_from_kle(&kle::Key {
             width: 1.25,
-            height: 1.,
-            x2: 0.,
-            y2: 0.,
+            height: 1.0,
+            x2: 0.0,
+            y2: 0.0,
             width2: 1.75,
-            height2: 1.,
+            height2: 1.0,
             ..Default::default()
         })
         .unwrap();
@@ -206,12 +206,12 @@ mod tests {
     #[test]
     fn key_shape_from_kle_invalid() {
         let invalid = shape_from_kle(&kle::Key {
-            width: 1.,
-            height: 1.,
+            width: 1.0,
+            height: 1.0,
             x2: -0.25,
-            y2: 0.,
+            y2: 0.0,
             width2: 1.5,
-            height2: 1.,
+            height2: 1.0,
             ..Default::default()
         });
 

@@ -200,8 +200,8 @@ mod tests {
 
         let drawing = options.draw(&keys);
 
-        assert_is_close!(drawing.bounds.width(), 1.);
-        assert_is_close!(drawing.bounds.height(), 1.);
+        assert_is_close!(drawing.bounds.width(), 1.0);
+        assert_is_close!(drawing.bounds.height(), 1.0);
         assert_eq!(drawing.keys.len(), 1);
         assert_is_close!(drawing.scale, options.scale);
     }

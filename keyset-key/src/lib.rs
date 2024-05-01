@@ -132,7 +132,7 @@ impl Default for Key {
     fn default() -> Self {
         Self {
             position: Point::origin(),
-            shape: Shape::Normal(Size::new(1., 1.)),
+            shape: Shape::Normal(Size::new(1.0, 1.0)),
             color: Color::new(0.8, 0.8, 0.8),
             legends: Legends::default(),
         }
@@ -148,7 +148,7 @@ pub mod tests {
     #[test]
     fn shape_outer_size() {
         assert_eq!(
-            Shape::Normal(Size::new(2.25, 1.)).outer_rect(),
+            Shape::Normal(Size::new(2.25, 1.0)).outer_rect(),
             Rect::from_origin_and_size((0.0, 0.0).into(), (2.25, 1.0).into())
         );
         assert_eq!(
@@ -189,8 +189,8 @@ pub mod tests {
     fn key_new() {
         let key = Key::new();
 
-        assert_eq!(key.position, Point::new(0., 0.));
-        assert_matches!(key.shape, Shape::Normal(size) if size == Size::new(1., 1.));
+        assert_eq!(key.position, Point::new(0.0, 0.0));
+        assert_matches!(key.shape, Shape::Normal(size) if size == Size::new(1.0, 1.0));
         assert_eq!(key.color, Color::new(0.8, 0.8, 0.8));
         for legend in key.legends {
             assert!(legend.is_none());
@@ -202,8 +202,8 @@ pub mod tests {
         let key = Key::example();
         let legend_is_some = [true, false, true, false, false, false, true, false, true];
 
-        assert_eq!(key.position, Point::new(0., 0.));
-        assert_matches!(key.shape, Shape::Normal(size) if size == Size::new(1., 1.));
+        assert_eq!(key.position, Point::new(0.0, 0.0));
+        assert_matches!(key.shape, Shape::Normal(size) if size == Size::new(1.0, 1.0));
         assert_eq!(key.color, Color::new(0.8, 0.8, 0.8));
         for (legend, is_some) in key.legends.into_iter().zip(legend_is_some) {
             assert_eq!(legend.is_some(), is_some);

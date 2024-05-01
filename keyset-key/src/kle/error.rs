@@ -70,12 +70,12 @@ pub mod tests {
     #[test]
     fn error_fmt() {
         let unsupported_key_size = Error::UnsupportedKeySize {
-            w: 1.,
-            h: 1.,
+            w: 1.0,
+            h: 1.0,
             x2: -0.25,
-            y2: 0.,
+            y2: 0.0,
             w2: 1.5,
-            h2: 1.,
+            h2: 1.0,
         };
         assert_eq!(
             format!("{unsupported_key_size}"),
@@ -93,12 +93,12 @@ pub mod tests {
     #[test]
     fn error_source() {
         let unsupported_key_size = Error::UnsupportedKeySize {
-            w: 1.,
-            h: 1.,
+            w: 1.0,
+            h: 1.0,
             x2: -0.25,
-            y2: 0.,
+            y2: 0.0,
             w2: 1.5,
-            h2: 1.,
+            h2: 1.0,
         };
         assert!(unsupported_key_size.source().is_none());
 

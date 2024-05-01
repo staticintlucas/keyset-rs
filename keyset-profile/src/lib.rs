@@ -150,7 +150,7 @@ impl TextHeight {
             Self::default()
         } else {
             let (index, height): (Vec<_>, Vec<_>) = {
-                iter::once((0., 0.))
+                iter::once((0.0, 0.0))
                     .chain(
                         #[allow(clippy::cast_precision_loss)]
                         heights
@@ -252,7 +252,7 @@ impl TopSurface {
     };
 
     pub(crate) fn rect(&self) -> Rect<Dot> {
-        Rect::from_center_and_size(Point::new(500., 500. + self.y_offset.get()), self.size)
+        Rect::from_center_and_size(Point::new(500.0, 500.0 + self.y_offset.get()), self.size)
     }
 
     pub(crate) fn round_rect(&self) -> RoundRect<Dot> {
@@ -403,7 +403,9 @@ mod tests {
             assert_is_close!(e, r);
         }
 
-        let expected = [0., 60., 120., 180., 190., 210., 230., 280., 330., 380.];
+        let expected = [
+            0.0, 60.0, 120.0, 180.0, 190.0, 210.0, 230.0, 280.0, 330.0, 380.0,
+        ];
         let result = TextHeight::new(&HashMap::from([
             (1, 60.0),
             (3, 180.0),
@@ -455,16 +457,16 @@ mod tests {
         }
 
         let expected = [
-            SideOffsets::new_all_same(0.),
-            SideOffsets::new_all_same(0.),
-            SideOffsets::new_all_same(0.),
-            SideOffsets::new_all_same(-50.),
-            SideOffsets::new_all_same(-50.),
-            SideOffsets::new_all_same(-50.),
-            SideOffsets::new_all_same(-100.),
-            SideOffsets::new_all_same(-100.),
-            SideOffsets::new_all_same(-100.),
-            SideOffsets::new_all_same(-100.),
+            SideOffsets::new_all_same(0.0),
+            SideOffsets::new_all_same(0.0),
+            SideOffsets::new_all_same(0.0),
+            SideOffsets::new_all_same(-50.0),
+            SideOffsets::new_all_same(-50.0),
+            SideOffsets::new_all_same(-50.0),
+            SideOffsets::new_all_same(-100.0),
+            SideOffsets::new_all_same(-100.0),
+            SideOffsets::new_all_same(-100.0),
+            SideOffsets::new_all_same(-100.0),
         ];
         let result = TextMargin::new(&HashMap::from([
             (2, SideOffsets::new_all_same(0.0)),
@@ -509,7 +511,7 @@ mod tests {
         let surf = TopSurface::default();
         assert_is_close!(
             surf.rect(),
-            Rect::from_origin_and_size(Point::new(170., 55.), Size::new(660., 735.))
+            Rect::from_origin_and_size(Point::new(170.0, 55.0), Size::new(660.0, 735.0))
         );
     }
 
