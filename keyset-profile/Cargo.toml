@@ -33,5 +33,5 @@ toml = { version = "0.8", default-features = false, features = ["parse"], option
 
 [dev-dependencies]
 assert_matches = "1.5"
-isclose = { git = "https://github.com/staticintlucas/isclose", branch = "main", features = ["euclid"] }
+isclose = { version = "0.1", features = ["euclid"] }
 unindent = "0.2"

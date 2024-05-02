@@ -21,7 +21,6 @@ license.workspace = true
 [dependencies]
 geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.3.2" }
 
-byte-strings = "0.3"
 dashmap = "5.1"
 log = "0.4"
 ouroboros = "0.18"
@@ -29,7 +28,4 @@ ttf-parser = { version = "0.20", default-features = false, features = ["std"]}
 
 [dev-dependencies]
 assert_matches = "1.5"
-isclose = { git = "https://github.com/staticintlucas/isclose", branch = "main", features = ["euclid"] }
-
-[build-dependencies]
-which = "6.0"
+isclose = { version = "0.1", features = ["euclid"] }

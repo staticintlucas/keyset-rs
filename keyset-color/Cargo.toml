@@ -17,9 +17,6 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
-isclose = { git = "https://github.com/staticintlucas/isclose", branch = "main", features = ["euclid"] }
+isclose = "0.1"
 tiny-skia = { version = "0.11", default-features = false, features = ["std"], optional = true }
 rgb = { version = "0.8", default-features = false, optional = true }
-
-[dev-dependencies]
-geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.3.2" }

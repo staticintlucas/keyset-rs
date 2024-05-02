@@ -32,11 +32,8 @@ log = "0.4"
 miniz_oxide = { version = "0.7", optional = true }
 pdf-writer = { version = "0.9", optional = true }
 tiny-skia = { version = "0.11", optional = true }
-svg = { version = "0.16", optional = true }
+svg = { version = "0.17", optional = true }
 
 [dev-dependencies]
-isclose = { git = "https://github.com/staticintlucas/isclose", branch = "main", features = ["euclid"] }
+isclose = { version = "0.1", features = ["euclid"] }
 unindent = "0.2"
-
-[build-dependencies]
-which = "6.0"
