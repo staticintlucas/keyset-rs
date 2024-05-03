@@ -17,7 +17,10 @@ license.workspace = true
 [package.metadata.docs.rs]
 all-features = true
 
+[lints]
+workspace = true
+
 [dependencies]
 isclose.workspace = true
-tiny-skia = { workspace = true, default-features = false, features = ["std"], optional = true }
+tiny-skia = { workspace = true, features = ["std"], optional = true }
 rgb = { workspace = true, optional = true }

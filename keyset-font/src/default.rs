@@ -53,7 +53,7 @@ mod tests {
         let a = font();
         let b = font();
 
-        assert_eq!(a as *const _, b as *const _);
+        assert!(std::ptr::eq(a, b));
     }
 
     #[test]

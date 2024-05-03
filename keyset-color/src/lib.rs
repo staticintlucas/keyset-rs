@@ -19,22 +19,6 @@
 //! [`RGB<u16>`]: ::rgb::RGB
 //! [`RGB<f32>`]: ::rgb::RGB
 
-#![warn(
-    missing_docs,
-    clippy::all,
-    clippy::correctness,
-    clippy::suspicious,
-    clippy::style,
-    clippy::complexity,
-    clippy::perf,
-    clippy::pedantic,
-    clippy::cargo,
-    clippy::nursery
-)]
-#![allow(
-    clippy::suboptimal_flops // Optimiser is pretty good, and mul_add is pretty ugly
-)]
-
 #[cfg(feature = "tiny-skia")]
 mod skia;
 

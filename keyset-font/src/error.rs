@@ -3,7 +3,7 @@ use std::fmt;
 use ttf_parser::FaceParsingError;
 
 /// A font error
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Error(FaceParsingError);
 
 impl fmt::Display for Error {

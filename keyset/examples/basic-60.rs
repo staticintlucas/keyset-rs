@@ -1,7 +1,9 @@
+//! Example usage to generate layout diagrams for a basic 60% keyboard
+
 use std::{fs, path::Path};
 
 use fontdb::{Database, Family, Query, Source};
-use keyset::*;
+use keyset::{drawing, font, key, profile};
 
 fn main() {
     let kle = r#"[
@@ -11,7 +13,7 @@ fn main() {
         [{"w": 1.25, "f": 3, "a": 6}, "Shift", {"f": 4, "a": 4}, "|\n\\", {"f": 5}, "Z",  "X", "C", "V", "B", "N", "M", {"f": 4}, "<\n,", ">\n.", "?\n/", {"w": 2.75, "f": 3, "a": 6}, "Shift"],
         [{"w": 1.5}, "Ctrl", "Win", {"w": 1.5}, "Alt", {"p": "space", "w": 7}, "", {"p": "", "w": 1.5}, "AltGr", "Win", {"w": 1.5}, "Ctrl"]
     ]"#;
-    let profile = r#"
+    let profile = "
         type = 'cylindrical'
         depth = 0.5
 
@@ -49,7 +51,7 @@ fn main() {
         scoop = { depth = 1.5 }
         bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
         bump = { diameter = 0.4, y-offset = -0.2 }
-    "#;
+    ";
 
     let font = {
         let mut fontdb = Database::new();
@@ -67,8 +69,7 @@ fn main() {
             .unwrap();
         match fontdb.face_source(id).unwrap().0 {
             Source::File(path) => fs::read(path).unwrap(),
-            Source::Binary(bytes) => (*bytes).as_ref().to_vec(),
-            Source::SharedFile(_, bytes) => (*bytes).as_ref().to_vec(),
+            Source::Binary(bytes) | Source::SharedFile(_, bytes) => (*bytes).as_ref().to_vec(),
         }
     };
 

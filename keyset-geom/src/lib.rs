@@ -3,22 +3,6 @@
 //!
 //! [keyset]: https://crates.io/crates/keyset
 
-#![warn(
-    missing_docs,
-    clippy::all,
-    clippy::correctness,
-    clippy::suspicious,
-    clippy::style,
-    clippy::complexity,
-    clippy::perf,
-    clippy::pedantic,
-    clippy::cargo,
-    clippy::nursery
-)]
-#![allow(
-    clippy::suboptimal_flops // Optimiser is pretty good, and mul_add is pretty ugly
-)]
-
 mod circle;
 mod path;
 mod round_rect;

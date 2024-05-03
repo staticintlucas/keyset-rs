@@ -1,3 +1,5 @@
+#![allow(missing_docs, clippy::pedantic)] // This is just a build.rs
+
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::time::Duration;

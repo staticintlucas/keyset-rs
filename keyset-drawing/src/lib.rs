@@ -1,19 +1,4 @@
-#![warn(
-    missing_docs,
-    clippy::all,
-    clippy::correctness,
-    clippy::suspicious,
-    clippy::style,
-    clippy::complexity,
-    clippy::perf,
-    clippy::pedantic,
-    clippy::cargo,
-    clippy::nursery
-)]
-#![allow(
-    clippy::suboptimal_flops, // Optimiser is pretty good, and mul_add is pretty ugly
-    missing_docs, // TODO
-)]
+#![allow(missing_docs)] // TODO
 
 mod imp;
 #[cfg(feature = "pdf")]
@@ -41,7 +26,7 @@ pub struct Drawing {
 
 impl Drawing {
     #[must_use]
-    pub fn new(keys: &[Key], options: &Options) -> Self {
+    pub fn new(keys: &[Key], options: &Options<'_>) -> Self {
         let bounds = keys
             .iter()
             .map(|k| k.shape.outer_rect().translate(k.position.to_vector()))
@@ -103,7 +88,7 @@ pub struct Options<'a> {
     show_margin: bool,
 }
 
-impl<'a> Default for Options<'a> {
+impl Default for Options<'_> {
     fn default() -> Self {
         Self {
             profile: &Profile::DEFAULT,

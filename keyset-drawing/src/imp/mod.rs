@@ -31,7 +31,7 @@ pub struct KeyDrawing {
 }
 
 impl KeyDrawing {
-    pub fn new(key: &Key, options: &Options) -> Self {
+    pub fn new(key: &Key, options: &Options<'_>) -> Self {
         let show_key = options.show_keys && !matches!(key.shape, KeyShape::None(..));
 
         let bottom = show_key.then(|| key::bottom(key, options));

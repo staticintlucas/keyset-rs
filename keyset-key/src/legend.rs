@@ -46,7 +46,7 @@ impl Legends {
     }
 
     /// Creates an iterator in a left-to-right, top-to-bottom order
-    pub fn iter(&self) -> std::slice::Iter<Option<Legend>> {
+    pub fn iter(&self) -> std::slice::Iter<'_, Option<Legend>> {
         self.0.iter()
     }
 }

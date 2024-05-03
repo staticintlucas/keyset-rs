@@ -17,6 +17,9 @@ license.workspace = true
 [package.metadata.docs.rs]
 all-features = true
 
+[lints]
+workspace = true
+
 [features]
 pdf = ["dep:miniz_oxide", "dep:pdf-writer"]
 png = ["dep:tiny-skia", "color/tiny-skia"]
@@ -32,7 +35,7 @@ profile.workspace = true
 log.workspace = true
 miniz_oxide = { workspace = true, optional = true }
 pdf-writer = { workspace = true, optional = true }
-tiny-skia = { workspace = true, optional = true }
+tiny-skia = { workspace = true, features = ["default"], optional = true }
 svg = { workspace = true, optional = true }
 
 [dev-dependencies]

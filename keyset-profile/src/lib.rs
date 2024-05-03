@@ -1,21 +1,4 @@
-#![warn(
-    missing_docs,
-    clippy::all,
-    clippy::correctness,
-    clippy::suspicious,
-    clippy::style,
-    clippy::complexity,
-    clippy::perf,
-    clippy::pedantic,
-    clippy::cargo,
-    clippy::nursery
-)]
-#![allow(
-    missing_docs, // TODO
-    clippy::missing_errors_doc, // TODO
-    clippy::missing_panics_doc, // TODO
-    clippy::suboptimal_flops // Optimiser is pretty good, and mul_add is pretty ugly
-)]
+#![allow(missing_docs, clippy::missing_errors_doc, clippy::missing_panics_doc)] // TODO
 
 #[cfg(feature = "serde")]
 mod de;
@@ -75,6 +58,7 @@ pub struct BumpProps {
     pub y_offset: Length<Mm>,
 }
 
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(remote = "Homing", rename_all = "kebab-case"))]
 pub enum HomingDef {
@@ -122,7 +106,7 @@ impl Default for HomingProps {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct TextHeight([f32; Self::NUM_HEIGHTS]);
 
 impl TextHeight {
@@ -182,7 +166,7 @@ impl Default for TextHeight {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct TextMargin([SideOffsets<Dot>; Self::NUM_RECTS]);
 
 impl TextMargin {
@@ -244,7 +228,7 @@ impl Default for TextMargin {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct TopSurface {
     pub size: Size<Dot>,
     pub radius: Length<Dot>,
@@ -276,7 +260,7 @@ impl Default for TopSurface {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct BottomSurface {
     pub size: Size<Dot>,
     pub radius: Length<Dot>,

@@ -8,7 +8,7 @@ use crate::Options;
 
 use super::{KeyPath, Outline};
 
-pub fn top(key: &key::Key, options: &Options) -> KeyPath {
+pub fn top(key: &key::Key, options: &Options<'_>) -> KeyPath {
     let path = match key.shape {
         key::Shape::None(..) => Path::empty(),
         key::Shape::Normal(size) | key::Shape::Space(size) => {
@@ -32,7 +32,7 @@ pub fn top(key: &key::Key, options: &Options) -> KeyPath {
     }
 }
 
-pub fn bottom(key: &key::Key, options: &Options) -> KeyPath {
+pub fn bottom(key: &key::Key, options: &Options<'_>) -> KeyPath {
     let path = match key.shape {
         key::Shape::None(..) => Path::empty(),
         key::Shape::Normal(size) | key::Shape::Space(size) => {
@@ -59,7 +59,7 @@ pub fn bottom(key: &key::Key, options: &Options) -> KeyPath {
     }
 }
 
-pub fn homing(key: &key::Key, options: &Options) -> Option<KeyPath> {
+pub fn homing(key: &key::Key, options: &Options<'_>) -> Option<KeyPath> {
     let profile = &options.profile;
 
     let key::Shape::Homing(homing) = key.shape else {
@@ -99,7 +99,7 @@ pub fn homing(key: &key::Key, options: &Options) -> Option<KeyPath> {
     })
 }
 
-pub fn step(key: &key::Key, options: &Options) -> Option<KeyPath> {
+pub fn step(key: &key::Key, options: &Options<'_>) -> Option<KeyPath> {
     matches!(key.shape, key::Shape::SteppedCaps).then(|| {
         let profile = &options.profile;
 

@@ -122,12 +122,12 @@ impl<U> Path<U> {
     }
 
     /// Create an iterator over the path's segments
-    pub fn iter(&self) -> std::slice::Iter<PathSegment<U>> {
+    pub fn iter(&self) -> std::slice::Iter<'_, PathSegment<U>> {
         self.data.iter()
     }
 
     /// Create a mutable iterator over the path's segments
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<PathSegment<U>> {
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, PathSegment<U>> {
         self.data.iter_mut()
     }
 }

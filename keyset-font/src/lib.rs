@@ -2,19 +2,6 @@
 //!
 //! [keyset]: https://crates.io/crates/keyset
 
-#![warn(
-    missing_docs,
-    clippy::all,
-    clippy::correctness,
-    clippy::suspicious,
-    clippy::style,
-    clippy::complexity,
-    clippy::perf,
-    clippy::pedantic,
-    clippy::cargo,
-    clippy::nursery
-)]
-
 mod default;
 mod error;
 mod face;
@@ -328,12 +315,13 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        #[allow(clippy::redundant_clone)]
+        #[allow(let_underscore_drop, clippy::redundant_clone)]
         let _ = font.clone(); // Shouldn't panic
     }
 
     #[test]
     fn font_default() {
+        #[allow(let_underscore_drop)]
         let _ = Font::default(); // Shouldn't panic
     }
 

@@ -14,6 +14,9 @@ license.workspace = true
 [package.metadata.docs.rs]
 all-features = true
 
+[lints]
+workspace = true
+
 [dependencies]
 color.workspace = true
 drawing = { workspace = true, features = ["pdf", "png", "svg"] }
