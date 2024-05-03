@@ -135,17 +135,17 @@ fn iso_bottom_path(profile: &Profile) -> Path<Dot> {
 
     let mut path = Path::builder();
     path.abs_move(rect150.min + Size::new(0.0, radii.x));
-    path.rel_arc(radii, Angle::zero(), false, false, radii.neg_y());
+    path.rel_arc(radii, Angle::zero(), false, true, radii.neg_y());
     path.abs_horiz_line(Length::new(rect150.max.x - radii.x));
-    path.rel_arc(radii, Angle::zero(), false, false, radii);
+    path.rel_arc(radii, Angle::zero(), false, true, radii);
     path.abs_vert_line(Length::new(rect125.max.y - radii.y));
-    path.rel_arc(radii, Angle::zero(), false, false, radii.neg_x());
+    path.rel_arc(radii, Angle::zero(), false, true, radii.neg_x());
     path.abs_horiz_line(Length::new(rect125.min.x + radii.x));
-    path.rel_arc(radii, Angle::zero(), false, false, -radii);
+    path.rel_arc(radii, Angle::zero(), false, true, -radii);
     path.abs_vert_line(Length::new(rect150.max.y + radii.y));
     path.rel_arc(radii, Angle::zero(), false, false, -radii);
     path.abs_horiz_line(Length::new(rect150.min.x + radii.x));
-    path.rel_arc(radii, Angle::zero(), false, false, -radii);
+    path.rel_arc(radii, Angle::zero(), false, true, -radii);
     path.close();
 
     path.build()
@@ -187,9 +187,9 @@ fn step_path(rect: RoundRect<Dot>) -> Path<Dot> {
     path.abs_move(rect.min + Size::new(0.0, radii.y));
     path.rel_arc(radii, Angle::zero(), false, false, -radii);
     path.abs_horiz_line(Length::new(rect.max.x - radii.x));
-    path.rel_arc(radii, Angle::zero(), false, false, radii);
+    path.rel_arc(radii, Angle::zero(), false, true, radii);
     path.abs_vert_line(Length::new(rect.max.y - radii.y));
-    path.rel_arc(radii, Angle::zero(), false, false, radii.neg_x());
+    path.rel_arc(radii, Angle::zero(), false, true, radii.neg_x());
     path.abs_horiz_line(Length::new(rect.min.x - radii.x));
     path.rel_arc(radii, Angle::zero(), false, false, radii.neg_y());
     path.close();
