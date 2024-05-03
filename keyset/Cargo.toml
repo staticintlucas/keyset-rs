@@ -4,8 +4,6 @@ description = "A Rust tool to create pretty keyset layout diagrams using correct
 keywords = ["keyboard", "keycap", "keyset", "layout", "diagram"]
 categories = ["command-line-utilities", "graphics", "multimedia::images", "rendering"]
 
-metadata.docs.rs.all-features = true
-
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -13,12 +11,15 @@ rust-version.workspace = true
 repository.workspace = true
 license.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
-color = { package = "keyset-color", path = "../keyset-color", version = "0.3.2" }
-drawing = { package = "keyset-drawing", path = "../keyset-drawing", version = "0.3.2", features = ["pdf", "png", "svg"] }
-font = { package = "keyset-font", path = "../keyset-font", version = "0.3.2" }
-key = { package = "keyset-key", path = "../keyset-key", version = "0.3.2", features = ["kle"] }
-profile = { package = "keyset-profile", path = "../keyset-profile", version = "0.3.2", features = ["toml"] }
+color.workspace = true
+drawing = { workspace = true, features = ["pdf", "png", "svg"] }
+font.workspace = true
+key = { workspace = true, features = ["kle"] }
+profile = { workspace = true, features = ["toml"] }
 
 [dev-dependencies]
 fontdb = "0.16"

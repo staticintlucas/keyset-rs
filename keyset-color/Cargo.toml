@@ -7,8 +7,6 @@ description = "Color type and conversions for keyset"
 keywords = ["keyset"]
 categories = ["none"]
 
-metadata.docs.rs.all-features = true
-
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -16,7 +14,10 @@ rust-version.workspace = true
 repository.workspace = true
 license.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
-isclose = "0.1"
-tiny-skia = { version = "0.11", default-features = false, features = ["std"], optional = true }
-rgb = { version = "0.8", default-features = false, optional = true }
+isclose.workspace = true
+tiny-skia = { workspace = true, default-features = false, features = ["std"], optional = true }
+rgb = { workspace = true, optional = true }

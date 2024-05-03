@@ -7,8 +7,6 @@ description = "Font type and functionality for keyset"
 keywords = ["keyset"]
 categories = ["none"]
 
-metadata.docs.rs.all-features = true
-
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -16,16 +14,17 @@ rust-version.workspace = true
 repository.workspace = true
 license.workspace = true
 
-[features]
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
-geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.3.2" }
+geom.workspace = true
 
-dashmap = "5.1"
-log = "0.4"
-ouroboros = "0.18"
-ttf-parser = { version = "0.20", default-features = false, features = ["std"]}
+dashmap.workspace = true
+log.workspace = true
+ouroboros.workspace = true
+ttf-parser.workspace = true
 
 [dev-dependencies]
-assert_matches = "1.5"
-isclose = { version = "0.1", features = ["euclid"] }
+assert_matches.workspace = true
+isclose = { workspace = true, features = ["euclid"] }

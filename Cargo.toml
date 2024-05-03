@@ -17,3 +17,31 @@ edition = "2021"
 rust-version = "1.70"
 repository = "https://github.com/staticintlucas/keyset-rs"
 license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+color = { package = "keyset-color", path = "keyset-color", version = "0.3.2" }
+drawing = { package = "keyset-drawing", path = "keyset-drawing", version = "0.3.2" }
+font = { package = "keyset-font", path = "keyset-font", version = "0.3.2" }
+geom = { package = "keyset-geom", path = "keyset-geom", version = "0.3.2" }
+key = { package = "keyset-key", path = "keyset-key", version = "0.3.2" }
+profile = { package = "keyset-profile", path = "keyset-profile", version = "0.3.2" }
+
+assert_matches = "1.5"
+dashmap = "5.1"
+euclid = "0.22"
+interp = { version = "1.0", features = ["interp_array"] }
+isclose = "0.1"
+itertools = "0.12"
+kle-serial = "0.3"
+log = "0.4"
+miniz_oxide = "0.7"
+ouroboros = "0.18"
+pdf-writer = "0.9"
+rgb = { version = "0.8", default-features = false }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = "1.0"
+svg = "0.17"
+tiny-skia = "0.11"
+toml = { version = "0.8", default-features = false, features = ["parse"] }
+ttf-parser = { version = "0.20", default-features = false, features = ["std"] }
+unindent = "0.2"

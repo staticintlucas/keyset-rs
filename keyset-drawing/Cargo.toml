@@ -7,8 +7,6 @@ description = "Drawing output functionality for keyset"
 keywords = ["keyset"]
 categories = ["none"]
 
-metadata.docs.rs.all-features = true
-
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -16,24 +14,27 @@ rust-version.workspace = true
 repository.workspace = true
 license.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+
 [features]
-pdf = ["miniz_oxide", "pdf-writer"]
-png = ["tiny-skia", "color/tiny-skia"]
+pdf = ["dep:miniz_oxide", "dep:pdf-writer"]
+png = ["dep:tiny-skia", "color/tiny-skia"]
 svg = ["dep:svg"]
 
 [dependencies]
-color = { package = "keyset-color", path = "../keyset-color", version = "0.3.2" }
-font = { package = "keyset-font", path = "../keyset-font", version = "0.3.2" }
-geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.3.2" }
-key = { package = "keyset-key", path = "../keyset-key", version = "0.3.2" }
-profile = { package = "keyset-profile", path = "../keyset-profile", version = "0.3.2" }
+color.workspace = true
+font.workspace = true
+geom.workspace = true
+key.workspace = true
+profile.workspace = true
 
-log = "0.4"
-miniz_oxide = { version = "0.7", optional = true }
-pdf-writer = { version = "0.9", optional = true }
-tiny-skia = { version = "0.11", optional = true }
-svg = { version = "0.17", optional = true }
+log.workspace = true
+miniz_oxide = { workspace = true, optional = true }
+pdf-writer = { workspace = true, optional = true }
+tiny-skia = { workspace = true, optional = true }
+svg = { workspace = true, optional = true }
 
 [dev-dependencies]
-isclose = { version = "0.1", features = ["euclid"] }
-unindent = "0.2"
+isclose = { workspace = true, features = ["euclid"] }
+unindent.workspace = true

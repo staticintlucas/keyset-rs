@@ -7,8 +7,6 @@ description = "Key type and functionality for keyset"
 keywords = ["keyset"]
 categories = ["none"]
 
-metadata.docs.rs.all-features = true
-
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -16,17 +14,20 @@ rust-version.workspace = true
 repository.workspace = true
 license.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+
 [features]
-kle = ["kle-serial", "serde_json"]
+kle = ["dep:kle-serial", "dep:serde_json", "color/rgb"]
 
 [dependencies]
-color = { package = "keyset-color", path = "../keyset-color", version = "0.3.2", features = ["rgb"] }
-geom = { package = "keyset-geom", path = "../keyset-geom", version = "0.3.2" }
+color.workspace = true
+geom.workspace = true
 
-kle-serial = { version = "0.3", optional = true }
-serde_json = { version = "1.0", optional = true }
+kle-serial = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 
 [dev-dependencies]
-assert_matches = "1.5"
-isclose = { version = "0.1", features = ["euclid"] }
-unindent = "0.2"
+assert_matches.workspace = true
+isclose = { workspace = true, features = ["euclid"] }
+unindent.workspace = true
