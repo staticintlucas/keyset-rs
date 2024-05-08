@@ -31,7 +31,6 @@ dashmap = "5.1"
 euclid = "0.22"
 interp = { version = "1.0", features = ["interp_array"] }
 isclose = "0.1"
-itertools = "0.12"
 kle-serial = "0.3"
 log = "0.4"
 miniz_oxide = "0.7"
@@ -73,13 +72,18 @@ variant-size-differences = "warn"
 
 [workspace.lints.clippy]
 all = "warn"
-correctness = "warn"
-suspicious = "warn"
-style = "warn"
-complexity = "warn"
-perf = "warn"
-pedantic = "warn"
 cargo = "warn"
 nursery = "warn"
+pedantic = "warn"
+
+allow_attributes_without_reason = "warn"
+dbg_macro = "warn"
+expect_used = "warn"
+panic = "warn"
+pattern_type_mismatch = "warn"
+redundant_type_annotations = "warn"
+try_err = "warn"
+unseparated_literal_suffix = "warn"
+unwrap_used = "warn"
 
 suboptimal-flops = { level = "allow", priority = 1 } # TODO rust-lang/rust-clippy#6867

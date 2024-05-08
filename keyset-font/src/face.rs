@@ -25,7 +25,8 @@ pub(crate) struct Face {
 
 impl Clone for Face {
     fn clone(&self) -> Self {
-        Self::from_ttf(self.borrow_data().clone()).expect("face was already parsed")
+        Self::from_ttf(self.borrow_data().clone())
+            .unwrap_or_else(|_| unreachable!("face was already parsed"))
     }
 }
 

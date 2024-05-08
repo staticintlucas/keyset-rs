@@ -3,14 +3,13 @@
 #[cfg(feature = "serde")]
 mod de;
 
+use std::array;
 use std::collections::HashMap;
-use std::{array, iter};
 
 use geom::{
     Dot, ExtRect, Length, Mm, Point, Rect, RoundRect, SideOffsets, Size, Unit, Vector, DOT_PER_UNIT,
 };
 use interp::interp_array;
-use itertools::Itertools;
 use key::Homing;
 
 #[derive(Debug, Clone, Copy)]
@@ -26,6 +25,7 @@ impl Type {
     // 1.0mm is approx the depth of OEM profile
     pub const DEFAULT: Self = Self::Cylindrical { depth: 1.0 };
 
+    #[inline]
     #[must_use]
     pub const fn depth(self) -> f32 {
         match self {
@@ -36,6 +36,7 @@ impl Type {
 }
 
 impl Default for Type {
+    #[inline]
     fn default() -> Self {
         Self::DEFAULT
     }
@@ -101,6 +102,7 @@ impl HomingProps {
 }
 
 impl Default for HomingProps {
+    #[inline]
     fn default() -> Self {
         Self::DEFAULT
     }
@@ -133,34 +135,34 @@ impl TextHeight {
         if heights.is_empty() {
             Self::default()
         } else {
-            let (index, height): (Vec<_>, Vec<_>) = {
-                iter::once((0.0, 0.0))
-                    .chain(
-                        #[allow(clippy::cast_precision_loss)] // `i` will never be that big
-                        heights
-                            .iter()
-                            .sorted_by_key(|(&i, _)| i)
-                            .map(|(&i, &h)| (i as f32, h)),
-                    )
-                    .unzip()
+            // Get all the indices and heights in the hashmap
+            let (indices, heights): (Vec<_>, Vec<_>) = {
+                // TODO is unconditionally prepending (0, 0.0) here correct? Self::DEFAULT doesn't
+                // use 0.0 font size for 0
+                let mut vec: Vec<_> = std::iter::once((&0, &0.0)).chain(heights).collect();
+                vec.sort_unstable_by_key(|&(i, _h)| i);
+                #[allow(clippy::cast_precision_loss)]
+                vec.into_iter().map(|(&i, &h)| (i as f32, h)).unzip()
             };
-            #[allow(clippy::cast_precision_loss)] // `i` will never be that big
+
+            #[allow(clippy::cast_precision_loss)]
             let all_indeces = array::from_fn(|i| i as f32);
-            Self(interp_array(&index, &height, &all_indeces))
+            Self(interp_array(&indices, &heights, &all_indeces))
         }
     }
 
+    #[inline]
     #[must_use]
-    pub const fn get(&self, size_index: usize) -> f32 {
-        if size_index < self.0.len() {
-            self.0[size_index]
-        } else {
-            self.0[self.0.len() - 1]
-        }
+    pub fn get(&self, size_index: usize) -> f32 {
+        *self
+            .0
+            .get(size_index)
+            .unwrap_or_else(|| self.0.last().unwrap_or_else(|| unreachable!()))
     }
 }
 
 impl Default for TextHeight {
+    #[inline]
     fn default() -> Self {
         Self::DEFAULT
     }
@@ -184,45 +186,46 @@ impl TextMargin {
 
     #[must_use]
     pub fn new(offsets: &HashMap<usize, SideOffsets<Dot>>) -> Self {
-        if offsets.is_empty() {
-            Self::default()
-        } else {
-            // Note this unwrap will not panic because we know rects is not empty at this stage
-            // TODO there should be a better way to do this logic?
-            let max_rect = offsets[offsets.keys().max().unwrap()];
+        // Get an array of all the offsets
+        let mut offsets = array::from_fn(|i| offsets.get(&i));
 
-            // TODO clean up this logic
-            // For each font size where the alignment rectangle isn't set, the rectangle of the
-            // next largest rect is used, so we need to scan in reverse to carry the back the next
-            // largest rect.
-            let offsets: Vec<_> = {
-                let tmp = (0..Self::NUM_RECTS)
-                    .rev()
-                    .scan(max_rect, |prev, i| {
-                        if let Some(&value) = offsets.get(&i) {
-                            *prev = value;
-                        }
-                        Some(*prev)
-                    })
-                    .collect_vec();
-                tmp.into_iter().rev().collect()
-            };
+        // Find the offset for the max index
+        let mut last_offset = offsets.into_iter().flatten().last().unwrap_or_else(|| {
+            Self::DEFAULT
+                .0
+                .last()
+                .unwrap_or_else(|| unreachable!("Self::DEFAULT.0 is non-empty"))
+        });
 
-            Self(offsets.try_into().unwrap())
+        // Set all Nones to the next Some(..) value by iterating in reverse
+        for opt in offsets.iter_mut().rev() {
+            if let Some(off) = *opt {
+                last_offset = off;
+            } else {
+                *opt = Some(last_offset);
+            }
         }
+
+        // Map all Some(&offset) to offset
+        Self(offsets.map(|opt| {
+            opt.copied()
+                .unwrap_or_else(|| unreachable!("Set to Some(..) in for loop"))
+        }))
     }
 
+    #[inline]
     #[must_use]
     pub const fn get(&self, size_index: usize) -> SideOffsets<Dot> {
         if size_index < self.0.len() {
             self.0[size_index]
         } else {
-            self.0[self.0.len() - 1]
+            self.0[self.0.len() - 1] // Can't use .last() in a const fn
         }
     }
 }
 
 impl Default for TextMargin {
+    #[inline]
     fn default() -> Self {
         Self::DEFAULT
     }
@@ -255,6 +258,7 @@ impl TopSurface {
 }
 
 impl Default for TopSurface {
+    #[inline]
     fn default() -> Self {
         Self::DEFAULT
     }
@@ -282,6 +286,7 @@ impl BottomSurface {
 }
 
 impl Default for BottomSurface {
+    #[inline]
     fn default() -> Self {
         Self::DEFAULT
     }
@@ -308,15 +313,18 @@ impl Profile {
     };
 
     #[cfg(feature = "toml")]
+    #[inline]
     pub fn from_toml(s: &str) -> de::Result<Self> {
         toml::from_str(s).map_err(de::Error::from)
     }
 
     #[cfg(feature = "json")]
+    #[inline]
     pub fn from_json(s: &str) -> de::Result<Self> {
         serde_json::from_str(s).map_err(de::Error::from)
     }
 
+    #[inline]
     #[must_use]
     pub fn top_with_size(&self, size: Size<Unit>) -> RoundRect<Dot> {
         let RoundRect { min, max, radius } = self.top.round_rect();
@@ -324,6 +332,7 @@ impl Profile {
         RoundRect::new(min, max, radius)
     }
 
+    #[inline]
     #[must_use]
     pub fn top_with_rect(&self, rect: Rect<Unit>) -> RoundRect<Dot> {
         let RoundRect { min, max, radius } = self.top.round_rect();
@@ -332,6 +341,7 @@ impl Profile {
         RoundRect::new(min, max, radius)
     }
 
+    #[inline]
     #[must_use]
     pub fn bottom_with_size(&self, size: Size<Unit>) -> RoundRect<Dot> {
         let RoundRect { min, max, radius } = self.bottom.round_rect();
@@ -339,6 +349,7 @@ impl Profile {
         RoundRect::new(min, max, radius)
     }
 
+    #[inline]
     #[must_use]
     pub fn bottom_with_rect(&self, rect: Rect<Unit>) -> RoundRect<Dot> {
         let RoundRect { min, max, radius } = self.bottom.round_rect();
@@ -349,6 +360,7 @@ impl Profile {
 }
 
 impl Default for Profile {
+    #[inline]
     fn default() -> Self {
         Self::DEFAULT
     }

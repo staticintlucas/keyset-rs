@@ -1,4 +1,4 @@
-#![allow(missing_docs, clippy::pedantic)] // This is just a build.rs
+#![allow(missing_docs, clippy::pedantic, clippy::restriction)] // This is just a build.rs
 
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};

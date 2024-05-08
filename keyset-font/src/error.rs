@@ -7,18 +7,21 @@ use ttf_parser::FaceParsingError;
 pub struct Error(FaceParsingError);
 
 impl fmt::Display for Error {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
 impl std::error::Error for Error {
+    #[inline]
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         Some(&self.0)
     }
 }
 
 impl From<FaceParsingError> for Error {
+    #[inline]
     fn from(error: FaceParsingError) -> Self {
         Self(error)
     }

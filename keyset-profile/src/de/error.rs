@@ -10,22 +10,22 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
+        match *self {
             #[cfg(feature = "toml")]
-            Self::TomlParseError(error) => write!(f, "{error}"),
+            Self::TomlParseError(ref error) => write!(f, "{error}"),
             #[cfg(feature = "json")]
-            Self::JsonParseError(error) => write!(f, "{error}"),
+            Self::JsonParseError(ref error) => write!(f, "{error}"),
         }
     }
 }
 
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
+        match *self {
             #[cfg(feature = "toml")]
-            Self::TomlParseError(error) => Some(error),
+            Self::TomlParseError(ref error) => Some(error),
             #[cfg(feature = "json")]
-            Self::JsonParseError(error) => Some(error),
+            Self::JsonParseError(ref error) => Some(error),
         }
     }
 }

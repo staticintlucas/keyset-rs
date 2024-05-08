@@ -3,6 +3,7 @@ use super::Color;
 use tiny_skia::Color as SkiaColor;
 
 impl From<Color> for SkiaColor {
+    #[inline]
     fn from(value: Color) -> Self {
         // Use set_* here rather than Self::from_rgba to avoid clippy::fallible_impl_from
         let mut result = Self::BLACK;
@@ -14,6 +15,7 @@ impl From<Color> for SkiaColor {
 }
 
 impl From<SkiaColor> for Color {
+    #[inline]
     fn from(value: SkiaColor) -> Self {
         let (r, g, b) = (value.red(), value.green(), value.blue());
         Self::new(r, g, b)

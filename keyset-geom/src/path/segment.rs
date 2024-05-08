@@ -26,6 +26,7 @@ pub enum PathSegment<U> {
 
 // Impl here rather than derive so we don't require U: Clone everywhere
 impl<U> Clone for PathSegment<U> {
+    #[inline]
     fn clone(&self) -> Self {
         *self
     }
@@ -37,6 +38,7 @@ impl<U> IsClose<f32> for PathSegment<U> {
     const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
     const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
 
+    #[inline]
     fn is_close_tol(
         &self,
         other: impl Borrow<Self>,
@@ -46,15 +48,15 @@ impl<U> IsClose<f32> for PathSegment<U> {
         // TODO need type hints here to help rust-analyzer
         let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
             (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
-        match (self, other) {
-            (Move(s), Move(o)) => s.is_close_tol(o, rel_tol, abs_tol),
-            (Line(s), Line(o)) => s.is_close_tol(o, rel_tol, abs_tol),
-            (CubicBezier(s1, s2, s), CubicBezier(o1, o2, o)) => {
+        match (*self, *other) {
+            (Move(ref s), Move(ref o)) => s.is_close_tol(o, rel_tol, abs_tol),
+            (Line(ref s), Line(ref o)) => s.is_close_tol(o, rel_tol, abs_tol),
+            (CubicBezier(ref s1, ref s2, ref s), CubicBezier(ref o1, ref o2, ref o)) => {
                 s1.is_close_tol(o1, rel_tol, abs_tol)
                     && s2.is_close_tol(o2, rel_tol, abs_tol)
                     && s.is_close_tol(o, rel_tol, abs_tol)
             }
-            (QuadraticBezier(s1, s), QuadraticBezier(o1, o)) => {
+            (QuadraticBezier(ref s1, ref s), QuadraticBezier(ref o1, ref o)) => {
                 s1.is_close_tol(o1, rel_tol, abs_tol) && s.is_close_tol(o, rel_tol, abs_tol)
             }
             (Close, Close) => true,
@@ -65,6 +67,7 @@ impl<U> IsClose<f32> for PathSegment<U> {
 
 impl<U> PathSegment<U> {
     /// Translate the path segment
+    #[inline]
     #[must_use]
     pub fn translate(self, by: Vector<U>) -> Self {
         match self {
@@ -75,6 +78,7 @@ impl<U> PathSegment<U> {
     }
 
     /// Scale the path segment
+    #[inline]
     #[must_use]
     pub fn scale(self, x: f32, y: f32) -> Self {
         let scale = Vector::new(x, y);
@@ -97,6 +101,7 @@ impl<U> PathSegment<U> {
 impl<U, V> Mul<Scale<U, V>> for PathSegment<U> {
     type Output = PathSegment<V>;
 
+    #[inline]
     fn mul(self, scale: Scale<U, V>) -> Self::Output {
         match self {
             Move(point) => Move(point * scale),
@@ -113,6 +118,7 @@ impl<U, V> Mul<Scale<U, V>> for PathSegment<U> {
 impl<U, V> Mul<Transform<U, V>> for PathSegment<U> {
     type Output = PathSegment<V>;
 
+    #[inline]
     fn mul(self, transform: Transform<U, V>) -> Self::Output {
         match self {
             Move(point) => Move(transform.transform_point(point)),
@@ -132,16 +138,17 @@ impl<U, V> Mul<Transform<U, V>> for PathSegment<U> {
 }
 
 impl<U> MulAssign<Scale<U, U>> for PathSegment<U> {
+    #[inline]
     fn mul_assign(&mut self, scale: Scale<U, U>) {
-        match self {
-            Move(point) => *point *= scale,
-            Line(dist) => *dist *= scale,
-            CubicBezier(ctrl1, ctrl2, dist) => {
+        match *self {
+            Move(ref mut point) => *point *= scale,
+            Line(ref mut dist) => *dist *= scale,
+            CubicBezier(ref mut ctrl1, ref mut ctrl2, ref mut dist) => {
                 *ctrl1 *= scale;
                 *ctrl2 *= scale;
                 *dist *= scale;
             }
-            QuadraticBezier(ctrl1, dist) => {
+            QuadraticBezier(ref mut ctrl1, ref mut dist) => {
                 *ctrl1 *= scale;
                 *dist *= scale;
             }
@@ -151,16 +158,17 @@ impl<U> MulAssign<Scale<U, U>> for PathSegment<U> {
 }
 
 impl<U> MulAssign<Transform<U, U>> for PathSegment<U> {
+    #[inline]
     fn mul_assign(&mut self, transform: Transform<U, U>) {
-        match self {
-            Move(point) => *point = transform.transform_point(*point),
-            Line(dist) => *dist = transform.transform_vector(*dist),
-            CubicBezier(ctrl1, ctrl2, dist) => {
+        match *self {
+            Move(ref mut point) => *point = transform.transform_point(*point),
+            Line(ref mut dist) => *dist = transform.transform_vector(*dist),
+            CubicBezier(ref mut ctrl1, ref mut ctrl2, ref mut dist) => {
                 *ctrl1 = transform.transform_vector(*ctrl1);
                 *ctrl2 = transform.transform_vector(*ctrl2);
                 *dist = transform.transform_vector(*dist);
             }
-            QuadraticBezier(ctrl1, dist) => {
+            QuadraticBezier(ref mut ctrl1, ref mut dist) => {
                 *ctrl1 = transform.transform_vector(*ctrl1);
                 *dist = transform.transform_vector(*dist);
             }
@@ -172,6 +180,7 @@ impl<U> MulAssign<Transform<U, U>> for PathSegment<U> {
 impl<U, V> Div<Scale<V, U>> for PathSegment<U> {
     type Output = PathSegment<V>;
 
+    #[inline]
     fn div(self, scale: Scale<V, U>) -> Self::Output {
         match self {
             Move(point) => Move(point / scale),
@@ -186,16 +195,17 @@ impl<U, V> Div<Scale<V, U>> for PathSegment<U> {
 }
 
 impl<U> DivAssign<Scale<U, U>> for PathSegment<U> {
+    #[inline]
     fn div_assign(&mut self, scale: Scale<U, U>) {
-        match self {
-            Move(point) => *point /= scale,
-            Line(dist) => *dist /= scale,
-            CubicBezier(ctrl1, ctrl2, dist) => {
+        match *self {
+            Move(ref mut point) => *point /= scale,
+            Line(ref mut dist) => *dist /= scale,
+            CubicBezier(ref mut ctrl1, ref mut ctrl2, ref mut dist) => {
                 *ctrl1 /= scale;
                 *ctrl2 /= scale;
                 *dist /= scale;
             }
-            QuadraticBezier(ctrl1, dist) => {
+            QuadraticBezier(ref mut ctrl1, ref mut dist) => {
                 *ctrl1 /= scale;
                 *dist /= scale;
             }

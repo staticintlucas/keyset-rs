@@ -35,6 +35,7 @@ pub trait ToTransform<U, V> {
 }
 
 impl<U, V> ToTransform<U, V> for Scale<U, V> {
+    #[inline]
     fn to_transform(self) -> Transform<U, V> {
         Transform::scale(self.get(), self.get())
     }

@@ -141,10 +141,6 @@ mod tests {
             .top_with_size(Size::new(1.5, 1.0))
             .rect()
             .inner_box(options.profile.text_margin.get(font_size));
-        dbg!(
-            options.profile.top_with_size(Size::new(1.5, 1.0)).rect(),
-            options.profile.text_margin.get(font_size)
-        );
         assert_is_close!(bounding_box, margin_rect);
 
         // ISO V

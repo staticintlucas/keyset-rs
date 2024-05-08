@@ -47,10 +47,10 @@ fn draw_key(key: &KeyDrawing) -> Group {
 }
 
 fn draw_path(path: &KeyPath) -> SvgPath {
-    let data = path
+    let data: String = path
         .data
         .iter()
-        .map(|el| match el {
+        .map(|el| match *el {
             PathSegment::Move(p) => fmt_num!("M{} {}", p.x, p.y),
             PathSegment::Line(d) => fmt_num!("l{} {}", d.x, d.y),
             PathSegment::CubicBezier(c1, c2, d) => {
@@ -59,7 +59,7 @@ fn draw_path(path: &KeyPath) -> SvgPath {
             PathSegment::QuadraticBezier(c1, d) => fmt_num!("q{} {} {} {}", c1.x, c1.y, d.x, d.y),
             PathSegment::Close => "z".into(),
         })
-        .fold(String::new(), |str, el| str + &el);
+        .collect();
 
     let fill = path
         .fill

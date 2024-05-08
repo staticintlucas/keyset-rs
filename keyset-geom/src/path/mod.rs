@@ -24,6 +24,7 @@ pub struct Path<U> {
 
 // Impl here rather than derive so we don't require U: Clone everywhere
 impl<U> Clone for Path<U> {
+    #[inline]
     fn clone(&self) -> Self {
         Self {
             data: self.data.clone(),
@@ -33,6 +34,7 @@ impl<U> Clone for Path<U> {
 }
 
 impl<U> Default for Path<U> {
+    #[inline]
     fn default() -> Self {
         Self {
             data: Box::default(),
@@ -43,12 +45,14 @@ impl<U> Default for Path<U> {
 
 impl<U> Path<U> {
     /// Create a new empty path
+    #[inline]
     #[must_use]
     pub fn empty() -> Self {
         Self::default()
     }
 
     /// Create a new [`PathBuilder`], equivalent to calling [`PathBuilder::new()`]
+    #[inline]
     #[must_use]
     pub fn builder() -> PathBuilder<U> {
         PathBuilder::new()
@@ -56,25 +60,27 @@ impl<U> Path<U> {
 
     /// Create a new [`PathBuilder`] with a given capacity, equivalent to calling
     /// [`PathBuilder::with_capacity()`]
+    #[inline]
     #[must_use]
     pub fn builder_with_capacity(capacity: usize) -> PathBuilder<U> {
         PathBuilder::with_capacity(capacity)
     }
 
     /// Create a path by joining a slice of paths
+    #[inline]
     #[must_use]
     pub fn from_slice(slice: &[Self]) -> Self {
         let capacity = slice
             .iter()
             .map(|el| {
-                el.len() + usize::from(!matches!(el.data.first(), Some(PathSegment::Move(..))))
+                el.len() + usize::from(!matches!(el.data.first(), Some(&PathSegment::Move(..))))
             })
             .sum();
 
         let data = slice
             .iter()
             .fold(Vec::with_capacity(capacity), |mut vec, path| {
-                if !matches!(path.data.first(), Some(PathSegment::Move(..))) {
+                if !matches!(path.data.first(), Some(&PathSegment::Move(..))) {
                     vec.push(PathSegment::Move(Point::origin()));
                 }
                 vec.extend(path.data.iter());
@@ -92,18 +98,21 @@ impl<U> Path<U> {
     }
 
     /// The number of segments in the path
+    #[inline]
     #[must_use]
     pub const fn len(&self) -> usize {
         self.data.len()
     }
 
     /// If the path is empty
+    #[inline]
     #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     /// Translate the path
+    #[inline]
     #[must_use]
     pub fn translate(self, by: Vector<U>) -> Self {
         Self {
@@ -113,6 +122,7 @@ impl<U> Path<U> {
     }
 
     /// Scale the path
+    #[inline]
     #[must_use]
     pub fn scale(self, x: f32, y: f32) -> Self {
         Self {
@@ -122,11 +132,13 @@ impl<U> Path<U> {
     }
 
     /// Create an iterator over the path's segments
+    #[inline]
     pub fn iter(&self) -> std::slice::Iter<'_, PathSegment<U>> {
         self.data.iter()
     }
 
     /// Create a mutable iterator over the path's segments
+    #[inline]
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, PathSegment<U>> {
         self.data.iter_mut()
     }
@@ -136,6 +148,7 @@ impl<'a, U> IntoIterator for &'a Path<U> {
     type Item = &'a PathSegment<U>;
     type IntoIter = std::slice::Iter<'a, PathSegment<U>>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
@@ -145,6 +158,7 @@ impl<'a, U> IntoIterator for &'a mut Path<U> {
     type Item = &'a mut PathSegment<U>;
     type IntoIter = std::slice::IterMut<'a, PathSegment<U>>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
@@ -154,6 +168,7 @@ impl<U> IntoIterator for Path<U> {
     type Item = PathSegment<U>;
     type IntoIter = std::vec::IntoIter<PathSegment<U>>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         // into_vec is needed here, see rust-lang/rust#59878
         self.data.into_vec().into_iter()
@@ -163,6 +178,7 @@ impl<U> IntoIterator for Path<U> {
 impl<U, V> Mul<Scale<U, V>> for Path<U> {
     type Output = Path<V>;
 
+    #[inline]
     fn mul(self, scale: Scale<U, V>) -> Self::Output {
         Self::Output {
             data: self.iter().map(|&seg| seg * scale).collect(),
@@ -174,6 +190,7 @@ impl<U, V> Mul<Scale<U, V>> for Path<U> {
 impl<U, V> Mul<Transform<U, V>> for Path<U> {
     type Output = Path<V>;
 
+    #[inline]
     fn mul(self, transform: Transform<U, V>) -> Self::Output {
         let data: Box<_> = self.into_iter().map(|seg| seg * transform).collect();
         let bounds = calculate_bounds(&data);
@@ -182,6 +199,7 @@ impl<U, V> Mul<Transform<U, V>> for Path<U> {
 }
 
 impl<U> MulAssign<Scale<U, U>> for Path<U> {
+    #[inline]
     fn mul_assign(&mut self, scale: Scale<U, U>) {
         self.data.iter_mut().for_each(|seg| *seg *= scale);
         self.bounds *= scale;
@@ -189,6 +207,7 @@ impl<U> MulAssign<Scale<U, U>> for Path<U> {
 }
 
 impl<U> MulAssign<Transform<U, U>> for Path<U> {
+    #[inline]
     fn mul_assign(&mut self, transform: Transform<U, U>) {
         self.data.iter_mut().for_each(|seg| *seg *= transform);
         self.bounds = calculate_bounds(&self.data);
@@ -198,6 +217,7 @@ impl<U> MulAssign<Transform<U, U>> for Path<U> {
 impl<U, V> Div<Scale<V, U>> for Path<U> {
     type Output = Path<V>;
 
+    #[inline]
     fn div(self, scale: Scale<V, U>) -> Self::Output {
         Self::Output {
             data: self.iter().map(|&seg| seg / scale).collect(),
@@ -207,6 +227,7 @@ impl<U, V> Div<Scale<V, U>> for Path<U> {
 }
 
 impl<U> DivAssign<Scale<U, U>> for Path<U> {
+    #[inline]
     fn div_assign(&mut self, scale: Scale<U, U>) {
         self.data.iter_mut().for_each(|seg| *seg /= scale);
         self.bounds /= scale;
@@ -225,6 +246,7 @@ pub struct PathBuilder<U> {
 
 // Impl here rather than derive so we don't require U: Clone everywhere
 impl<U> Clone for PathBuilder<U> {
+    #[inline]
     fn clone(&self) -> Self {
         Self {
             data: self.data.clone(),
@@ -237,6 +259,7 @@ impl<U> Clone for PathBuilder<U> {
 
 impl<U> PathBuilder<U> {
     /// Create a new [`PathBuilder`]
+    #[inline]
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -248,6 +271,7 @@ impl<U> PathBuilder<U> {
     }
 
     /// Create a new [`PathBuilder`] with the given capacity
+    #[inline]
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -257,6 +281,7 @@ impl<U> PathBuilder<U> {
     }
 
     /// Build the [`Path`]
+    #[inline]
     #[must_use]
     pub fn build(self) -> Path<U> {
         Path {
@@ -266,6 +291,7 @@ impl<U> PathBuilder<U> {
     }
 
     /// Append another [`PathBuilder`] to the builder
+    #[inline]
     pub fn extend(&mut self, other: Self) {
         if other.data.is_empty() {
             // Do nothing
@@ -287,11 +313,13 @@ impl<U> PathBuilder<U> {
     }
 
     /// Add a move segment with relative distance
+    #[inline]
     pub fn rel_move(&mut self, d: Vector<U>) {
         self.abs_move(self.point + d);
     }
 
     /// Add a line segment with relative distance
+    #[inline]
     pub fn rel_line(&mut self, d: Vector<U>) {
         self.data.push(PathSegment::Line(d));
         self.point += d;
@@ -299,16 +327,19 @@ impl<U> PathBuilder<U> {
     }
 
     /// Add a horizontal line segment with relative distance
+    #[inline]
     pub fn rel_horiz_line(&mut self, dx: Length<U>) {
         self.rel_line(Vector::new(dx.get(), 0.0));
     }
 
     /// Add a vertical line segment with relative distance
+    #[inline]
     pub fn rel_vert_line(&mut self, dy: Length<U>) {
         self.rel_line(Vector::new(0.0, dy.get()));
     }
 
     /// Add a cubic Bézier segment with relative control points and distance
+    #[inline]
     pub fn rel_cubic_bezier(&mut self, d1: Vector<U>, d2: Vector<U>, d: Vector<U>) {
         self.data.push(PathSegment::CubicBezier(d1, d2, d));
         self.point += d;
@@ -316,6 +347,7 @@ impl<U> PathBuilder<U> {
     }
 
     /// Add a smooth cubic Bézier segment with relative control point and distance
+    #[inline]
     pub fn rel_smooth_cubic_bezier(&mut self, d2: Vector<U>, d: Vector<U>) {
         let d1 = match self.data.last() {
             Some(&PathSegment::CubicBezier(_, prev_d2, prev_d)) => prev_d - prev_d2,
@@ -325,6 +357,7 @@ impl<U> PathBuilder<U> {
     }
 
     /// Add a quadratic Bézier segment with relative control point and distance
+    #[inline]
     pub fn rel_quadratic_bezier(&mut self, d1: Vector<U>, d: Vector<U>) {
         self.data.push(PathSegment::QuadraticBezier(d1, d));
         self.point += d;
@@ -332,6 +365,7 @@ impl<U> PathBuilder<U> {
     }
 
     /// Add a smooth quadratic Bézier segment with relative distance
+    #[inline]
     pub fn rel_smooth_quadratic_bezier(&mut self, d: Vector<U>) {
         let d1 = match self.data.last() {
             Some(&PathSegment::QuadraticBezier(prev_d1, prev_d)) => prev_d - prev_d1,
@@ -341,6 +375,7 @@ impl<U> PathBuilder<U> {
     }
 
     /// Add an arc segment with relative distance
+    #[inline]
     pub fn rel_arc(&mut self, r: Vector<U>, xar: Angle, laf: bool, sf: bool, d: Vector<U>) {
         for (d1, d2, d) in arc_to_bezier(r, xar, laf, sf, d) {
             self.data.push(PathSegment::CubicBezier(d1, d2, d));
@@ -350,12 +385,14 @@ impl<U> PathBuilder<U> {
     }
 
     /// Close the path
+    #[inline]
     pub fn close(&mut self) {
         self.data.push(PathSegment::Close);
         self.point = self.start;
     }
 
     /// Add a move segment with absolute distance
+    #[inline]
     pub fn abs_move(&mut self, p: Point<U>) {
         self.bounds = if self.data.is_empty() {
             Rect::new(p, p)
@@ -368,47 +405,56 @@ impl<U> PathBuilder<U> {
     }
 
     /// Add a line segment with absolute distance
+    #[inline]
     pub fn abs_line(&mut self, p: Point<U>) {
         self.rel_line(p - self.point);
     }
 
     /// Add a horizontal line segment with absolute distance
+    #[inline]
     pub fn abs_horiz_line(&mut self, x: Length<U>) {
         self.rel_horiz_line(x - Length::new(self.point.x));
     }
 
     /// Add a vertical line segment with absolute distance
+    #[inline]
     pub fn abs_vert_line(&mut self, y: Length<U>) {
         self.rel_vert_line(y - Length::new(self.point.y));
     }
 
     /// Add a cubic Bézier segment with absolute control points and distance
+    #[inline]
     pub fn abs_cubic_bezier(&mut self, p1: Point<U>, p2: Point<U>, p: Point<U>) {
         self.rel_cubic_bezier(p1 - self.point, p2 - self.point, p - self.point);
     }
 
     /// Add a smooth cubic Bézier segment with absolute control point and distance
+    #[inline]
     pub fn abs_smooth_cubic_bezier(&mut self, p2: Point<U>, p: Point<U>) {
         self.rel_smooth_cubic_bezier(p2 - self.point, p - self.point);
     }
 
     /// Add a quadratic Bézier segment with absolute control point and distance
+    #[inline]
     pub fn abs_quadratic_bezier(&mut self, p1: Point<U>, p: Point<U>) {
         self.rel_quadratic_bezier(p1 - self.point, p - self.point);
     }
 
     /// Add a smooth quadratic Bézier segment with absolute distance
+    #[inline]
     pub fn abs_smooth_quadratic_bezier(&mut self, p: Point<U>) {
         self.rel_smooth_quadratic_bezier(p - self.point);
     }
 
     /// Add an arc segment with absolute distance
+    #[inline]
     pub fn abs_arc(&mut self, r: Vector<U>, xar: Angle, laf: bool, sf: bool, p: Point<U>) {
         self.rel_arc(r, xar, laf, sf, p - self.point);
     }
 }
 
 impl<U> Default for PathBuilder<U> {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -418,19 +464,21 @@ impl<U> Add for PathBuilder<U> {
     type Output = Self;
 
     /// Return a new [`PathBuilder`] by appending another [`PathBuilder`] to [`self`]
+    #[inline]
     fn add(mut self, other: Self) -> Self::Output {
         self.extend(other);
         self
     }
 }
 
+#[inline]
 fn update_bounds<U>(bounds: Rect<U>, p: Point<U>) -> Rect<U> {
     Rect::new(Point::min(bounds.min, p), Point::max(bounds.max, p))
 }
 
 fn calculate_bounds<U>(data: &[PathSegment<U>]) -> Rect<U> {
     // Add leading move to (0, 0) if we don't already start with a move
-    let mov = (!matches!(data.first(), Some(PathSegment::Move(..))))
+    let mov = (!matches!(data.first(), Some(&PathSegment::Move(..))))
         .then_some(PathSegment::Move(Point::zero()));
 
     Rect::from_points(

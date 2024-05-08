@@ -66,6 +66,7 @@ fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
 }
 
 impl From<kle::Legend> for Legend {
+    #[inline]
     fn from(legend: kle::Legend) -> Self {
         let kle::Legend { text, size, color } = legend;
         Self {
@@ -102,7 +103,8 @@ impl TryFrom<kle::Key> for Key {
 ///
 /// # Errors
 ///
-/// If an
+/// If an invalid or unsupported JSON string is encountered, this will return an [`Error`]
+#[inline]
 pub fn from_json(json: &str) -> Result<Vec<Key>> {
     let key_iter: kle::KeyIterator = serde_json::from_str(json)?;
     key_iter.map(Key::try_from).collect()

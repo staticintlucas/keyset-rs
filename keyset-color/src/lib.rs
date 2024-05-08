@@ -40,30 +40,35 @@ impl Color {
     ///
     /// The components should be in the range `0.0..1.0` for a semantically valid colour, although
     /// this function does not perform any range checks.
+    #[inline]
     #[must_use]
     pub const fn new(r: f32, g: f32, b: f32) -> Self {
         Self([r, g, b])
     }
 
     /// Returns the red component.
+    #[inline]
     #[must_use]
     pub const fn r(&self) -> f32 {
         self.0[0]
     }
 
     /// Returns the green component.
+    #[inline]
     #[must_use]
     pub const fn g(&self) -> f32 {
         self.0[1]
     }
 
     /// Returns the blue component.
+    #[inline]
     #[must_use]
     pub const fn b(&self) -> f32 {
         self.0[2]
     }
 
     /// Returns an iterator over the colour's components.
+    #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &f32> {
         self.0.iter()
     }
@@ -72,6 +77,7 @@ impl Color {
     ///
     /// Modified components should be in the range `0.0..1.0` for a semantically valid colour,
     /// although this function does not perform any range checks.
+    #[inline]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut f32> {
         self.0.iter_mut()
     }
@@ -80,12 +86,14 @@ impl Color {
     ///
     /// The resulting components should be in the range `0.0..1.0` for a semantically valid colour,
     /// although this function does not perform any range checks.
+    #[inline]
     #[must_use]
     pub fn map(self, f: impl FnMut(f32) -> f32) -> Self {
         Self(self.0.map(f))
     }
 
     /// Returns a tuple containing the red, green, and blue components as [`u8`].
+    #[inline]
     #[must_use]
     pub fn as_rgb8(&self) -> (u8, u8, u8) {
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // We want truncation
@@ -94,6 +102,7 @@ impl Color {
     }
 
     /// Returns a tuple containing the red, green, and blue components as [`u16`].
+    #[inline]
     #[must_use]
     pub fn as_rgb16(&self) -> (u16, u16, u16) {
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // We want truncation
@@ -103,6 +112,7 @@ impl Color {
 
     /// Creates a new [`Color`] from a tuple containing the red, green, and blue
     /// components as [`u8`].
+    #[inline]
     #[must_use]
     pub fn from_rgb8((r, g, b): (u8, u8, u8)) -> Self {
         [r, g, b].map(|c| f32::from(c) / 255.0).into()
@@ -110,18 +120,21 @@ impl Color {
 
     /// Creates a new [`Color`] from a tuple containing the red, green, and blue
     /// components as [`u16`].
+    #[inline]
     #[must_use]
     pub fn from_rgb16((r, g, b): (u16, u16, u16)) -> Self {
         [r, g, b].map(|c| f32::from(c) / 65535.0).into()
     }
 
     /// Returns a slice containing the red, green, and blue components of the colour.
+    #[inline]
     #[must_use]
     pub const fn as_slice(&self) -> &[f32] {
         &self.0
     }
 
     /// Returns a mutable slice containing the red, green, and blue components of the colour.
+    #[inline]
     #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [f32] {
         &mut self.0
@@ -132,36 +145,42 @@ impl IntoIterator for Color {
     type Item = f32;
     type IntoIter = std::array::IntoIter<f32, 3>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }
 }
 
 impl AsMut<[f32; 3]> for Color {
+    #[inline]
     fn as_mut(&mut self) -> &mut [f32; 3] {
         &mut self.0
     }
 }
 
 impl AsMut<[f32]> for Color {
+    #[inline]
     fn as_mut(&mut self) -> &mut [f32] {
         &mut self.0
     }
 }
 
 impl AsRef<[f32; 3]> for Color {
+    #[inline]
     fn as_ref(&self) -> &[f32; 3] {
         &self.0
     }
 }
 
 impl AsRef<[f32]> for Color {
+    #[inline]
     fn as_ref(&self) -> &[f32] {
         &self.0
     }
 }
 
 impl Display for Color {
+    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let [r, g, b] = self.0.map(|c| (c * 1e3).round() / 1e3);
         write!(f, "rgb({r},{g},{b})")
@@ -169,6 +188,7 @@ impl Display for Color {
 }
 
 impl LowerHex for Color {
+    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let prefix = if f.alternate() { "0x" } else { "#" };
         let (r, g, b) = self.as_rgb8();
@@ -177,6 +197,7 @@ impl LowerHex for Color {
 }
 
 impl UpperHex for Color {
+    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let prefix = if f.alternate() { "0x" } else { "#" };
         let (r, g, b) = self.as_rgb8();
@@ -185,24 +206,28 @@ impl UpperHex for Color {
 }
 
 impl From<[f32; 3]> for Color {
+    #[inline]
     fn from(value: [f32; 3]) -> Self {
         Self(value)
     }
 }
 
 impl From<(f32, f32, f32)> for Color {
+    #[inline]
     fn from((r, g, b): (f32, f32, f32)) -> Self {
         Self::new(r, g, b)
     }
 }
 
 impl From<Color> for [f32; 3] {
+    #[inline]
     fn from(value: Color) -> Self {
         value.0
     }
 }
 
 impl From<Color> for (f32, f32, f32) {
+    #[inline]
     fn from(value: Color) -> Self {
         (value.r(), value.g(), value.b())
     }
@@ -213,6 +238,7 @@ impl Color {
     ///
     /// `val` should be in the range `0.0..1.0` for a semantically valid factor, although this
     /// function does not perform any range checks.
+    #[inline]
     #[must_use]
     pub fn lighter(self, val: f32) -> Self {
         self.map(|c| val + c * (1.0 - val))
@@ -222,6 +248,7 @@ impl Color {
     ///
     /// `val` should be in the range `0.0..1.0` for a semantically valid factor, although this
     /// function does not perform any range checks.
+    #[inline]
     #[must_use]
     pub fn darker(self, val: f32) -> Self {
         self.map(|c| c * (1.0 - val))
@@ -234,6 +261,7 @@ impl Color {
     ///
     /// [`lighter`]: Color::lighter
     /// [`darker`]: Color::darker
+    #[inline]
     #[must_use]
     pub fn highlight(self, val: f32) -> Self {
         let (c_max, c_min) = self
@@ -257,6 +285,7 @@ impl IsClose<f32> for Color {
     const ABS_TOL: f32 = f32::ABS_TOL;
     const REL_TOL: f32 = f32::REL_TOL;
 
+    #[inline]
     fn is_close_tol(
         &self,
         other: impl std::borrow::Borrow<Self>,

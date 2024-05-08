@@ -9,11 +9,15 @@ const FONT_TTF: &[u8] = include_bytes!(env!("DEFAULT_TTF"));
 static FONT: OnceLock<Font> = OnceLock::new();
 
 pub fn font() -> &'static Font {
-    FONT.get_or_init(|| Font::from_ttf(FONT_TTF.to_owned()).expect("default font is tested"))
+    FONT.get_or_init(|| {
+        Font::from_ttf(FONT_TTF.to_owned())
+            .unwrap_or_else(|_| unreachable!("default font is tested"))
+    })
 }
 
 pub fn notdef() -> Glyph {
-    Glyph::parse_from(&font().face, GlyphId(0)).expect("default font is tested")
+    Glyph::parse_from(&font().face, GlyphId(0))
+        .unwrap_or_else(|| unreachable!("default font is tested"))
 }
 
 pub fn cap_height() -> Length<FontUnit> {
@@ -21,7 +25,7 @@ pub fn cap_height() -> Length<FontUnit> {
         font()
             .face
             .capital_height()
-            .expect("default font is tested")
+            .unwrap_or_else(|| unreachable!("default font is tested"))
             .into(),
     )
 }
@@ -31,7 +35,7 @@ pub fn x_height() -> Length<FontUnit> {
         font()
             .face
             .x_height()
-            .expect("default font is tested")
+            .unwrap_or_else(|| unreachable!("default font is tested"))
             .into(),
     )
 }

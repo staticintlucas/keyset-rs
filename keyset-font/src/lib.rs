@@ -86,12 +86,14 @@ pub struct Font {
 }
 
 impl Debug for Font {
+    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Font").field(self.name()).finish()
     }
 }
 
 impl Default for Font {
+    #[inline]
     fn default() -> Self {
         Self::default_ref().clone()
     }
@@ -102,6 +104,7 @@ impl Font {
     ///
     /// This is equivalent to calling [`Default::default`] but returns a reference and avoids
     /// cloning any internal data
+    #[inline]
     #[must_use]
     pub fn default_ref() -> &'static Self {
         default::font()
@@ -112,6 +115,7 @@ impl Font {
     /// # Errors
     ///
     /// If there is an error parsing the font data
+    #[inline]
     pub fn from_ttf(data: Vec<u8>) -> Result<Self> {
         Ok(Self {
             face: Face::from_ttf(data)?,
@@ -128,6 +132,7 @@ impl Font {
     /// The font family name
     ///
     /// Returns `"unknown"` if the font does not specify a family name
+    #[inline]
     pub fn family(&self) -> &String {
         self.family.get_or_init(|| {
             self.face
@@ -145,6 +150,7 @@ impl Font {
     /// The font's full name
     ///
     /// Returns `"unknown"` if the font does not specify a full name
+    #[inline]
     pub fn name(&self) -> &String {
         self.name.get_or_init(|| {
             self.face
@@ -160,6 +166,7 @@ impl Font {
     }
 
     /// The number font units per EM
+    #[inline]
     pub fn em_size(&self) -> Length<FontUnit> {
         Length::new(self.face.units_per_em().into())
     }
@@ -168,6 +175,7 @@ impl Font {
     ///
     /// Measures the height of the uppercase `'M'` if it is not set. In case the font does not contain
     /// an uppercase `'M'`, a default value is returned
+    #[inline]
     pub fn cap_height(&self) -> Length<FontUnit> {
         *self.cap_height.get_or_init(|| {
             self.face
@@ -185,6 +193,7 @@ impl Font {
     ///
     /// Measures the height of the lowercase `'x'` if it is not set. In case the font does not contain
     /// a lowercase `'x'`, a default value is returned
+    #[inline]
     pub fn x_height(&self) -> Length<FontUnit> {
         *self.x_height.get_or_init(|| {
             self.face
@@ -199,16 +208,19 @@ impl Font {
     }
 
     /// The font's ascender in font units
+    #[inline]
     pub fn ascender(&self) -> Length<FontUnit> {
         Length::new(self.face.ascender().into())
     }
 
     /// The font's descender in font units
+    #[inline]
     pub fn descender(&self) -> Length<FontUnit> {
         Length::new((-self.face.descender()).into())
     }
 
     /// The font's line gap in font units
+    #[inline]
     pub fn line_gap(&self) -> Length<FontUnit> {
         Length::new(self.face.line_gap().into())
     }
@@ -216,21 +228,25 @@ impl Font {
     /// The font's line height in font units
     ///
     /// This is equal to `self.ascender() + self.descender() + self.line_gap()`
+    #[inline]
     pub fn line_height(&self) -> Length<FontUnit> {
         self.ascender() + self.descender() + self.line_gap()
     }
 
     /// The font's slope angle, anticlockwise being positive
+    #[inline]
     pub fn slope(&self) -> Option<Angle> {
         self.face.italic_angle().map(Angle::degrees) // Negate so forward = positive
     }
 
     /// The number of glyph outlines in the font
+    #[inline]
     pub fn num_glyphs(&self) -> usize {
         self.face.number_of_glyphs().into()
     }
 
     /// Returns the glyph for a given character if present in the font
+    #[inline]
     pub fn glyph(&self, char: char) -> Option<Glyph> {
         self.glyphs
             .entry(char)
@@ -243,11 +259,13 @@ impl Font {
     }
 
     /// Returns the glyph for a given character, or the default replacement character if not present
+    #[inline]
     pub fn glyph_or_default(&self, char: char) -> Glyph {
         self.glyph(char).unwrap_or_else(|| self.notdef())
     }
 
     /// Returns the font's default replacement glyph, `.notdef`, or a builtin default if not present
+    #[inline]
     pub fn notdef(&self) -> Glyph {
         self.notdef
             .get_or_init(|| {
@@ -261,6 +279,7 @@ impl Font {
 
     /// Returns the kerning between two characters' glyphs, or 0 if no kerning is specified in the
     /// font
+    #[inline]
     pub fn kerning(&self, left: char, right: char) -> Length<FontUnit> {
         *self.kerning.entry((left, right)).or_insert_with(|| {
             if let (Some(lhs), Some(rhs)) =

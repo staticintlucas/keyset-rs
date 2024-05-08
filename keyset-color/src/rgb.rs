@@ -4,30 +4,35 @@ use ::rgb::{RGB16, RGB8};
 type RGBf32 = ::rgb::RGB<f32>;
 
 impl From<RGB16> for Color {
+    #[inline]
     fn from(value: RGB16) -> Self {
         Self::from_rgb16(value.into())
     }
 }
 
 impl From<Color> for RGB16 {
+    #[inline]
     fn from(value: Color) -> Self {
         value.as_rgb16().into()
     }
 }
 
 impl From<RGB8> for Color {
+    #[inline]
     fn from(value: RGB8) -> Self {
         Self::from_rgb8(value.into())
     }
 }
 
 impl From<Color> for RGB8 {
+    #[inline]
     fn from(value: Color) -> Self {
         value.as_rgb8().into()
     }
 }
 
 impl From<RGBf32> for Color {
+    #[inline]
     fn from(value: RGBf32) -> Self {
         let (r, g, b) = value.into();
         (r, g, b).into()
@@ -35,6 +40,7 @@ impl From<RGBf32> for Color {
 }
 
 impl From<Color> for RGBf32 {
+    #[inline]
     fn from(value: Color) -> Self {
         let (r, g, b) = value.into();
         (r, g, b).into()

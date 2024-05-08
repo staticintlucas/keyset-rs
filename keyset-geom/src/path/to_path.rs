@@ -8,6 +8,7 @@ pub trait ToPath<U> {
 }
 
 impl<U> ToPath<U> for Circle<U> {
+    #[inline]
     fn to_path(self) -> Path<U> {
         let radius = self.radius.get();
 
@@ -34,6 +35,7 @@ impl<U> ToPath<U> for Circle<U> {
 }
 
 impl<U> ToPath<U> for Rect<U> {
+    #[inline]
     fn to_path(self) -> Path<U> {
         let mut builder = Path::builder_with_capacity(5);
         builder.abs_move(self.min);
@@ -47,6 +49,7 @@ impl<U> ToPath<U> for Rect<U> {
 }
 
 impl<U> ToPath<U> for RoundRect<U> {
+    #[inline]
     fn to_path(self) -> Path<U> {
         let radius = self.radius.get();
         let radii = Vector::splat(radius);

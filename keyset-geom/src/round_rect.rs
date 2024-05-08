@@ -18,6 +18,7 @@ pub struct RoundRect<U> {
 
 // Impl here rather than derive so we don't require U: Clone everywhere
 impl<U> Clone for RoundRect<U> {
+    #[inline]
     fn clone(&self) -> Self {
         *self
     }
@@ -104,6 +105,7 @@ impl<U> IsClose<f32> for RoundRect<U> {
     const ABS_TOL: f32 = f32::ABS_TOL;
     const REL_TOL: f32 = f32::REL_TOL;
 
+    #[inline]
     fn is_close_tol(
         &self,
         other: impl Borrow<Self>,

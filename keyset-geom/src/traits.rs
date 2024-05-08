@@ -7,6 +7,7 @@ pub trait ExtRect<U> {
 }
 
 impl<U> ExtRect<U> for Rect<U> {
+    #[inline]
     fn from_center_and_size(center: Point<U>, size: Size<U>) -> Self {
         Self::from_origin_and_size(center - size / 2.0, size)
     }
@@ -28,16 +29,19 @@ pub trait ExtVec<T, U> {
 }
 
 impl<U> ExtVec<Angle, U> for Vector<U> {
+    #[inline]
     fn rotate(self, angle: Angle) -> Self {
         let (sin, cos) = angle.sin_cos();
         Self::new(self.x * cos - self.y * sin, self.x * sin + self.y * cos)
     }
 
+    #[inline]
     fn neg_x(self) -> Self {
         let (x, y) = self.to_tuple();
         Self::new(-x, y)
     }
 
+    #[inline]
     fn neg_y(self) -> Self {
         let (x, y) = self.to_tuple();
         Self::new(x, -y)
@@ -45,16 +49,19 @@ impl<U> ExtVec<Angle, U> for Vector<U> {
 }
 
 impl<U> ExtVec<euclid::Angle<f64>, U> for euclid::Vector2D<f64, U> {
+    #[inline]
     fn rotate(self, angle: euclid::Angle<f64>) -> Self {
         let (sin, cos) = angle.sin_cos();
         Self::new(self.x * cos - self.y * sin, self.x * sin + self.y * cos)
     }
 
+    #[inline]
     fn neg_x(self) -> Self {
         let (x, y) = self.to_tuple();
         Self::new(-x, y)
     }
 
+    #[inline]
     fn neg_y(self) -> Self {
         let (x, y) = self.to_tuple();
         Self::new(x, -y)

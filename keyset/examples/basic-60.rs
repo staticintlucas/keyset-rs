@@ -1,3 +1,5 @@
+#![allow(clippy::restriction)]
+
 //! Example usage to generate layout diagrams for a basic 60% keyboard
 
 use std::{fs, path::Path};

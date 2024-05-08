@@ -48,24 +48,28 @@ impl Drawing {
     }
 
     #[cfg(feature = "pdf")]
+    #[inline]
     #[must_use]
     pub fn to_svg(&self) -> String {
         svg::draw(self)
     }
 
     #[cfg(feature = "pdf")]
+    #[inline]
     #[must_use]
     pub fn to_png(&self, ppi: f32) -> Vec<u8> {
         png::draw(self, geom::Scale::new(ppi))
     }
 
     #[cfg(feature = "pdf")]
+    #[inline]
     #[must_use]
     pub fn to_pdf(&self) -> Vec<u8> {
         pdf::draw(self)
     }
 
     #[cfg(feature = "pdf")]
+    #[inline]
     #[must_use]
     pub fn to_ai(&self) -> Vec<u8> {
         // An Illustrator file typically contains both an Illustrator-native and a PDF copy of an
@@ -89,6 +93,7 @@ pub struct Options<'a> {
 }
 
 impl Default for Options<'_> {
+    #[inline]
     fn default() -> Self {
         Self {
             profile: &Profile::DEFAULT,
@@ -102,26 +107,31 @@ impl Default for Options<'_> {
 }
 
 impl<'a> Options<'a> {
+    #[inline]
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[inline]
     #[must_use]
     pub const fn profile(self, profile: &'a Profile) -> Self {
         Self { profile, ..self }
     }
 
+    #[inline]
     #[must_use]
     pub const fn font(self, font: &'a Font) -> Self {
         Self { font, ..self }
     }
 
+    #[inline]
     #[must_use]
     pub const fn scale(self, scale: f32) -> Self {
         Self { scale, ..self }
     }
 
+    #[inline]
     #[must_use]
     pub const fn outline_width(self, outline_width: Length<Dot>) -> Self {
         Self {
@@ -130,11 +140,13 @@ impl<'a> Options<'a> {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn show_keys(self, show_keys: bool) -> Self {
         Self { show_keys, ..self }
     }
 
+    #[inline]
     #[must_use]
     pub const fn show_margin(self, show_margin: bool) -> Self {
         Self {
@@ -143,6 +155,7 @@ impl<'a> Options<'a> {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn draw(&self, keys: &[Key]) -> Drawing {
         Drawing::new(keys, self)

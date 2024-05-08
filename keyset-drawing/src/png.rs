@@ -12,12 +12,14 @@ pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Vec<u8> {
     let scale = (DOT_PER_INCH.inverse() * ppi) * Scale::<Pixel, Pixel>::new(drawing.scale);
     let size = drawing.bounds.size() * DOT_PER_UNIT * scale;
 
+    // TODO don't clamp and just return Error?
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // We want truncation
-    let (width, height) = (size.width.ceil() as u32, size.height.ceil() as u32);
+    let [width, height] = size
+        .to_array()
+        .map(|dim| (dim.ceil() as u32).clamp(1, (i32::MAX as u32) / 4));
 
-    // Will panic if width/height = 0 (which we prevent with .max(1))
-    // TODO Will also panic if width/height are too large
-    let mut pixmap = Pixmap::new(width.max(1), height.max(1)).unwrap();
+    let mut pixmap = Pixmap::new(width, height)
+        .unwrap_or_else(|| unreachable!("width/height are within range here"));
 
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
 
@@ -26,8 +28,10 @@ pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Vec<u8> {
         draw_key(&mut pixmap, key, transform);
     }
 
-    // Will panic for an IO error, but writing to a Vec<_> is infallible
-    pixmap.encode_png().unwrap()
+    // TODO return error on failure
+    pixmap
+        .encode_png()
+        .unwrap_or_else(|_| unreachable!("writing to Vec<_> should not fail"))
 }
 
 fn draw_key(pixmap: &mut Pixmap, key: &KeyDrawing, transform: Transform<Dot, Pixel>) {

@@ -51,6 +51,7 @@ impl Shape {
     /// The outer bounding rectangle of the key shape, i.e. the bounding box of the key shape. The
     /// inner and outer bounds are the same for regular-shaped keys, but are different for stepped
     /// keys, L-shaped keys, etc.
+    #[inline]
     #[must_use]
     pub fn outer_rect(self) -> Rect<Unit> {
         match self {
@@ -68,6 +69,7 @@ impl Shape {
     /// The inner bounding rectangle of the key shape, i.e. the bounds for the part of the key
     /// containing the legend. The inner and outer bounds are the same for regular-shaped keys, but
     /// are different for stepped keys, L-shaped keys, etc.
+    #[inline]
     #[must_use]
     pub fn inner_rect(self) -> Rect<Unit> {
         match self {
@@ -100,12 +102,14 @@ pub struct Key {
 
 impl Key {
     /// A new blank key
+    #[inline]
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// An example non-blank key
+    #[inline]
     #[must_use]
     pub fn example() -> Self {
         Self {
@@ -116,6 +120,7 @@ impl Key {
 }
 
 impl Default for Key {
+    #[inline]
     fn default() -> Self {
         Self {
             position: Point::origin(),

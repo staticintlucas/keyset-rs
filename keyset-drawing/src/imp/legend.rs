@@ -88,7 +88,7 @@ mod tests {
         assert_eq!(
             path.data
                 .into_iter()
-                .filter(|el| matches!(el, PathSegment::Move(..)))
+                .filter(|el| matches!(*el, PathSegment::Move(..)))
                 .count(),
             3
         );
