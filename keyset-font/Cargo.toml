@@ -23,7 +23,6 @@ workspace = true
 [dependencies]
 geom.workspace = true
 
-dashmap.workspace = true
 log.workspace = true
 ouroboros.workspace = true
 ttf-parser.workspace = true

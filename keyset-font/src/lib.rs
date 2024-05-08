@@ -6,10 +6,10 @@ mod default;
 mod error;
 mod face;
 
+use std::collections::HashMap;
 use std::fmt::Debug;
-use std::sync::OnceLock;
+use std::sync::{OnceLock, RwLock};
 
-use dashmap::DashMap;
 use geom::{Angle, Length, Path, PathBuilder, Point};
 use log::warn;
 use ttf_parser::GlyphId;
@@ -73,7 +73,6 @@ impl Glyph {
 }
 
 /// A parsed font
-#[derive(Clone)]
 pub struct Font {
     face: Face,
     family: OnceLock<String>,
@@ -81,14 +80,30 @@ pub struct Font {
     cap_height: OnceLock<Length<FontUnit>>,
     x_height: OnceLock<Length<FontUnit>>,
     notdef: OnceLock<Glyph>,
-    glyphs: DashMap<char, Option<Glyph>>,
-    kerning: DashMap<(char, char), Length<FontUnit>>,
+    glyphs: RwLock<HashMap<char, Option<Glyph>>>,
+    kerning: RwLock<HashMap<(char, char), Length<FontUnit>>>,
 }
 
 impl Debug for Font {
     #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Font").field(self.name()).finish()
+    }
+}
+
+impl Clone for Font {
+    fn clone(&self) -> Self {
+        #[allow(clippy::unwrap_used)] // Will only panic if the lock is poisoned
+        Self {
+            face: self.face.clone(),
+            family: self.family.clone(),
+            name: self.name.clone(),
+            cap_height: self.cap_height.clone(),
+            x_height: self.x_height.clone(),
+            notdef: self.notdef.clone(),
+            glyphs: RwLock::new(self.glyphs.read().unwrap().clone()),
+            kerning: RwLock::new(self.kerning.read().unwrap().clone()),
+        }
     }
 }
 
@@ -124,8 +139,8 @@ impl Font {
             cap_height: OnceLock::new(),
             x_height: OnceLock::new(),
             notdef: OnceLock::new(),
-            glyphs: DashMap::new(),
-            kerning: DashMap::new(),
+            glyphs: RwLock::new(HashMap::new()),
+            kerning: RwLock::new(HashMap::new()),
         })
     }
 
@@ -246,10 +261,16 @@ impl Font {
     }
 
     /// Returns the glyph for a given character if present in the font
+    ///
+    /// # Panics
+    ///
+    /// Panics if the internal lock becomes poisoned (due to a panic in another thread)
     #[inline]
     pub fn glyph(&self, char: char) -> Option<Glyph> {
-        self.glyphs
-            .entry(char)
+        #[allow(clippy::unwrap_used)] // Will only panic if the lock is poisoned
+        let mut map = self.glyphs.write().unwrap();
+
+        map.entry(char)
             .or_insert_with(|| {
                 self.face
                     .glyph_index(char)
@@ -279,9 +300,16 @@ impl Font {
 
     /// Returns the kerning between two characters' glyphs, or 0 if no kerning is specified in the
     /// font
+    ///
+    /// # Panics
+    ///
+    /// Panics if the internal lock becomes poisoned (due to a panic in another thread)
     #[inline]
     pub fn kerning(&self, left: char, right: char) -> Length<FontUnit> {
-        *self.kerning.entry((left, right)).or_insert_with(|| {
+        #[allow(clippy::unwrap_used)] // Will only panic if the lock is poisoned
+        let mut map = self.kerning.write().unwrap();
+
+        *map.entry((left, right)).or_insert_with(|| {
             if let (Some(lhs), Some(rhs)) =
                 (self.face.glyph_index(left), self.face.glyph_index(right))
             {
@@ -355,8 +383,8 @@ mod tests {
         assert!(font.cap_height.get().is_none());
         assert!(font.x_height.get().is_none());
         assert!(font.notdef.get().is_none());
-        assert_eq!(font.glyphs.len(), 0);
-        assert_eq!(font.kerning.len(), 0);
+        assert_eq!(font.glyphs.read().unwrap().len(), 0);
+        assert_eq!(font.kerning.read().unwrap().len(), 0);
     }
 
     #[test]
