@@ -22,5 +22,6 @@ workspace = true
 
 [dependencies]
 isclose.workspace = true
+saturate.workspace = true
 tiny-skia = { workspace = true, features = ["std"], optional = true }
 rgb = { workspace = true, optional = true }

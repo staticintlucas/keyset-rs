@@ -1,4 +1,5 @@
 use isclose::IsClose;
+use saturate::SaturatingFrom;
 
 use crate::{Angle, ExtVec, Vector};
 
@@ -56,8 +57,7 @@ pub fn arc_to_bezier<U>(
 
     // Subtract f32::TOLERANCE so 90.0001 deg doesn't become 2 segs
     let segments = ((dphi / Angle::frac_pi_2()).abs() - f32::ABS_TOL).ceil();
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let i_segments = segments as u8; // 0 < segments <= 4 so this will never truncate
+    let i_segments = u8::saturating_from(segments); // 0 < segments <= 4
     let dphi = dphi / segments;
 
     (0..i_segments)
@@ -114,7 +114,6 @@ mod tests {
 
     use std::f32::consts::SQRT_2;
 
-    #[allow(clippy::too_many_lines)]
     #[test]
     fn test_arc_to_bezier() {
         struct Params {
@@ -123,129 +122,59 @@ mod tests {
             laf: bool,
             sf: bool,
             d: Vector<()>,
-            exp: Vec<Vector<()>>,
         }
-        let params = vec![
+        fn params(r: (f32, f32), xar: f32, laf: bool, sf: bool, d: (f32, f32)) -> Params {
             Params {
-                r: Vector::new(1.0, 1.0),
-                xar: Angle::zero(),
-                laf: false,
-                sf: false,
-                d: Vector::new(1.0, 1.0),
-                exp: vec![Vector::new(1.0, 1.0)],
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                xar: Angle::zero(),
-                laf: true,
-                sf: false,
-                d: Vector::new(1.0, 1.0),
-                exp: vec![
-                    Vector::new(-1.0, 1.0),
-                    Vector::new(1.0, 1.0),
-                    Vector::new(1.0, -1.0),
-                ],
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                xar: Angle::zero(),
-                laf: true,
-                sf: true,
-                d: Vector::new(1.0, 1.0),
-                exp: vec![
-                    Vector::new(1.0, -1.0),
-                    Vector::new(1.0, 1.0),
-                    Vector::new(-1.0, 1.0),
-                ],
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                xar: Angle::zero(),
-                laf: true,
-                sf: true,
-                d: Vector::new(1.0, -1.0),
-                exp: vec![
-                    Vector::new(-1.0, -1.0),
-                    Vector::new(1.0, -1.0),
-                    Vector::new(1.0, 1.0),
-                ],
-            },
-            Params {
-                r: Vector::new(1.0, 2.0),
-                xar: Angle::zero(),
-                laf: false,
-                sf: false,
-                d: Vector::new(1.0, 2.0),
-                exp: vec![Vector::new(1.0, 2.0)],
-            },
-            Params {
-                r: Vector::new(1.0, 2.0),
-                xar: Angle::frac_pi_2(),
-                laf: false,
-                sf: false,
-                d: Vector::new(2.0, -1.0),
-                exp: vec![Vector::new(2.0, -1.0)],
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                xar: Angle::zero(),
-                laf: false,
-                sf: false,
-                d: Vector::zero(),
-                exp: vec![Vector::zero()],
-            },
-            Params {
-                r: Vector::new(SQRT_2, SQRT_2),
-                xar: Angle::zero(),
-                laf: false,
-                sf: true,
-                d: Vector::new(0.0, -2.0),
-                exp: vec![Vector::new(0.0, -2.0)],
-            },
-            Params {
-                r: Vector::new(SQRT_2, SQRT_2),
-                xar: Angle::zero(),
-                laf: false,
-                sf: false,
-                d: Vector::new(0.0, 2.0),
-                exp: vec![Vector::new(0.0, 2.0)],
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                xar: Angle::zero(),
-                laf: false,
-                sf: false,
-                d: Vector::new(2.0, 0.0),
-                exp: vec![Vector::new(1.0, 1.0), Vector::new(1.0, -1.0)],
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                xar: Angle::zero(),
-                laf: false,
-                sf: false,
-                d: Vector::new(4.0, 0.0),
-                exp: vec![Vector::new(2.0, 2.0), Vector::new(2.0, -2.0)],
-            },
-            Params {
-                r: Vector::zero(),
-                xar: Angle::zero(),
-                laf: false,
-                sf: false,
-                d: Vector::new(1.0, 0.0),
-                exp: vec![Vector::new(1.0, 0.0)],
-            },
+                r: r.into(),
+                xar: Angle::degrees(xar),
+                laf,
+                sf,
+                d: d.into(),
+            }
+        }
+        let params = [
+            params((1.0, 1.0), 0.0, false, false, (1.0, 1.0)),
+            params((1.0, 1.0), 0.0, true, false, (1.0, 1.0)),
+            params((1.0, 1.0), 0.0, true, true, (1.0, 1.0)),
+            params((1.0, 1.0), 0.0, true, true, (1.0, -1.0)),
+            params((1.0, 2.0), 0.0, false, false, (1.0, 2.0)),
+            params((1.0, 2.0), 90.0, false, false, (2.0, -1.0)),
+            params((1.0, 1.0), 0.0, false, false, (0.0, 0.0)),
+            params((SQRT_2, SQRT_2), 0.0, false, true, (0.0, -2.0)),
+            params((SQRT_2, SQRT_2), 0.0, false, false, (0.0, 2.0)),
+            params((1.0, 1.0), 0.0, false, false, (2.0, 0.0)),
+            params((1.0, 1.0), 0.0, false, false, (4.0, 0.0)),
+            params((0.0, 0.0), 0.0, false, false, (1.0, 0.0)),
+        ];
+        let expected = [
+            vec![Vector::new(1.0, 1.0)],
+            vec![
+                Vector::new(-1.0, 1.0),
+                Vector::new(1.0, 1.0),
+                Vector::new(1.0, -1.0),
+            ],
+            vec![
+                Vector::new(1.0, -1.0),
+                Vector::new(1.0, 1.0),
+                Vector::new(-1.0, 1.0),
+            ],
+            vec![
+                Vector::new(-1.0, -1.0),
+                Vector::new(1.0, -1.0),
+                Vector::new(1.0, 1.0),
+            ],
+            vec![Vector::new(1.0, 2.0)],
+            vec![Vector::new(2.0, -1.0)],
+            vec![Vector::new(0.0, 0.0)],
+            vec![Vector::new(0.0, -2.0)],
+            vec![Vector::new(0.0, 2.0)],
+            vec![Vector::new(1.0, 1.0), Vector::new(1.0, -1.0)],
+            vec![Vector::new(2.0, 2.0), Vector::new(2.0, -2.0)],
+            vec![Vector::new(1.0, 0.0)],
         ];
 
-        for Params {
-            r,
-            xar,
-            laf,
-            sf,
-            d,
-            exp,
-        } in params
-        {
-            let points = arc_to_bezier(r, xar, laf, sf, d);
+        for (p, exp) in params.into_iter().zip(expected) {
+            let points = arc_to_bezier(p.r, p.xar, p.laf, p.sf, p.d);
             let points = points.into_iter().map(|i| i.2);
 
             assert_eq!(points.len(), exp.len());
@@ -262,161 +191,81 @@ mod tests {
             laf: bool,
             sf: bool,
             d: Vector<()>,
-            exp: Vector<()>,
         }
-        let params = vec![
+        fn params(r: (f32, f32), laf: bool, sf: bool, d: (f32, f32)) -> Params {
             Params {
-                r: Vector::new(1.0, 1.0),
-                laf: false,
-                sf: false,
-                d: Vector::new(1.0, 1.0),
-                exp: Vector::new(1.0, 0.0),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                laf: true,
-                sf: false,
-                d: Vector::new(1.0, 1.0),
-                exp: Vector::new(0.0, 1.0),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                laf: false,
-                sf: true,
-                d: Vector::new(1.0, 1.0),
-                exp: Vector::new(0.0, 1.0),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                laf: true,
-                sf: true,
-                d: Vector::new(1.0, 1.0),
-                exp: Vector::new(1.0, 0.0),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                laf: false,
-                sf: false,
-                d: Vector::new(2.0, 0.0),
-                exp: Vector::new(1.0, 0.0),
-            },
+                r: r.into(),
+                laf,
+                sf,
+                d: d.into(),
+            }
+        }
+        let params = [
+            params((1.0, 1.0), false, false, (1.0, 1.0)),
+            params((1.0, 1.0), true, false, (1.0, 1.0)),
+            params((1.0, 1.0), false, true, (1.0, 1.0)),
+            params((1.0, 1.0), true, true, (1.0, 1.0)),
+            params((1.0, 1.0), false, false, (2.0, 0.0)),
+        ];
+        let expected = [
+            Vector::new(1.0, 0.0),
+            Vector::new(0.0, 1.0),
+            Vector::new(0.0, 1.0),
+            Vector::new(1.0, 0.0),
+            Vector::new(1.0, 0.0),
         ];
 
-        for Params { r, laf, sf, d, exp } in params {
-            let point = get_center(r, laf, sf, d);
+        for (p, exp) in params.into_iter().zip(expected) {
+            let point = get_center(p.r, p.laf, p.sf, p.d);
             assert_is_close!(point, exp);
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     #[test]
     fn test_create_arc() {
         struct Params {
             r: Vector<()>,
             phi0: Angle,
             dphi: Angle,
-            p: (Vector<()>, Vector<()>, Vector<()>),
+        }
+        fn params(r: (f32, f32), phi0: f32, dphi: f32) -> Params {
+            Params {
+                r: r.into(),
+                phi0: Angle::degrees(phi0),
+                dphi: Angle::degrees(dphi),
+            }
         }
         let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).radians.tan();
-        let params = vec![
-            Params {
-                r: Vector::new(1.0, 1.0),
-                phi0: Angle::zero(),
-                dphi: Angle::frac_pi_2(),
-                p: (
-                    Vector::new(0.0, a),
-                    Vector::new(a - 1.0, 1.0),
-                    Vector::new(-1.0, 1.0),
-                ),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                phi0: Angle::frac_pi_2(),
-                dphi: Angle::frac_pi_2(),
-                p: (
-                    Vector::new(-a, 0.0),
-                    Vector::new(-1.0, a - 1.0),
-                    Vector::new(-1.0, -1.0),
-                ),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                phi0: Angle::pi(),
-                dphi: Angle::frac_pi_2(),
-                p: (
-                    Vector::new(0.0, -a),
-                    Vector::new(1.0 - a, -1.0),
-                    Vector::new(1.0, -1.0),
-                ),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                phi0: -Angle::frac_pi_2(),
-                dphi: Angle::frac_pi_2(),
-                p: (
-                    Vector::new(a, 0.0),
-                    Vector::new(1.0, 1.0 - a),
-                    Vector::new(1.0, 1.0),
-                ),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                phi0: Angle::zero(),
-                dphi: -Angle::frac_pi_2(),
-                p: (
-                    Vector::new(0.0, -a),
-                    Vector::new(a - 1.0, -1.0),
-                    Vector::new(-1.0, -1.0),
-                ),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                phi0: Angle::frac_pi_2(),
-                dphi: -Angle::frac_pi_2(),
-                p: (
-                    Vector::new(a, 0.0),
-                    Vector::new(1.0, a - 1.0),
-                    Vector::new(1.0, -1.0),
-                ),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                phi0: Angle::pi(),
-                dphi: -Angle::frac_pi_2(),
-                p: (
-                    Vector::new(0.0, a),
-                    Vector::new(1.0 - a, 1.0),
-                    Vector::new(1.0, 1.0),
-                ),
-            },
-            Params {
-                r: Vector::new(1.0, 1.0),
-                phi0: -Angle::frac_pi_2(),
-                dphi: -Angle::frac_pi_2(),
-                p: (
-                    Vector::new(-a, 0.0),
-                    Vector::new(-1.0, 1.0 - a),
-                    Vector::new(-1.0, 1.0),
-                ),
-            },
-            Params {
-                r: Vector::new(2.0, 1.0),
-                phi0: Angle::zero(),
-                dphi: Angle::frac_pi_2(),
-                p: (
-                    Vector::new(0.0, a),
-                    Vector::new(2.0 * (a - 1.0), 1.0),
-                    Vector::new(-2.0, 1.0),
-                ),
-            },
+        let params = [
+            params((1.0, 1.0), 0.0, 90.0),
+            params((1.0, 1.0), 90.0, 90.0),
+            params((1.0, 1.0), 180.0, 90.0),
+            params((1.0, 1.0), -90.0, 90.0),
+            params((1.0, 1.0), 0.0, -90.0),
+            params((1.0, 1.0), 90.0, -90.0),
+            params((1.0, 1.0), 180.0, -90.0),
+            params((1.0, 1.0), -90.0, -90.0),
+            params((2.0, 1.0), 0.0, 90.0),
         ];
+        let expected = [
+            [(0.0, a), (a - 1.0, 1.0), (-1.0, 1.0)],
+            [(-a, 0.0), (-1.0, a - 1.0), (-1.0, -1.0)],
+            [(0.0, -a), (1.0 - a, -1.0), (1.0, -1.0)],
+            [(a, 0.0), (1.0, 1.0 - a), (1.0, 1.0)],
+            [(0.0, -a), (a - 1.0, -1.0), (-1.0, -1.0)],
+            [(a, 0.0), (1.0, a - 1.0), (1.0, -1.0)],
+            [(0.0, a), (1.0 - a, 1.0), (1.0, 1.0)],
+            [(-a, 0.0), (-1.0, 1.0 - a), (-1.0, 1.0)],
+            [(0.0, a), (2.0 * (a - 1.0), 1.0), (-2.0, 1.0)],
+        ]
+        .map(|pts| pts.map(Vector::from));
 
-        for Params { r, phi0, dphi, p } in params {
-            let points = create_arc(r, phi0, dphi);
+        for (p, exp) in params.into_iter().zip(expected) {
+            let points = create_arc(p.r, p.phi0, p.dphi);
 
-            assert_is_close!(p.0, points.0);
-            assert_is_close!(p.1, points.1);
-            assert_is_close!(p.2, points.2);
+            assert_is_close!(points.0, exp[0]);
+            assert_is_close!(points.1, exp[1]);
+            assert_is_close!(points.2, exp[2]);
         }
     }
 }

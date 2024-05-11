@@ -1,7 +1,6 @@
 use crate::{Angle, Circle, ExtVec, Length, Path, Rect, RoundRect, Size, Vector};
 
 /// Trait to allow conversion of primitive shapes to a [`Path`]
-#[allow(clippy::module_name_repetitions)] // rust-lang/rust-clippy#8524
 pub trait ToPath<U> {
     /// Convert a primitive shape to a [`Path`]
     fn to_path(self) -> Path<U>;

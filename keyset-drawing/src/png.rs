@@ -1,6 +1,7 @@
 use geom::{
     Dot, Inch, PathSegment, Point, Scale, ToTransform, Transform, DOT_PER_INCH, DOT_PER_UNIT,
 };
+use saturate::SaturatingFrom;
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform as SkiaTransform};
 
 use crate::{Drawing, KeyDrawing, KeyPath};
@@ -13,10 +14,9 @@ pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Vec<u8> {
     let size = drawing.bounds.size() * DOT_PER_UNIT * scale;
 
     // TODO don't clamp and just return Error?
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // We want truncation
     let [width, height] = size
         .to_array()
-        .map(|dim| (dim.ceil() as u32).clamp(1, (i32::MAX as u32) / 4));
+        .map(|dim| u32::saturating_from(dim.ceil()).clamp(1, u32::saturating_from(i32::MAX) / 4));
 
     let mut pixmap = Pixmap::new(width, height)
         .unwrap_or_else(|| unreachable!("width/height are within range here"));

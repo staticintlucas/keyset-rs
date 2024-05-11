@@ -8,6 +8,7 @@ use ::key::Shape as KeyShape;
 use color::Color;
 use geom::{Dot, Length, ToPath, Unit, Vector};
 use geom::{Path, Point};
+use saturate::SaturatingFrom;
 
 use crate::Options;
 
@@ -66,9 +67,10 @@ impl KeyDrawing {
 
         let legends = key.legends.iter().enumerate().filter_map(|(i, l)| {
             l.as_ref().map(|legend| {
-                // `i` will never be anywhere big enough lose precision
-                #[allow(clippy::cast_precision_loss)]
-                let align = Vector::new(((i % 3) as f32) / 2.0, ((i / 3) as f32) / 2.0);
+                let align = Vector::new(
+                    f32::saturating_from(i % 3) / 2.0,
+                    f32::saturating_from(i / 3) / 2.0,
+                );
                 legend::draw(legend, options.font, options.profile, top_rect, align)
             })
         });

@@ -362,14 +362,37 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        #[allow(let_underscore_drop, clippy::redundant_clone)]
-        let _ = font.clone(); // Shouldn't panic
+        #[allow(clippy::redundant_clone)] // We want to test clone
+        let font2 = font.clone();
+
+        assert_eq!(font.face.number_of_glyphs(), font2.face.number_of_glyphs());
+        assert_eq!(font.family.get(), font2.family.get());
+        assert_eq!(font.name.get(), font2.name.get());
+        assert_eq!(font.cap_height.get(), font2.cap_height.get());
+        assert_eq!(font.x_height.get(), font2.x_height.get());
+        // assert_eq!(font.notdef.get(), font2.notdef.get());
+        assert_eq!(
+            font.glyphs.read().unwrap().len(),
+            font2.glyphs.read().unwrap().len()
+        );
+        assert_eq!(
+            font.kerning.read().unwrap().len(),
+            font2.kerning.read().unwrap().len()
+        );
     }
 
     #[test]
     fn font_default() {
-        #[allow(let_underscore_drop)]
-        let _ = Font::default(); // Shouldn't panic
+        let default = Font::default();
+
+        assert_matches!(default.face.number_of_glyphs(), 1); // Only .notdef
+        assert!(default.family.get().is_none());
+        assert!(default.name.get().is_none());
+        assert!(default.cap_height.get().is_none());
+        assert!(default.x_height.get().is_none());
+        assert!(default.notdef.get().is_none());
+        assert_eq!(default.glyphs.read().unwrap().len(), 0);
+        assert_eq!(default.kerning.read().unwrap().len(), 0);
     }
 
     #[test]

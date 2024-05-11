@@ -142,8 +142,16 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let face = Face::from_ttf(data).unwrap();
 
-        #[allow(let_underscore_drop, clippy::redundant_clone)]
-        let _ = face.clone(); // Shouldn't panic
+        #[allow(clippy::redundant_clone)] // We want to test clone
+        let face2 = face.clone();
+
+        assert_eq!(face.borrow_data(), face2.borrow_data());
+        assert_eq!(
+            face.borrow_face().number_of_glyphs(),
+            face2.borrow_face().number_of_glyphs()
+        );
+        assert_eq!(face.borrow_cmap().len(), face2.borrow_cmap().len());
+        assert_eq!(face.borrow_kern().len(), face2.borrow_kern().len());
     }
 
     #[test]

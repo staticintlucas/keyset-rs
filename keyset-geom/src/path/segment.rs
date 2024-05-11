@@ -9,7 +9,6 @@ use PathSegment::{Close, CubicBezier, Line, Move, QuadraticBezier};
 use crate::{Point, Scale, Transform, Vector};
 
 /// Enum representing a path segment
-#[allow(clippy::module_name_repetitions)] // rust-lang/rust-clippy#8524
 #[derive(Debug, PartialEq)]
 pub enum PathSegment<U> {
     /// Move to a point

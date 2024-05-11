@@ -6,9 +6,7 @@ use std::ops::{Add, Div, DivAssign, Mul, MulAssign};
 
 use arc_to_bezier::arc_to_bezier;
 
-#[allow(clippy::module_name_repetitions)] // rust-lang/rust-clippy#8524
 pub use segment::PathSegment;
-#[allow(clippy::module_name_repetitions)] // rust-lang/rust-clippy#8524
 pub use to_path::ToPath;
 
 use crate::{Angle, Length, Point, Rect, Scale, Transform, Vector};
@@ -235,7 +233,6 @@ impl<U> DivAssign<Scale<U, U>> for Path<U> {
 }
 
 /// A builder for [`Path`]s
-#[allow(clippy::module_name_repetitions)] // rust-lang/rust-clippy#8524
 #[derive(Debug)]
 pub struct PathBuilder<U> {
     data: Vec<PathSegment<U>>,

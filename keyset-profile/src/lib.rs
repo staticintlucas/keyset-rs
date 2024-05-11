@@ -11,6 +11,7 @@ use geom::{
 };
 use interp::interp_array;
 use key::Homing;
+use saturate::SaturatingFrom;
 
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
@@ -115,19 +116,18 @@ impl TextHeight {
     const NUM_HEIGHTS: usize = 10;
 
     // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5b0a9cdfc7cc9bb225839192298d82a66d/kb.css#L113
-    // TODO can't use array::from_fn here because const_fn_floating_point_arithmetic isn't stable
-    #[allow(clippy::unnecessary_cast, clippy::cast_precision_loss)]
+    // TODO update this when const_array_from_fn and const_fn_floating_point_arithmetic are stable
     pub const DEFAULT: Self = Self([
-        ((6.0 + 2.0 * (0 as f32)) / 72.0) * DOT_PER_UNIT.0,
-        ((6.0 + 2.0 * (1 as f32)) / 72.0) * DOT_PER_UNIT.0,
-        ((6.0 + 2.0 * (2 as f32)) / 72.0) * DOT_PER_UNIT.0,
-        ((6.0 + 2.0 * (3 as f32)) / 72.0) * DOT_PER_UNIT.0,
-        ((6.0 + 2.0 * (4 as f32)) / 72.0) * DOT_PER_UNIT.0,
-        ((6.0 + 2.0 * (5 as f32)) / 72.0) * DOT_PER_UNIT.0,
-        ((6.0 + 2.0 * (6 as f32)) / 72.0) * DOT_PER_UNIT.0,
-        ((6.0 + 2.0 * (7 as f32)) / 72.0) * DOT_PER_UNIT.0,
-        ((6.0 + 2.0 * (8 as f32)) / 72.0) * DOT_PER_UNIT.0,
-        ((6.0 + 2.0 * (9 as f32)) / 72.0) * DOT_PER_UNIT.0,
+        (6.0 + 2.0 * 0.0) * (DOT_PER_UNIT.0 / 72.0),
+        (6.0 + 2.0 * 1.0) * (DOT_PER_UNIT.0 / 72.0),
+        (6.0 + 2.0 * 2.0) * (DOT_PER_UNIT.0 / 72.0),
+        (6.0 + 2.0 * 3.0) * (DOT_PER_UNIT.0 / 72.0),
+        (6.0 + 2.0 * 4.0) * (DOT_PER_UNIT.0 / 72.0),
+        (6.0 + 2.0 * 5.0) * (DOT_PER_UNIT.0 / 72.0),
+        (6.0 + 2.0 * 6.0) * (DOT_PER_UNIT.0 / 72.0),
+        (6.0 + 2.0 * 7.0) * (DOT_PER_UNIT.0 / 72.0),
+        (6.0 + 2.0 * 8.0) * (DOT_PER_UNIT.0 / 72.0),
+        (6.0 + 2.0 * 9.0) * (DOT_PER_UNIT.0 / 72.0),
     ]);
 
     #[must_use]
@@ -141,12 +141,12 @@ impl TextHeight {
                 // use 0.0 font size for 0
                 let mut vec: Vec<_> = std::iter::once((&0, &0.0)).chain(heights).collect();
                 vec.sort_unstable_by_key(|&(i, _h)| i);
-                #[allow(clippy::cast_precision_loss)]
-                vec.into_iter().map(|(&i, &h)| (i as f32, h)).unzip()
+                vec.into_iter()
+                    .map(|(&i, &h)| (f32::saturating_from(i), h))
+                    .unzip()
             };
 
-            #[allow(clippy::cast_precision_loss)]
-            let all_indeces = array::from_fn(|i| i as f32);
+            let all_indeces = array::from_fn(f32::saturating_from);
             Self(interp_array(&indices, &heights, &all_indeces))
         }
     }
@@ -398,9 +398,8 @@ mod tests {
 
     #[test]
     fn test_text_height_new() {
-        #[allow(clippy::cast_precision_loss)] // `i` will never be that big
         let expected: [_; 10] =
-            array::from_fn(|i| (6.0 + 2.0 * (i as f32)) / 72.0 * DOT_PER_UNIT.get());
+            array::from_fn(|i| (6.0 + 2.0 * f32::saturating_from(i)) / 72.0 * DOT_PER_UNIT.get());
         let result = TextHeight::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
@@ -445,9 +444,11 @@ mod tests {
     fn test_text_height_default() {
         let heights = TextHeight::default();
 
-        #[allow(clippy::cast_precision_loss)] // `i` will never be that big
         for (i, h) in heights.0.into_iter().enumerate() {
-            assert_is_close!(h, (6.0 + 2.0 * (i as f32)) / 72.0 * DOT_PER_UNIT.get());
+            assert_is_close!(
+                h,
+                (6.0 + 2.0 * f32::saturating_from(i)) / 72.0 * DOT_PER_UNIT.get()
+            );
         }
     }
 

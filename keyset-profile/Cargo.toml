@@ -29,6 +29,7 @@ geom.workspace = true
 key.workspace = true
 
 interp.workspace = true
+saturate.workspace = true
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
