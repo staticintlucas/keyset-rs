@@ -40,7 +40,23 @@ impl Face {
     pub fn from_ttf(data: Vec<u8>) -> Result<Self> {
         FaceTryBuilder {
             data,
-            face_builder: |data| Ok(ttf_parser::Face::parse(data, 0)?),
+            face_builder: |data| {
+                let face = ttf_parser::Face::parse(data, 0)?;
+
+                if let Some(os2) = face.tables().os2 {
+                    use crate::error::PermissionError;
+
+                    if matches!(os2.permissions(), Some(ttf_parser::Permissions::Restricted)) {
+                        return Err(PermissionError::RestrictedLicense.into());
+                    } else if !os2.is_subsetting_allowed() {
+                        return Err(PermissionError::NoSubsetting.into());
+                    } else if !os2.is_outline_embedding_allowed() {
+                        return Err(PermissionError::BitmapEmbeddingOnly.into());
+                    }
+                }
+
+                Ok(face)
+            },
             cmap_builder: |face| {
                 Ok(face.tables().cmap.map_or_else(
                     || {
@@ -135,6 +151,8 @@ impl Face {
 
 #[cfg(test)]
 mod tests {
+    use assert_matches::assert_matches;
+
     use super::*;
 
     #[test]
@@ -175,6 +193,31 @@ mod tests {
 
         assert_eq!(face.borrow_cmap().len(), 0);
         assert_eq!(face.borrow_kern().len(), 0);
+    }
+
+    #[test]
+    fn face_permissions() {
+        use crate::error::PermissionError::*;
+        use crate::Error::PermissionError;
+
+        let demo = Face::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap());
+        assert!(demo.is_ok());
+
+        let restricted = Face::from_ttf(std::fs::read(env!("RESTRICTED_TTF")).unwrap());
+        assert!(restricted.is_err());
+        let err = restricted.unwrap_err();
+        assert_matches!(err, PermissionError(RestrictedLicense));
+
+        let no_subsetting = Face::from_ttf(std::fs::read(env!("NO_SUBSET_TTF")).unwrap());
+        assert!(no_subsetting.is_err());
+        let err = no_subsetting.unwrap_err();
+        assert_matches!(err, PermissionError(NoSubsetting));
+
+        let bitmap_embedding_only =
+            Face::from_ttf(std::fs::read(env!("BITMAP_EMBED_ONLY_TTF")).unwrap());
+        assert!(bitmap_embedding_only.is_err());
+        let err = bitmap_embedding_only.unwrap_err();
+        assert_matches!(err, PermissionError(BitmapEmbeddingOnly));
     }
 
     #[test]
