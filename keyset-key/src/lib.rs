@@ -138,42 +138,66 @@ pub mod tests {
     use super::*;
 
     #[test]
-    fn shape_outer_size() {
+    fn shape_outer_rect() {
+        assert_eq!(
+            Shape::None(Size::new(1.0, 1.0)).outer_rect(),
+            Rect::new(Point::zero(), Point::new(1.0, 1.0))
+        );
         assert_eq!(
             Shape::Normal(Size::new(2.25, 1.0)).outer_rect(),
-            Rect::from_origin_and_size((0.0, 0.0).into(), (2.25, 1.0).into())
+            Rect::new(Point::zero(), Point::new(2.25, 1.0))
+        );
+        assert_eq!(
+            Shape::Space(Size::new(6.25, 1.0)).outer_rect(),
+            Rect::new(Point::zero(), Point::new(6.25, 1.0))
+        );
+        assert_eq!(
+            Shape::Homing(None).outer_rect(),
+            Rect::new(Point::zero(), Point::new(1.0, 1.0))
         );
         assert_eq!(
             Shape::IsoVertical.outer_rect(),
-            Rect::from_origin_and_size((0.0, 0.0).into(), (1.5, 2.0).into())
+            Rect::new(Point::zero(), Point::new(1.5, 2.0))
         );
         assert_eq!(
             Shape::IsoHorizontal.outer_rect(),
-            Rect::from_origin_and_size((0.0, 0.0).into(), (1.5, 2.0).into())
+            Rect::new(Point::zero(), Point::new(1.5, 2.0))
         );
         assert_eq!(
             Shape::SteppedCaps.outer_rect(),
-            Rect::from_origin_and_size((0.0, 0.0).into(), (1.75, 1.0).into())
+            Rect::new(Point::zero(), Point::new(1.75, 1.0))
         );
     }
 
     #[test]
-    fn shape_inner_size() {
+    fn shape_inner_rect() {
+        assert_eq!(
+            Shape::None(Size::new(1.0, 1.0)).inner_rect(),
+            Rect::new(Point::zero(), Point::new(1.0, 1.0))
+        );
         assert_eq!(
             Shape::Normal(Size::new(2.25, 1.0)).inner_rect(),
-            Rect::new((0.0, 0.0).into(), (2.25, 1.0).into())
+            Rect::new(Point::zero(), Point::new(2.25, 1.0))
+        );
+        assert_eq!(
+            Shape::Space(Size::new(6.25, 1.0)).inner_rect(),
+            Rect::new(Point::zero(), Point::new(6.25, 1.0))
+        );
+        assert_eq!(
+            Shape::Homing(None).inner_rect(),
+            Rect::new(Point::zero(), Point::new(1.0, 1.0))
         );
         assert_eq!(
             Shape::IsoVertical.inner_rect(),
-            Rect::new((0.25, 0.0).into(), (1.5, 2.0).into())
+            Rect::new(Point::new(0.25, 0.0), Point::new(1.5, 2.0))
         );
         assert_eq!(
             Shape::IsoHorizontal.inner_rect(),
-            Rect::new((0.0, 0.0).into(), (1.5, 1.0).into())
+            Rect::new(Point::zero(), Point::new(1.5, 1.0))
         );
         assert_eq!(
             Shape::SteppedCaps.inner_rect(),
-            Rect::new((0.0, 0.0).into(), (1.25, 1.0).into())
+            Rect::new(Point::zero(), Point::new(1.25, 1.0))
         );
     }
 

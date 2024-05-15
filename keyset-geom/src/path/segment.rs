@@ -1,5 +1,6 @@
 use std::{
     borrow::Borrow,
+    fmt,
     ops::{Div, DivAssign, Mul, MulAssign},
 };
 
@@ -9,7 +10,6 @@ use PathSegment::{Close, CubicBezier, Line, Move, QuadraticBezier};
 use crate::{Point, Scale, Transform, Vector};
 
 /// Enum representing a path segment
-#[derive(Debug, PartialEq)]
 pub enum PathSegment<U> {
     /// Move to a point
     Move(Point<U>),
@@ -32,6 +32,38 @@ impl<U> Clone for PathSegment<U> {
 }
 
 impl<U> Copy for PathSegment<U> {}
+
+impl<U> PartialEq for PathSegment<U> {
+    fn eq(&self, other: &Self) -> bool {
+        match (*self, *other) {
+            (Move(s), Move(o)) => s == o,
+            (Line(s), Line(o)) => s == o,
+            (CubicBezier(s1, s2, s), CubicBezier(o1, o2, o)) => s1 == o1 && s2 == o2 && s == o,
+            (QuadraticBezier(s1, s), QuadraticBezier(o1, o)) => s1 == o1 && s == o,
+            (Close, Close) => true,
+            _ => false,
+        }
+    }
+}
+
+impl<U> fmt::Debug for PathSegment<U> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Move(ref p) => f.debug_tuple("Move").field(p).finish(),
+            Line(ref v) => f.debug_tuple("Line").field(v).finish(),
+            CubicBezier(ref v1, ref v2, ref v) => f
+                .debug_tuple("CubicBezier")
+                .field(v1)
+                .field(v2)
+                .field(v)
+                .finish(),
+            QuadraticBezier(ref v1, ref v) => {
+                f.debug_tuple("QuadraticBezier").field(v1).field(v).finish()
+            }
+            Close => f.debug_tuple("Close").finish(),
+        }
+    }
+}
 
 impl<U> IsClose<f32> for PathSegment<U> {
     const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
@@ -220,7 +252,120 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_translate() {
+    fn path_seg_clone() {
+        struct NonCloneable;
+        let segs = [
+            Move(Point::<NonCloneable>::new(1.0, 1.0)),
+            Line(Vector::new(1.0, 1.0)),
+            CubicBezier(
+                Vector::new(0.0, 0.5),
+                Vector::new(0.5, 1.0),
+                Vector::new(1.0, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            Close,
+        ];
+        #[allow(clippy::clone_on_copy)] // We want to test clone, not copy
+        let result = segs.map(|s| s.clone());
+
+        for (seg, res) in segs.into_iter().zip(result) {
+            assert_is_close!(seg, res);
+        }
+    }
+
+    #[test]
+    fn path_seg_partial_eq() {
+        struct NonPartialEq;
+        let segs = [
+            Move(Point::<NonPartialEq>::new(1.0, 1.0)),
+            Line(Vector::new(1.0, 1.0)),
+            CubicBezier(
+                Vector::new(0.0, 0.5),
+                Vector::new(0.5, 1.0),
+                Vector::new(1.0, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            Close,
+        ];
+        let segs2 = segs;
+
+        for (seg, seg2) in segs.into_iter().zip(segs2) {
+            assert_eq!(seg, seg2);
+        }
+
+        let segs2 = {
+            let mut tmp = segs2;
+            tmp.rotate_right(1);
+            tmp
+        };
+
+        for (seg, seg2) in segs.into_iter().zip(segs2) {
+            assert_ne!(seg, seg2);
+        }
+    }
+
+    #[test]
+    fn path_seg_debug() {
+        struct NonDebug;
+        let segs = [
+            Move(Point::<NonDebug>::new(1.0, 1.0)),
+            Line(Vector::new(1.0, 1.0)),
+            CubicBezier(
+                Vector::new(0.0, 0.5),
+                Vector::new(0.5, 1.0),
+                Vector::new(1.0, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            Close,
+        ];
+        let dbg = segs.map(|s| format!("{s:?}"));
+        let exp = [
+            "Move((1.0, 1.0))",
+            "Line((1.0, 1.0))",
+            "CubicBezier((0.0, 0.5), (0.5, 1.0), (1.0, 1.0))",
+            "QuadraticBezier((0.0, 1.0), (1.0, 1.0))",
+            "Close",
+        ];
+
+        assert_eq!(dbg.len(), exp.len());
+        for (d, e) in dbg.into_iter().zip(exp) {
+            assert_eq!(d, e);
+        }
+    }
+
+    #[test]
+    fn path_seg_is_close() {
+        struct NonPartialEq;
+        let segs = [
+            Move(Point::<NonPartialEq>::new(1.0, 1.0)),
+            Line(Vector::new(1.0, 1.0)),
+            CubicBezier(
+                Vector::new(0.0, 0.5),
+                Vector::new(0.5, 1.0),
+                Vector::new(1.0, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            Close,
+        ];
+        let segs2 = segs.map(|s| s.scale(3.0, 3.0).scale(1.0 / 3.0, 1.0 / 3.0));
+
+        for (seg, seg2) in segs.into_iter().zip(segs2) {
+            assert!(seg.is_close(seg2));
+        }
+
+        let segs2 = {
+            let mut tmp = segs2;
+            tmp.rotate_right(1);
+            tmp
+        };
+
+        for (seg, seg2) in segs.into_iter().zip(segs2) {
+            assert!(!seg.is_close(seg2));
+        }
+    }
+
+    #[test]
+    fn path_seg_translate() {
         let input = vec![
             Move(Point::<()>::new(1.0, 1.0)),
             Line(Vector::new(1.0, 1.0)),
@@ -247,6 +392,146 @@ mod tests {
         assert_eq!(input.len(), expected.len());
         for (inp, exp) in input.into_iter().zip(expected) {
             let res = inp.translate(Vector::new(1.0, 1.0));
+            assert_is_close!(res, exp);
+        }
+    }
+
+    #[test]
+    fn path_seg_scale() {
+        let input = vec![
+            Move(Point::<()>::new(1.0, 1.0)),
+            Line(Vector::new(1.0, 1.0)),
+            CubicBezier(
+                Vector::new(0.0, 0.5),
+                Vector::new(0.5, 1.0),
+                Vector::new(1.0, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            Close,
+        ];
+        let expected = vec![
+            Move(Point::<()>::new(2.0, 3.0)),
+            Line(Vector::new(2.0, 3.0)),
+            CubicBezier(
+                Vector::new(0.0, 1.5),
+                Vector::new(1.0, 3.0),
+                Vector::new(2.0, 3.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 3.0), Vector::new(2.0, 3.0)),
+            Close,
+        ];
+
+        assert_eq!(input.len(), expected.len());
+        for (inp, exp) in input.into_iter().zip(expected) {
+            let res = inp.scale(2.0, 3.0);
+            assert_is_close!(res, exp);
+        }
+    }
+
+    #[test]
+    fn path_seg_mul_scale() {
+        let input = vec![
+            Move(Point::<()>::new(1.0, 1.0)),
+            Line(Vector::new(1.0, 1.0)),
+            CubicBezier(
+                Vector::new(0.0, 0.5),
+                Vector::new(0.5, 1.0),
+                Vector::new(1.0, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            Close,
+        ];
+        let expected = vec![
+            Move(Point::<()>::new(2.0, 2.0)),
+            Line(Vector::new(2.0, 2.0)),
+            CubicBezier(
+                Vector::new(0.0, 1.0),
+                Vector::new(1.0, 2.0),
+                Vector::new(2.0, 2.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 2.0), Vector::new(2.0, 2.0)),
+            Close,
+        ];
+
+        assert_eq!(input.len(), expected.len());
+        for (inp, exp) in input.into_iter().zip(expected) {
+            let res = inp * Scale::new(2.0);
+            assert_is_close!(res, exp);
+
+            let mut res = inp;
+            res *= Scale::new(2.0);
+            assert_is_close!(res, exp);
+        }
+    }
+
+    #[test]
+    fn path_seg_mul_transform() {
+        let input = vec![
+            Move(Point::<()>::new(1.0, 1.0)),
+            Line(Vector::new(1.0, 1.0)),
+            CubicBezier(
+                Vector::new(0.0, 0.5),
+                Vector::new(0.5, 1.0),
+                Vector::new(1.0, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            Close,
+        ];
+        let expected = vec![
+            Move(Point::<()>::new(3.0, 3.0)),
+            Line(Vector::new(2.0, 2.0)),
+            CubicBezier(
+                Vector::new(0.0, 1.0),
+                Vector::new(1.0, 2.0),
+                Vector::new(2.0, 2.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 2.0), Vector::new(2.0, 2.0)),
+            Close,
+        ];
+
+        assert_eq!(input.len(), expected.len());
+        for (inp, exp) in input.into_iter().zip(expected) {
+            let res = inp * Transform::new(2.0, 0.0, 0.0, 2.0, 1.0, 1.0);
+            assert_is_close!(res, exp);
+
+            let mut res = inp;
+            res *= Transform::new(2.0, 0.0, 0.0, 2.0, 1.0, 1.0);
+            assert_is_close!(res, exp);
+        }
+    }
+
+    #[test]
+    fn path_seg_div_scale() {
+        let input = vec![
+            Move(Point::<()>::new(1.0, 1.0)),
+            Line(Vector::new(1.0, 1.0)),
+            CubicBezier(
+                Vector::new(0.0, 0.5),
+                Vector::new(0.5, 1.0),
+                Vector::new(1.0, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            Close,
+        ];
+        let expected = vec![
+            Move(Point::<()>::new(0.5, 0.5)),
+            Line(Vector::new(0.5, 0.5)),
+            CubicBezier(
+                Vector::new(0.0, 0.25),
+                Vector::new(0.25, 0.5),
+                Vector::new(0.5, 0.5),
+            ),
+            QuadraticBezier(Vector::new(0.0, 0.5), Vector::new(0.5, 0.5)),
+            Close,
+        ];
+
+        assert_eq!(input.len(), expected.len());
+        for (inp, exp) in input.into_iter().zip(expected) {
+            let res = inp / Scale::new(2.0);
+            assert_is_close!(res, exp);
+
+            let mut res = inp;
+            res /= Scale::new(2.0);
             assert_is_close!(res, exp);
         }
     }

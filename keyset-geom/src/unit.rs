@@ -1,4 +1,4 @@
-use crate::{Scale, Transform};
+use crate::Scale;
 
 /// Keyboard Unit, usually 19.05 mm or 0.75 in
 #[derive(Clone, Copy, Debug, Default)]
@@ -27,16 +27,3 @@ pub const INCH_PER_UNIT: Scale<Unit, Inch> = Scale::new(0.75);
 pub const DOT_PER_MM: Scale<Mm, Dot> = Scale::new(DOT_PER_UNIT.0 / MM_PER_UNIT.0);
 /// Conversion factor for Inches to Drawing Units
 pub const DOT_PER_INCH: Scale<Inch, Dot> = Scale::new(DOT_PER_UNIT.0 / INCH_PER_UNIT.0);
-
-/// Trait to allow conversion from a [`Scale<U, V>`] to a [`Transform<U, V>`]
-pub trait ToTransform<U, V> {
-    /// Convert a [`Scale<U, V>`] to a [`Transform<U, V>`]
-    fn to_transform(self) -> Transform<U, V>;
-}
-
-impl<U, V> ToTransform<U, V> for Scale<U, V> {
-    #[inline]
-    fn to_transform(self) -> Transform<U, V> {
-        Transform::scale(self.get(), self.get())
-    }
-}

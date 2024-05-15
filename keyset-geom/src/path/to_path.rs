@@ -67,3 +67,113 @@ impl<U> ToPath<U> for RoundRect<U> {
         builder.build()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use isclose::assert_is_close;
+
+    use crate::{PathSegment, Point};
+
+    use super::*;
+
+    #[test]
+    fn circle_to_path() {
+        let circle = Circle::<()>::new(Point::new(1.5, 2.0), Length::new(1.0));
+        let path = circle.to_path();
+
+        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).radians.tan();
+        let exp = [
+            PathSegment::<()>::Move(Point::new(0.5, 2.0)),
+            PathSegment::CubicBezier(
+                Vector::new(0.0, -a),
+                Vector::new(1.0 - a, -1.0),
+                Vector::new(1.0, -1.0),
+            ),
+            PathSegment::CubicBezier(
+                Vector::new(a, 0.0),
+                Vector::new(1.0, 1.0 - a),
+                Vector::new(1.0, 1.0),
+            ),
+            PathSegment::CubicBezier(
+                Vector::new(0.0, a),
+                Vector::new(-(1.0 - a), 1.0),
+                Vector::new(-1.0, 1.0),
+            ),
+            PathSegment::CubicBezier(
+                Vector::new(-a, 0.0),
+                Vector::new(-1.0, -(1.0 - a)),
+                Vector::new(-1.0, -1.0),
+            ),
+            PathSegment::Close,
+        ];
+        let bounds = Rect::new(Point::new(0.5, 1.0), Point::new(2.5, 3.0));
+
+        assert_eq!(path.data.len(), exp.len());
+        assert_is_close!(path.bounds, bounds);
+        for (el, ex) in path.data.iter().zip(exp) {
+            assert_is_close!(el, ex);
+        }
+    }
+
+    #[test]
+    fn rect_to_path() {
+        let rect = Rect::<()>::new(Point::new(1.0, 2.0), Point::new(3.0, 4.0));
+        let path = rect.to_path();
+
+        let exp = [
+            PathSegment::<()>::Move(Point::new(1.0, 2.0)),
+            PathSegment::Line(Vector::new(2.0, 0.0)),
+            PathSegment::Line(Vector::new(0.0, 2.0)),
+            PathSegment::Line(Vector::new(-2.0, 0.0)),
+            PathSegment::Close,
+        ];
+
+        assert_eq!(path.data.len(), exp.len());
+        assert_is_close!(path.bounds, rect);
+        for (el, ex) in path.data.iter().zip(exp) {
+            assert_is_close!(el, ex);
+        }
+    }
+
+    #[test]
+    fn round_rect_to_path() {
+        let rect =
+            RoundRect::<()>::new(Point::new(2.0, 4.0), Point::new(6.0, 8.0), Length::new(1.0));
+        let path = rect.to_path();
+
+        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).radians.tan();
+        let exp = [
+            PathSegment::<()>::Move(Point::new(2.0, 5.0)),
+            PathSegment::CubicBezier(
+                Vector::new(0.0, -a),
+                Vector::new(1.0 - a, -1.0),
+                Vector::new(1.0, -1.0),
+            ),
+            PathSegment::Line(Vector::new(2.0, 0.0)),
+            PathSegment::CubicBezier(
+                Vector::new(a, 0.0),
+                Vector::new(1.0, 1.0 - a),
+                Vector::new(1.0, 1.0),
+            ),
+            PathSegment::Line(Vector::new(0.0, 2.0)),
+            PathSegment::CubicBezier(
+                Vector::new(0.0, a),
+                Vector::new(-(1.0 - a), 1.0),
+                Vector::new(-1.0, 1.0),
+            ),
+            PathSegment::Line(Vector::new(-2.0, 0.0)),
+            PathSegment::CubicBezier(
+                Vector::new(-a, 0.0),
+                Vector::new(-1.0, -(1.0 - a)),
+                Vector::new(-1.0, -1.0),
+            ),
+            PathSegment::Close,
+        ];
+
+        assert_eq!(path.data.len(), exp.len());
+        assert_is_close!(path.bounds, rect.rect());
+        for (el, ex) in path.data.iter().zip(exp) {
+            assert_is_close!(el, ex);
+        }
+    }
+}

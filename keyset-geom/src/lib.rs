@@ -14,8 +14,7 @@ pub use path::{Path, PathBuilder, PathSegment, ToPath};
 pub use round_rect::RoundRect;
 pub use traits::*;
 pub use unit::{
-    Dot, Inch, Mm, ToTransform, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT, INCH_PER_UNIT,
-    MM_PER_UNIT,
+    Dot, Inch, Mm, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT, INCH_PER_UNIT, MM_PER_UNIT,
 };
 
 /// An angle in radians

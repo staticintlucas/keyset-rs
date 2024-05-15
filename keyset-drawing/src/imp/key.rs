@@ -200,6 +200,7 @@ fn step_path(rect: RoundRect<Dot>) -> Path<Dot> {
 #[cfg(test)]
 mod tests {
     use isclose::assert_is_close;
+    use key::Key;
 
     use super::*;
 
@@ -208,7 +209,7 @@ mod tests {
         let options = Options::default();
 
         // Regular 1u key
-        let key = key::Key::example();
+        let key = Key::example();
         let path = top(&key, &options);
         let bounds = path.data.bounds;
 
@@ -218,9 +219,30 @@ mod tests {
         let top_rect = options.profile.top_with_size(Size::new(1.0, 1.0));
         assert_is_close!(bounds, top_rect.rect());
 
+        // None
+        let key = {
+            let mut key = Key::example();
+            key.shape = key::Shape::None(Size::splat(1.0));
+            key
+        };
+        let path = top(&key, &options);
+        let bounds = path.data.bounds;
+        assert_is_close!(bounds, Rect::zero());
+
+        // Homing
+        let key = {
+            let mut key = Key::example();
+            key.shape = key::Shape::Homing(None);
+            key
+        };
+        let path = top(&key, &options);
+        let bounds = path.data.bounds;
+        let top_rect = options.profile.top_with_size(Size::splat(1.0));
+        assert_is_close!(bounds, top_rect.rect());
+
         // Stepped caps
         let key = {
-            let mut key = key::Key::example();
+            let mut key = Key::example();
             key.shape = key::Shape::SteppedCaps;
             key
         };
@@ -231,7 +253,7 @@ mod tests {
 
         // ISO enter
         let key = {
-            let mut key = key::Key::example();
+            let mut key = Key::example();
             key.shape = key::Shape::IsoVertical;
             key
         };
@@ -243,9 +265,10 @@ mod tests {
 
     #[test]
     fn test_bottom() {
-        let key = key::Key::example();
         let options = Options::default();
 
+        // Regular 1u key
+        let key = Key::example();
         let path = bottom(&key, &options);
         let bounds = path.data.bounds;
 
@@ -255,9 +278,30 @@ mod tests {
         let bottom_rect = options.profile.bottom_with_size(Size::new(1.0, 1.0));
         assert_is_close!(bounds, bottom_rect.rect());
 
+        // None
+        let key = {
+            let mut key = Key::example();
+            key.shape = key::Shape::None(Size::splat(1.0));
+            key
+        };
+        let path = bottom(&key, &options);
+        let bounds = path.data.bounds;
+        assert_is_close!(bounds, Rect::zero());
+
+        // Homing
+        let key = {
+            let mut key = Key::example();
+            key.shape = key::Shape::Homing(None);
+            key
+        };
+        let path = bottom(&key, &options);
+        let bounds = path.data.bounds;
+        let bottom_rect = options.profile.bottom_with_size(Size::splat(1.0));
+        assert_is_close!(bounds, bottom_rect.rect());
+
         // Stepped caps
         let key = {
-            let mut key = key::Key::example();
+            let mut key = Key::example();
             key.shape = key::Shape::SteppedCaps;
             key
         };
@@ -268,7 +312,7 @@ mod tests {
 
         // ISO enter
         let key = {
-            let mut key = key::Key::example();
+            let mut key = Key::example();
             key.shape = key::Shape::IsoVertical;
             key
         };
@@ -284,7 +328,7 @@ mod tests {
 
         // Scoop
         let scoop = {
-            let mut key = key::Key::example();
+            let mut key = Key::example();
             key.shape = key::Shape::Homing(Some(key::Homing::Scoop));
             key
         };
@@ -294,7 +338,7 @@ mod tests {
 
         // Bar
         let bar = {
-            let mut key = key::Key::example();
+            let mut key = Key::example();
             key.shape = key::Shape::Homing(Some(key::Homing::Bar));
             key
         };
@@ -319,7 +363,7 @@ mod tests {
 
         // Bump
         let bump = {
-            let mut key = key::Key::example();
+            let mut key = Key::example();
             key.shape = key::Shape::Homing(Some(key::Homing::Bump));
             key
         };
@@ -343,7 +387,7 @@ mod tests {
         assert_is_close!(bounds, expected);
 
         // Non-homing key
-        let none = key::Key::example();
+        let none = Key::example();
 
         let path = homing(&none, &options);
         assert!(path.is_none()); // No additional feature to draw
@@ -352,7 +396,7 @@ mod tests {
     #[test]
     fn test_step() {
         let key = {
-            let mut key = key::Key::example();
+            let mut key = Key::example();
             key.shape = key::Shape::SteppedCaps;
             key
         };

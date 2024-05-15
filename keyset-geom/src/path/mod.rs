@@ -168,7 +168,7 @@ impl<U> IntoIterator for Path<U> {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        // into_vec is needed here, see rust-lang/rust#59878
+        // TODO into_vec is needed here but is essentially free; see rust-lang/rust#59878
         self.data.into_vec().into_iter()
     }
 }
@@ -251,6 +251,13 @@ impl<U> Clone for PathBuilder<U> {
             point: self.point,
             bounds: self.bounds,
         }
+    }
+}
+
+impl<U> Default for PathBuilder<U> {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -450,13 +457,6 @@ impl<U> PathBuilder<U> {
     }
 }
 
-impl<U> Default for PathBuilder<U> {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<U> Add for PathBuilder<U> {
     type Output = Self;
 
@@ -498,6 +498,7 @@ fn calculate_bounds<U>(data: &[PathSegment<U>]) -> Rect<U> {
 
 #[cfg(test)]
 mod tests {
+    use euclid::Scale;
     use isclose::assert_is_close;
 
     use super::*;
@@ -505,19 +506,421 @@ mod tests {
     use crate::{Angle, Size};
 
     #[test]
-    fn test_path_new() {
-        let paths: Vec<PathBuilder<()>> = vec![PathBuilder::new(), PathBuilder::default()];
+    fn test_path_clone() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+
+        #[allow(clippy::redundant_clone)] // We want to test clone
+        let path2 = path.clone();
+
+        assert_eq!(path.data.len(), path2.data.len());
+        assert_is_close!(path.bounds, path2.bounds);
+    }
+
+    #[test]
+    fn test_path_empty() {
+        let paths = [Path::<()>::default(), Path::empty()];
 
         for path in paths {
             assert!(path.data.is_empty());
-            assert_is_close!(path.start, Point::origin());
-            assert_is_close!(path.point, Point::origin());
             assert_is_close!(path.bounds, Rect::zero());
         }
     }
 
     #[test]
-    fn test_path_add() {
+    fn test_path_from_slice() {
+        let paths = [
+            Path::<()>::empty(),
+            Path {
+                data: Box::new([
+                    PathSegment::Move(Point::zero()),
+                    PathSegment::Line(Vector::one()),
+                ]),
+                bounds: Rect::from_size(Size::splat(1.0)),
+            },
+            Path {
+                data: Box::new([PathSegment::CubicBezier(
+                    Vector::new(0.5, 0.0),
+                    Vector::new(1.0, 0.5),
+                    Vector::splat(1.0),
+                )]),
+                bounds: Rect::from_size(Size::splat(1.0)),
+            },
+        ];
+
+        let expected = Path {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::Move(Point::zero()),
+                PathSegment::CubicBezier(
+                    Vector::new(0.5, 0.0),
+                    Vector::new(1.0, 0.5),
+                    Vector::splat(1.0),
+                ),
+            ]),
+            bounds: Rect::from_size(Size::splat(1.0)),
+        };
+
+        let path = Path::from_slice(&paths);
+
+        assert_is_close!(path.bounds, expected.bounds);
+        for (p, e) in path.data.iter().zip(expected.data.iter()) {
+            assert_is_close!(p, e);
+        }
+    }
+
+    #[test]
+    fn test_path_len() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+
+        assert_eq!(path.len(), path.data.len());
+    }
+
+    #[test]
+    fn test_path_is_empty() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+
+        assert!(Path::<()>::empty().is_empty());
+        assert!(!path.is_empty());
+    }
+
+    #[test]
+    fn test_path_translate() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        }
+        .translate(Vector::new(1.0, 2.0));
+
+        let exp = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::new(1.0, 2.0)),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::new(1.0, 2.0), Point::new(4.0, 5.0)),
+        };
+
+        assert_is_close!(path.bounds, exp.bounds);
+        for (p, e) in path.data.iter().zip(exp.data.iter()) {
+            assert_is_close!(p, e);
+        }
+    }
+
+    #[test]
+    fn test_path_scale() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        }
+        .scale(0.5, 0.5);
+
+        let exp = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::splat(0.5)),
+                PathSegment::CubicBezier(
+                    Vector::new(0.5, 0.0),
+                    Vector::new(1.0, 0.5),
+                    Vector::splat(1.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(1.5)),
+        };
+
+        assert_is_close!(path.bounds, exp.bounds);
+        for (p, e) in path.data.iter().zip(exp.data.iter()) {
+            assert_is_close!(p, e);
+        }
+    }
+
+    #[test]
+    fn test_path_iter() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+
+        for (p1, p2) in path.iter().zip(path.data.iter()) {
+            assert!(std::ptr::eq(p1, p2));
+        }
+    }
+
+    #[test]
+    fn test_path_iter_mut() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+
+        let mut path2 = path.clone();
+        path2.iter_mut().for_each(|seg| *seg = seg.scale(2.0, 2.0));
+
+        for (p1, p2) in path.data.iter().zip(path2.data.iter()) {
+            assert_is_close!(p1.scale(2.0, 2.0), p2);
+        }
+    }
+
+    #[test]
+    fn test_path_into_iter() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+
+        for (p1, p2) in (&path).into_iter().zip(path.data.iter()) {
+            assert!(std::ptr::eq(p1, p2));
+        }
+
+        let mut path2 = path.clone();
+        (&mut path2)
+            .into_iter()
+            .for_each(|seg| *seg = seg.scale(2.0, 2.0));
+
+        for (p1, p2) in path.data.iter().zip(path2.data.iter()) {
+            assert_is_close!(p1.scale(2.0, 2.0), p2);
+        }
+
+        let data = path.data.to_vec();
+
+        for (p1, p2) in path.into_iter().zip(data.iter()) {
+            assert_is_close!(p1, p2);
+        }
+    }
+
+    #[test]
+    fn test_path_mul() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+        let scale = Scale::new(2.0);
+        let transform = Transform::new(2.0, 0.5, 1.5, 1.0, 2.0, 3.0);
+
+        let path2 = path.clone() * scale;
+        for (p1, p2) in path.data.iter().zip(path2.data.iter()) {
+            assert_is_close!(p1.scale(scale.get(), scale.get()), p2);
+        }
+
+        let mut path2 = path.clone();
+        path2 *= scale;
+
+        for (p1, p2) in path.data.iter().zip(path2.data.iter()) {
+            assert_is_close!(p1.scale(scale.get(), scale.get()), p2);
+        }
+
+        let path2 = path.clone() * transform;
+
+        for (p1, p2) in path.data.iter().zip(path2.data.iter()) {
+            assert_is_close!(*p1 * transform, p2);
+        }
+
+        let mut path2 = path.clone();
+        path2 *= transform;
+
+        for (p1, p2) in path.data.iter().zip(path2.data.iter()) {
+            assert_is_close!(*p1 * transform, p2);
+        }
+    }
+
+    #[test]
+    fn test_path_div() {
+        let path = Path::<()> {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+        let scale = Scale::new(2.0);
+
+        let path2 = path.clone() / scale;
+        for (p1, p2) in path.data.iter().zip(path2.data.iter()) {
+            assert_is_close!(p1.scale(1.0 / scale.get(), 1.0 / scale.get()), p2);
+        }
+
+        let mut path2 = path.clone();
+        path2 /= scale;
+
+        for (p1, p2) in path.data.iter().zip(path2.data.iter()) {
+            assert_is_close!(p1.scale(1.0 / scale.get(), 1.0 / scale.get()), p2);
+        }
+    }
+
+    #[test]
+    fn test_path_builder_clone() {
+        let builder = PathBuilder::<()> {
+            data: vec![
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ],
+            start: Point::zero(),
+            point: Point::zero(),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+
+        #[allow(clippy::redundant_clone)] // We want to test clone
+        let builder2 = builder.clone();
+
+        assert_eq!(builder.data.len(), builder2.data.len());
+        assert_is_close!(builder.start, builder2.start);
+        assert_is_close!(builder.point, builder2.point);
+        assert_is_close!(builder.bounds, builder2.bounds);
+    }
+
+    #[test]
+    fn test_path_builder_new() {
+        let builders = [
+            PathBuilder::<()>::new(),
+            PathBuilder::default(),
+            PathBuilder::with_capacity(0),
+            Path::builder(),
+            Path::builder_with_capacity(0),
+        ];
+
+        for builder in builders {
+            assert!(builder.data.is_empty());
+            assert_is_close!(builder.start, Point::origin());
+            assert_is_close!(builder.point, Point::origin());
+            assert_is_close!(builder.bounds, Rect::zero());
+        }
+    }
+
+    #[test]
+    fn test_path_builder_build() {
+        let builder = PathBuilder::<()> {
+            data: vec![
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::splat(2.0),
+                ),
+                PathSegment::Close,
+            ],
+            start: Point::zero(),
+            point: Point::zero(),
+            bounds: Rect::new(Point::zero(), Point::splat(3.0)),
+        };
+
+        let path = builder.clone().build();
+
+        assert_eq!(builder.data.len(), path.data.len());
+        assert_is_close!(builder.bounds, path.bounds);
+    }
+
+    #[test]
+    fn test_path_builder_extend() {
         let empty = PathBuilder::<()>::new();
         let mut line1 = PathBuilder::new();
         line1.abs_line(Point::new(1.0, 1.0));
@@ -548,13 +951,13 @@ mod tests {
             (line1.clone(), line3.clone(), cross.clone()),
         ];
 
-        for (first, second, expected) in params {
-            let result = first.add(second);
+        for (mut first, second, expected) in params {
+            first.extend(second);
 
-            assert_eq!(result.data.len(), expected.data.len());
-            assert_is_close!(result.start, expected.start);
-            assert_is_close!(result.point, expected.point);
-            assert_is_close!(result.bounds, expected.bounds);
+            assert_eq!(first.data.len(), expected.data.len());
+            assert_is_close!(first.start, expected.start);
+            assert_is_close!(first.point, expected.point);
+            assert_is_close!(first.bounds, expected.bounds);
         }
     }
 
@@ -634,6 +1037,48 @@ mod tests {
 
         for path in params {
             assert_is_close!(path.bounds, Rect::from_size(Size::splat(2.0)));
+        }
+    }
+
+    #[test]
+    fn test_path_builder_add() {
+        let empty = PathBuilder::<()>::new();
+        let mut line1 = PathBuilder::new();
+        line1.abs_line(Point::new(1.0, 1.0));
+
+        let mut line2 = PathBuilder::new();
+        line2.abs_line(Point::new(1.0, 0.0));
+
+        let mut line3 = PathBuilder::new();
+        line3.abs_move(Point::new(0.0, 1.0));
+        line3.abs_line(Point::new(1.0, 0.0));
+
+        let mut angle = PathBuilder::new();
+        angle.abs_line(Point::new(1.0, 1.0));
+        angle.abs_move(Point::zero());
+        angle.abs_line(Point::new(1.0, 0.0));
+
+        let mut cross = PathBuilder::new();
+        cross.abs_line(Point::new(1.0, 1.0));
+        cross.abs_move(Point::new(0.0, 1.0));
+        cross.abs_line(Point::new(1.0, 0.0));
+
+        #[allow(clippy::redundant_clone)]
+        let params = [
+            (empty.clone(), empty.clone(), empty.clone()),
+            (line1.clone(), empty.clone(), line1.clone()),
+            (empty.clone(), line1.clone(), line1.clone()),
+            (line1.clone(), line2.clone(), angle.clone()),
+            (line1.clone(), line3.clone(), cross.clone()),
+        ];
+
+        for (first, second, expected) in params {
+            let result = first + second;
+
+            assert_eq!(result.data.len(), expected.data.len());
+            assert_is_close!(result.start, expected.start);
+            assert_is_close!(result.point, expected.point);
+            assert_is_close!(result.bounds, expected.bounds);
         }
     }
 }

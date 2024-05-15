@@ -213,7 +213,16 @@ pub mod tests {
 
     #[test]
     fn legends_into_iter() {
-        let mut iter = Legends::default().into_iter();
+        let legends = Legends::default();
+        let mut iter = legends.into_iter();
+
+        for _ in 0..9 {
+            assert!(iter.next().is_some());
+        }
+        assert!(iter.next().is_none());
+
+        let legends = Legends::default();
+        let mut iter = (&legends).into_iter();
 
         for _ in 0..9 {
             assert!(iter.next().is_some());

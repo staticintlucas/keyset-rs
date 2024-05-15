@@ -56,7 +56,9 @@ fn draw_path(path: &KeyPath) -> SvgPath {
             PathSegment::CubicBezier(c1, c2, d) => {
                 fmt_num!("c{} {} {} {} {} {}", c1.x, c1.y, c2.x, c2.y, d.x, d.y)
             }
+            // GRCOV_EXCL_START - no quads in example
             PathSegment::QuadraticBezier(c1, d) => fmt_num!("q{} {} {} {}", c1.x, c1.y, d.x, d.y),
+            // GRCOV_EXCL_STOP
             PathSegment::Close => "z".into(),
         })
         .collect();
