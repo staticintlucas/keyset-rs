@@ -96,7 +96,7 @@ impl Default for Options<'_> {
     #[inline]
     fn default() -> Self {
         Self {
-            profile: &Profile::DEFAULT,
+            profile: Profile::default_ref(),
             font: Font::default_ref(),
             scale: 1.0,
             outline_width: Length::new(0.01) * DOT_PER_UNIT,

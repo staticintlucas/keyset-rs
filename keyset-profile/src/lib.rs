@@ -5,6 +5,7 @@ mod de;
 
 use std::array;
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 use geom::{
     Dot, ExtRect, Length, Mm, Point, Rect, RoundRect, SideOffsets, Size, Unit, Vector, DOT_PER_UNIT,
@@ -23,9 +24,6 @@ pub enum Type {
 }
 
 impl Type {
-    // 1.0mm is approx the depth of OEM profile
-    pub const DEFAULT: Self = Self::Cylindrical { depth: 1.0 };
-
     #[inline]
     #[must_use]
     pub const fn depth(self) -> f32 {
@@ -39,7 +37,10 @@ impl Type {
 impl Default for Type {
     #[inline]
     fn default() -> Self {
-        Self::DEFAULT
+        Self::Cylindrical {
+            // 1.0mm is approx the depth of OEM profile
+            depth: 1.0,
+        }
     }
 }
 
@@ -85,27 +86,23 @@ pub struct HomingProps {
     pub bump: BumpProps,
 }
 
-impl HomingProps {
-    pub const DEFAULT: Self = Self {
-        default: Homing::Bar,
-        scoop: ScoopProps {
-            depth: Length::new(2.0 * Type::DEFAULT.depth()), // 2x the regular depth
-        },
-        bar: BarProps {
-            size: Size::new(3.81, 0.51), // = 0.15in, 0.02in
-            y_offset: Length::new(6.35), // = 0.25in
-        },
-        bump: BumpProps {
-            diameter: Length::new(0.51), // = 0.02in
-            y_offset: Length::new(0.0),
-        },
-    };
-}
-
 impl Default for HomingProps {
     #[inline]
     fn default() -> Self {
-        Self::DEFAULT
+        Self {
+            default: Homing::Bar,
+            scoop: ScoopProps {
+                depth: Length::new(2.0 * Type::default().depth()), // 2x the regular depth
+            },
+            bar: BarProps {
+                size: Size::new(3.81, 0.51), // = 0.15in, 0.02in
+                y_offset: Length::new(6.35), // = 0.25in
+            },
+            bump: BumpProps {
+                diameter: Length::new(0.51), // = 0.02in
+                y_offset: Length::new(0.0),
+            },
+        }
     }
 }
 
@@ -115,21 +112,6 @@ pub struct TextHeight([f32; Self::NUM_HEIGHTS]);
 impl TextHeight {
     const NUM_HEIGHTS: usize = 10;
 
-    // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5b0a9cdfc7cc9bb225839192298d82a66d/kb.css#L113
-    // TODO update this when const_array_from_fn and const_fn_floating_point_arithmetic are stable
-    pub const DEFAULT: Self = Self([
-        (6.0 + 2.0 * 0.0) * (DOT_PER_UNIT.0 / 72.0),
-        (6.0 + 2.0 * 1.0) * (DOT_PER_UNIT.0 / 72.0),
-        (6.0 + 2.0 * 2.0) * (DOT_PER_UNIT.0 / 72.0),
-        (6.0 + 2.0 * 3.0) * (DOT_PER_UNIT.0 / 72.0),
-        (6.0 + 2.0 * 4.0) * (DOT_PER_UNIT.0 / 72.0),
-        (6.0 + 2.0 * 5.0) * (DOT_PER_UNIT.0 / 72.0),
-        (6.0 + 2.0 * 6.0) * (DOT_PER_UNIT.0 / 72.0),
-        (6.0 + 2.0 * 7.0) * (DOT_PER_UNIT.0 / 72.0),
-        (6.0 + 2.0 * 8.0) * (DOT_PER_UNIT.0 / 72.0),
-        (6.0 + 2.0 * 9.0) * (DOT_PER_UNIT.0 / 72.0),
-    ]);
-
     #[must_use]
     pub fn new(heights: &HashMap<usize, f32>) -> Self {
         if heights.is_empty() {
@@ -137,17 +119,19 @@ impl TextHeight {
         } else {
             // Get all the indices and heights in the hashmap
             let (indices, heights): (Vec<_>, Vec<_>) = {
-                // TODO is unconditionally prepending (0, 0.0) here correct? Self::DEFAULT doesn't
+                // TODO is unconditionally prepending (0, 0.0) here correct? Self::default() doesn't
                 // use 0.0 font size for 0
-                let mut vec: Vec<_> = std::iter::once((&0, &0.0)).chain(heights).collect();
+                let mut vec = Vec::with_capacity(heights.len().saturating_add(1));
+                vec.push((&0, &0.0));
+                vec.extend(heights.iter());
                 vec.sort_unstable_by_key(|&(i, _h)| i);
                 vec.into_iter()
                     .map(|(&i, &h)| (f32::saturating_from(i), h))
                     .unzip()
             };
 
-            let all_indeces = array::from_fn(f32::saturating_from);
-            Self(interp_array(&indices, &heights, &all_indeces))
+            let all_indices = array::from_fn(f32::saturating_from);
+            Self(interp_array(&indices, &heights, &all_indices))
         }
     }
 
@@ -164,7 +148,11 @@ impl TextHeight {
 impl Default for TextHeight {
     #[inline]
     fn default() -> Self {
-        Self::DEFAULT
+        // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5/kb.css#L113
+        Self(
+            array::from_fn(|i| 6.0 + 2.0 * f32::saturating_from(i))
+                .map(|sz| sz * (DOT_PER_UNIT.0 / 72.0)),
+        )
     }
 }
 
@@ -174,28 +162,22 @@ pub struct TextMargin([SideOffsets<Dot>; Self::NUM_RECTS]);
 impl TextMargin {
     const NUM_RECTS: usize = 10;
 
-    // Need to use SideOffsets::new() here because SideOffsets::new_all_same() isn't const
-    pub const DEFAULT: Self = Self(
-        [SideOffsets::new(
-            0.05 * DOT_PER_UNIT.0,
-            0.05 * DOT_PER_UNIT.0,
-            0.05 * DOT_PER_UNIT.0,
-            0.05 * DOT_PER_UNIT.0,
-        ); Self::NUM_RECTS],
-    );
-
     #[must_use]
     pub fn new(offsets: &HashMap<usize, SideOffsets<Dot>>) -> Self {
         // Get an array of all the offsets
         let mut offsets = array::from_fn(|i| offsets.get(&i));
 
+        let default_offset = Self::default()
+            .0
+            .last()
+            .copied()
+            .unwrap_or_else(|| unreachable!("Self::default().0 is non-empty"));
         // Find the offset for the max index
-        let mut last_offset = offsets.into_iter().flatten().last().unwrap_or_else(|| {
-            Self::DEFAULT
-                .0
-                .last()
-                .unwrap_or_else(|| unreachable!("Self::DEFAULT.0 is non-empty"))
-        });
+        let mut last_offset = offsets
+            .into_iter()
+            .flatten()
+            .last()
+            .unwrap_or(&default_offset);
 
         // Set all Nones to the next Some(..) value by iterating in reverse
         for opt in offsets.iter_mut().rev() {
@@ -227,7 +209,7 @@ impl TextMargin {
 impl Default for TextMargin {
     #[inline]
     fn default() -> Self {
-        Self::DEFAULT
+        Self([SideOffsets::<Unit>::new_all_same(0.05) * DOT_PER_UNIT; Self::NUM_RECTS])
     }
 }
 
@@ -239,12 +221,6 @@ pub struct TopSurface {
 }
 
 impl TopSurface {
-    pub const DEFAULT: Self = Self {
-        size: Size::new(0.660 * DOT_PER_UNIT.0, 0.735 * DOT_PER_UNIT.0),
-        radius: Length::new(0.065 * DOT_PER_UNIT.0),
-        y_offset: Length::new(-0.0775 * DOT_PER_UNIT.0),
-    };
-
     pub(crate) fn rect(&self) -> Rect<Dot> {
         Rect::from_center_and_size(
             (Point::new(0.5, 0.5) * DOT_PER_UNIT) + Vector::new(0.0, self.y_offset.get()),
@@ -260,7 +236,11 @@ impl TopSurface {
 impl Default for TopSurface {
     #[inline]
     fn default() -> Self {
-        Self::DEFAULT
+        Self {
+            size: Size::<Unit>::new(0.660, 0.735) * DOT_PER_UNIT,
+            radius: Length::<Unit>::new(0.065) * DOT_PER_UNIT,
+            y_offset: Length::<Unit>::new(-0.0775) * DOT_PER_UNIT,
+        }
     }
 }
 
@@ -271,11 +251,6 @@ pub struct BottomSurface {
 }
 
 impl BottomSurface {
-    pub const DEFAULT: Self = Self {
-        size: Size::new(0.95 * DOT_PER_UNIT.0, 0.95 * DOT_PER_UNIT.0),
-        radius: Length::new(0.065 * DOT_PER_UNIT.0),
-    };
-
     pub(crate) fn rect(&self) -> Rect<Dot> {
         Rect::from_center_and_size(Point::<Unit>::new(0.5, 0.5) * DOT_PER_UNIT, self.size)
     }
@@ -288,7 +263,10 @@ impl BottomSurface {
 impl Default for BottomSurface {
     #[inline]
     fn default() -> Self {
-        Self::DEFAULT
+        Self {
+            size: Size::<Unit>::splat(0.95) * DOT_PER_UNIT,
+            radius: Length::<Unit>::new(0.065) * DOT_PER_UNIT,
+        }
     }
 }
 
@@ -303,15 +281,6 @@ pub struct Profile {
 }
 
 impl Profile {
-    pub const DEFAULT: Self = Self {
-        typ: Type::DEFAULT,
-        bottom: BottomSurface::DEFAULT,
-        top: TopSurface::DEFAULT,
-        text_margin: TextMargin::DEFAULT,
-        text_height: TextHeight::DEFAULT,
-        homing: HomingProps::DEFAULT,
-    };
-
     #[cfg(feature = "toml")]
     #[inline]
     pub fn from_toml(s: &str) -> de::Result<Self> {
@@ -362,7 +331,23 @@ impl Profile {
 impl Default for Profile {
     #[inline]
     fn default() -> Self {
-        Self::DEFAULT
+        Self {
+            typ: Type::default(),
+            bottom: BottomSurface::default(),
+            top: TopSurface::default(),
+            text_margin: TextMargin::default(),
+            text_height: TextHeight::default(),
+            homing: HomingProps::default(),
+        }
+    }
+}
+
+impl Profile {
+    #[inline]
+    pub fn default_ref() -> &'static Self {
+        static PROFILE: OnceLock<Profile> = OnceLock::new();
+
+        PROFILE.get_or_init(Self::default)
     }
 }
 
@@ -403,7 +388,6 @@ mod tests {
         let result = TextHeight::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
-
         for (e, r) in expected.iter().zip(result.iter()) {
             assert_is_close!(e, r);
         }
@@ -574,52 +558,54 @@ mod tests {
     }
 
     #[cfg(feature = "toml")]
+    const PROFILE_TOML: &str = indoc!(
+        "
+        type = 'cylindrical'
+        depth = 0.5
+
+        [bottom]
+        width = 18.29
+        height = 18.29
+        radius = 0.38
+
+        [top]
+        width = 11.81
+        height = 13.91
+        radius = 1.52
+        y-offset = -1.62
+
+        [legend.5]
+        size = 4.84
+        width = 9.45
+        height = 11.54
+        y-offset = 0
+
+        [legend.4]
+        size = 3.18
+        width = 9.53
+        height = 9.56
+        y-offset = 0.40
+
+        [legend.3]
+        size = 2.28
+        width = 9.45
+        height = 11.30
+        y-offset = -0.12
+
+        [homing]
+        default = 'scoop'
+        scoop = { depth = 1.5 }
+        bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
+        bump = { diameter = 0.4, y-offset = -0.2 }
+        "
+    );
+
+    #[cfg(feature = "toml")]
     #[test]
     fn test_profile_from_toml() {
         use geom::DOT_PER_MM;
 
-        let profile = Profile::from_toml(indoc!(
-            "
-            type = 'cylindrical'
-            depth = 0.5
-
-            [bottom]
-            width = 18.29
-            height = 18.29
-            radius = 0.38
-
-            [top]
-            width = 11.81
-            height = 13.91
-            radius = 1.52
-            y-offset = -1.62
-
-            [legend.5]
-            size = 4.84
-            width = 9.45
-            height = 11.54
-            y-offset = 0
-
-            [legend.4]
-            size = 3.18
-            width = 9.53
-            height = 9.56
-            y-offset = 0.40
-
-            [legend.3]
-            size = 2.28
-            width = 9.45
-            height = 11.30
-            y-offset = -0.12
-
-            [homing]
-            default = 'scoop'
-            scoop = { depth = 1.5 }
-            bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
-            bump = { diameter = 0.4, y-offset = -0.2 }
-            ",
-        ))
-        .unwrap();
+        let profile = Profile::from_toml(PROFILE_TOML).unwrap();
 
         assert!(matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(0.5)));
 
@@ -685,71 +671,73 @@ mod tests {
     }
 
     #[cfg(feature = "json")]
+    const PROFILE_JSON: &str = indoc!(
+        r#"
+        {
+            "type": "cylindrical",
+            "depth": 0.5,
+
+            "bottom": {
+                "width": 18.29,
+                "height": 18.29,
+                "radius": 0.38
+            },
+
+            "top": {
+                "width": 11.81,
+                "height": 13.91,
+                "radius": 1.52,
+                "y-offset": -1.62
+            },
+
+            "legend": {
+                "5": {
+                    "size": 4.84,
+                    "width": 9.45,
+                    "height": 11.54,
+                    "y-offset": 0
+                },
+                "4": {
+                    "size": 3.18,
+                    "width": 9.53,
+                    "height": 9.56,
+                    "y-offset": 0.40
+                },
+                "3": {
+                    "size": 2.28,
+                    "width": 9.45,
+                    "height": 11.30,
+                    "y-offset": -0.12
+                }
+            },
+
+            "homing": {
+                "default": "scoop",
+                "scoop": {
+                    "depth": 1.5
+                },
+                "bar": {
+                    "width": 3.85,
+                    "height": 0.4,
+                    "y-offset": 5.05
+                },
+                "bump": {
+                    "diameter": 0.4,
+                    "y-offset": -0.2
+                }
+            }
+        }
+        "#,
+    );
+
+    #[cfg(feature = "json")]
     #[test]
     fn test_profile_from_json() {
         use geom::DOT_PER_MM;
 
-        let profile = Profile::from_json(indoc!(
-            r#"
-            {
-                "type": "cylindrical",
-                "depth": 0.5,
+        let profile = Profile::from_json(PROFILE_JSON).unwrap();
 
-                "bottom": {
-                    "width": 18.29,
-                    "height": 18.29,
-                    "radius": 0.38
-                },
-
-                "top": {
-                    "width": 11.81,
-                    "height": 13.91,
-                    "radius": 1.52,
-                    "y-offset": -1.62
-                },
-
-                "legend": {
-                    "5": {
-                        "size": 4.84,
-                        "width": 9.45,
-                        "height": 11.54,
-                        "y-offset": 0
-                    },
-                    "4": {
-                        "size": 3.18,
-                        "width": 9.53,
-                        "height": 9.56,
-                        "y-offset": 0.40
-                    },
-                    "3": {
-                        "size": 2.28,
-                        "width": 9.45,
-                        "height": 11.30,
-                        "y-offset": -0.12
-                    }
-                },
-
-                "homing": {
-                    "default": "scoop",
-                    "scoop": {
-                        "depth": 1.5
-                    },
-                    "bar": {
-                        "width": 3.85,
-                        "height": 0.4,
-                        "y-offset": 5.05
-                    },
-                    "bump": {
-                        "diameter": 0.4,
-                        "y-offset": -0.2
-                    }
-                }
-            }
-            "#,
-        ))
-        .unwrap();
-
-        assert!(matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(0.5)));
+        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(0.5));
 
         assert_is_close!(profile.bottom.size, Size::splat(18.29) * DOT_PER_MM);
         assert_is_close!(profile.bottom.radius, Length::new(0.38) * DOT_PER_MM);
