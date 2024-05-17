@@ -36,5 +36,5 @@ toml = { workspace = true, optional = true }
 
 [dev-dependencies]
 assert_matches.workspace = true
+indoc.workspace = true
 isclose = { workspace = true, features = ["euclid"] }
-unindent.workspace = true

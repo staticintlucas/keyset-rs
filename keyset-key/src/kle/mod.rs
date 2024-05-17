@@ -113,8 +113,8 @@ pub fn from_json(json: &str) -> Result<Vec<Key>> {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
+    use indoc::indoc;
     use isclose::{assert_is_close, IsClose};
-    use unindent::unindent;
 
     use super::*;
 
@@ -230,8 +230,9 @@ mod tests {
 
     #[test]
     fn kle_from_json() {
-        let result1: Vec<_> = from_json(&unindent(
-            r#"[
+        let result1: Vec<_> = from_json(indoc!(
+            r#"
+            [
                 {
                     "meta": "data"
                 },
@@ -251,7 +252,8 @@ mod tests {
                 [
                     "D"
                 ]
-            ]"#,
+            ]
+            "#,
         ))
         .unwrap();
 
@@ -261,12 +263,14 @@ mod tests {
         assert_is_close!(result1[2].position, Point::new(1.5, 0.25));
         assert_is_close!(result1[3].position, Point::new(0.0, 1.25));
 
-        let result2: Vec<_> = from_json(&unindent(
-            r#"[
+        let result2: Vec<_> = from_json(indoc!(
+            r#"
+            [
                 [
                     "A"
                 ]
-            ]"#,
+            ]
+            "#,
         ))
         .unwrap();
 

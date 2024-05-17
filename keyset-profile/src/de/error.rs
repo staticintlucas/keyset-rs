@@ -51,6 +51,7 @@ mod tests {
     use std::error::Error as _;
 
     use assert_matches::assert_matches;
+    use indoc::indoc;
 
     use crate::Profile;
 
@@ -64,8 +65,9 @@ mod tests {
 
             assert_eq!(
                 format!("{error}"),
-                unindent::unindent(
-                    "TOML parse error at line 1, column 5
+                indoc!(
+                    "
+                    TOML parse error at line 1, column 5
                       |
                     1 | null
                       |     ^
@@ -94,8 +96,9 @@ mod tests {
             assert!(error.source().is_some());
             assert_eq!(
                 format!("{}", error.source().unwrap()),
-                unindent::unindent(
-                    "TOML parse error at line 1, column 5
+                indoc!(
+                    "
+                    TOML parse error at line 1, column 5
                       |
                     1 | null
                       |     ^

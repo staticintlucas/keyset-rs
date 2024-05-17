@@ -40,5 +40,5 @@ tiny-skia = { workspace = true, features = ["default"], optional = true }
 svg = { workspace = true, optional = true }
 
 [dev-dependencies]
+indoc.workspace = true
 isclose = { workspace = true, features = ["euclid"] }
-unindent.workspace = true

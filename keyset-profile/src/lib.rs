@@ -369,8 +369,8 @@ impl Default for Profile {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
+    use indoc::indoc;
     use isclose::{assert_is_close, IsClose};
-    use unindent::unindent;
 
     use super::*;
 
@@ -578,7 +578,7 @@ mod tests {
     fn test_profile_from_toml() {
         use geom::DOT_PER_MM;
 
-        let profile = Profile::from_toml(&unindent(
+        let profile = Profile::from_toml(indoc!(
             "
             type = 'cylindrical'
             depth = 0.5
@@ -617,7 +617,7 @@ mod tests {
             scoop = { depth = 1.5 }
             bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
             bump = { diameter = 0.4, y-offset = -0.2 }
-        ",
+            ",
         ))
         .unwrap();
 
@@ -672,8 +672,9 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             format!("{}", result.unwrap_err()),
-            unindent(
-                "TOML parse error at line 1, column 5
+            indoc!(
+                "
+                TOML parse error at line 1, column 5
                   |
                 1 | null
                   |     ^
@@ -688,8 +689,9 @@ mod tests {
     fn test_profile_from_json() {
         use geom::DOT_PER_MM;
 
-        let profile = Profile::from_json(&unindent(
-            r#"{
+        let profile = Profile::from_json(indoc!(
+            r#"
+            {
                 "type": "cylindrical",
                 "depth": 0.5,
 
@@ -742,7 +744,8 @@ mod tests {
                         "y-offset": -0.2
                     }
                 }
-            }"#,
+            }
+            "#,
         ))
         .unwrap();
 

@@ -79,8 +79,9 @@ fn draw_path(path: &KeyPath) -> SvgPath {
 
 #[cfg(test)]
 mod tests {
+    use indoc::indoc;
+
     use key::Key;
-    use unindent::unindent;
 
     use crate::Options;
 
@@ -97,8 +98,9 @@ mod tests {
 
         assert_eq!(
             svg,
-            unindent(
-                r##"<svg height="19.05mm" viewBox="0 0 1000 1000" width="19.05mm" xmlns="http://www.w3.org/2000/svg">
+            indoc!(
+                r##"
+                <svg height="19.05mm" viewBox="0 0 1000 1000" width="19.05mm" xmlns="http://www.w3.org/2000/svg">
                 <g transform="translate(0,0)">
                 <path d="M25 90c0 -35.89851 29.10149 -65.00001 64.99999 -65.00001l820 0c35.89851 0 65 29.10149 65 65l0 820c0 35.89851 -29.1015 65 -65 65l-820 0c-35.89851 0 -64.99999 -29.1015 -64.99999 -65.00001z" fill="#cccccc" stroke="#aeaeae" stroke-width="10"/>
                 <path d="M170 120c0 -35.89851 29.10149 -65.00001 64.99999 -65.00001l530 0c35.89851 0 65 29.10149 65 65l0 605c0 35.89851 -29.1015 65 -65 65l-530 0c-35.89851 0 -64.99999 -29.1015 -64.99999 -65.00001z" fill="#cccccc" stroke="#aeaeae" stroke-width="10"/>
