@@ -1,6 +1,6 @@
 use geom::{
     Angle, Circle, Dot, ExtRect, ExtVec, Length, Path, Point, Rect, RoundRect, Size, ToPath,
-    Vector, DOT_PER_MM, DOT_PER_UNIT,
+    Vector, DOT_PER_UNIT,
 };
 use profile::Profile;
 
@@ -75,15 +75,15 @@ pub fn homing(key: &key::Key, options: &Options<'_>) -> Option<KeyPath> {
         key::Homing::Scoop => None,
         key::Homing::Bar => Some(
             Rect::from_center_and_size(
-                center + Size::new(0.0, (profile.homing.bar.y_offset * DOT_PER_MM).get()),
-                profile.homing.bar.size * DOT_PER_MM,
+                center + Size::new(0.0, profile.homing.bar.y_offset.get()),
+                profile.homing.bar.size,
             )
             .to_path(),
         ),
         key::Homing::Bump => Some(
             Circle::from_center_and_diameter(
-                center + Size::new(0.0, (profile.homing.bump.y_offset * DOT_PER_MM).get()),
-                profile.homing.bump.diameter * DOT_PER_MM,
+                center + Size::new(0.0, profile.homing.bump.y_offset.get()),
+                profile.homing.bump.diameter,
             )
             .to_path(),
         ),
@@ -353,12 +353,9 @@ mod tests {
         assert_is_close!(path.outline.unwrap().width, options.outline_width);
         let expected = Rect::from_center_and_size(
             options.profile.top_with_size(Size::splat(1.0)).center(),
-            options.profile.homing.bar.size * DOT_PER_MM,
+            options.profile.homing.bar.size,
         )
-        .translate(Vector::new(
-            0.0,
-            (options.profile.homing.bar.y_offset * DOT_PER_MM).get(),
-        ));
+        .translate(Vector::new(0.0, options.profile.homing.bar.y_offset.get()));
         assert_is_close!(bounds, expected);
 
         // Bump
@@ -378,12 +375,9 @@ mod tests {
         assert_is_close!(path.outline.unwrap().width, options.outline_width);
         let expected = Rect::from_center_and_size(
             options.profile.top_with_size(Size::splat(1.0)).center(),
-            Size::splat(options.profile.homing.bump.diameter.get()) * DOT_PER_MM,
+            Size::splat(options.profile.homing.bump.diameter.get()),
         )
-        .translate(Vector::new(
-            0.0,
-            (options.profile.homing.bump.y_offset * DOT_PER_MM).get(),
-        ));
+        .translate(Vector::new(0.0, options.profile.homing.bump.y_offset.get()));
         assert_is_close!(bounds, expected);
 
         // Non-homing key

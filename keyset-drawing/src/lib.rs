@@ -164,6 +164,7 @@ impl<'a> Options<'a> {
 
 #[cfg(test)]
 mod tests {
+    use geom::{Mm, DOT_PER_MM};
     use isclose::assert_is_close;
     use profile::Profile;
 
@@ -186,7 +187,10 @@ mod tests {
             .show_keys(false)
             .show_margin(true);
 
-        assert_is_close!(options.profile.typ.depth(), 1.0);
+        assert_is_close!(
+            options.profile.typ.depth(),
+            Length::<Mm>::new(1.0) * DOT_PER_MM
+        );
         assert_eq!(options.font.num_glyphs(), 3); // .notdef, A, V
         assert_is_close!(options.scale, 2.0);
     }

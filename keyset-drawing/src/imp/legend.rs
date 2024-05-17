@@ -1,5 +1,5 @@
 use font::{Font, Glyph};
-use geom::{Dot, Path, Point, Rect, Scale, ToTransform, Vector};
+use geom::{Dot, Path, Point, Rect, ToTransform, Vector};
 use log::warn;
 use profile::Profile;
 
@@ -30,7 +30,7 @@ pub fn draw(
 
     let height = profile.text_height.get(legend.size_idx);
     // Scale to correct height & flip y-axis
-    let transform = Scale::new(height / font.cap_height().get())
+    let transform = (height / font.cap_height())
         .to_transform()
         .then_scale(1.0, -1.0);
     let text_path = Path::from_slice(&char_paths) * transform;
@@ -38,7 +38,7 @@ pub fn draw(
     // Calculate legend bounds. For x this is based on actual size while for y we use the base line
     // and text height so each character (especially symbols) are still aligned across keys
     let bounds = Rect::new(
-        Point::new(text_path.bounds.min.x, -height),
+        Point::new(text_path.bounds.min.x, -height.get()),
         Point::new(text_path.bounds.max.x, 0.0),
     );
 

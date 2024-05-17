@@ -14,6 +14,39 @@ use super::{BarProps, BumpProps, Profile, TopSurface};
 
 pub use error::{Error, Result};
 
+impl<'de> Deserialize<'de> for Type {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(serde::Deserialize)]
+        #[serde(tag = "type", rename_all = "kebab-case")]
+        enum RawType {
+            Cylindrical {
+                depth: f32,
+            },
+            Spherical {
+                depth: f32,
+            },
+            #[serde(alias = "chiclet")]
+            Flat,
+        }
+
+        RawType::deserialize(deserializer).map(|typ| {
+            // Convert to Length
+            match typ {
+                RawType::Cylindrical { depth } => Self::Cylindrical {
+                    depth: Length::<Mm>::new(depth) * DOT_PER_MM,
+                },
+                RawType::Spherical { depth } => Self::Spherical {
+                    depth: Length::<Mm>::new(depth) * DOT_PER_MM,
+                },
+                RawType::Flat => Self::Flat,
+            }
+        })
+    }
+}
+
 impl<'de> Deserialize<'de> for ScoopProps {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
@@ -28,7 +61,7 @@ impl<'de> Deserialize<'de> for ScoopProps {
         RawScoopProps::deserialize(deserializer).map(|props| {
             // Convert to Length
             Self {
-                depth: Length::<Mm>::new(props.depth),
+                depth: Length::<Mm>::new(props.depth) * DOT_PER_MM,
             }
         })
     }
@@ -50,8 +83,8 @@ impl<'de> Deserialize<'de> for BarProps {
         RawBarProps::deserialize(deserializer).map(|props| {
             // Convert to Length
             Self {
-                size: Size::<Mm>::new(props.width, props.height),
-                y_offset: Length::<Mm>::new(props.y_offset),
+                size: Size::<Mm>::new(props.width, props.height) * DOT_PER_MM,
+                y_offset: Length::<Mm>::new(props.y_offset) * DOT_PER_MM,
             }
         })
     }
@@ -72,8 +105,8 @@ impl<'de> Deserialize<'de> for BumpProps {
         RawBumpProps::deserialize(deserializer).map(|props| {
             // Convert to Length
             Self {
-                diameter: Length::<Mm>::new(props.diameter),
-                y_offset: Length::<Mm>::new(props.y_offset),
+                diameter: Length::<Mm>::new(props.diameter) * DOT_PER_MM,
+                y_offset: Length::<Mm>::new(props.y_offset) * DOT_PER_MM,
             }
         })
     }
@@ -192,6 +225,7 @@ impl<'de> Deserialize<'de> for Profile {
             .legend
             .into_iter()
             .map(|(i, props)| {
+                let height = Length::<Dot>::new(props.size);
                 let Rect {
                     min: props_min,
                     max: props_max,
@@ -200,9 +234,9 @@ impl<'de> Deserialize<'de> for Profile {
                     min: raw_min,
                     max: raw_max,
                 } = raw_data.top.rect();
-                let offsets =
+                let offset =
                     SideOffsets::from_vectors_inner(props_min - raw_min, props_max - raw_max);
-                ((i, props.size), (i, offsets))
+                ((i, height), (i, offset))
             })
             .unzip();
 
@@ -228,16 +262,16 @@ mod tests {
         let bar_props: BarProps =
             toml::from_str("width = 3.85\nheight = 0.4\ny-offset = 5.05").unwrap();
 
-        assert_is_close!(bar_props.size, Size::<Mm>::new(3.85, 0.4));
-        assert_is_close!(bar_props.y_offset, Length::<Mm>::new(5.05));
+        assert_is_close!(bar_props.size, Size::<Mm>::new(3.85, 0.4) * DOT_PER_MM);
+        assert_is_close!(bar_props.y_offset, Length::<Mm>::new(5.05) * DOT_PER_MM);
     }
 
     #[test]
     fn deserialize_bump_props() {
         let bar_props: BumpProps = toml::from_str("diameter = 0.4\ny-offset = -0.2").unwrap();
 
-        assert_is_close!(bar_props.diameter, Length::<Mm>::new(0.4));
-        assert_is_close!(bar_props.y_offset, Length::<Mm>::new(-0.2));
+        assert_is_close!(bar_props.diameter, Length::<Mm>::new(0.4) * DOT_PER_MM);
+        assert_is_close!(bar_props.y_offset, Length::<Mm>::new(-0.2) * DOT_PER_MM);
     }
 
     #[test]
