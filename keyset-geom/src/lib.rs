@@ -1,5 +1,5 @@
 //! This crate contains the geometry types used internally in [keyset]. At the moment it mainly just
-//! re-exports types from Kurbo with a few custom additions.
+//! re-exports types from [euclid] with a few custom additions.
 //!
 //! [keyset]: https://crates.io/crates/keyset
 
