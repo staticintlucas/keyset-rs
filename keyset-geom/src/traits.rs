@@ -9,7 +9,8 @@ pub trait ExtRect<U> {
 impl<U> ExtRect<U> for Rect<U> {
     #[inline]
     fn from_center_and_size(center: Point<U>, size: Size<U>) -> Self {
-        Self::from_origin_and_size(center - size / 2.0, size)
+        let half_size = size * 0.5;
+        Self::new(center - half_size, center + half_size)
     }
 }
 
