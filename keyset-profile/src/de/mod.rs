@@ -253,9 +253,30 @@ impl<'de> Deserialize<'de> for Profile {
 
 #[cfg(test)]
 mod tests {
-    use isclose::assert_is_close;
+    use assert_matches::assert_matches;
+    use isclose::{assert_is_close, IsClose};
 
     use super::*;
+
+    #[test]
+    fn deserialize_type() {
+        let cyl: Type = toml::from_str("type = 'cylindrical'\ndepth = 0.5").unwrap();
+        let sph: Type = toml::from_str("type = 'spherical'\ndepth = 0.8").unwrap();
+        let chc: Type = toml::from_str("type = 'chiclet'").unwrap();
+        let flt: Type = toml::from_str("type = 'flat'").unwrap();
+
+        assert_matches!(cyl, Type::Cylindrical { depth } if depth.is_close(Length::<Mm>::new(0.5) * DOT_PER_MM));
+        assert_matches!(sph, Type::Spherical { depth } if depth.is_close(Length::<Mm>::new(0.8) * DOT_PER_MM));
+        assert_matches!(chc, Type::Flat);
+        assert_matches!(flt, Type::Flat);
+    }
+
+    #[test]
+    fn deserialize_scoop_props() {
+        let scoop_props: ScoopProps = toml::from_str("depth = 0.8").unwrap();
+
+        assert_is_close!(scoop_props.depth, Length::<Mm>::new(0.8) * DOT_PER_MM);
+    }
 
     #[test]
     fn deserialize_bar_props() {
