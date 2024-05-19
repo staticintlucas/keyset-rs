@@ -15,45 +15,59 @@ fn main() {
         [{"w": 1.25, "f": 3, "a": 6}, "Shift", {"f": 4, "a": 4}, "|\n\\", {"f": 5}, "Z",  "X", "C", "V", "B", "N", "M", {"f": 4}, "<\n,", ">\n.", "?\n/", {"w": 2.75, "f": 3, "a": 6}, "Shift"],
         [{"w": 1.5}, "Ctrl", "Win", {"w": 1.5}, "Alt", {"p": "space", "w": 7}, "", {"p": "", "w": 1.5}, "AltGr", "Win", {"w": 1.5}, "Ctrl"]
     ]"#;
-    let profile = "
-        type = 'cylindrical'
-        depth = 0.5
+    let profile = r#"{
+        "type": "cylindrical",
+        "depth": 0.5,
 
-        [bottom]
-        width = 18.29
-        height = 18.29
-        radius = 0.38
+        "bottom": {
+            "width": 18.29,
+            "height": 18.29,
+            "radius": 0.38
+        },
+        "top": {
+            "width": 11.81,
+            "height": 13.91,
+            "radius": 1.52,
+            "y-offset": -1.62
+        },
 
-        [top]
-        width = 11.81
-        height = 13.91
-        radius = 1.52
-        y-offset = -1.62
+        "legend": {
+            "5": {
+                "size": 4.84,
+                "width": 9.45,
+                "height": 11.54,
+                "y-offset": 0
+            },
+            "4": {
+                "size": 3.18,
+                "width": 9.53,
+                "height": 9.56,
+                "y-offset": 0.40
+            },
+            "3": {
+                "size": 2.28,
+                "width": 9.45,
+                "height": 11.30,
+                "y-offset": -0.12
+            }
+        },
 
-        [legend.5]
-        size = 4.84
-        width = 9.45
-        height = 11.54
-        y-offset = 0
-
-        [legend.4]
-        size = 3.18
-        width = 9.53
-        height = 9.56
-        y-offset = 0.40
-
-        [legend.3]
-        size = 2.28
-        width = 9.45
-        height = 11.30
-        y-offset = -0.12
-
-        [homing]
-        default = 'scoop'
-        scoop = { depth = 1.5 }
-        bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
-        bump = { diameter = 0.4, y-offset = -0.2 }
-    ";
+        "homing": {
+            "default": "scoop",
+            "scoop": {
+                "depth": 1.5
+            },
+            "bar": {
+                "width": 3.85,
+                "height": 0.4,
+                "y-offset": 5.05
+            },
+            "bump": {
+                "diameter": 0.4,
+                "y-offset": -0.2
+            }
+        }
+    }"#;
 
     let font = {
         let mut fontdb = Database::new();
@@ -76,7 +90,7 @@ fn main() {
     };
 
     let keys = key::kle::from_json(kle).unwrap();
-    let profile = profile::Profile::from_toml(profile).unwrap();
+    let profile = profile::Profile::from_json(profile).unwrap();
     let font = font::Font::from_ttf(font).unwrap();
     let options = drawing::Options::new().profile(&profile).font(&font);
     let drawing = options.draw(&keys);

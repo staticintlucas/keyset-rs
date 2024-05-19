@@ -282,6 +282,10 @@ pub struct Profile {
 impl Profile {
     #[cfg(feature = "toml")]
     #[inline]
+    #[deprecated(
+        since = "0.4.0",
+        note = "TOML profile files are deprecated, use JSON files instead"
+    )]
     pub fn from_toml(s: &str) -> de::Result<Self> {
         toml::from_str(s).map_err(de::Error::from)
     }
@@ -633,6 +637,7 @@ mod tests {
     fn test_profile_from_toml() {
         use geom::DOT_PER_MM;
 
+        #[allow(deprecated)]
         let profile = Profile::from_toml(PROFILE_TOML).unwrap();
 
         assert!(
@@ -699,6 +704,7 @@ mod tests {
     #[cfg(feature = "toml")]
     #[test]
     fn test_profile_from_invalid_toml() {
+        #[allow(deprecated)]
         let result = Profile::from_toml("null");
         assert!(result.is_err());
         assert_eq!(

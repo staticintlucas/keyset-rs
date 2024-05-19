@@ -22,7 +22,7 @@ color.workspace = true
 drawing = { workspace = true, features = ["pdf", "png", "svg"] }
 font.workspace = true
 key = { workspace = true, features = ["kle"] }
-profile = { workspace = true, features = ["toml"] }
+profile = { workspace = true, features = ["json"] }
 
 [dev-dependencies]
 fontdb = "0.17"

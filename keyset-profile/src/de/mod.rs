@@ -260,10 +260,10 @@ mod tests {
 
     #[test]
     fn deserialize_type() {
-        let cyl: Type = toml::from_str("type = 'cylindrical'\ndepth = 0.5").unwrap();
-        let sph: Type = toml::from_str("type = 'spherical'\ndepth = 0.8").unwrap();
-        let chc: Type = toml::from_str("type = 'chiclet'").unwrap();
-        let flt: Type = toml::from_str("type = 'flat'").unwrap();
+        let cyl: Type = serde_json::from_str(r#"{ "type": "cylindrical", "depth": 0.5 }"#).unwrap();
+        let sph: Type = serde_json::from_str(r#"{ "type": "spherical", "depth": 0.8 }"#).unwrap();
+        let chc: Type = serde_json::from_str(r#"{ "type": "chiclet" }"#).unwrap();
+        let flt: Type = serde_json::from_str(r#"{ "type": "flat" }"#).unwrap();
 
         assert_matches!(cyl, Type::Cylindrical { depth } if depth.is_close(Length::<Mm>::new(0.5) * DOT_PER_MM));
         assert_matches!(sph, Type::Spherical { depth } if depth.is_close(Length::<Mm>::new(0.8) * DOT_PER_MM));
@@ -273,7 +273,7 @@ mod tests {
 
     #[test]
     fn deserialize_scoop_props() {
-        let scoop_props: ScoopProps = toml::from_str("depth = 0.8").unwrap();
+        let scoop_props: ScoopProps = serde_json::from_str(r#"{ "depth": 0.8 }"#).unwrap();
 
         assert_is_close!(scoop_props.depth, Length::<Mm>::new(0.8) * DOT_PER_MM);
     }
@@ -281,7 +281,7 @@ mod tests {
     #[test]
     fn deserialize_bar_props() {
         let bar_props: BarProps =
-            toml::from_str("width = 3.85\nheight = 0.4\ny-offset = 5.05").unwrap();
+            serde_json::from_str(r#"{ "width": 3.85, "height": 0.4, "y-offset": 5.05 }"#).unwrap();
 
         assert_is_close!(bar_props.size, Size::<Mm>::new(3.85, 0.4) * DOT_PER_MM);
         assert_is_close!(bar_props.y_offset, Length::<Mm>::new(5.05) * DOT_PER_MM);
@@ -289,7 +289,8 @@ mod tests {
 
     #[test]
     fn deserialize_bump_props() {
-        let bar_props: BumpProps = toml::from_str("diameter = 0.4\ny-offset = -0.2").unwrap();
+        let bar_props: BumpProps =
+            serde_json::from_str(r#"{ "diameter": 0.4, "y-offset": -0.2 }"#).unwrap();
 
         assert_is_close!(bar_props.diameter, Length::<Mm>::new(0.4) * DOT_PER_MM);
         assert_is_close!(bar_props.y_offset, Length::<Mm>::new(-0.2) * DOT_PER_MM);
@@ -297,9 +298,10 @@ mod tests {
 
     #[test]
     fn deserialize_top_surface() {
-        let surf: TopSurface =
-            toml::from_str("width = 11.81\nheight = 13.91\nradius = 1.52\ny-offset = -1.62")
-                .unwrap();
+        let surf: TopSurface = serde_json::from_str(
+            r#"{ "width": 11.81, "height": 13.91, "radius": 1.52, "y-offset": -1.62 }"#,
+        )
+        .unwrap();
 
         assert_is_close!(surf.size, Size::new(11.81, 13.91) * DOT_PER_MM);
         assert_is_close!(surf.radius, Length::new(1.52) * DOT_PER_MM);
@@ -309,7 +311,7 @@ mod tests {
     #[test]
     fn deserialize_bottom_surface() {
         let surf: BottomSurface =
-            toml::from_str("width = 18.29\nheight = 18.29\nradius = 0.38").unwrap();
+            serde_json::from_str(r#"{ "width": 18.29, "height": 18.29, "radius": 0.38 }"#).unwrap();
 
         assert_is_close!(surf.size, Size::splat(18.29) * DOT_PER_MM);
         assert_is_close!(surf.radius, Length::new(0.38) * DOT_PER_MM);

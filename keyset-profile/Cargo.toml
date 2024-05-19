@@ -23,6 +23,7 @@ workspace = true
 [features]
 toml = ["serde", "dep:toml"]
 json = ["serde", "dep:serde_json"]
+serde = ["dep:serde"]
 
 [dependencies]
 geom.workspace = true
@@ -38,3 +39,4 @@ toml = { workspace = true, optional = true }
 assert_matches.workspace = true
 indoc.workspace = true
 isclose = { workspace = true, features = ["euclid"] }
+serde_json.workspace = true
