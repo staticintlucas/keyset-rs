@@ -11,21 +11,24 @@ use crate::Result;
 
 #[self_referencing]
 pub(crate) struct Face {
-    data: Vec<u8>,
+    data: Box<[u8]>,
     #[borrows(data)]
     #[covariant]
     face: ttf_parser::Face<'this>,
     #[borrows(face)]
     #[covariant]
-    cmap: Vec<ttf_parser::cmap::Subtable<'this>>,
+    cmap: Box<[ttf_parser::cmap::Subtable<'this>]>,
     #[borrows(face)]
     #[covariant]
-    kern: Vec<ttf_parser::kern::Subtable<'this>>,
+    kern: Box<[ttf_parser::kern::Subtable<'this>]>,
 }
 
 impl Clone for Face {
     fn clone(&self) -> Self {
-        Self::from_ttf(self.borrow_data().clone())
+        // Since we need to clone the data anyway, to_vec() doesn't really have
+        // any overhead. And the conversion back to boxed slice in from_ttf() is
+        // essentially free
+        Self::from_ttf(self.borrow_data().to_vec())
             .unwrap_or_else(|_| unreachable!("face was already parsed"))
     }
 }
@@ -39,7 +42,7 @@ impl Debug for Face {
 impl Face {
     pub fn from_ttf(data: Vec<u8>) -> Result<Self> {
         FaceTryBuilder {
-            data,
+            data: data.into_boxed_slice(),
             face_builder: |data| {
                 let face = ttf_parser::Face::parse(data, 0)?;
 
@@ -61,7 +64,7 @@ impl Face {
                 Ok(face.tables().cmap.map_or_else(
                     || {
                         warn!("no CMAP table in font");
-                        Vec::new()
+                        Box::default()
                     },
                     |cmap| {
                         cmap.subtables
@@ -72,7 +75,7 @@ impl Face {
                 ))
             },
             kern_builder: |face| {
-                Ok(face.tables().kern.map_or_else(Vec::new, |kern| {
+                Ok(face.tables().kern.map_or_else(Box::default, |kern| {
                     kern.subtables
                         .into_iter()
                         .filter(|st| {

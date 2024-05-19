@@ -99,13 +99,13 @@ impl TryFrom<kle::Key> for Key {
     }
 }
 
-/// Loads a KLE layout from a JSON string into a [`Vec<Key>`]
+/// Loads a KLE layout from a JSON string into a [`Box<[Key]>`]
 ///
 /// # Errors
 ///
 /// If an invalid or unsupported JSON string is encountered, this will return an [`Error`]
 #[inline]
-pub fn from_json(json: &str) -> Result<Vec<Key>> {
+pub fn from_json(json: &str) -> Result<Box<[Key]>> {
     let key_iter: kle::KeyIterator = serde_json::from_str(json)?;
     key_iter.map(Key::try_from).collect()
 }
@@ -230,7 +230,7 @@ mod tests {
 
     #[test]
     fn kle_from_json() {
-        let result1: Vec<_> = from_json(indoc!(
+        let result1 = from_json(indoc!(
             r#"
             [
                 {
@@ -263,7 +263,7 @@ mod tests {
         assert_is_close!(result1[2].position, Point::new(1.5, 0.25));
         assert_is_close!(result1[3].position, Point::new(0.0, 1.25));
 
-        let result2: Vec<_> = from_json(indoc!(
+        let result2 = from_json(indoc!(
             r#"
             [
                 [

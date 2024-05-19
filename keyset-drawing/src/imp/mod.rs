@@ -28,7 +28,7 @@ pub struct KeyPath {
 #[derive(Debug, Clone)]
 pub struct KeyDrawing {
     pub origin: Point<Unit>,
-    pub paths: Vec<KeyPath>,
+    pub paths: Box<[KeyPath]>,
 }
 
 impl KeyDrawing {

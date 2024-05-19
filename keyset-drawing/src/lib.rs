@@ -20,7 +20,7 @@ pub(crate) use imp::{KeyDrawing, KeyPath};
 #[derive(Debug, Clone)]
 pub struct Drawing {
     bounds: Rect<Unit>,
-    keys: Vec<KeyDrawing>,
+    keys: Box<[KeyDrawing]>,
     scale: f32,
 }
 
