@@ -17,12 +17,21 @@ all-features = true
 [lints]
 workspace = true
 
+[features]
+default = ["json-profile", "toml-profile", "kle-layout", "pdf-drawing", "png-drawing", "svg-drawing"]
+toml-profile = ["profile/toml"]
+json-profile = ["profile/json"]
+kle-layout = ["key/kle"]
+pdf-drawing = ["drawing/pdf"]
+png-drawing = ["drawing/png"]
+svg-drawing = ["drawing/svg"]
+
 [dependencies]
 color.workspace = true
-drawing = { workspace = true, features = ["pdf", "png", "svg"] }
+drawing.workspace = true
 font.workspace = true
-key = { workspace = true, features = ["kle"] }
-profile = { workspace = true, features = ["json"] }
+key.workspace = true
+profile.workspace = true
 
 [dev-dependencies]
 fontdb = "0.17"
