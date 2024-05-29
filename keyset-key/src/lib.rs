@@ -8,7 +8,7 @@ mod legend;
 #[cfg(feature = "kle")]
 pub mod kle;
 
-pub use legend::{Legend, Legends};
+pub use legend::{Legend, Legends, Text};
 
 use color::Color;
 use geom::{Point, Rect, Size, Unit};

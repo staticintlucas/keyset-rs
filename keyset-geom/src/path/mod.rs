@@ -2,6 +2,7 @@ mod arc_to_bezier;
 mod segment;
 mod to_path;
 
+use std::borrow::Borrow;
 use std::ops::{Add, Div, DivAssign, Mul, MulAssign};
 
 use arc_to_bezier::arc_to_bezier;
@@ -68,31 +69,7 @@ impl<U> Path<U> {
     #[inline]
     #[must_use]
     pub fn from_slice(slice: &[Self]) -> Self {
-        let capacity = slice
-            .iter()
-            .map(|el| {
-                el.len() + usize::from(!matches!(el.data.first(), Some(&PathSegment::Move(..))))
-            })
-            .sum();
-
-        let data = slice
-            .iter()
-            .fold(Vec::with_capacity(capacity), |mut vec, path| {
-                if !matches!(path.data.first(), Some(&PathSegment::Move(..))) {
-                    vec.push(PathSegment::Move(Point::origin()));
-                }
-                vec.extend(path.data.iter());
-                vec
-            })
-            .into_boxed_slice();
-
-        let bounds = slice
-            .iter()
-            .map(|p| p.bounds)
-            .reduce(|a, b| a.union(&b))
-            .unwrap_or_else(Rect::zero);
-
-        Self { data, bounds }
+        slice.iter().collect()
     }
 
     /// The number of segments in the path
@@ -170,6 +147,35 @@ impl<U> IntoIterator for Path<U> {
     fn into_iter(self) -> Self::IntoIter {
         // TODO into_vec is needed here but is essentially free; see rust-lang/rust#59878
         self.data.into_vec().into_iter()
+    }
+}
+
+impl<U, B> FromIterator<B> for Path<U>
+where
+    B: Borrow<Self>,
+{
+    fn from_iter<T: IntoIterator<Item = B>>(iter: T) -> Self {
+        let mut iter = iter.into_iter();
+
+        let (data, bounds) = iter.next().map_or_else(
+            || (Box::default(), Rect::zero()),
+            |path| {
+                let mut data = path.borrow().data.to_vec();
+                let mut bounds = path.borrow().bounds;
+
+                for path in iter {
+                    if !matches!(path.borrow().data.first(), Some(&PathSegment::Move(..))) {
+                        data.push(PathSegment::Move(Point::origin()));
+                    }
+                    data.extend(path.borrow().data.iter());
+                    bounds = bounds.union(&path.borrow().bounds);
+                }
+
+                (data.into_boxed_slice(), bounds)
+            },
+        );
+
+        Self { data, bounds }
     }
 }
 
@@ -562,7 +568,6 @@ mod tests {
         let expected = Path {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
-                PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
                 PathSegment::Move(Point::zero()),
                 PathSegment::CubicBezier(
@@ -619,6 +624,49 @@ mod tests {
 
         assert!(Path::<()>::empty().is_empty());
         assert!(!path.is_empty());
+    }
+
+    #[test]
+    fn test_path_from_iter() {
+        let paths = [
+            Path::<()>::empty(),
+            Path {
+                data: Box::new([
+                    PathSegment::Move(Point::zero()),
+                    PathSegment::Line(Vector::one()),
+                ]),
+                bounds: Rect::from_size(Size::splat(1.0)),
+            },
+            Path {
+                data: Box::new([PathSegment::CubicBezier(
+                    Vector::new(0.5, 0.0),
+                    Vector::new(1.0, 0.5),
+                    Vector::splat(1.0),
+                )]),
+                bounds: Rect::from_size(Size::splat(1.0)),
+            },
+        ];
+
+        let expected = Path {
+            data: Box::new([
+                PathSegment::Move(Point::zero()),
+                PathSegment::Line(Vector::one()),
+                PathSegment::Move(Point::zero()),
+                PathSegment::CubicBezier(
+                    Vector::new(0.5, 0.0),
+                    Vector::new(1.0, 0.5),
+                    Vector::splat(1.0),
+                ),
+            ]),
+            bounds: Rect::from_size(Size::splat(1.0)),
+        };
+
+        let path: Path<_> = paths.iter().collect();
+
+        assert_is_close!(path.bounds, expected.bounds);
+        for (p, e) in path.data.iter().zip(expected.data.iter()) {
+            assert_is_close!(p, e);
+        }
     }
 
     #[test]

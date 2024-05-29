@@ -32,6 +32,7 @@ indoc = "2.0"
 interp = { version = "1.0", features = ["interp_array"] }
 isclose = "0.1"
 kle-serial = "0.3"
+lazy-regex = "3.0"
 log = "0.4"
 miniz_oxide = "0.7"
 ouroboros = "0.18"

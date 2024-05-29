@@ -2,11 +2,15 @@ use std::ops::{Index, IndexMut};
 
 use color::Color;
 
+pub use text::Text;
+
+mod text;
+
 /// A single legend
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Legend {
     /// The legend text
-    pub text: String,
+    pub text: Text,
     /// The legend size
     pub size_idx: usize,
     /// The legend colour
@@ -16,9 +20,10 @@ pub struct Legend {
 impl Legend {
     /// Create a new [`Legend`]
     #[inline]
-    pub fn new(text: impl Into<String>, size_idx: usize, color: Color) -> Self {
+    #[must_use]
+    pub fn new(text: &str, size_idx: usize, color: Color) -> Self {
         Self {
-            text: text.into(),
+            text: Text::parse_from(text),
             size_idx,
             color,
         }
@@ -141,7 +146,7 @@ pub mod tests {
     fn legend_new() {
         let legend = Legend::new("test", 4, Color::new(0.0, 0.2, 0.4));
 
-        assert_eq!(legend.text, "test");
+        assert_eq!(legend.text.to_string(), "test");
         assert_eq!(legend.size_idx, 4);
         assert_is_close!(legend.color, Color::new(0.0, 0.2, 0.4));
     }
@@ -234,15 +239,15 @@ pub mod tests {
     fn legends_index() {
         let legends = Legends::example();
 
-        assert_eq!(legends[0].as_ref().unwrap().text, "!");
-        assert_eq!(legends[2].as_ref().unwrap().text, "¹");
-        assert_eq!(legends[6].as_ref().unwrap().text, "1");
-        assert_eq!(legends[8].as_ref().unwrap().text, "¡");
+        assert_eq!(legends[0].as_ref().unwrap().text.to_string(), "!");
+        assert_eq!(legends[2].as_ref().unwrap().text.to_string(), "¹");
+        assert_eq!(legends[6].as_ref().unwrap().text.to_string(), "1");
+        assert_eq!(legends[8].as_ref().unwrap().text.to_string(), "¡");
 
-        assert_eq!(legends[(0, 0)].as_ref().unwrap().text, "!");
-        assert_eq!(legends[(2, 0)].as_ref().unwrap().text, "¹");
-        assert_eq!(legends[(0, 2)].as_ref().unwrap().text, "1");
-        assert_eq!(legends[(2, 2)].as_ref().unwrap().text, "¡");
+        assert_eq!(legends[(0, 0)].as_ref().unwrap().text.to_string(), "!");
+        assert_eq!(legends[(2, 0)].as_ref().unwrap().text.to_string(), "¹");
+        assert_eq!(legends[(0, 2)].as_ref().unwrap().text.to_string(), "1");
+        assert_eq!(legends[(2, 2)].as_ref().unwrap().text.to_string(), "¡");
     }
 
     #[test]
@@ -253,18 +258,18 @@ pub mod tests {
         legends[2] = Some(Legend::new("B", 4, Color::new(0.2, 0.4, 0.6)));
         legends[6] = Some(Legend::new("C", 4, Color::new(0.2, 0.4, 0.6)));
         legends[8] = Some(Legend::new("D", 4, Color::new(0.2, 0.4, 0.6)));
-        assert_eq!(legends[0].as_ref().unwrap().text, "A");
-        assert_eq!(legends[2].as_ref().unwrap().text, "B");
-        assert_eq!(legends[6].as_ref().unwrap().text, "C");
-        assert_eq!(legends[8].as_ref().unwrap().text, "D");
+        assert_eq!(legends[0].as_ref().unwrap().text.to_string(), "A");
+        assert_eq!(legends[2].as_ref().unwrap().text.to_string(), "B");
+        assert_eq!(legends[6].as_ref().unwrap().text.to_string(), "C");
+        assert_eq!(legends[8].as_ref().unwrap().text.to_string(), "D");
 
         legends[(0, 0)] = Some(Legend::new("A", 4, Color::new(0.2, 0.4, 0.6)));
         legends[(2, 0)] = Some(Legend::new("B", 4, Color::new(0.2, 0.4, 0.6)));
         legends[(0, 2)] = Some(Legend::new("C", 4, Color::new(0.2, 0.4, 0.6)));
         legends[(2, 2)] = Some(Legend::new("D", 4, Color::new(0.2, 0.4, 0.6)));
-        assert_eq!(legends[(0, 0)].as_ref().unwrap().text, "A");
-        assert_eq!(legends[(2, 0)].as_ref().unwrap().text, "B");
-        assert_eq!(legends[(0, 2)].as_ref().unwrap().text, "C");
-        assert_eq!(legends[(2, 2)].as_ref().unwrap().text, "D");
+        assert_eq!(legends[(0, 0)].as_ref().unwrap().text.to_string(), "A");
+        assert_eq!(legends[(2, 0)].as_ref().unwrap().text.to_string(), "B");
+        assert_eq!(legends[(0, 2)].as_ref().unwrap().text.to_string(), "C");
+        assert_eq!(legends[(2, 2)].as_ref().unwrap().text.to_string(), "D");
     }
 }

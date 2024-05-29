@@ -1,7 +1,8 @@
-use font::{Font, Glyph};
+use font::{Font, FontUnit, Glyph};
 use geom::{Dot, Path, Point, Rect, ToTransform, Vector};
 use log::warn;
 use profile::Profile;
+use saturate::SaturatingFrom;
 
 use super::KeyPath;
 
@@ -10,48 +11,52 @@ pub fn draw(
     font: &Font,
     profile: &Profile,
     top_rect: Rect<Dot>,
-    align: Vector<Dot>,
+    align: Vector<()>,
 ) -> KeyPath {
-    let mut chars = legend.text.chars();
-    let Some(first) = chars.next() else {
-        unreachable!() // We should never have an empty legend here
-    };
-    let first = font.glyph_or_default(first);
-    let mut char_paths = Vec::with_capacity(legend.text.chars().count());
-    char_paths.push(first.path);
-    let mut pos = first.advance;
+    // Get transform to correct height & flip y-axis
+    let text_height = profile.text_height.get(legend.size_idx);
+    let text_scale = text_height / font.cap_height();
+    let text_xform = text_scale.to_transform().then_scale(1.0, -1.0);
 
-    for (lhs, rhs) in legend.text.chars().zip(chars) {
-        pos += font.kerning(lhs, rhs);
-        let Glyph { path, advance, .. } = font.glyph_or_default(rhs);
-        char_paths.push(path.translate(Vector::new(pos.get(), 0.0)));
-        pos += advance;
-    }
+    // Dimensions used to position text
+    let line_height = font.line_height() * text_scale;
+    let n_lines = f32::saturating_from(legend.text.lines().count());
+    let margin = top_rect.inner_box(profile.text_margin.get(legend.size_idx));
 
-    let height = profile.text_height.get(legend.size_idx);
-    // Scale to correct height & flip y-axis
-    let transform = (height / font.cap_height())
-        .to_transform()
-        .then_scale(1.0, -1.0);
-    let text_path = Path::from_slice(&char_paths) * transform;
+    let text_path: Path<_> = legend
+        .text
+        .lines()
+        .enumerate()
+        .map(|(i, text)| {
+            let line_offset = n_lines - f32::saturating_from(i) - 1.0;
+
+            let path = text_path(text, font) * text_xform;
+            let width = path.bounds.width();
+
+            // Check to ensure our legend fits
+            let h_scale = if width > margin.width() {
+                let percent = 100.0 * (width / margin.width() - 1.0);
+                warn!(r#"legend "{text}" is {percent}% too wide; squishing legend to fit"#);
+                margin.width() / width
+            } else {
+                1.0
+            };
+
+            path.translate(Vector::new(
+                -width * align.x,
+                -line_offset * line_height.get(),
+            ))
+            .scale(h_scale, 1.0)
+        })
+        .collect();
 
     // Calculate legend bounds. For x this is based on actual size while for y we use the base line
     // and text height so each character (especially symbols) are still aligned across keys
+    let height = text_height + line_height * (n_lines - 1.0);
     let bounds = Rect::new(
         Point::new(text_path.bounds.min.x, -height.get()),
         Point::new(text_path.bounds.max.x, 0.0),
     );
-
-    // Check to ensure our legend fits
-    let margin = top_rect.inner_box(profile.text_margin.get(legend.size_idx));
-    let text_path = if bounds.width() > margin.width() {
-        let text = &legend.text;
-        let percent = 100.0 * (bounds.width() / margin.width() - 1.0);
-        warn!(r#"legend "{text}" is {percent}% too wide; squishing legend to fit"#);
-        text_path.scale(margin.width() / bounds.width(), 1.0)
-    } else {
-        text_path
-    };
 
     // Align the legend within the margins
     let size = margin.size() - bounds.size();
@@ -65,18 +70,38 @@ pub fn draw(
     }
 }
 
+fn text_path(text: &str, font: &Font) -> Path<FontUnit> {
+    let mut chars = text.chars();
+
+    let first = font.glyph_or_default(chars.next().unwrap_or_else(|| unreachable!())); // We should never have an empty legend here
+
+    let mut char_paths = Vec::with_capacity(text.chars().count());
+    char_paths.push(first.path);
+    let mut pos = first.advance;
+
+    for (lhs, rhs) in text.chars().zip(chars) {
+        pos += font.kerning(lhs, rhs);
+        let Glyph { path, advance, .. } = font.glyph_or_default(rhs);
+        char_paths.push(path.translate(Vector::new(pos.get(), 0.0)));
+        pos += advance;
+    }
+
+    Path::from_slice(&char_paths)
+}
+
 #[cfg(test)]
 mod tests {
     use color::Color;
     use geom::{PathSegment, Size};
     use isclose::assert_is_close;
+    use key::Text;
 
     use super::*;
 
     #[test]
     fn test_legend_draw() {
         let legend = ::key::Legend {
-            text: "AV".into(),
+            text: Text::parse_from("AV"),
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
@@ -94,7 +119,7 @@ mod tests {
         );
 
         let legend = ::key::Legend {
-            text: "😎".into(),
+            text: Text::parse_from("😎"),
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
@@ -103,7 +128,7 @@ mod tests {
         assert_eq!(path.data.len(), font.notdef().path.len());
 
         let legend = ::key::Legend {
-            text: "Some really long legend that will totally need to be squished".into(),
+            text: Text::parse_from("Some really long legend that will totally need to be squished"),
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
@@ -117,5 +142,14 @@ mod tests {
                 .inner_box(profile.text_margin.get(5)))
             .width()
         );
+
+        let legend = ::key::Legend {
+            text: Text::parse_from("Two<br>lines!"),
+            size_idx: 5,
+            color: Color::new(0.0, 0.0, 0.0),
+        };
+        let path = draw(&legend, &font, &profile, top_rect, Vector::new(1.0, 1.0));
+
+        assert!(path.data.bounds.height() > profile.text_height.get(legend.size_idx).get() * 2.0);
     }
 }

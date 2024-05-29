@@ -5,7 +5,7 @@ mod error;
 use geom::{Point, Size};
 use kle_serial::f32 as kle;
 
-use crate::{Homing, Key, Legend, Shape};
+use crate::{Homing, Key, Legend, Shape, Text};
 pub use error::{Error, Result};
 
 fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
@@ -70,7 +70,7 @@ impl From<kle::Legend> for Legend {
     fn from(legend: kle::Legend) -> Self {
         let kle::Legend { text, size, color } = legend;
         Self {
-            text,
+            text: Text::parse_from(&text),
             size_idx: size,
             color: color.rgb().into(),
         }
