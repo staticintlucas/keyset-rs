@@ -466,7 +466,7 @@ impl<U> PathBuilder<U> {
 impl<U> Add for PathBuilder<U> {
     type Output = Self;
 
-    /// Return a new [`PathBuilder`] by appending another [`PathBuilder`] to [`self`]
+    /// Return a new [`PathBuilder`] by appending another [`PathBuilder`] to `self`
     #[inline]
     fn add(mut self, other: Self) -> Self::Output {
         self.extend(other);
