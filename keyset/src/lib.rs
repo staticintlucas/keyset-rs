@@ -1,9 +1,11 @@
-//!
-//!
+// TODO
+
 //! ## Example
 //!
 //! ```
 //! use keyset::{Font, kle, Profile};
+//!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!
 //! // JSON output from http://www.keyboard-layout-editor.com/
 //! let kle = r#"[
@@ -33,39 +35,28 @@
 //!     }
 //! }"#;
 //!
-//! // Use `fontdb` to load system fonts
-//! let font = {
-//!     use fontdb::*;
-//!     let mut db = Database::new();
-//!     db.load_system_fonts();
-//!     let query = Query {
-//!         families: &[Family::Name("Helvetica"), Family::Name("Arial"), Family::Name("Liberation Sans"), Family::SansSerif],
-//!         ..Default::default()
-//!     };
-//!     let id = db.query(&query).unwrap();
-//!     match db.face_source(id).unwrap().0 {
-//!         Source::File(path) => std::fs::read(path).unwrap(),
-//!         Source::Binary(bytes) | Source::SharedFile(_, bytes) => (*bytes).as_ref().to_vec(),
-//!     }
-//! };
-//!
 //! // Use `keyset` to load layout, profile and font
-//! let keys = kle::from_json(kle).unwrap();
-//! let profile = Profile::from_json(profile).unwrap();
-//! let font = Font::from_ttf(font).unwrap();
+//! let keys = kle::from_json(kle)?;
+//! let profile = Profile::from_json(profile)?;
+//! let font = Font::default();
+//! // Or load an actual font with Font::from_ttf(std::fs::read("font.ttf")?)?
 //!
 //! // Set drawing options
-//! let options = drawing::Options::new().profile(&profile).font(&font);
+//! let options = drawing::Options::new()
+//!     .profile(&profile)
+//!     .font(&font);
 //!
 //! // Create drawing
 //! let drawing = options.draw(&keys);
 //!
 //! // Save output
-//! let path = std::env::current_dir().unwrap();
-//! std::fs::write(path.join("output.svg"), drawing.to_svg()).unwrap();
-//! std::fs::write(path.join("output.png"), drawing.to_png(96.0)).unwrap();
-//! std::fs::write(path.join("output.pdf"), drawing.to_pdf()).unwrap();
+//! let path = std::env::current_dir()?;
+//! std::fs::write(path.join("output.svg"), drawing.to_svg())?;
+//! std::fs::write(path.join("output.png"), drawing.to_png(96.0))?;
+//! std::fs::write(path.join("output.pdf"), drawing.to_pdf())?;
 //!
+//! # Ok(())
+//! # }
 //! ```
 
 pub use color::Color;

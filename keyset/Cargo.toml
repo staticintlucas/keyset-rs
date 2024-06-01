@@ -32,6 +32,3 @@ drawing.workspace = true
 font.workspace = true
 key.workspace = true
 profile.workspace = true
-
-[dev-dependencies]
-fontdb = "0.17"
