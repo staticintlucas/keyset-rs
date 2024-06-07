@@ -3,6 +3,7 @@
 //!
 //! [keyset]: https://crates.io/crates/keyset
 
+mod error;
 mod imp;
 #[cfg(feature = "pdf")]
 mod pdf;
@@ -17,6 +18,8 @@ use font::Font;
 use geom::{Dot, Length, Point, Rect, Size, Unit, DOT_PER_UNIT};
 use key::Key;
 use profile::Profile;
+
+pub use error::Error;
 
 pub(crate) use imp::{KeyDrawing, KeyPath};
 
@@ -61,10 +64,14 @@ impl Drawing {
     }
 
     /// Encode the drawing as a PNG
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::PngDimensionsError`] if the drawing is too large or too small to be
+    /// encoded as a PNG.
     #[cfg(feature = "png")]
     #[inline]
-    #[must_use]
-    pub fn to_png(&self, ppi: f32) -> Vec<u8> {
+    pub fn to_png(&self, ppi: f32) -> Result<Vec<u8>, Error> {
         png::draw(self, geom::Scale::new(ppi))
     }
 

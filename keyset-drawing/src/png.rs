@@ -1,25 +1,24 @@
+use array_util::ArrayExt;
 use geom::{
     Dot, Inch, PathSegment, Point, Scale, ToTransform, Transform, DOT_PER_INCH, DOT_PER_UNIT,
 };
 use saturate::SaturatingFrom;
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform as SkiaTransform};
 
-use crate::{Drawing, KeyDrawing, KeyPath};
+use crate::{Drawing, Error, KeyDrawing, KeyPath};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Pixel;
 
-pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Vec<u8> {
+pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Result<Vec<u8>, Error> {
     let scale = (DOT_PER_INCH.inverse() * ppi) * Scale::<Pixel, Pixel>::new(drawing.scale);
     let size = drawing.bounds.size() * DOT_PER_UNIT * scale;
 
-    // TODO don't clamp and just return Error?
-    let [width, height] = size
+    let mut pixmap = size
         .to_array()
-        .map(|dim| u32::saturating_from(dim.ceil()).clamp(1, u32::saturating_from(i32::MAX) / 4));
-
-    let mut pixmap = Pixmap::new(width, height)
-        .unwrap_or_else(|| unreachable!("width/height are within range here"));
+        .try_map_ext(|dim| usize::saturating_from(dim.ceil()).try_into().ok())
+        .and_then(|[width, height]| Pixmap::new(width, height))
+        .ok_or(Error::PngDimensionsError(size))?;
 
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
 
@@ -28,10 +27,9 @@ pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Vec<u8> {
         draw_key(&mut pixmap, key, transform);
     }
 
-    // TODO return error on failure
-    pixmap
+    Ok(pixmap
         .encode_png()
-        .unwrap_or_else(|_| unreachable!("writing to Vec<_> should not fail"))
+        .unwrap_or_else(|_| unreachable!("writing to Vec<_> should not fail")))
 }
 
 fn draw_key(pixmap: &mut Pixmap, key: &KeyDrawing, transform: Transform<Dot, Pixel>) {
@@ -139,7 +137,7 @@ mod tests {
         let keys = [Key::example()];
         let drawing = options.draw(&keys);
 
-        let png = drawing.to_png(96.0);
+        let png = drawing.to_png(96.0).unwrap();
 
         let pixmap = Pixmap::decode_png(&png).unwrap();
         assert_eq!(pixmap.width(), 72);

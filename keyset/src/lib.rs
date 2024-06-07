@@ -57,7 +57,7 @@
 //! // Save output
 //! let path = std::env::current_dir()?;
 //! std::fs::write(path.join("output.svg"), drawing.to_svg())?;
-//! std::fs::write(path.join("output.png"), drawing.to_png(96.0))?;
+//! std::fs::write(path.join("output.png"), drawing.to_png(96.0)?)?;
 //! std::fs::write(path.join("output.pdf"), drawing.to_pdf())?;
 //!
 //! # Ok(())
