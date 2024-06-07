@@ -1,4 +1,8 @@
-#![allow(missing_docs, clippy::missing_errors_doc, clippy::missing_panics_doc)] // TODO
+//! This crate contains the profile struct and types used for describing
+//! profiles used by [keyset]. It also contains utility functions for loading
+//! profiles from file
+//!
+//! [keyset]: https://crates.io/crates/keyset
 
 #[cfg(feature = "serde")]
 mod de;
@@ -15,14 +19,25 @@ use interp::interp_array;
 use key::Homing;
 use saturate::SaturatingFrom;
 
+/// The type of a profile
 #[derive(Debug, Clone, Copy)]
 pub enum Type {
-    Cylindrical { depth: Length<Dot> },
-    Spherical { depth: Length<Dot> },
+    /// A cylindrical profile, e.g. Cherry or OEM
+    Cylindrical {
+        /// The depth of the key's dish
+        depth: Length<Dot>,
+    },
+    /// A cylindrical profile, e.g. SA or KAT
+    Spherical {
+        /// The depth of the key's dish
+        depth: Length<Dot>,
+    },
+    /// A flat profile, e.g. G20 or chiclet
     Flat,
 }
 
 impl Type {
+    /// Returns the depth of a key's dish. This is zero for [`Type::Flat`]
     #[inline]
     #[must_use]
     pub const fn depth(self) -> Length<Dot> {
@@ -43,27 +58,36 @@ impl Default for Type {
     }
 }
 
+/// Scooped (a.k.a. deep dish) homing key properties
 #[derive(Debug, Clone, Copy)]
 pub struct ScoopProps {
+    /// The depth of the scooped dish
     pub depth: Length<Dot>,
 }
 
+/// Homing bar properties
 #[derive(Debug, Clone, Copy)]
 pub struct BarProps {
+    /// The size of the bar
     pub size: Size<Dot>,
+    /// The distance of the bar from the center of the key top
     pub y_offset: Length<Dot>,
 }
 
+/// Homing bump (a.k.a. nub or nipple) properties
 #[derive(Debug, Clone, Copy)]
 pub struct BumpProps {
+    /// The diameter of the bump
     pub diameter: Length<Dot>,
+    /// The distance of the bump from the center of the key top
     pub y_offset: Length<Dot>,
 }
 
+/// Struct used to deserialize [`key::Homing`]
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(remote = "Homing", rename_all = "kebab-case"))]
-pub enum HomingDef {
+enum HomingDef {
     #[cfg_attr(feature = "serde", serde(alias = "deep-dish", alias = "dish"))]
     Scoop,
     #[cfg_attr(feature = "serde", serde(alias = "line"))]
@@ -75,13 +99,18 @@ pub enum HomingDef {
     Bump,
 }
 
+/// Homing key properties
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct HomingProps {
+    /// The default type of homing key for this profile
     #[cfg_attr(feature = "serde", serde(with = "HomingDef"))]
     pub default: Homing,
+    /// Properties for scooped homing keys
     pub scoop: ScoopProps,
+    /// Properties for barred homing keys
     pub bar: BarProps,
+    /// Properties for keys with a homing bump
     pub bump: BumpProps,
 }
 
@@ -105,12 +134,15 @@ impl Default for HomingProps {
     }
 }
 
+/// Text height mapping. This maps a [`usize`] index (used by KLE for example)
+/// to a [`Length`] for the height of uppercase letter
 #[derive(Debug, Clone, Copy)]
 pub struct TextHeight([Length<Dot>; Self::NUM_HEIGHTS]);
 
 impl TextHeight {
     const NUM_HEIGHTS: usize = 10;
 
+    /// Create a new [`TextHeight`] mapping from a [`HashMap`]
     #[must_use]
     pub fn new(heights: &HashMap<usize, Length<Dot>>) -> Self {
         if heights.is_empty() {
@@ -134,6 +166,7 @@ impl TextHeight {
         }
     }
 
+    /// Get the height of an uppercase letter for the given index
     #[inline]
     #[must_use]
     pub fn get(&self, size_index: usize) -> Length<Dot> {
@@ -155,12 +188,15 @@ impl Default for TextHeight {
     }
 }
 
+/// Text margin mapping. This maps a [`usize`] index (used by KLE for example)
+/// to a [`SideOffsets`] for the text alignment relative to the key top
 #[derive(Debug, Clone, Copy)]
 pub struct TextMargin([SideOffsets<Dot>; Self::NUM_RECTS]);
 
 impl TextMargin {
     const NUM_RECTS: usize = 10;
 
+    /// Create a new [`TextMargin`] mapping from a [`HashMap`]
     #[must_use]
     pub fn new(offsets: &HashMap<usize, SideOffsets<Dot>>) -> Self {
         // Get an array of all the offsets
@@ -194,6 +230,7 @@ impl TextMargin {
         }))
     }
 
+    /// Get the text alignment for the given index relative to the key top
     #[inline]
     #[must_use]
     pub const fn get(&self, size_index: usize) -> SideOffsets<Dot> {
@@ -212,10 +249,14 @@ impl Default for TextMargin {
     }
 }
 
+/// A key top surface
 #[derive(Debug, Clone, Copy)]
 pub struct TopSurface {
+    /// The size of the key top
     pub size: Size<Dot>,
+    /// The corner radius for the key top
     pub radius: Length<Dot>,
+    /// The offset of the key top relative to the key bottom
     pub y_offset: Length<Dot>,
 }
 
@@ -243,9 +284,12 @@ impl Default for TopSurface {
     }
 }
 
+/// A key bottom surface
 #[derive(Debug, Clone, Copy)]
 pub struct BottomSurface {
+    /// The size of the key bottom
     pub size: Size<Dot>,
+    /// The corner radius of the key bottom
     pub radius: Length<Dot>,
 }
 
@@ -269,17 +313,29 @@ impl Default for BottomSurface {
     }
 }
 
+/// A keyboard profile
 #[derive(Debug, Clone)]
 pub struct Profile {
+    /// The type of profile
     pub typ: Type,
+    /// The shape of the bottom surface
     pub bottom: BottomSurface,
+    /// The shape of the top surface
     pub top: TopSurface,
+    /// The margin mapping for legend text alignment
     pub text_margin: TextMargin,
+    /// The legend text size mapping
     pub text_height: TextHeight,
+    /// Homing properties
     pub homing: HomingProps,
 }
 
 impl Profile {
+    /// Load a profile from a TOML configuration file
+    ///
+    /// # Errors
+    ///
+    /// If there was an error parsing the file
     #[cfg(feature = "toml")]
     #[inline]
     #[deprecated(
@@ -290,12 +346,20 @@ impl Profile {
         toml::from_str(s).map_err(de::Error::from)
     }
 
+    /// Load a profile from a JSON configuration file
+    ///
+    /// # Errors
+    ///
+    /// If there was an error parsing the file
     #[cfg(feature = "json")]
     #[inline]
     pub fn from_json(s: &str) -> de::Result<Self> {
         serde_json::from_str(s).map_err(de::Error::from)
     }
 
+    // TODO move the following to drawing?:
+
+    /// Get the key top rectangle for a given key size
     #[inline]
     #[must_use]
     pub fn top_with_size(&self, size: Size<Unit>) -> RoundRect<Dot> {
@@ -304,6 +368,7 @@ impl Profile {
         RoundRect::new(min, max, radius)
     }
 
+    /// Get the key top rectangle for a given key rect
     #[inline]
     #[must_use]
     pub fn top_with_rect(&self, rect: Rect<Unit>) -> RoundRect<Dot> {
@@ -313,6 +378,7 @@ impl Profile {
         RoundRect::new(min, max, radius)
     }
 
+    /// Get the key bottom rectangle for a given key size
     #[inline]
     #[must_use]
     pub fn bottom_with_size(&self, size: Size<Unit>) -> RoundRect<Dot> {
@@ -321,6 +387,7 @@ impl Profile {
         RoundRect::new(min, max, radius)
     }
 
+    /// Get the key bottom rectangle for a given key rectangle
     #[inline]
     #[must_use]
     pub fn bottom_with_rect(&self, rect: Rect<Unit>) -> RoundRect<Dot> {
@@ -346,6 +413,7 @@ impl Default for Profile {
 }
 
 impl Profile {
+    /// A static reference to the default profile
     #[inline]
     pub fn default_ref() -> &'static Self {
         static PROFILE: OnceLock<Profile> = OnceLock::new();

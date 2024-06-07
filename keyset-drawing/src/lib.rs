@@ -1,4 +1,7 @@
-#![allow(missing_docs)] // TODO
+//! This crate contains the drawing functionality used to generate layout
+//! diagrams by [keyset].
+//!
+//! [keyset]: https://crates.io/crates/keyset
 
 mod imp;
 #[cfg(feature = "pdf")]
@@ -17,6 +20,7 @@ use profile::Profile;
 
 pub(crate) use imp::{KeyDrawing, KeyPath};
 
+/// A drawing
 #[derive(Debug, Clone)]
 pub struct Drawing {
     bounds: Rect<Unit>,
@@ -25,6 +29,7 @@ pub struct Drawing {
 }
 
 impl Drawing {
+    /// Create a new drawing using the given options
     #[must_use]
     pub fn new(keys: &[Key], options: &Options<'_>) -> Self {
         let bounds = keys
@@ -47,20 +52,23 @@ impl Drawing {
         }
     }
 
-    #[cfg(feature = "pdf")]
+    /// Encode the drawing as an SVG
+    #[cfg(feature = "svg")]
     #[inline]
     #[must_use]
     pub fn to_svg(&self) -> String {
         svg::draw(self)
     }
 
-    #[cfg(feature = "pdf")]
+    /// Encode the drawing as a PNG
+    #[cfg(feature = "png")]
     #[inline]
     #[must_use]
     pub fn to_png(&self, ppi: f32) -> Vec<u8> {
         png::draw(self, geom::Scale::new(ppi))
     }
 
+    /// Encode the drawing as a PDF
     #[cfg(feature = "pdf")]
     #[inline]
     #[must_use]
@@ -68,20 +76,30 @@ impl Drawing {
         pdf::draw(self)
     }
 
+    /// Encode the drawing as an Illustrator file
+    ///
+    /// <div class="warning">
+    ///
+    /// An Illustrator file typically contains both an Illustrator-native and a
+    /// PDF copy of a graphic. Illustrator will happily read a file containing
+    /// only PDF data and most other software (including Adobe's own InDesign)
+    /// only use the PDF copy.
+    ///
+    /// As Illustrator files are a proprietary format, we just generate a PDF
+    /// when exporting an Illustrator file. There have not been any reports of
+    /// compatibility issues using this approach, but it is recommend to check
+    /// your files in Illustrator just in case.
+    ///
+    /// </div>
     #[cfg(feature = "pdf")]
     #[inline]
     #[must_use]
     pub fn to_ai(&self) -> Vec<u8> {
-        // An Illustrator file typically contains both an Illustrator-native and a PDF copy of an
-        // image. Most other software (including Adobe's own InDesign) use the PDF data and not the
-        // native Illustrator format. Illustrator also happily opens a PDF with .ai file extension,
-        // so we just generate a PDF when exporting an Illustrator file. I have not come across any
-        // compatibility issues using this approach, but I do recommend checking your files in
-        // Illustrator just in case.
         pdf::draw(self)
     }
 }
 
+/// Options for generating a drawing
 #[derive(Debug, Clone)]
 pub struct Options<'a> {
     profile: &'a Profile,
@@ -107,30 +125,35 @@ impl Default for Options<'_> {
 }
 
 impl<'a> Options<'a> {
+    /// Create a new struct containing the default option
     #[inline]
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Set the keycap profile used for drawing keys
     #[inline]
     #[must_use]
     pub const fn profile(self, profile: &'a Profile) -> Self {
         Self { profile, ..self }
     }
 
+    /// Set the font used for drawing legends
     #[inline]
     #[must_use]
     pub const fn font(self, font: &'a Font) -> Self {
         Self { font, ..self }
     }
 
+    /// Set the scale used for the drawing
     #[inline]
     #[must_use]
     pub const fn scale(self, scale: f32) -> Self {
         Self { scale, ..self }
     }
 
+    /// Set the outline width for drawing key edges
     #[inline]
     #[must_use]
     pub const fn outline_width(self, outline_width: Length<Dot>) -> Self {
@@ -140,12 +163,14 @@ impl<'a> Options<'a> {
         }
     }
 
+    /// Whether to show the keys in the drawing. Does not affect legends
     #[inline]
     #[must_use]
     pub const fn show_keys(self, show_keys: bool) -> Self {
         Self { show_keys, ..self }
     }
 
+    /// Show the margin used for legend alignment. Useful for debug purposes
     #[inline]
     #[must_use]
     pub const fn show_margin(self, show_margin: bool) -> Self {
@@ -155,6 +180,7 @@ impl<'a> Options<'a> {
         }
     }
 
+    /// Draw keys with the given options
     #[inline]
     #[must_use]
     pub fn draw(&self, keys: &[Key]) -> Drawing {
