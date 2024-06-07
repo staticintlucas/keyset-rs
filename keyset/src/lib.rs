@@ -1,6 +1,11 @@
-// TODO
-
-//! ## Example
+//! A library for creating pretty keyset layout diagrams using correct fonts and icons
+//!
+//! This project is primarily intended to serve as the backend for [pykeyset], but can also be used
+//! directly in Rust.
+//!
+//! [pykeyset]: https://github.com/staticintlucas/pykeyset
+//!
+//! # Example
 //!
 //! ```
 //! use keyset::{Font, kle, Profile};
