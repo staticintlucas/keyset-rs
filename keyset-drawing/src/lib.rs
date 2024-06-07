@@ -37,7 +37,7 @@ impl Drawing {
             .map(|k| k.shape.outer_rect().translate(k.position.to_vector()))
             .fold(
                 Rect::from_origin_and_size(Point::origin(), Size::new(1.0, 1.0)),
-                |rect, key| rect.union(&key),
+                |rect, key| Rect::new(rect.min.min(key.min), rect.max.max(key.max)),
             );
 
         let keys = keys

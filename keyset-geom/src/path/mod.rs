@@ -161,14 +161,18 @@ where
             || (Box::default(), Rect::zero()),
             |path| {
                 let mut data = path.borrow().data.to_vec();
-                let mut bounds = path.borrow().bounds;
+                let mut bounds: Rect<U> = path.borrow().bounds;
 
                 for path in iter {
-                    if !matches!(path.borrow().data.first(), Some(&PathSegment::Move(..))) {
+                    let path: &Self = path.borrow();
+                    if !matches!(path.data.first(), Some(&PathSegment::Move(..))) {
                         data.push(PathSegment::Move(Point::origin()));
                     }
-                    data.extend(path.borrow().data.iter());
-                    bounds = bounds.union(&path.borrow().bounds);
+                    data.extend(path.data.iter());
+                    bounds = Rect::new(
+                        bounds.min.min(path.bounds.min),
+                        bounds.max.max(path.bounds.max),
+                    );
                 }
 
                 (data.into_boxed_slice(), bounds)
