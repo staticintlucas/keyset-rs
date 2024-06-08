@@ -46,8 +46,7 @@ pub fn arc_to_bezier<U>(
         _ => dphi,
     };
 
-    // Double checks the quadrant of dphi
-    // TODO remove these? They shouldn't ever fail I think aside from the odd tolerance issue
+    // Double checks the quadrant of dphi. Shouldn't ever fail aside from maybe tolerance issues?
     match (laf, sf) {
         (false, false) => debug_assert!((-Angle::pi()..=Angle::zero()).contains(&dphi)),
         (false, true) => debug_assert!((Angle::zero()..=Angle::pi()).contains(&dphi)),

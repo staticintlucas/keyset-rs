@@ -81,7 +81,7 @@ impl Face {
                         .filter(|st| {
                             st.horizontal // We only support LTR for the moment
                                 && !st.variable // We don't support variable fonts
-                                && !st.has_cross_stream // TODO support this?
+                                && !st.has_cross_stream // We don't support vertical adjustment
                                 && !st.has_state_machine // Not supported by ttf-parser
                         })
                         .collect()

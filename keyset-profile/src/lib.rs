@@ -357,8 +357,6 @@ impl Profile {
         serde_json::from_str(s).map_err(de::Error::from)
     }
 
-    // TODO move the following to drawing?:
-
     /// Get the key top rectangle for a given key size
     #[inline]
     #[must_use]

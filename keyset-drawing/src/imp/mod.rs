@@ -43,7 +43,7 @@ impl KeyDrawing {
         let top_rect = options.profile.top_with_rect(key.shape.inner_rect()).rect();
 
         let margin = options.show_margin.then(|| {
-            // TODO get unique margins, not size_idx's. Currently impossible because SideOffsets: !Hash
+            // Cann't get unique margins because SideOffsets: !Hash, use unique size_idx's instead
             let sizes: HashSet<_> = key.legends.iter().flatten().map(|l| l.size_idx).collect();
             let paths: Vec<_> = sizes
                 .into_iter()

@@ -76,7 +76,7 @@ impl<U> IsClose<f32> for PathSegment<U> {
         rel_tol: impl Borrow<f32>,
         abs_tol: impl Borrow<f32>,
     ) -> bool {
-        // TODO need type hints here to help rust-analyzer
+        // TODO need type hints here to help rust-analyzer; see: rust-lang/rust-analyzer#5514
         let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
             (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
         match (*self, *other) {

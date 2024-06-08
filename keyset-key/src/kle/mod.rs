@@ -53,7 +53,6 @@ fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
     } else if is_close(&dims, &ISO_HORIZ) {
         Ok(Shape::IsoHorizontal)
     } else {
-        // TODO arbitrary key shapes/sizes
         Err(Error::UnsupportedKeySize {
             w,
             h,

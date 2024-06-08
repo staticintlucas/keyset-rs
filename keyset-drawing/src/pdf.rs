@@ -152,7 +152,7 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
         (None, Some(_)) => {
             content.stroke();
         }
-        (None, None) => {} // GRCOV_EXCL_LINE // TODO unreachable!() ?
+        (None, None) => {} // unreachable!() ? // it makes sense to just do nothing here regardless
     };
 }
 

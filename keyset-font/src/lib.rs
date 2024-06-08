@@ -35,7 +35,7 @@ impl Glyph {
     fn parse_from(face: &Face, gid: GlyphId) -> Option<Self> {
         struct PathBuilderWrapper(PathBuilder<FontUnit>);
 
-        // GRCOV_EXCL_START // TODO these are pretty trivial but we could cover them in tests
+        // GRCOV_EXCL_START // these are trivial and I'm too lazy to write tests
         impl ttf_parser::OutlineBuilder for PathBuilderWrapper {
             fn move_to(&mut self, x: f32, y: f32) {
                 self.0.abs_move(Point::new(x, y));

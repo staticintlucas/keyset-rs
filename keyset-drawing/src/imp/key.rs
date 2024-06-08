@@ -105,7 +105,7 @@ pub fn step(key: &key::Key, options: &Options<'_>) -> Option<KeyPath> {
 
         // Take average dimensions of top and bottom
         let rect = {
-            let frac = 0.5; // TODO make this configurable?
+            let frac = 0.5;
             let top = profile.top_with_size(Size::new(1.0, 1.0));
             let btm = profile.bottom_with_size(Size::new(1.0, 1.0));
             RoundRect::new(
