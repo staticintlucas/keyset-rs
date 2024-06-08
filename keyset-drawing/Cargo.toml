@@ -32,7 +32,6 @@ geom.workspace = true
 key.workspace = true
 profile.workspace = true
 
-array-util.workspace = true
 log.workspace = true
 miniz_oxide = { workspace = true, optional = true }
 pdf-writer = { workspace = true, optional = true }

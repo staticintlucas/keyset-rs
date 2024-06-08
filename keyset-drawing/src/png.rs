@@ -1,4 +1,3 @@
-use array_util::ArrayExt;
 use geom::{
     Dot, Inch, PathSegment, Point, Scale, ToTransform, Transform, DOT_PER_INCH, DOT_PER_UNIT,
 };
@@ -14,10 +13,12 @@ pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Result<Vec<u8>, Error
     let scale = (DOT_PER_INCH.inverse() * ppi) * Scale::<Pixel, Pixel>::new(drawing.scale);
     let size = drawing.bounds.size() * DOT_PER_UNIT * scale;
 
-    let mut pixmap = size
+    let [width, height] = size
         .to_array()
-        .try_map_ext(|dim| usize::saturating_from(dim.ceil()).try_into().ok())
-        .and_then(|[width, height]| Pixmap::new(width, height))
+        .map(|dim| isize::saturating_from(dim.ceil()).try_into().ok());
+    let mut pixmap = width
+        .zip(height)
+        .and_then(|(width, height)| Pixmap::new(width, height))
         .ok_or(Error::PngDimensionsError(size))?;
 
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
