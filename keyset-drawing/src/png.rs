@@ -1,7 +1,6 @@
 use geom::{
     Dot, Inch, PathSegment, Point, Scale, ToTransform, Transform, DOT_PER_INCH, DOT_PER_UNIT,
 };
-use saturate::SaturatingFrom;
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform as SkiaTransform};
 
 use crate::{Drawing, Error, KeyDrawing, KeyPath};
@@ -13,12 +12,9 @@ pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Result<Vec<u8>, Error
     let scale = (DOT_PER_INCH.inverse() * ppi) * Scale::<Pixel, Pixel>::new(drawing.scale);
     let size = drawing.bounds.size() * DOT_PER_UNIT * scale;
 
-    let [width, height] = size
-        .to_array()
-        .map(|dim| isize::saturating_from(dim.ceil()).try_into().ok());
-    let mut pixmap = width
-        .zip(height)
-        .and_then(|(width, height)| Pixmap::new(width, height))
+    let mut pixmap = size
+        .try_cast()
+        .and_then(|size| Pixmap::new(size.width, size.height))
         .ok_or(Error::PngDimensionsError(size))?;
 
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
