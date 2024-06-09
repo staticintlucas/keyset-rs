@@ -1,5 +1,6 @@
 /// An error parsing a KLE layout
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     /// An error in parsing the KLE JSON file
     JsonParseError(serde_json::Error),
