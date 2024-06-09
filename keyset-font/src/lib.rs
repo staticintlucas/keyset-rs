@@ -7,7 +7,7 @@ mod error;
 mod face;
 
 use std::collections::HashMap;
-use std::fmt::Debug;
+use std::fmt;
 use std::sync::{OnceLock, RwLock};
 
 use geom::{Angle, Length, Path, PathBuilder, Point};
@@ -21,14 +21,34 @@ use face::Face;
 #[derive(Debug, Clone, Copy)]
 pub struct FontUnit;
 
+#[derive(Clone, Copy)]
+struct NonExhaustive;
+
 /// A glyph loaded from a [`Font`]
-#[derive(Debug, Clone)]
-#[non_exhaustive]
+#[derive(Clone)]
 pub struct Glyph {
     /// The outline of the glyph
     pub path: Path<FontUnit>,
     /// The glyphs horizontal advance
     pub advance: Length<FontUnit>,
+    /// Hidden field to enforce non-exhaustive struct while still allowing instantiation using
+    /// `..Default::default()` functional update syntax
+    #[allow(private_interfaces)]
+    #[doc(hidden)]
+    pub __non_exhaustive: NonExhaustive,
+}
+
+impl fmt::Debug for Glyph {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut dbg = f.debug_struct("Glyph");
+        dbg.field("path", &self.path)
+            .field("advance", &self.advance);
+
+        #[cfg(clippy)] // Suppress clippy::missing_fields_in_debug but only for this one field
+        dbg.field("__non_exhaustive", &"NonExhaustive");
+
+        dbg.finish()
+    }
 }
 
 impl Glyph {
@@ -68,7 +88,11 @@ impl Glyph {
 
         let advance = Length::new(face.glyph_hor_advance(gid)?.into());
 
-        Some(Self { path, advance })
+        Some(Self {
+            path,
+            advance,
+            __non_exhaustive: NonExhaustive,
+        })
     }
 }
 
@@ -84,9 +108,9 @@ pub struct Font {
     kerning: RwLock<HashMap<(char, char), Length<FontUnit>>>,
 }
 
-impl Debug for Font {
+impl fmt::Debug for Font {
     #[inline]
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Font").field(self.name()).finish()
     }
 }
@@ -328,6 +352,27 @@ mod tests {
     use isclose::assert_is_close;
 
     use super::*;
+
+    #[test]
+    fn glyph_debug() {
+        let glyph = Glyph {
+            path: Path {
+                data: Box::new([]),
+                bounds: Rect::zero(),
+            },
+            advance: Length::new(0.0),
+            __non_exhaustive: NonExhaustive,
+        };
+
+        assert_eq!(
+            format!("{glyph:?}"),
+            format!(
+                "Glyph {{ path: {:?}, advance: {:?} }}",
+                Path::<FontUnit>::default(),
+                0.0
+            ),
+        );
+    }
 
     #[test]
     fn glyph_parse_from() {

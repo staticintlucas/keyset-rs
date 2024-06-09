@@ -247,6 +247,7 @@ impl<'de> Deserialize<'de> for Profile {
             text_margin: TextMargin::new(&offsets),
             text_height: TextHeight::new(&heights),
             homing: raw_data.homing,
+            __non_exhaustive: super::NonExhaustive,
         })
     }
 }

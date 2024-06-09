@@ -9,6 +9,7 @@ mod de;
 
 use std::array;
 use std::collections::HashMap;
+use std::fmt;
 use std::sync::OnceLock;
 
 use geom::{
@@ -313,8 +314,11 @@ impl Default for BottomSurface {
     }
 }
 
+#[derive(Clone, Copy)]
+struct NonExhaustive;
+
 /// A keyboard profile
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Profile {
     /// The type of profile
     pub typ: Type,
@@ -328,6 +332,28 @@ pub struct Profile {
     pub text_height: TextHeight,
     /// Homing properties
     pub homing: HomingProps,
+    /// Hidden field to enforce non-exhaustive struct while still allowing instantiation using
+    /// `..Default::default()` functional update syntax
+    #[allow(private_interfaces)]
+    #[doc(hidden)]
+    pub __non_exhaustive: NonExhaustive,
+}
+
+impl fmt::Debug for Profile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut dbg = f.debug_struct("Profile");
+        dbg.field("typ", &self.typ)
+            .field("bottom", &self.bottom)
+            .field("top", &self.top)
+            .field("text_margin", &self.text_margin)
+            .field("text_height", &self.text_height)
+            .field("homing", &self.homing);
+
+        #[cfg(clippy)] // Suppress clippy::missing_fields_in_debug but only for this one field
+        dbg.field("__non_exhaustive", &"NonExhaustive");
+
+        dbg.finish()
+    }
 }
 
 impl Profile {
@@ -406,6 +432,7 @@ impl Default for Profile {
             text_margin: TextMargin::default(),
             text_height: TextHeight::default(),
             homing: HomingProps::default(),
+            __non_exhaustive: NonExhaustive,
         }
     }
 }
@@ -653,6 +680,25 @@ mod tests {
         let surf = BottomSurface::default();
         assert_is_close!(surf.size, Size::new(0.950, 0.950) * DOT_PER_UNIT);
         assert_is_close!(surf.radius, Length::new(0.065) * DOT_PER_UNIT);
+    }
+
+    #[test]
+    fn profile_debug() {
+        let profile = Profile::default();
+
+        assert_eq!(
+            format!("{profile:?}"),
+            format!(
+                "Profile {{ typ: {:?}, bottom: {:?}, top: {:?}, text_margin: {:?}, \
+                text_height: {:?}, homing: {:?} }}",
+                Type::default(),
+                BottomSurface::default(),
+                TopSurface::default(),
+                TextMargin::default(),
+                TextHeight::default(),
+                HomingProps::default(),
+            )
+        );
     }
 
     #[cfg(feature = "toml")]

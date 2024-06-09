@@ -94,6 +94,7 @@ impl TryFrom<kle::Key> for Key {
             shape,
             color,
             legends,
+            __non_exhaustive: super::NonExhaustive,
         })
     }
 }

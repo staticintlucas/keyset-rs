@@ -8,6 +8,8 @@ mod legend;
 #[cfg(feature = "kle")]
 pub mod kle;
 
+use std::fmt;
+
 pub use legend::{Legend, Legends, Text};
 
 use color::Color;
@@ -86,9 +88,11 @@ impl Shape {
     }
 }
 
+#[derive(Clone, Copy)]
+struct NonExhaustive;
+
 /// A key
-#[derive(Debug, Clone)]
-#[non_exhaustive]
+#[derive(Clone)]
 pub struct Key {
     /// The position of the key
     pub position: Point<Unit>,
@@ -98,6 +102,26 @@ pub struct Key {
     pub color: Color,
     /// The key's legends
     pub legends: Legends,
+    /// Hidden field to enforce non-exhaustive struct while still allowing instantiation using
+    /// `..Default::default()` functional update syntax
+    #[allow(private_interfaces)]
+    #[doc(hidden)]
+    pub __non_exhaustive: NonExhaustive,
+}
+
+impl fmt::Debug for Key {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut dbg = f.debug_struct("Key");
+        dbg.field("position", &self.position)
+            .field("shape", &self.shape)
+            .field("color", &self.color)
+            .field("legends", &self.legends);
+
+        #[cfg(clippy)] // Suppress clippy::missing_fields_in_debug but only for this one field
+        dbg.field("__non_exhaustive", &"NonExhaustive");
+
+        dbg.finish()
+    }
 }
 
 impl Key {
@@ -127,6 +151,7 @@ impl Default for Key {
             shape: Shape::Normal(Size::new(1.0, 1.0)),
             color: Color::new(0.8, 0.8, 0.8),
             legends: Legends::default(),
+            __non_exhaustive: NonExhaustive,
         }
     }
 }
@@ -198,6 +223,22 @@ pub mod tests {
         assert_eq!(
             Shape::SteppedCaps.inner_rect(),
             Rect::new(Point::zero(), Point::new(1.25, 1.0))
+        );
+    }
+
+    #[test]
+    fn key_debug() {
+        let key = Key::new();
+
+        assert_eq!(
+            format!("{key:?}"),
+            format!(
+                "Key {{ position: {:?}, shape: {:?}, color: {:?}, legends: {:?} }}",
+                Point::<Unit>::origin(),
+                Shape::Normal(Size::splat(1.0)),
+                Color::new(0.8, 0.8, 0.8),
+                Legends::default(),
+            )
         );
     }
 
