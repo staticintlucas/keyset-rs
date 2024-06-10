@@ -97,32 +97,30 @@ impl Color {
     #[inline]
     #[must_use]
     pub fn as_rgb8(&self) -> (u8, u8, u8) {
-        let [r, g, b] = self.0.map(|c| (c * 256.0).saturating_into());
-        (r, g, b)
+        self.0.map(|c| (c * 256.0).saturating_into()).into()
     }
 
     /// Returns a tuple containing the red, green, and blue components as [`u16`].
     #[inline]
     #[must_use]
     pub fn as_rgb16(&self) -> (u16, u16, u16) {
-        let [r, g, b] = self.0.map(|c| (c * 65536.0).saturating_into());
-        (r, g, b)
+        self.0.map(|c| (c * 65536.0).saturating_into()).into()
     }
 
     /// Creates a new [`Color`] from a tuple containing the red, green, and blue
     /// components as [`u8`].
     #[inline]
     #[must_use]
-    pub fn from_rgb8((r, g, b): (u8, u8, u8)) -> Self {
-        [r, g, b].map(|c| f32::from(c) / 255.0).into()
+    pub fn from_rgb8(rgb: (u8, u8, u8)) -> Self {
+        <[u8; 3]>::from(rgb).map(|c| f32::from(c) / 255.0).into()
     }
 
     /// Creates a new [`Color`] from a tuple containing the red, green, and blue
     /// components as [`u16`].
     #[inline]
     #[must_use]
-    pub fn from_rgb16((r, g, b): (u16, u16, u16)) -> Self {
-        [r, g, b].map(|c| f32::from(c) / 65535.0).into()
+    pub fn from_rgb16(rgb: (u16, u16, u16)) -> Self {
+        <[u16; 3]>::from(rgb).map(|c| f32::from(c) / 65535.0).into()
     }
 
     /// Returns a slice containing the red, green, and blue components of the colour.

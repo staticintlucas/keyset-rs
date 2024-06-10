@@ -62,10 +62,9 @@ pub fn arc_to_bezier<U>(
     (0..i_segments)
         .map(|i| phi0 + dphi * i.into()) // Starting angle for segment
         .map(|phi0| create_arc(r, phi0, dphi)) // Create segment arc
-        .map(|(ctrl1, ctrl2, point)| {
+        .map(|vecs| {
             // Re-rotate by xar
-            let [ctrl1, ctrl2, point] = [ctrl1, ctrl2, point].map(|p| p.rotate(xar));
-            (ctrl1, ctrl2, point)
+            <[Vector<_>; 3]>::from(vecs).map(|p| p.rotate(xar)).into()
         })
         .collect()
 }
