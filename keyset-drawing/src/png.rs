@@ -123,7 +123,7 @@ mod tests {
     use key::Key;
     use tiny_skia::Pixmap;
 
-    use crate::Options;
+    use crate::{Drawing, Options};
 
     #[test]
     fn test_to_png() {
@@ -132,7 +132,7 @@ mod tests {
 
         let options = Options::default();
         let keys = [Key::example()];
-        let drawing = options.draw(&keys);
+        let drawing = Drawing::new(&keys, &options);
 
         let png = drawing.to_png(96.0).unwrap();
 

@@ -97,7 +97,7 @@ mod tests {
 
     use key::Key;
 
-    use crate::Options;
+    use crate::{Drawing, Options};
 
     #[test]
     fn test_to_svg() {
@@ -106,7 +106,7 @@ mod tests {
             ..Default::default()
         };
         let keys = [Key::example()];
-        let drawing = options.draw(&keys);
+        let drawing = Drawing::new(&keys, &options);
 
         let svg = drawing.to_svg();
 

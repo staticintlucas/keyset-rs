@@ -29,7 +29,7 @@ impl std::error::Error for Error {}
 mod tests {
     use geom::Point;
 
-    use crate::Options;
+    use crate::{Drawing, Options};
 
     #[test]
     fn error_fmt() {
@@ -40,8 +40,7 @@ mod tests {
             tmp
         };
 
-        let error = Options::default()
-            .draw(&[key1, key2])
+        let error = Drawing::new(&[key1, key2], &Options::default())
             .to_png(1.0)
             .unwrap_err();
 

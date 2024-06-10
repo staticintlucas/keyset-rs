@@ -14,6 +14,8 @@ mod svg;
 #[cfg(not(any(feature = "pdf", feature = "png", feature = "svg")))]
 compile_error!("no output format is enabled");
 
+use std::fmt;
+
 use font::Font;
 use geom::{Dot, Length, Point, Rect, Size, Unit, DOT_PER_UNIT};
 use key::Key;
@@ -106,15 +108,46 @@ impl Drawing {
     }
 }
 
+#[derive(Clone, Copy)]
+struct NonExhaustive;
+
 /// Options for generating a drawing
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Options<'a> {
-    profile: &'a Profile,
-    font: &'a Font,
-    scale: f32,
-    outline_width: Length<Dot>,
-    show_keys: bool,
-    show_margin: bool,
+    /// The keycap profile used for drawing keys
+    pub profile: &'a Profile,
+    /// The font used for drawing legends
+    pub font: &'a Font,
+    /// The scale used for the drawing
+    pub scale: f32,
+    /// The outline width for drawing key edges
+    pub outline_width: Length<Dot>,
+    /// Whether to show the keys in the drawing. Does not affect legends
+    pub show_keys: bool,
+    /// Show the margin used for legend alignment. Useful for debug purposes
+    pub show_margin: bool,
+    /// Hidden field to enforce non-exhaustive struct while still allowing instantiation using
+    /// `..Default::default()` functional update syntax
+    #[allow(private_interfaces)]
+    #[doc(hidden)]
+    pub __non_exhaustive: NonExhaustive,
+}
+
+impl fmt::Debug for Options<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut dbg = f.debug_struct("Glyph");
+        dbg.field("profile", &self.profile)
+            .field("font", &self.font)
+            .field("scale", &self.scale)
+            .field("outline_width", &self.outline_width)
+            .field("show_keys", &self.show_keys)
+            .field("show_margin", &self.show_margin);
+
+        #[cfg(clippy)] // Suppress clippy::missing_fields_in_debug but only for this one field
+        dbg.field("__non_exhaustive", &"NonExhaustive");
+
+        dbg.finish()
+    }
 }
 
 impl Default for Options<'_> {
@@ -127,71 +160,8 @@ impl Default for Options<'_> {
             outline_width: Length::new(0.01) * DOT_PER_UNIT,
             show_keys: true,
             show_margin: false,
+            __non_exhaustive: NonExhaustive,
         }
-    }
-}
-
-impl<'a> Options<'a> {
-    /// Create a new struct containing the default option
-    #[inline]
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Set the keycap profile used for drawing keys
-    #[inline]
-    #[must_use]
-    pub const fn profile(self, profile: &'a Profile) -> Self {
-        Self { profile, ..self }
-    }
-
-    /// Set the font used for drawing legends
-    #[inline]
-    #[must_use]
-    pub const fn font(self, font: &'a Font) -> Self {
-        Self { font, ..self }
-    }
-
-    /// Set the scale used for the drawing
-    #[inline]
-    #[must_use]
-    pub const fn scale(self, scale: f32) -> Self {
-        Self { scale, ..self }
-    }
-
-    /// Set the outline width for drawing key edges
-    #[inline]
-    #[must_use]
-    pub const fn outline_width(self, outline_width: Length<Dot>) -> Self {
-        Self {
-            outline_width,
-            ..self
-        }
-    }
-
-    /// Whether to show the keys in the drawing. Does not affect legends
-    #[inline]
-    #[must_use]
-    pub const fn show_keys(self, show_keys: bool) -> Self {
-        Self { show_keys, ..self }
-    }
-
-    /// Show the margin used for legend alignment. Useful for debug purposes
-    #[inline]
-    #[must_use]
-    pub const fn show_margin(self, show_margin: bool) -> Self {
-        Self {
-            show_margin,
-            ..self
-        }
-    }
-
-    /// Draw keys with the given options
-    #[inline]
-    #[must_use]
-    pub fn draw(&self, keys: &[Key]) -> Drawing {
-        Drawing::new(keys, self)
     }
 }
 
@@ -212,13 +182,15 @@ mod tests {
 
         let profile = Profile::default();
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
-        let options = Options::new()
-            .profile(&profile)
-            .font(&font)
-            .scale(2.0)
-            .outline_width(Length::new(20.0))
-            .show_keys(false)
-            .show_margin(true);
+        let options = Options {
+            profile: &profile,
+            font: &font,
+            scale: 2.0,
+            outline_width: Length::new(20.0),
+            show_keys: false,
+            show_margin: true,
+            ..Options::default()
+        };
 
         assert_is_close!(
             options.profile.typ.depth(),
@@ -230,10 +202,10 @@ mod tests {
 
     #[test]
     fn test_drawing_options_draw() {
-        let options = Options::new();
+        let options = Options::default();
         let keys = [Key::example()];
 
-        let drawing = options.draw(&keys);
+        let drawing = Drawing::new(&keys, &options);
 
         assert_is_close!(drawing.bounds.width(), 1.0);
         assert_is_close!(drawing.bounds.height(), 1.0);

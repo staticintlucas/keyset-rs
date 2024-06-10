@@ -8,7 +8,7 @@
 //! # Example
 //!
 //! ```
-//! use keyset::{Font, kle, Profile};
+//! use keyset::{Drawing, Font, kle, Profile};
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!
@@ -47,12 +47,14 @@
 //! // Or load an actual font with Font::from_ttf(std::fs::read("font.ttf")?)?
 //!
 //! // Set drawing options
-//! let options = drawing::Options::new()
-//!     .profile(&profile)
-//!     .font(&font);
+//! let options = drawing::Options {
+//!     profile: &profile,
+//!     font: &font,
+//!     ..Default::default()
+//! };
 //!
 //! // Create drawing
-//! let drawing = options.draw(&keys);
+//! let drawing = Drawing::new(&keys, &options);
 //!
 //! // Save output
 //! let path = std::env::current_dir()?;
