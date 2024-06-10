@@ -85,18 +85,15 @@ pub struct BumpProps {
 }
 
 /// Struct used to deserialize [`key::Homing`]
-#[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(remote = "Homing", rename_all = "kebab-case"))]
+#[cfg(feature = "serde")]
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
+#[serde(remote = "Homing", rename_all = "kebab-case")]
 enum HomingDef {
-    #[cfg_attr(feature = "serde", serde(alias = "deep-dish", alias = "dish"))]
+    #[serde(alias = "deep-dish", alias = "dish")]
     Scoop,
-    #[cfg_attr(feature = "serde", serde(alias = "line"))]
+    #[serde(alias = "line")]
     Bar,
-    #[cfg_attr(
-        feature = "serde",
-        serde(alias = "nub", alias = "dot", alias = "nipple")
-    )]
+    #[serde(alias = "nub", alias = "dot", alias = "nipple")]
     Bump,
 }
 
