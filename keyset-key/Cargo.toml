@@ -28,7 +28,6 @@ color.workspace = true
 geom.workspace = true
 
 kle-serial = { workspace = true, optional = true }
-lazy-regex.workspace = true
 serde_json = { workspace = true, optional = true }
 
 [dev-dependencies]
