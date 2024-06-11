@@ -133,23 +133,6 @@ pub struct Options<'a> {
     pub __non_exhaustive: NonExhaustive,
 }
 
-impl fmt::Debug for Options<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut dbg = f.debug_struct("Glyph");
-        dbg.field("profile", &self.profile)
-            .field("font", &self.font)
-            .field("scale", &self.scale)
-            .field("outline_width", &self.outline_width)
-            .field("show_keys", &self.show_keys)
-            .field("show_margin", &self.show_margin);
-
-        #[cfg(clippy)] // Suppress clippy::missing_fields_in_debug but only for this one field
-        dbg.field("__non_exhaustive", &"NonExhaustive");
-
-        dbg.finish()
-    }
-}
-
 impl Default for Options<'_> {
     #[inline]
     fn default() -> Self {
@@ -165,6 +148,23 @@ impl Default for Options<'_> {
     }
 }
 
+impl fmt::Debug for Options<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut dbg = f.debug_struct("Options");
+        dbg.field("profile", &self.profile)
+            .field("font", &self.font)
+            .field("scale", &self.scale)
+            .field("outline_width", &self.outline_width)
+            .field("show_keys", &self.show_keys)
+            .field("show_margin", &self.show_margin);
+
+        #[cfg(clippy)] // Suppress clippy::missing_fields_in_debug but only for this one field
+        dbg.field("__non_exhaustive", &"NonExhaustive");
+
+        dbg.finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use geom::{Mm, DOT_PER_MM};
@@ -174,7 +174,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_drawing_options() {
+    fn options() {
         let options = Options::default();
 
         assert_is_close!(options.scale, 1.0);
@@ -201,7 +201,26 @@ mod tests {
     }
 
     #[test]
-    fn test_drawing_options_draw() {
+    fn options_debug() {
+        let options = Options::default();
+
+        assert_eq!(
+            format!("{options:?}"),
+            format!(
+                "Options {{ profile: {:?}, font: {:?}, scale: {:?}, outline_width: {:?}, \
+                    show_keys: {:?}, show_margin: {:?} }}",
+                Profile::default_ref(),
+                Font::default_ref(),
+                1.0,
+                10.0,
+                true,
+                false
+            ),
+        );
+    }
+
+    #[test]
+    fn options_draw() {
         let options = Options::default();
         let keys = [Key::example()];
 
