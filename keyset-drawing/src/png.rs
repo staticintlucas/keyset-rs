@@ -47,7 +47,6 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
         let mut origin = Point::zero();
 
         for &el in &path.data {
-            let el = el * transform;
             match el {
                 PathSegment::Move(p) => {
                     builder.move_to(p.x, p.y);
@@ -85,19 +84,22 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
         return; // GRCOV_EXCL_LINE
     };
 
+    let skia_transform = SkiaTransform {
+        sx: transform.m11,
+        kx: transform.m12,
+        ky: transform.m21,
+        sy: transform.m22,
+        tx: transform.m31,
+        ty: transform.m32,
+    };
+
     if let Some(color) = path.fill {
         let paint = Paint {
             shader: Shader::SolidColor(color.into()),
             anti_alias: true,
             ..Default::default()
         };
-        pixmap.fill_path(
-            &skia_path,
-            &paint,
-            FillRule::EvenOdd,
-            SkiaTransform::default(),
-            None,
-        );
+        pixmap.fill_path(&skia_path, &paint, FillRule::EvenOdd, skia_transform, None);
     }
 
     if let Some(outline) = path.outline {
@@ -114,7 +116,7 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
             width: (outline.width * scale).get(),
             ..Default::default()
         };
-        pixmap.stroke_path(&skia_path, &paint, &stroke, SkiaTransform::default(), None);
+        pixmap.stroke_path(&skia_path, &paint, &stroke, skia_transform, None);
     }
 }
 
