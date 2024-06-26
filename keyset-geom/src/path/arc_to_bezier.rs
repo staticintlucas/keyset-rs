@@ -9,12 +9,14 @@ pub fn arc_to_bezier<U>(
     laf: bool,
     sf: bool,
     d: Vector<U>,
-) -> Vec<(Vector<U>, Vector<U>, Vector<U>)> {
+    mut cb: impl FnMut(Vector<U>, Vector<U>, Vector<U>),
+) {
     // Ensure our radii are large enough
     // If either radius is 0 we just return a straight line
     let r = r.abs();
     if d.length().is_close(0.0) || r.x.is_close(0.0) || r.y.is_close(0.0) {
-        return vec![(d / 3.0, d * (2.0 / 3.0), d)];
+        cb(d / 3.0, d * (2.0 / 3.0), d);
+        return;
     }
 
     // Rotate the point by -xar. We calculate the result as if xar==0 and then re-rotate the result
@@ -59,14 +61,14 @@ pub fn arc_to_bezier<U>(
     let i_segments = u8::saturating_from(segments); // 0 < segments <= 4
     let dphi = dphi / segments;
 
-    (0..i_segments)
-        .map(|i| phi0 + dphi * i.into()) // Starting angle for segment
-        .map(|phi0| create_arc(r, phi0, dphi)) // Create segment arc
-        .map(|vecs| {
-            // Re-rotate by xar
-            <[Vector<_>; 3]>::from(vecs).map(|p| p.rotate(xar)).into()
-        })
-        .collect()
+    for i in 0..i_segments {
+        let phi0 = phi0 + dphi * i.into(); // Starting angle for segment
+        let (d1, d2, d) = create_arc(r, phi0, dphi); // Create segment arc
+        let (d1, d2, d) = <[Vector<_>; 3]>::from((d1, d2, d))
+            .map(|d| d.rotate(xar)) // Re-rotate by xar
+            .into();
+        cb(d1, d2, d);
+    }
 }
 
 fn get_center<U>(r: Vector<U>, laf: bool, sf: bool, d: Vector<U>) -> Vector<U> {
@@ -172,11 +174,11 @@ mod tests {
         ];
 
         for (p, exp) in params.into_iter().zip(expected) {
-            let points = arc_to_bezier(p.r, p.xar, p.laf, p.sf, p.d);
-            let points = points.into_iter().map(|i| i.2);
+            let mut points = vec![];
+            arc_to_bezier(p.r, p.xar, p.laf, p.sf, p.d, |_p1, _p2, p| points.push(p));
 
             assert_eq!(points.len(), exp.len());
-            for (pnt, exp) in points.zip(exp) {
+            for (pnt, exp) in points.into_iter().zip(exp) {
                 assert_is_close!(pnt, exp);
             }
         }

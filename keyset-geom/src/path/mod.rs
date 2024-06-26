@@ -391,11 +391,11 @@ impl<U> PathBuilder<U> {
     /// Add an arc segment with relative distance
     #[inline]
     pub fn rel_arc(&mut self, r: Vector<U>, xar: Angle, laf: bool, sf: bool, d: Vector<U>) {
-        for (d1, d2, d) in arc_to_bezier(r, xar, laf, sf, d) {
+        arc_to_bezier(r, xar, laf, sf, d, |d1, d2, d| {
             self.data.push(PathSegment::CubicBezier(d1, d2, d));
             self.bounds = update_bounds(self.bounds, self.point + d);
             self.point += d;
-        }
+        });
     }
 
     /// Close the path
