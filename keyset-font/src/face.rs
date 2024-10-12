@@ -95,7 +95,7 @@ impl Face {
         self.borrow_face().names()
     }
 
-    pub fn italic_angle(&self) -> Option<f32> {
+    pub fn italic_angle(&self) -> f32 {
         self.borrow_face().italic_angle()
     }
 
@@ -155,6 +155,7 @@ impl Face {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
+    use isclose::assert_is_close;
 
     use super::*;
 
@@ -229,7 +230,7 @@ mod tests {
         let face = Face::from_ttf(data).unwrap();
 
         assert_eq!(face.names().len(), 4);
-        assert_eq!(face.italic_angle(), None);
+        assert_is_close!(face.italic_angle(), 0.0);
         assert_eq!(face.ascender(), 1024);
         assert_eq!(face.descender(), -400);
         assert_eq!(face.line_gap(), 0);

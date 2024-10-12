@@ -16,7 +16,7 @@ use geom::{
     Dot, ExtRect, Inch, Length, Mm, Point, Rect, RoundRect, SideOffsets, Size, Unit, Vector,
     DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT,
 };
-use interp::interp_array;
+use interp::{interp_array, InterpMode};
 use key::Homing;
 use saturate::SaturatingFrom;
 
@@ -160,7 +160,10 @@ impl TextHeight {
             };
 
             let all_indices = array::from_fn(f32::saturating_from);
-            Self(interp_array(&indices, &heights, &all_indices).map(Length::<Dot>::new))
+            Self(
+                interp_array(&indices, &heights, &all_indices, &InterpMode::Extrapolate)
+                    .map(Length::<Dot>::new),
+            )
         }
     }
 

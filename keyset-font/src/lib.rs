@@ -274,8 +274,8 @@ impl Font {
 
     /// The font's slope angle, anticlockwise being positive
     #[inline]
-    pub fn slope(&self) -> Option<Angle> {
-        self.face.italic_angle().map(Angle::degrees) // Negate so forward = positive
+    pub fn slope(&self) -> Angle {
+        Angle::degrees(self.face.italic_angle())
     }
 
     /// The number of glyph outlines in the font
@@ -471,7 +471,7 @@ mod tests {
         assert_is_close!(font.descender(), Length::new(400.0));
         assert_is_close!(font.line_gap(), Length::new(0.0));
         assert_is_close!(font.line_height(), Length::new(1424.0));
-        assert_eq!(font.slope(), None);
+        assert_is_close!(font.slope(), Angle::degrees(0.0));
         assert_eq!(font.num_glyphs(), 3);
 
         let data = std::fs::read(env!("NULL_TTF")).unwrap();
@@ -487,7 +487,7 @@ mod tests {
         assert_is_close!(font.descender(), Length::new(400.0));
         assert_is_close!(font.line_gap(), Length::new(200.0));
         assert_is_close!(font.line_height(), Length::new(1200.0));
-        assert_eq!(font.slope(), None);
+        assert_is_close!(font.slope(), Angle::degrees(0.0));
         assert_eq!(font.num_glyphs(), 1); // Just .notdef
     }
 
