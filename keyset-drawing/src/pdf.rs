@@ -57,7 +57,7 @@ pub fn draw(drawing: &Drawing) -> Vec<u8> {
         .to_transform()
         .then_scale(1.0, -1.0)
         .then_translate(Vector::new(0.0, size.height));
-    for key in drawing.keys.iter() {
+    for key in &drawing.keys {
         draw_key(&mut content, key, transform);
     }
 
@@ -81,7 +81,7 @@ fn draw_key(content: &mut Content, key: &KeyDrawing, transform: Transform<Dot, P
     let transform = (key.origin.to_vector() * DOT_PER_UNIT)
         .to_transform()
         .then(&transform);
-    for path in key.paths.iter() {
+    for path in &key.paths {
         draw_path(content, path, transform);
     }
 }

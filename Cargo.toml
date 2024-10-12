@@ -14,7 +14,7 @@ resolver = "2"
 version = "0.3.2"
 authors = ["Lucas Jansen"]
 edition = "2021"
-rust-version = "1.74"
+rust-version = "1.80"
 repository = "https://github.com/staticintlucas/keyset-rs"
 license = "MIT OR Apache-2.0"
 
@@ -53,6 +53,7 @@ rust-2018-compatibility = "warn"
 rust-2018-idioms = "warn"
 rust-2021-compatibility = "warn"
 rust-2024-compatibility = "warn"
+edition-2024-expr-fragment-specifier = { level = "allow", priority = 1 }
 unused = "warn"
 
 missing-copy-implementations = "warn"
@@ -63,12 +64,12 @@ single-use-lifetimes = "warn"
 trivial-casts = "warn"
 trivial-numeric-casts = "warn"
 unit-bindings = "warn"
-unsafe-code = "forbid"
 unstable-features = "warn"
 unused-crate-dependencies = "warn"
 unused-lifetimes = "warn"
 unused-qualifications = "warn"
 variant-size-differences = "warn"
+unsafe-code = { level = "forbid", priority = 1 }
 
 [workspace.lints.clippy]
 all = "warn"

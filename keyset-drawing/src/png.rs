@@ -20,7 +20,7 @@ pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Result<Vec<u8>, Error
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
 
     let transform = scale.to_transform();
-    for key in drawing.keys.iter() {
+    for key in &drawing.keys {
         draw_key(&mut pixmap, key, transform);
     }
 
@@ -33,7 +33,7 @@ fn draw_key(pixmap: &mut Pixmap, key: &KeyDrawing, transform: Transform<Dot, Pix
     let transform = (key.origin.to_vector() * DOT_PER_UNIT)
         .to_transform()
         .then(&transform);
-    for path in key.paths.iter() {
+    for path in &key.paths {
         draw_path(pixmap, path, transform);
     }
 }
