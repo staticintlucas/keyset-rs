@@ -57,4 +57,13 @@ fn main() {
         println!("cargo:rustc-env={env_var}={}", ttf.display());
         println!("cargo:rerun-if-changed={}", ttx.display());
     }
+
+    let image_dir = manifest_dir.join("resources").join("images");
+    let png_files = files_with_extension(&image_dir, "png")
+        .unwrap_or_else(|e| panic!("failed to list files in {image_dir:?}: {e:?}"));
+
+    for png in png_files {
+        let env_var = png.file_stem().unwrap().to_string_lossy().to_uppercase() + "_PNG";
+        println!("cargo:rustc-env={env_var}={}", png.display());
+    }
 }

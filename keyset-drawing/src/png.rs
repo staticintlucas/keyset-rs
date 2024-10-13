@@ -125,24 +125,42 @@ mod tests {
 
     #[test]
     fn test_to_png() {
-        // It's pretty difficult to test this stuff without visually inspecting
-        // the image, so we just test a few pixels
-
         let options = Options::default();
         let keys = [Key::example()];
         let drawing = Drawing::new(&keys, &options);
 
         let png = drawing.to_png(96.0).unwrap();
 
-        let pixmap = Pixmap::decode_png(&png).unwrap();
-        assert_eq!(pixmap.width(), 72);
-        assert_eq!(pixmap.height(), 72);
+        let result = Pixmap::decode_png(&png).unwrap();
+        let expected = Pixmap::load_png(env!("REFERENCE_PNG")).unwrap();
 
-        let pixel = pixmap
-            .pixel(pixmap.width() / 2, pixmap.height() / 2)
-            .unwrap();
-        assert_eq!(pixel.demultiply().red(), 0xCC);
-        assert_eq!(pixel.demultiply().green(), 0xCC);
-        assert_eq!(pixel.demultiply().blue(), 0xCC);
+        assert_eq!(result.width(), expected.width());
+        assert_eq!(result.height(), expected.height());
+
+        for p in 0..result.pixels().len() {
+            let res = result.pixels()[p].demultiply();
+            let exp = expected.pixels()[p].demultiply();
+
+            let (res_r, res_g, res_b, res_a) = (res.red(), res.green(), res.blue(), res.alpha());
+            let (exp_r, exp_g, exp_b, exp_a) = (exp.red(), exp.green(), exp.blue(), exp.alpha());
+
+            // TODO: what's a good tolerance here?
+            assert!(
+                res_r.abs_diff(exp_r) < 10,
+                "res_r = {res_r}, exp_r = {exp_r}"
+            );
+            assert!(
+                res_g.abs_diff(exp_g) < 10,
+                "res_g = {res_g}, exp_g = {exp_g}"
+            );
+            assert!(
+                res_b.abs_diff(exp_b) < 10,
+                "res_b = {res_b}, exp_b = {exp_b}"
+            );
+            assert!(
+                res_a.abs_diff(exp_a) < 10,
+                "res_a = {res_a}, exp_a = {exp_a}"
+            );
+        }
     }
 }
