@@ -108,12 +108,8 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
             anti_alias: true,
             ..Default::default()
         };
-        let scale = Scale::<Dot, Pixel>::new(
-            (f32::hypot(transform.m11, transform.m21) + f32::hypot(transform.m12, transform.m22))
-                / 2.0,
-        );
         let stroke = Stroke {
-            width: (outline.width * scale).get(),
+            width: outline.width.get(),
             ..Default::default()
         };
         pixmap.stroke_path(&skia_path, &paint, &stroke, skia_transform, None);
