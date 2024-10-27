@@ -2,6 +2,7 @@ use std::fmt;
 
 use geom::Size;
 
+#[cfg(feature = "png")]
 use crate::png::Pixel;
 
 /// A drawing creation error
@@ -9,7 +10,7 @@ use crate::png::Pixel;
 #[non_exhaustive]
 pub enum Error {
     /// The drawing is larger than the maximum PNG dimensions
-    #[cfg(feature = "svg")]
+    #[cfg(feature = "png")]
     PngDimensionsError(Size<Pixel>),
 }
 
@@ -17,7 +18,7 @@ impl fmt::Display for Error {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            #[cfg(feature = "svg")]
+            #[cfg(feature = "png")]
             Self::PngDimensionsError(dims) => write!(f, "invalid PNG dimensions {dims:?}"),
         }
     }
@@ -31,6 +32,7 @@ mod tests {
 
     use crate::{Drawing, Options};
 
+    #[cfg(feature = "png")]
     #[test]
     fn error_fmt() {
         let key1 = key::Key::example();
