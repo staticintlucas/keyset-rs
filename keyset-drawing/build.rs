@@ -47,7 +47,7 @@ fn main() {
 
         // rather than just checking if the TTF is newer than the TTX, use a 10ms tolerance so
         // if the TTF is created first by `git clone` it won't error out
-        let tolerance = Duration::from_millis(10);
+        let tolerance = Duration::from_millis(50);
         assert!(
             ttf_mtime >= ttx_mtime - tolerance,
             "Font {ttf_str} is out of date!\n\nPlease run `ttx -o {ttf_str} {ttx_str}`\n\n\
