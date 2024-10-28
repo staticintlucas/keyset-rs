@@ -1,4 +1,4 @@
-use font::{Font, FontUnit, Glyph};
+use font::Font;
 use geom::{Dot, Path, Point, Rect, ToTransform, Vector};
 use log::warn;
 use profile::Profile;
@@ -30,7 +30,7 @@ pub fn draw(
         .map(|(i, text)| {
             let line_offset = n_lines - f32::saturating_from(i) - 1.0;
 
-            let path = text_path(text, font) * text_xform;
+            let path = font.render_string(text) * text_xform;
             let width = path.bounds.width();
 
             // Check to ensure our legend fits
@@ -70,25 +70,6 @@ pub fn draw(
     }
 }
 
-fn text_path(text: &str, font: &Font) -> Path<FontUnit> {
-    let mut chars = text.chars();
-
-    let first = font.glyph_or_default(chars.next().unwrap_or_else(|| unreachable!())); // We should never have an empty legend here
-
-    let mut char_paths = Vec::with_capacity(text.chars().count());
-    char_paths.push(first.path);
-    let mut pos = first.advance;
-
-    for (lhs, rhs) in text.chars().zip(chars) {
-        pos += font.kerning(lhs, rhs);
-        let Glyph { path, advance, .. } = font.glyph_or_default(rhs);
-        char_paths.push(path.translate(Vector::new(pos.get(), 0.0)));
-        pos += advance;
-    }
-
-    Path::from_slice(&char_paths)
-}
-
 #[cfg(test)]
 mod tests {
     use color::Color;
@@ -125,7 +106,7 @@ mod tests {
         };
         let path = draw(&legend, &font, &profile, top_rect, Vector::new(1.0, 1.0));
 
-        assert_eq!(path.data.len(), font.notdef().path.len());
+        assert_eq!(path.data.len(), 12); // == .notdef length
 
         let legend = ::key::Legend {
             text: Text::parse_from("Some really long legend that will totally need to be squished"),

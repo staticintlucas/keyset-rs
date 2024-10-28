@@ -23,9 +23,10 @@ workspace = true
 [dependencies]
 geom.workspace = true
 
-log.workspace = true
+itertools.workspace = true
 ouroboros.workspace = true
-ttf-parser.workspace = true
+rustybuzz.workspace = true
+saturate.workspace = true
 
 [dev-dependencies]
 assert_matches.workspace = true

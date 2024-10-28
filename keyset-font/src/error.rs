@@ -1,6 +1,6 @@
 use std::fmt;
 
-use ttf_parser::FaceParsingError;
+use rustybuzz::ttf_parser::FaceParsingError;
 
 /// A font permissions error
 ///
@@ -30,13 +30,15 @@ impl fmt::Display for PermissionError {
 impl std::error::Error for PermissionError {}
 
 /// A font error
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum Error {
     /// There was an error parsing the font face
     ParsingError(FaceParsingError),
     /// The font's permissions don't allow us to use it
     PermissionError(PermissionError),
+    /// Missing required property
+    MissingProperty(String),
 }
 
 impl fmt::Display for Error {
@@ -45,6 +47,7 @@ impl fmt::Display for Error {
         match *self {
             Self::ParsingError(ref error) => write!(f, "error parsing font: {error}"),
             Self::PermissionError(ref error) => write!(f, "permissions error: {error}"),
+            Self::MissingProperty(ref prop) => write!(f, "missing property {prop}"),
         }
     }
 }
@@ -55,6 +58,7 @@ impl std::error::Error for Error {
         match *self {
             Self::ParsingError(ref error) => Some(error),
             Self::PermissionError(ref error) => Some(error),
+            Self::MissingProperty(..) => None,
         }
     }
 }
@@ -80,46 +84,50 @@ pub type Result<T> = std::result::Result<T, Error>;
 mod tests {
     use std::error::Error as _;
 
-    use ttf_parser::Face;
+    use crate::{Face, Font};
+    use rustybuzz::ttf_parser;
 
     use super::*;
 
     #[test]
     fn error_fmt() {
-        let error = crate::Font::from_ttf(b"invalid".to_vec()).unwrap_err();
+        let error = Font::from_ttf(b"invalid".to_vec()).unwrap_err();
         assert_eq!(format!("{error}"), "error parsing font: unknown magic");
 
-        let error =
-            crate::Face::from_ttf(std::fs::read(env!("RESTRICTED_TTF")).unwrap()).unwrap_err();
+        let error = Face::from_ttf(std::fs::read(env!("RESTRICTED_TTF")).unwrap()).unwrap_err();
         assert_eq!(format!("{error}"), "permissions error: restricted license");
 
-        let error =
-            crate::Face::from_ttf(std::fs::read(env!("NO_SUBSET_TTF")).unwrap()).unwrap_err();
+        let error = Face::from_ttf(std::fs::read(env!("NO_SUBSET_TTF")).unwrap()).unwrap_err();
         assert_eq!(format!("{error}"), "permissions error: no subsetting");
 
-        let error = crate::Face::from_ttf(std::fs::read(env!("BITMAP_EMBED_ONLY_TTF")).unwrap())
-            .unwrap_err();
+        let error =
+            Face::from_ttf(std::fs::read(env!("BITMAP_EMBED_ONLY_TTF")).unwrap()).unwrap_err();
         assert_eq!(
             format!("{error}"),
             "permissions error: bitmap embedding only"
         );
+
+        let error = Font::from_ttf(std::fs::read(env!("NULL_TTF")).unwrap()).unwrap_err();
+        assert_eq!(format!("{error}"), "missing property font family");
     }
 
     #[test]
     fn error_source() {
-        let error = crate::Font::from_ttf(b"invalid".to_vec()).unwrap_err();
+        let error = Face::from_ttf(b"invalid".to_vec()).unwrap_err();
         assert!(error.source().is_some());
         assert_eq!(format!("{}", error.source().unwrap()), "unknown magic");
 
-        let error =
-            crate::Face::from_ttf(std::fs::read(env!("RESTRICTED_TTF")).unwrap()).unwrap_err();
+        let error = Face::from_ttf(std::fs::read(env!("RESTRICTED_TTF")).unwrap()).unwrap_err();
         assert!(error.source().is_some());
         assert_eq!(format!("{}", error.source().unwrap()), "restricted license");
+
+        let error = Font::from_ttf(std::fs::read(env!("NULL_TTF")).unwrap()).unwrap_err();
+        assert!(error.source().is_none());
     }
 
     #[test]
     fn error_from() {
-        let result = Face::parse(b"invalid", 0);
+        let result = ttf_parser::Face::parse(b"invalid", 0);
         let error: Error = result.unwrap_err().into();
         assert_eq!(format!("{error}"), "error parsing font: unknown magic");
 

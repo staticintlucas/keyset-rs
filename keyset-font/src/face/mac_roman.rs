@@ -1,4 +1,4 @@
-type PlatformId = ttf_parser::PlatformId;
+type PlatformId = rustybuzz::ttf_parser::PlatformId;
 
 // References:
 // https://github.com/fonttools/fonttools/issues/236
@@ -468,7 +468,7 @@ mod tests {
 
     #[test]
     fn test_is_mac_roman_encoding() {
-        use ttf_parser::PlatformId as Plat;
+        use rustybuzz::ttf_parser::PlatformId as Plat;
         use MacEncodingId as Enc;
         use MacLanguageId as Lang;
 

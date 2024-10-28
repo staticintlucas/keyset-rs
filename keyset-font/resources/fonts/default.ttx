@@ -9,6 +9,9 @@
     <namerecord nameID="1" platformID="0" platEncID="4" langID="0x0" unicode="True">
       default
     </namerecord>
+    <namerecord nameID="4" platformID="0" platEncID="4" langID="0x0" unicode="True">
+      default regular
+    </namerecord>
   </name>
 
   <head>
