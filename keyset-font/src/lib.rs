@@ -15,7 +15,7 @@ use log::warn;
 use ttf_parser::GlyphId;
 
 pub use self::error::{Error, Result};
-use face::Face;
+use face::{is_mac_roman_encoding, mac_roman_decode, Face};
 
 /// Unit within a font
 #[derive(Debug, Clone, Copy)]
@@ -174,11 +174,22 @@ impl Font {
     #[inline]
     pub fn family(&self) -> &String {
         self.family.get_or_init(|| {
-            self.face
+            let mut names = self
+                .face
                 .names()
                 .into_iter()
-                .filter(|n| n.name_id == ttf_parser::name_id::FAMILY)
+                .filter(|n| n.name_id == ttf_parser::name_id::FAMILY);
+
+            names
+                .clone()
                 .find_map(|n| n.to_string())
+                .or_else(|| {
+                    names
+                        .find(|n| {
+                            is_mac_roman_encoding(n.platform_id, n.encoding_id, n.language_id)
+                        })
+                        .map(|name| mac_roman_decode(name.name))
+                })
                 .unwrap_or_else(|| {
                     warn!("cannot read font family name");
                     "unknown".to_owned()
@@ -192,11 +203,22 @@ impl Font {
     #[inline]
     pub fn name(&self) -> &String {
         self.name.get_or_init(|| {
-            self.face
+            let mut names = self
+                .face
                 .names()
                 .into_iter()
-                .filter(|n| n.name_id == ttf_parser::name_id::FULL_NAME)
+                .filter(|n| n.name_id == ttf_parser::name_id::FULL_NAME);
+
+            names
+                .clone()
                 .find_map(|n| n.to_string())
+                .or_else(|| {
+                    names
+                        .find(|n| {
+                            is_mac_roman_encoding(n.platform_id, n.encoding_id, n.language_id)
+                        })
+                        .map(|name| mac_roman_decode(name.name))
+                })
                 .unwrap_or_else(|| {
                     warn!("cannot read font full name");
                     "unknown".to_owned()

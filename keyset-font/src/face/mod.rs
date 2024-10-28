@@ -1,6 +1,8 @@
 // TODO these warnings originate from within ouroboros
 #![allow(clippy::future_not_send, clippy::redundant_pub_crate)]
 
+mod mac_roman;
+
 use std::fmt::Debug;
 
 use log::warn;
@@ -8,6 +10,7 @@ use ouroboros::self_referencing;
 use ttf_parser::GlyphId;
 
 use crate::Result;
+pub use mac_roman::*;
 
 #[self_referencing]
 pub(crate) struct Face {
