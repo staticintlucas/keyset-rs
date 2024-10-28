@@ -118,10 +118,22 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
 
 #[cfg(test)]
 mod tests {
+    use isclose::assert_is_close_abs_tol;
+    use itertools::izip;
     use key::Key;
-    use tiny_skia::Pixmap;
+    use tiny_skia::{Color, Pixmap, PremultipliedColorU8};
 
     use crate::{Drawing, Options};
+
+    fn premul_u8_to_f32(color: PremultipliedColorU8) -> Color {
+        let [r, g, b, a] =
+            [color.red(), color.green(), color.blue(), color.alpha()].map(|c| f32::from(c) / 255.0);
+        if color.alpha() == 0 {
+            Color::TRANSPARENT
+        } else {
+            Color::from_rgba(r, g, b, a).unwrap()
+        }
+    }
 
     #[test]
     fn test_to_png() {
@@ -137,30 +149,18 @@ mod tests {
         assert_eq!(result.width(), expected.width());
         assert_eq!(result.height(), expected.height());
 
-        for p in 0..result.pixels().len() {
-            let res = result.pixels()[p].demultiply();
-            let exp = expected.pixels()[p].demultiply();
+        let result = result.pixels().iter().map(|&c| premul_u8_to_f32(c));
+        let expected = expected.pixels().iter().map(|&c| premul_u8_to_f32(c));
 
+        for (res, exp) in izip!(result, expected) {
             let (res_r, res_g, res_b, res_a) = (res.red(), res.green(), res.blue(), res.alpha());
             let (exp_r, exp_g, exp_b, exp_a) = (exp.red(), exp.green(), exp.blue(), exp.alpha());
 
             // TODO: what's a good tolerance here?
-            assert!(
-                res_r.abs_diff(exp_r) < 10,
-                "res_r = {res_r}, exp_r = {exp_r}"
-            );
-            assert!(
-                res_g.abs_diff(exp_g) < 10,
-                "res_g = {res_g}, exp_g = {exp_g}"
-            );
-            assert!(
-                res_b.abs_diff(exp_b) < 10,
-                "res_b = {res_b}, exp_b = {exp_b}"
-            );
-            assert!(
-                res_a.abs_diff(exp_a) < 10,
-                "res_a = {res_a}, exp_a = {exp_a}"
-            );
+            assert_is_close_abs_tol!(res_r, exp_r, 0.025);
+            assert_is_close_abs_tol!(res_g, exp_g, 0.025);
+            assert_is_close_abs_tol!(res_b, exp_b, 0.025);
+            assert_is_close_abs_tol!(res_a, exp_a, 0.025);
         }
     }
 }
