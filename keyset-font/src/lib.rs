@@ -5,7 +5,7 @@
 mod error;
 mod face;
 
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use itertools::izip;
 use rustybuzz::ttf_parser::name_id;
@@ -23,7 +23,10 @@ pub struct FontUnit;
 
 /// A parsed font
 #[derive(Debug, Clone)]
-pub struct Font {
+pub struct Font(Arc<FontData>);
+
+#[derive(Debug, Clone)]
+struct FontData {
     face: Face,
     family: String,
     name: String,
@@ -34,13 +37,15 @@ pub struct Font {
 impl Default for Font {
     #[inline]
     fn default() -> Self {
-        static FONT: OnceLock<Font> = OnceLock::new();
+        const FONT_TTF: &[u8] = include_bytes!(env!("DEFAULT_TTF"));
+        static DEFAULT: OnceLock<Font> = OnceLock::new();
 
-        FONT.get_or_init(|| {
-            Self::from_ttf(include_bytes!(env!("DEFAULT_TTF")).to_vec())
-                .unwrap_or_else(|_| unreachable!("default font is tested"))
-        })
-        .clone()
+        DEFAULT
+            .get_or_init(|| {
+                Self::from_ttf(FONT_TTF.to_owned())
+                    .unwrap_or_else(|_| unreachable!("default font is tested"))
+            })
+            .clone()
     }
 }
 
@@ -75,34 +80,36 @@ impl Font {
                 .into(),
         );
 
-        Ok(Self {
+        let data = FontData {
             face,
             family,
             name,
             cap_height,
             x_height,
-        })
+        };
+
+        Ok(Self(Arc::new(data)))
     }
 
     /// The font family name
     #[inline]
     #[must_use]
     pub fn family(&self) -> &str {
-        &self.family
+        &self.0.family
     }
 
     /// The font's full name
     #[inline]
     #[must_use]
     pub fn name(&self) -> &str {
-        &self.name
+        &self.0.name
     }
 
     /// The number font units per EM
     #[inline]
     #[must_use]
     pub fn em_size(&self) -> Length<FontUnit> {
-        Length::new(self.face.units_per_em().into())
+        Length::new(self.0.face.units_per_em().into())
     }
 
     /// The capital height in font units
@@ -110,8 +117,8 @@ impl Font {
     /// Measures the height of the uppercase `'H'` if not set by the font
     #[inline]
     #[must_use]
-    pub const fn cap_height(&self) -> Length<FontUnit> {
-        self.cap_height
+    pub fn cap_height(&self) -> Length<FontUnit> {
+        self.0.cap_height
     }
 
     /// The x-height in font units
@@ -119,15 +126,15 @@ impl Font {
     /// Measures the height of the lowercase `'x'` if not set by the font
     #[inline]
     #[must_use]
-    pub const fn x_height(&self) -> Length<FontUnit> {
-        self.x_height
+    pub fn x_height(&self) -> Length<FontUnit> {
+        self.0.x_height
     }
 
     /// The font's ascender in font units
     #[inline]
     #[must_use]
     pub fn ascender(&self) -> Length<FontUnit> {
-        Length::new(self.face.ascender().into())
+        Length::new(self.0.face.ascender().into())
     }
 
     /// The font's descender in font units
@@ -136,14 +143,14 @@ impl Font {
     #[inline]
     #[must_use]
     pub fn descender(&self) -> Length<FontUnit> {
-        Length::new((-self.face.descender()).into())
+        Length::new((-self.0.face.descender()).into())
     }
 
     /// The font's line gap in font units
     #[inline]
     #[must_use]
     pub fn line_gap(&self) -> Length<FontUnit> {
-        Length::new(self.face.line_gap().into())
+        Length::new(self.0.face.line_gap().into())
     }
 
     /// The font's line height in font units
@@ -165,21 +172,21 @@ impl Font {
     #[inline]
     #[must_use]
     pub fn slope(&self) -> Angle {
-        Angle::degrees(-self.face.italic_angle())
+        Angle::degrees(-self.0.face.italic_angle())
     }
 
     /// The number of glyph outlines in the font
     #[inline]
     #[must_use]
     pub fn num_glyphs(&self) -> usize {
-        self.face.number_of_glyphs().into()
+        self.0.face.number_of_glyphs().into()
     }
 
     /// Checks if the font has a glyph for the given char
     #[inline]
     #[must_use]
     pub fn has_glyph(&self, code_point: char) -> bool {
-        self.face.glyph_index(code_point).is_some()
+        self.0.face.glyph_index(code_point).is_some()
     }
 
     /// Renders a string of text to a path
@@ -192,14 +199,14 @@ impl Font {
 
         // TODO: cache plan?
         let plan = ShapePlan::new(
-            self.face.inner(),
+            self.0.face.inner(),
             buffer.direction(),
             Some(buffer.script()),
             buffer.language().as_ref(),
             &[],
         );
 
-        let glyph_buffer = rustybuzz::shape_with_plan(self.face.inner(), &plan, buffer);
+        let glyph_buffer = rustybuzz::shape_with_plan(self.0.face.inner(), &plan, buffer);
 
         let infos = glyph_buffer.glyph_infos();
         let positions = glyph_buffer.glyph_positions();
@@ -207,7 +214,7 @@ impl Font {
         let capacity = infos
             .iter()
             .map(|info| info.glyph_id.saturating_into()) // guaranteed in u16 range by rustybuzz
-            .map(|glyph_id| self.face.outline_length(glyph_id))
+            .map(|glyph_id| self.0.face.outline_length(glyph_id))
             .sum();
 
         let mut builder = PathBuilder::with_capacity(capacity);
@@ -222,7 +229,7 @@ impl Font {
                 pos.y_offset.saturating_into(),
             );
 
-            self.face.outline_glyph(
+            self.0.face.outline_glyph(
                 info.glyph_id.saturating_into(), // guaranteed to be in u16 range by rustybuzz
                 &mut builder,
                 position + offset,
@@ -246,11 +253,11 @@ mod tests {
     fn font_default() {
         let default = Font::default();
 
-        assert_matches!(default.face.number_of_glyphs(), 1); // Only .notdef
-        assert_eq!(default.family, "default");
-        assert_eq!(default.name, "default regular");
-        assert_is_close!(default.cap_height, Length::new(714.0));
-        assert_is_close!(default.x_height, Length::new(523.0));
+        assert_matches!(default.0.face.number_of_glyphs(), 1); // Only .notdef
+        assert_eq!(default.0.family, "default");
+        assert_eq!(default.0.name, "default regular");
+        assert_is_close!(default.0.cap_height, Length::new(714.0));
+        assert_is_close!(default.0.x_height, Length::new(523.0));
     }
 
     #[test]
@@ -258,11 +265,11 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let font = Font::from_ttf(data).unwrap();
 
-        assert_eq!(font.face.number_of_glyphs(), 3);
-        assert_eq!(font.family, "demo");
-        assert_eq!(font.name, "demo regular");
-        assert_eq!(font.cap_height, Length::new(650.0));
-        assert_eq!(font.x_height, Length::new(450.0));
+        assert_eq!(font.0.face.number_of_glyphs(), 3);
+        assert_eq!(font.0.family, "demo");
+        assert_eq!(font.0.name, "demo regular");
+        assert_eq!(font.0.cap_height, Length::new(650.0));
+        assert_eq!(font.0.x_height, Length::new(450.0));
     }
 
     #[test]

@@ -4,7 +4,6 @@
 mod mac_roman;
 
 use std::fmt;
-use std::sync::Arc;
 
 use ouroboros::self_referencing;
 use rustybuzz::ttf_parser::{self, GlyphId};
@@ -17,7 +16,7 @@ use crate::{FontUnit, Result};
 
 #[self_referencing]
 pub struct Face {
-    data: Arc<[u8]>,
+    data: Box<[u8]>,
     #[borrows(data)]
     #[covariant]
     inner: rustybuzz::Face<'this>,
@@ -45,7 +44,7 @@ impl fmt::Debug for Face {
 impl Face {
     pub fn from_ttf(data: Vec<u8>) -> Result<Self> {
         FaceTryBuilder {
-            data: data.into_boxed_slice().into(),
+            data: data.into_boxed_slice(),
             inner_builder: |data| {
                 let face = ttf_parser::Face::parse(data, 0)?;
 
