@@ -157,7 +157,7 @@ impl Default for Key {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use assert_matches::assert_matches;
 
     use super::*;
