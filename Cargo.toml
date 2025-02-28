@@ -90,3 +90,4 @@ unwrap_used = "warn"
 
 suboptimal-flops = { level = "allow", priority = 1 } # TODO rust-lang/rust-clippy#6867
 module-name-repetitions = { level = "allow", priority = 1 } # TODO rust-lang/rust-clippy#8524
+literal-string-with-formatting-args = { level = "allow", priority = 1 } # TODO rust-lang/rust-clippy#13885, will be fixed in 1.87
