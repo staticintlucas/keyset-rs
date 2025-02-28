@@ -104,7 +104,7 @@ allow = [
 
     "MIT",
     "Apache-2.0",
-    "Unicode-DFS-2016", # Used by unicode-ident for data files
+    "Unicode-3.0", # Used by unicode-ident for data files
     "BSD-2-Clause", # Used by arrayref
     "BSD-3-Clause", # Used by tiny-skia
     # "Zlib", # Used by slotmap (dependency of fontdb)
@@ -219,8 +219,6 @@ skip = [
 
     # TODO remove this when png updates to 2.x
     "bitflags@1.3.2",
-    # TODO remove this when ouroboros updates to 0.13.x
-    "itertools@0.12.1",
 ]
 # Similarly to `skip` allows you to skip certain crates during duplicate
 # detection. Unlike skip, it also includes the entire tree of transitive
