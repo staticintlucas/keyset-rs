@@ -11,7 +11,7 @@
 //! use keyset::{Drawing, Font, kle, Profile};
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!
+//! #
 //! // JSON output from http://www.keyboard-layout-editor.com/
 //! let kle = r#"[
 //!     [{"f": 4}, "¬\n`", "!\n1", "\"\n2", "£\n3", "$\n4", "%\n5", "^\n6", "&\n7", "*\n8", "(\n9", ")\n0", "_\n-", "+\n=", {"w": 2, "f": 3, "a": 6}, "Backspace"],
@@ -61,7 +61,7 @@
 //! std::fs::write(path.join("output.svg"), drawing.to_svg())?;
 //! std::fs::write(path.join("output.png"), drawing.to_png(96.0)?)?;
 //! std::fs::write(path.join("output.pdf"), drawing.to_pdf())?;
-//!
+//! #
 //! # Ok(())
 //! # }
 //! ```

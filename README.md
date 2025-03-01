@@ -9,14 +9,16 @@
 [codecov]: https://app.codecov.io/github/staticintlucas/keyset-rs
 [crates]: https://crates.io/crates/keyset
 
+<!-- cargo-rdme start -->
+
 A library for creating pretty keyset layout diagrams using correct fonts and icons
 
-This project is primarily intended to serve as the backend for [pykeyset],
-but can also be used directly in Rust.
+This project is primarily intended to serve as the backend for [pykeyset], but can also be used
+directly in Rust.
 
 [pykeyset]: https://github.com/staticintlucas/pykeyset
 
-# Example
+## Example
 
 ```rust
 use keyset::{Drawing, Font, kle, Profile};
@@ -72,20 +74,13 @@ std::fs::write(path.join("output.png"), drawing.to_png(96.0)?)?;
 std::fs::write(path.join("output.pdf"), drawing.to_pdf())?;
 ```
 
+<!-- cargo-rdme end -->
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
-
-You can install the [pre-commit] hook (which checks formatting, etc) by running:
-
-```sh
-pip install -U pre-commit
-pre-commit install
-```
-
-[pre-commit]: https://pre-commit.com/
 
 ## Licence
 
