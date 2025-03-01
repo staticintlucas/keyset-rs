@@ -110,7 +110,6 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
                 content.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
                 point = p;
             }
-            // GRCOV_EXCL_START - no quads in example
             PathSegment::QuadraticBezier(d1, d) => {
                 // Convert quad to cubic since PostScript doesn't have quadratic Béziers
                 let (d1, d2) = (d1 * (2.0 / 3.0), d + (d1 - d) * (2.0 / 3.0));
@@ -118,7 +117,6 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
                 content.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
                 point = p;
             }
-            // GRCOV_EXCL_STOP
             PathSegment::Close => {
                 point = origin;
                 content.close_path();

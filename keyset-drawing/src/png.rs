@@ -63,13 +63,11 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
                     builder.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
                     point = p;
                 }
-                // GRCOV_EXCL_START - no quads in example
                 PathSegment::QuadraticBezier(d1, d) => {
                     let (p1, p) = (point + d1, point + d);
                     builder.quad_to(p1.x, p1.y, p.x, p.y);
                     point = p;
                 }
-                // GRCOV_EXCL_STOP
                 PathSegment::Close => {
                     builder.close();
                     point = origin;
@@ -81,7 +79,7 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
     };
 
     let Some(skia_path) = path_builder.finish() else {
-        return; // GRCOV_EXCL_LINE
+        return;
     };
 
     let skia_transform = SkiaTransform {

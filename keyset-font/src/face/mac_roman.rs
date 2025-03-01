@@ -55,7 +55,6 @@ impl TryFrom<u16> for MacEncodingId {
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
-            // GRCOV_EXCL_START // We cover some of these lines but not all
             0 => Ok(Self::Roman),
             1 => Ok(Self::Japanese),
             2 => Ok(Self::ChineseTraditional),
@@ -92,7 +91,6 @@ impl TryFrom<u16> for MacEncodingId {
             37 => Ok(Self::Icelandic),
             38 => Ok(Self::Romanian),
             _ => Err(()),
-            // GRCOV_EXCL_STOP
         }
     }
 }
@@ -232,7 +230,6 @@ impl TryFrom<u16> for MacLanguageId {
     #[allow(clippy::too_many_lines)]
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
-            // GRCOV_EXCL_START // We cover some of these lines but not all
             0 => Ok(Self::English),
             1 => Ok(Self::French),
             2 => Ok(Self::German),
@@ -352,7 +349,6 @@ impl TryFrom<u16> for MacLanguageId {
             149 => Ok(Self::Greenlandic),
             150 => Ok(Self::AzerbaijaniRoman),
             _ => Err(()),
-            // GRCOV_EXCL_STOP
         }
     }
 }

@@ -71,30 +71,16 @@ jobs:
       - name: Setup toolchain
         uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           components: llvm-tools
-      - name: Setup grcov
-        run: cargo install grcov
-      - name: Run cargo test
-        run: cargo test --lib --all-features
-        env:
-          RUSTFLAGS: -Cinstrument-coverage
-          LLVM_PROFILE_FILE: keyset-rs-%p-%m.profraw
-      - name: Run grcov
-        run: >-
-          grcov .
-          --source-dir .
-          --binary-path ./target/debug/
-          --output-type lcov
-          --branch
-          --llvm
-          --ignore-not-existing
-          --output-path ./lcov.info
-          --ignore '/*'
-          --ignore '**/build.rs'
-          --excl-line '(^\s*#\[derive\([\w, ]*\)\]|unreachable!\(\))|GRCOV_EXCL_LINE'
-          --excl-start 'GRCOV_EXCL_START'
-          --excl-stop 'GRCOV_EXCL_STOP'
+      - name: Setup cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+      - name: Show coverage
+        run: cargo llvm-cov --lib
+      - name: Generate coverage report
+        run: cargo llvm-cov --lib --codecov --output-path lcov.info
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4
         with:

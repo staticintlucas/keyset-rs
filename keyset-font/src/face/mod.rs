@@ -163,7 +163,6 @@ impl Face {
                 self.0 += 1;
             }
 
-            // GRCOV_EXCL_START // these don't exist in the test fonts, but they're pretty trivial
             fn quad_to(&mut self, _x1: f32, _y1: f32, _x: f32, _y: f32) {
                 self.0 += 1;
             }
@@ -171,7 +170,6 @@ impl Face {
             fn curve_to(&mut self, _x1: f32, _y1: f32, _x2: f32, _y2: f32, _x: f32, _y: f32) {
                 self.0 += 1;
             }
-            // GRCOV_EXCL_STOP
 
             fn close(&mut self) {
                 self.0 += 1;
@@ -203,7 +201,6 @@ impl Face {
                 self.builder.abs_line(Point::new(x, y) + self.offset);
             }
 
-            // GRCOV_EXCL_START // these don't exist in the test fonts, but they're pretty trivial
             fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
                 self.builder.abs_quadratic_bezier(
                     Point::new(x1, y1) + self.offset,
@@ -218,7 +215,6 @@ impl Face {
                     Point::new(x, y) + self.offset,
                 );
             }
-            // GRCOV_EXCL_STOP
 
             fn close(&mut self) {
                 self.builder.close();
