@@ -4,6 +4,7 @@
 mod mac_roman;
 
 use std::fmt;
+use std::sync::Arc;
 
 use geom::{PathBuilder, Point, Vector};
 use ouroboros::self_referencing;
@@ -15,7 +16,7 @@ use mac_roman::{is_mac_roman_encoding, mac_roman_decode};
 
 #[self_referencing]
 pub struct Face {
-    data: Box<[u8]>,
+    data: Arc<[u8]>,
     #[borrows(data)]
     #[covariant]
     inner: rustybuzz::Face<'this>,
@@ -43,7 +44,7 @@ impl fmt::Debug for Face {
 impl Face {
     pub fn from_ttf(data: Vec<u8>) -> Result<Self> {
         FaceTryBuilder {
-            data: data.into_boxed_slice(),
+            data: data.into_boxed_slice().into(),
             inner_builder: |data| {
                 let face = ttf_parser::Face::parse(data, 0)?;
 
