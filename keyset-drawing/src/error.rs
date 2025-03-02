@@ -30,7 +30,7 @@ impl std::error::Error for Error {}
 mod tests {
     use geom::Point;
 
-    use crate::{Drawing, Options};
+    use crate::Template;
 
     #[cfg(feature = "png")]
     #[test]
@@ -42,7 +42,7 @@ mod tests {
             tmp
         };
 
-        let error = Drawing::new(&[key1, key2], &Options::default())
+        let error = Template::default().draw(&[key1, key2])
             .to_png(1.0)
             .unwrap_err();
 

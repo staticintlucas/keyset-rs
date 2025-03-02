@@ -158,16 +158,16 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
 mod tests {
     use key::Key;
 
-    use crate::{Drawing, Options};
+    use crate::Template;
 
     #[test]
     fn test_to_pdf() {
-        let options = Options {
+        let template = Template {
             show_margin: true, // to give us an unfilled path
             ..Default::default()
         };
         let keys = [Key::example()];
-        let drawing = Drawing::new(&keys, &options);
+        let drawing = template.draw(&keys);
 
         let pdf = drawing.to_pdf();
         let ai = drawing.to_ai();

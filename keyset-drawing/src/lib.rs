@@ -34,29 +34,6 @@ pub struct Drawing {
 }
 
 impl Drawing {
-    /// Create a new drawing using the given options
-    #[must_use]
-    pub fn new(keys: &[Key], options: &Options) -> Self {
-        let bounds = keys
-            .iter()
-            .map(|k| k.shape.outer_rect().translate(k.position.to_vector()))
-            .fold(
-                Rect::from_origin_and_size(Point::origin(), Size::new(1.0, 1.0)),
-                |rect, key| Rect::new(rect.min.min(key.min), rect.max.max(key.max)),
-            );
-
-        let keys = keys
-            .iter()
-            .map(|key| KeyDrawing::new(key, options))
-            .collect();
-
-        Self {
-            bounds,
-            keys,
-            scale: options.scale,
-        }
-    }
-
     /// Encode the drawing as an SVG
     #[cfg(feature = "svg")]
     #[inline]
@@ -111,9 +88,9 @@ impl Drawing {
 #[derive(Clone, Copy)]
 struct NonExhaustive;
 
-/// Options for generating a drawing
+/// Template for generating a drawing
 #[derive(Clone)]
-pub struct Options {
+pub struct Template {
     /// The keycap profile used for drawing keys
     pub profile: Profile,
     /// The font used for drawing legends
@@ -133,7 +110,32 @@ pub struct Options {
     pub __non_exhaustive: NonExhaustive,
 }
 
-impl Default for Options {
+impl Template {
+    /// Draw the given keys using this template
+    #[must_use]
+    pub fn draw(&self, keys: &[Key]) -> Drawing {
+        let bounds = keys
+            .iter()
+            .map(|k| k.shape.outer_rect().translate(k.position.to_vector()))
+            .fold(
+                Rect::from_origin_and_size(Point::origin(), Size::new(1.0, 1.0)),
+                |rect, key| Rect::new(rect.min.min(key.min), rect.max.max(key.max)),
+            );
+
+        let keys = keys
+            .iter()
+            .map(|key| KeyDrawing::new(key, self))
+            .collect();
+
+        Drawing {
+            bounds,
+            keys,
+            scale: self.scale,
+        }
+    }
+}
+
+impl Default for Template {
     #[inline]
     fn default() -> Self {
         Self {
@@ -148,9 +150,9 @@ impl Default for Options {
     }
 }
 
-impl fmt::Debug for Options {
+impl fmt::Debug for Template {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut dbg = f.debug_struct("Options");
+        let mut dbg = f.debug_struct("Template");
         dbg.field("profile", &self.profile)
             .field("font", &self.font)
             .field("scale", &self.scale)
@@ -174,40 +176,40 @@ mod tests {
     use super::*;
 
     #[test]
-    fn options() {
-        let options = Options::default();
+    fn template() {
+        let template = Template::default();
 
-        assert_is_close!(options.scale, 1.0);
-        assert_eq!(options.font.num_glyphs(), 1); // .notdef
+        assert_is_close!(template.scale, 1.0);
+        assert_eq!(template.font.num_glyphs(), 1); // .notdef
 
         let profile = Profile::default();
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
-        let options = Options {
-            profile,
-            font,
+        let template = Template {
+            profile: profile,
+            font: font,
             scale: 2.0,
             outline_width: Length::new(20.0),
             show_keys: false,
             show_margin: true,
-            ..Options::default()
+            ..Template::default()
         };
 
         assert_is_close!(
-            options.profile.typ.depth(),
+            template.profile.typ.depth(),
             Length::<Mm>::new(1.0) * DOT_PER_MM
         );
-        assert_eq!(options.font.num_glyphs(), 3); // .notdef, A, V
-        assert_is_close!(options.scale, 2.0);
+        assert_eq!(template.font.num_glyphs(), 3); // .notdef, A, V
+        assert_is_close!(template.scale, 2.0);
     }
 
     #[test]
-    fn options_debug() {
-        let options = Options::default();
+    fn template_debug() {
+        let template = Template::default();
 
         assert_eq!(
-            format!("{options:?}"),
+            format!("{template:?}"),
             format!(
-                "Options {{ profile: {:?}, font: {:?}, scale: {:?}, outline_width: {:?}, \
+                "Template {{ profile: {:?}, font: {:?}, scale: {:?}, outline_width: {:?}, \
                     show_keys: {:?}, show_margin: {:?} }}",
                 Profile::default(),
                 Font::default(),
@@ -220,15 +222,15 @@ mod tests {
     }
 
     #[test]
-    fn options_draw() {
-        let options = Options::default();
+    fn template_draw() {
+        let template = Template::default();
         let keys = [Key::example()];
 
-        let drawing = Drawing::new(&keys, &options);
+        let drawing = template.draw(&keys);
 
         assert_is_close!(drawing.bounds.width(), 1.0);
         assert_is_close!(drawing.bounds.height(), 1.0);
         assert_eq!(drawing.keys.len(), 1);
-        assert_is_close!(drawing.scale, options.scale);
+        assert_is_close!(drawing.scale, template.scale);
     }
 }

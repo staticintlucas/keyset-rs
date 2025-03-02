@@ -57,15 +57,15 @@ let profile = Profile::from_json(profile)?;
 let font = Font::default();
 // Or load an actual font with Font::from_ttf(std::fs::read("font.ttf")?)?
 
-// Set drawing options
-let options = drawing::Options {
+// Create template (tells keyset-rs how to draw the keys)
+let template = drawing::Template {
     profile,
     font,
     ..Default::default()
 };
 
 // Create drawing
-let drawing = Drawing::new(&keys, &options);
+let drawing = template.draw(&keys);
 
 // Save output
 let path = std::env::current_dir()?;

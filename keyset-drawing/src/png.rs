@@ -121,7 +121,7 @@ mod tests {
     use key::Key;
     use tiny_skia::{Color, Pixmap, PremultipliedColorU8};
 
-    use crate::{Drawing, Options};
+    use crate::Template;
 
     fn premul_u8_to_f32(color: PremultipliedColorU8) -> Color {
         let [r, g, b, a] =
@@ -135,9 +135,9 @@ mod tests {
 
     #[test]
     fn test_to_png() {
-        let options = Options::default();
+        let template = Template::default();
         let keys = [Key::example()];
-        let drawing = Drawing::new(&keys, &options);
+        let drawing = template.draw(&keys);
 
         let png = drawing.to_png(96.0).unwrap();
 

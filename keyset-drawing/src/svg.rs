@@ -95,16 +95,16 @@ mod tests {
 
     use key::Key;
 
-    use crate::{Drawing, Options};
+    use crate::Template;
 
     #[test]
     fn test_to_svg() {
-        let options = Options {
+        let template = Template {
             show_margin: true,
             ..Default::default()
         };
         let keys = [Key::example()];
-        let drawing = Drawing::new(&keys, &options);
+        let drawing = template.draw(&keys);
 
         let svg = drawing.to_svg();
 
