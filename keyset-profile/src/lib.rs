@@ -437,16 +437,6 @@ impl Default for Profile {
     }
 }
 
-impl Profile {
-    /// A static reference to the default profile
-    #[inline]
-    pub fn default_ref() -> &'static Self {
-        static PROFILE: OnceLock<Profile> = OnceLock::new();
-
-        PROFILE.get_or_init(Self::default)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;

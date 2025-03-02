@@ -36,7 +36,7 @@ pub struct Drawing {
 impl Drawing {
     /// Create a new drawing using the given options
     #[must_use]
-    pub fn new(keys: &[Key], options: &Options<'_>) -> Self {
+    pub fn new(keys: &[Key], options: &Options) -> Self {
         let bounds = keys
             .iter()
             .map(|k| k.shape.outer_rect().translate(k.position.to_vector()))
@@ -113,11 +113,11 @@ struct NonExhaustive;
 
 /// Options for generating a drawing
 #[derive(Clone)]
-pub struct Options<'a> {
+pub struct Options {
     /// The keycap profile used for drawing keys
-    pub profile: &'a Profile,
+    pub profile: Profile,
     /// The font used for drawing legends
-    pub font: &'a Font,
+    pub font: Font,
     /// The scale used for the drawing
     pub scale: f32,
     /// The outline width for drawing key edges
@@ -133,12 +133,12 @@ pub struct Options<'a> {
     pub __non_exhaustive: NonExhaustive,
 }
 
-impl Default for Options<'_> {
+impl Default for Options {
     #[inline]
     fn default() -> Self {
         Self {
-            profile: Profile::default_ref(),
-            font: Font::default_ref(),
+            profile: Profile::default(),
+            font: Font::default(),
             scale: 1.0,
             outline_width: Length::new(0.01) * DOT_PER_UNIT,
             show_keys: true,
@@ -148,7 +148,7 @@ impl Default for Options<'_> {
     }
 }
 
-impl fmt::Debug for Options<'_> {
+impl fmt::Debug for Options {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut dbg = f.debug_struct("Options");
         dbg.field("profile", &self.profile)
@@ -183,8 +183,8 @@ mod tests {
         let profile = Profile::default();
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
         let options = Options {
-            profile: &profile,
-            font: &font,
+            profile,
+            font,
             scale: 2.0,
             outline_width: Length::new(20.0),
             show_keys: false,
@@ -209,8 +209,8 @@ mod tests {
             format!(
                 "Options {{ profile: {:?}, font: {:?}, scale: {:?}, outline_width: {:?}, \
                     show_keys: {:?}, show_margin: {:?} }}",
-                Profile::default_ref(),
-                Font::default_ref(),
+                Profile::default(),
+                Font::default(),
                 1.0,
                 10.0,
                 true,

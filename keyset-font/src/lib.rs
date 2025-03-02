@@ -2,9 +2,10 @@
 //!
 //! [keyset]: https://crates.io/crates/keyset
 
-mod default;
 mod error;
 mod face;
+
+use std::sync::OnceLock;
 
 use geom::{Angle, Length, Path, PathBuilder, Vector};
 use itertools::izip;
@@ -32,21 +33,17 @@ pub struct Font {
 impl Default for Font {
     #[inline]
     fn default() -> Self {
-        Self::default_ref().clone()
+        static FONT: OnceLock<Font> = OnceLock::new();
+
+        FONT.get_or_init(|| {
+            Font::from_ttf(include_bytes!(env!("DEFAULT_TTF")).to_vec())
+                .unwrap_or_else(|_| unreachable!("default font is tested"))
+        })
+        .clone()
     }
 }
 
 impl Font {
-    /// Returns a static reference to the default font
-    ///
-    /// This is equivalent to calling [`Default::default`] but returns a reference and avoids
-    /// cloning any internal data
-    #[inline]
-    #[must_use]
-    pub fn default_ref() -> &'static Self {
-        default::font()
-    }
-
     /// Parse a font from TrueType or OpenType format font data
     ///
     /// # Errors
@@ -253,14 +250,6 @@ mod tests {
         assert_eq!(default.name, "default regular");
         assert_is_close!(default.cap_height, Length::new(714.0));
         assert_is_close!(default.x_height, Length::new(523.0));
-
-        let default_ref = Font::default_ref();
-
-        assert_matches!(default_ref.face.number_of_glyphs(), 1); // Only .notdef
-        assert_eq!(default_ref.family, "default");
-        assert_eq!(default_ref.name, "default regular");
-        assert_is_close!(default_ref.cap_height, Length::new(714.0));
-        assert_is_close!(default_ref.x_height, Length::new(523.0));
     }
 
     #[test]

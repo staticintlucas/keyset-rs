@@ -32,7 +32,7 @@ pub struct KeyDrawing {
 }
 
 impl KeyDrawing {
-    pub fn new(key: &Key, options: &Options<'_>) -> Self {
+    pub fn new(key: &Key, options: &Options) -> Self {
         let show_key = options.show_keys && !matches!(key.shape, KeyShape::None(..));
 
         let bottom = show_key.then(|| key::bottom(key, options));
@@ -71,7 +71,7 @@ impl KeyDrawing {
                     f32::saturating_from(i % 3) / 2.0,
                     f32::saturating_from(i / 3) / 2.0,
                 );
-                legend::draw(legend, options.font, options.profile, top_rect, align)
+                legend::draw(legend, &options.font, &options.profile, top_rect, align)
             })
         });
 

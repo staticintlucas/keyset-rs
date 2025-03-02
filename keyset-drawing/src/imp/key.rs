@@ -8,7 +8,7 @@ use crate::Options;
 
 use super::{KeyPath, Outline};
 
-pub fn top(key: &key::Key, options: &Options<'_>) -> KeyPath {
+pub fn top(key: &key::Key, options: &Options) -> KeyPath {
     let path = match key.shape {
         key::Shape::None(..) => Path::empty(),
         key::Shape::Normal(size) | key::Shape::Space(size) => {
@@ -19,7 +19,7 @@ pub fn top(key: &key::Key, options: &Options<'_>) -> KeyPath {
             .profile
             .top_with_size(Size::new(1.25, 1.0))
             .to_path(),
-        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_top_path(options.profile),
+        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_top_path(&options.profile),
     };
 
     KeyPath {
@@ -32,7 +32,7 @@ pub fn top(key: &key::Key, options: &Options<'_>) -> KeyPath {
     }
 }
 
-pub fn bottom(key: &key::Key, options: &Options<'_>) -> KeyPath {
+pub fn bottom(key: &key::Key, options: &Options) -> KeyPath {
     let path = match key.shape {
         key::Shape::None(..) => Path::empty(),
         key::Shape::Normal(size) | key::Shape::Space(size) => {
@@ -46,7 +46,7 @@ pub fn bottom(key: &key::Key, options: &Options<'_>) -> KeyPath {
             .profile
             .bottom_with_size(Size::new(1.75, 1.0))
             .to_path(),
-        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_bottom_path(options.profile),
+        key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_bottom_path(&options.profile),
     };
 
     KeyPath {
@@ -59,7 +59,7 @@ pub fn bottom(key: &key::Key, options: &Options<'_>) -> KeyPath {
     }
 }
 
-pub fn homing(key: &key::Key, options: &Options<'_>) -> Option<KeyPath> {
+pub fn homing(key: &key::Key, options: &Options) -> Option<KeyPath> {
     let profile = &options.profile;
 
     let key::Shape::Homing(homing) = key.shape else {
@@ -99,7 +99,7 @@ pub fn homing(key: &key::Key, options: &Options<'_>) -> Option<KeyPath> {
     })
 }
 
-pub fn step(key: &key::Key, options: &Options<'_>) -> Option<KeyPath> {
+pub fn step(key: &key::Key, options: &Options) -> Option<KeyPath> {
     matches!(key.shape, key::Shape::SteppedCaps).then(|| {
         let profile = &options.profile;
 

@@ -59,8 +59,8 @@ let font = Font::default();
 
 // Set drawing options
 let options = drawing::Options {
-    profile: &profile,
-    font: &font,
+    profile,
+    font,
     ..Default::default()
 };
 
