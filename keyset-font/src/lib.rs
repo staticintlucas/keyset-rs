@@ -36,7 +36,7 @@ impl Default for Font {
         static FONT: OnceLock<Font> = OnceLock::new();
 
         FONT.get_or_init(|| {
-            Font::from_ttf(include_bytes!(env!("DEFAULT_TTF")).to_vec())
+            Self::from_ttf(include_bytes!(env!("DEFAULT_TTF")).to_vec())
                 .unwrap_or_else(|_| unreachable!("default font is tested"))
         })
         .clone()

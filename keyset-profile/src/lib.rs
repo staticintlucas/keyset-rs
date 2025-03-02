@@ -10,7 +10,6 @@ mod de;
 use std::array;
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::OnceLock;
 
 use geom::{
     Dot, ExtRect, Inch, Length, Mm, Point, Rect, RoundRect, SideOffsets, Size, Unit, Vector,
