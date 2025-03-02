@@ -1,6 +1,7 @@
-use geom::{PathSegment, Scale, Unit, DOT_PER_UNIT, MM_PER_UNIT};
 use svg::node::element::{Group, Path as SvgPath};
 use svg::Document;
+
+use geom::{PathSegment, Scale, Unit, DOT_PER_UNIT, MM_PER_UNIT};
 
 use super::{Drawing, KeyDrawing, KeyPath};
 

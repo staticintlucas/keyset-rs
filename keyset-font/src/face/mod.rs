@@ -6,13 +6,14 @@ mod mac_roman;
 use std::fmt;
 use std::sync::Arc;
 
-use geom::{PathBuilder, Point, Vector};
 use ouroboros::self_referencing;
 use rustybuzz::ttf_parser::{self, GlyphId};
 
+use geom::{PathBuilder, Point, Vector};
+
+use self::mac_roman::{is_mac_roman_encoding, mac_roman_decode};
 use crate::error::PermissionError;
 use crate::{FontUnit, Result};
-use mac_roman::{is_mac_roman_encoding, mac_roman_decode};
 
 #[self_referencing]
 pub struct Face {
@@ -295,10 +296,8 @@ mod tests {
 
     #[test]
     fn face_permissions() {
-        use crate::error::{
-            Error::PermissionError,
-            PermissionError::{BitmapEmbeddingOnly, NoSubsetting, RestrictedLicense},
-        };
+        use crate::error::Error::PermissionError;
+        use crate::error::PermissionError::{BitmapEmbeddingOnly, NoSubsetting, RestrictedLicense};
 
         let null = Face::from_ttf(std::fs::read(env!("NULL_TTF")).unwrap());
         assert!(null.is_ok()); // no OS/2 table

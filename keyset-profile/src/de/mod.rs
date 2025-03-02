@@ -2,17 +2,16 @@ mod error;
 
 use std::collections::HashMap;
 
-use geom::{
-    Dot, ExtRect, Length, Mm, Point, Rect, SideOffsets, Size, Vector, DOT_PER_MM, DOT_PER_UNIT,
-};
 use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use crate::{BottomSurface, HomingProps, ScoopProps, TextHeight, TextMargin, Type};
+use geom::{
+    Dot, ExtRect, Length, Mm, Point, Rect, SideOffsets, Size, Vector, DOT_PER_MM, DOT_PER_UNIT,
+};
 
+pub use self::error::{Error, Result};
 use super::{BarProps, BumpProps, Profile, TopSurface};
-
-pub use error::{Error, Result};
+use crate::{BottomSurface, HomingProps, ScoopProps, TextHeight, TextMargin, Type};
 
 impl<'de> Deserialize<'de> for Type {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>

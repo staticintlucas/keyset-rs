@@ -10,10 +10,10 @@ pub mod kle;
 
 use std::fmt;
 
-pub use legend::{Legend, Legends, Text};
-
 use color::Color;
 use geom::{Point, Rect, Size, Unit};
+
+pub use self::legend::{Legend, Legends, Text};
 
 /// The type of homing used on a homing key
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

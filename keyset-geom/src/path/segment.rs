@@ -1,11 +1,8 @@
-use std::{
-    borrow::Borrow,
-    fmt,
-    ops::{Div, DivAssign, Mul, MulAssign},
-};
+use std::borrow::Borrow;
+use std::fmt;
+use std::ops::{Div, DivAssign, Mul, MulAssign};
 
 use isclose::IsClose;
-use PathSegment::{Close, CubicBezier, Line, Move, QuadraticBezier};
 
 use crate::{Point, Scale, Transform, Vector};
 
@@ -35,6 +32,7 @@ impl<U> Copy for PathSegment<U> {}
 
 impl<U> PartialEq for PathSegment<U> {
     fn eq(&self, other: &Self) -> bool {
+        use PathSegment::*;
         match (*self, *other) {
             (Move(s), Move(o)) => s == o,
             (Line(s), Line(o)) => s == o,
@@ -48,6 +46,7 @@ impl<U> PartialEq for PathSegment<U> {
 
 impl<U> fmt::Debug for PathSegment<U> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use PathSegment::*;
         match *self {
             Move(ref p) => f.debug_tuple("Move").field(p).finish(),
             Line(ref v) => f.debug_tuple("Line").field(v).finish(),
@@ -76,6 +75,7 @@ impl<U> IsClose<f32> for PathSegment<U> {
         rel_tol: impl Borrow<f32>,
         abs_tol: impl Borrow<f32>,
     ) -> bool {
+        use PathSegment::*;
         // TODO need type hints here to help rust-analyzer; see: rust-lang/rust-analyzer#5514
         let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
             (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
@@ -101,6 +101,7 @@ impl<U> PathSegment<U> {
     #[inline]
     #[must_use]
     pub fn translate(self, by: Vector<U>) -> Self {
+        use PathSegment::*;
         match self {
             Move(point) => Move(point + by),
             // Everything else is relative
@@ -112,6 +113,7 @@ impl<U> PathSegment<U> {
     #[inline]
     #[must_use]
     pub fn scale(self, x: f32, y: f32) -> Self {
+        use PathSegment::*;
         let scale = Vector::new(x, y);
         match self {
             Move(point) => Move(point.to_vector().component_mul(scale).to_point()),
@@ -134,6 +136,7 @@ impl<U, V> Mul<Scale<U, V>> for PathSegment<U> {
 
     #[inline]
     fn mul(self, scale: Scale<U, V>) -> Self::Output {
+        use PathSegment::*;
         match self {
             Move(point) => Move(point * scale),
             Line(dist) => Line(dist * scale),
@@ -151,6 +154,7 @@ impl<U, V> Mul<Transform<U, V>> for PathSegment<U> {
 
     #[inline]
     fn mul(self, transform: Transform<U, V>) -> Self::Output {
+        use PathSegment::*;
         match self {
             Move(point) => Move(transform.transform_point(point)),
             Line(dist) => Line(transform.transform_vector(dist)),
@@ -171,6 +175,7 @@ impl<U, V> Mul<Transform<U, V>> for PathSegment<U> {
 impl<U> MulAssign<Scale<U, U>> for PathSegment<U> {
     #[inline]
     fn mul_assign(&mut self, scale: Scale<U, U>) {
+        use PathSegment::*;
         match *self {
             Move(ref mut point) => *point *= scale,
             Line(ref mut dist) => *dist *= scale,
@@ -191,6 +196,7 @@ impl<U> MulAssign<Scale<U, U>> for PathSegment<U> {
 impl<U> MulAssign<Transform<U, U>> for PathSegment<U> {
     #[inline]
     fn mul_assign(&mut self, transform: Transform<U, U>) {
+        use PathSegment::*;
         match *self {
             Move(ref mut point) => *point = transform.transform_point(*point),
             Line(ref mut dist) => *dist = transform.transform_vector(*dist),
@@ -213,6 +219,7 @@ impl<U, V> Div<Scale<V, U>> for PathSegment<U> {
 
     #[inline]
     fn div(self, scale: Scale<V, U>) -> Self::Output {
+        use PathSegment::*;
         match self {
             Move(point) => Move(point / scale),
             Line(dist) => Line(dist / scale),
@@ -228,6 +235,7 @@ impl<U, V> Div<Scale<V, U>> for PathSegment<U> {
 impl<U> DivAssign<Scale<U, U>> for PathSegment<U> {
     #[inline]
     fn div_assign(&mut self, scale: Scale<U, U>) {
+        use PathSegment::*;
         match *self {
             Move(ref mut point) => *point /= scale,
             Line(ref mut dist) => *dist /= scale,
@@ -249,6 +257,7 @@ impl<U> DivAssign<Scale<U, U>> for PathSegment<U> {
 mod tests {
     use isclose::assert_is_close;
 
+    use super::PathSegment::*;
     use super::*;
 
     #[test]

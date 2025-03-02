@@ -1,6 +1,6 @@
-use super::Color;
-
 use tiny_skia::Color as SkiaColor;
+
+use super::Color;
 
 impl From<Color> for SkiaColor {
     #[inline]

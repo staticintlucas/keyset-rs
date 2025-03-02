@@ -1,7 +1,8 @@
+use rgb::{RGB16, RGB8};
+
 use super::Color;
 
-use ::rgb::{RGB16, RGB8};
-type RGBf32 = ::rgb::RGB<f32>;
+type RGBf32 = rgb::RGB<f32>;
 
 impl From<RGB16> for Color {
     #[inline]

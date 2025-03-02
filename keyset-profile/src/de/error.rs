@@ -53,9 +53,8 @@ mod tests {
 
     use assert_matches::assert_matches;
 
-    use crate::Profile;
-
     use super::*;
+    use crate::Profile;
 
     #[test]
     fn error_fmt() {

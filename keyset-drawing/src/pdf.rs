@@ -1,8 +1,9 @@
+use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
+use pdf_writer::{Content, Filter, Finish, Pdf, Rect, Ref, TextStr};
+
 use geom::{
     Dot, PathSegment, Point, Scale, ToTransform, Transform, Vector, DOT_PER_INCH, DOT_PER_UNIT,
 };
-use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
-use pdf_writer::{Content, Filter, Finish, Pdf, Rect, Ref, TextStr};
 
 use crate::{Drawing, KeyDrawing, KeyPath};
 
@@ -151,7 +152,7 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
             content.stroke();
         }
         (None, None) => {} // unreachable!() ? // it makes sense to just do nothing here regardless
-    };
+    }
 }
 
 #[cfg(test)]

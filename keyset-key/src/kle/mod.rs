@@ -2,11 +2,12 @@
 
 mod error;
 
-use geom::{Point, Size};
 use kle_serial::f32 as kle;
 
+use geom::{Point, Size};
+
+pub use self::error::{Error, Result};
 use crate::{Homing, Key, Legend, Shape, Text};
-pub use error::{Error, Result};
 
 fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
     const STEP_CAPS: [f32; 6] = [1.25, 1.0, 0.0, 0.0, 1.75, 1.0];

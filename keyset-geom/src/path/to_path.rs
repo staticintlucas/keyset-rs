@@ -72,9 +72,8 @@ impl<U> ToPath<U> for RoundRect<U> {
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::{PathSegment, Point};
-
     use super::*;
+    use crate::{PathSegment, Point};
 
     #[test]
     fn circle_to_path() {

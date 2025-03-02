@@ -1,8 +1,9 @@
+use log::warn;
+use saturate::SaturatingFrom;
+
 use font::Font;
 use geom::{Dot, Path, Point, Rect, ToTransform, Vector};
-use log::warn;
 use profile::Profile;
-use saturate::SaturatingFrom;
 
 use super::KeyPath;
 
@@ -72,9 +73,10 @@ pub fn draw(
 
 #[cfg(test)]
 mod tests {
+    use isclose::assert_is_close;
+
     use color::Color;
     use geom::{PathSegment, Size};
-    use isclose::assert_is_close;
     use key::Text;
 
     use super::*;

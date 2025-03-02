@@ -4,9 +4,8 @@ use geom::{
 };
 use profile::Profile;
 
-use crate::Template;
-
 use super::{KeyPath, Outline};
+use crate::Template;
 
 pub fn top(key: &key::Key, template: &Template) -> KeyPath {
     let path = match key.shape {
@@ -203,6 +202,7 @@ fn step_path(rect: RoundRect<Dot>) -> Path<Dot> {
 #[cfg(test)]
 mod tests {
     use isclose::assert_is_close;
+
     use key::Key;
 
     use super::*;

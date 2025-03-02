@@ -1,7 +1,8 @@
+use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform as SkiaTransform};
+
 use geom::{
     Dot, Inch, PathSegment, Point, Scale, ToTransform, Transform, DOT_PER_INCH, DOT_PER_UNIT,
 };
-use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform as SkiaTransform};
 
 use crate::{Drawing, Error, KeyDrawing, KeyPath};
 
@@ -118,8 +119,9 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
 mod tests {
     use isclose::assert_is_close_abs_tol;
     use itertools::izip;
-    use key::Key;
     use tiny_skia::{Color, Pixmap, PremultipliedColorU8};
+
+    use key::Key;
 
     use crate::Template;
 

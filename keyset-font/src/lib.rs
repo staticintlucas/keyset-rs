@@ -7,14 +7,15 @@ mod face;
 
 use std::sync::OnceLock;
 
-use geom::{Angle, Length, Path, PathBuilder, Vector};
 use itertools::izip;
 use rustybuzz::ttf_parser::name_id;
 use rustybuzz::{BufferClusterLevel, ShapePlan, UnicodeBuffer};
 use saturate::SaturatingInto;
 
+use geom::{Angle, Length, Path, PathBuilder, Vector};
+
 pub use self::error::{Error, Result};
-use face::Face;
+use self::face::Face;
 
 /// Unit within a font
 #[derive(Debug, Clone, Copy)]

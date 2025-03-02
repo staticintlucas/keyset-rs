@@ -9,11 +9,11 @@ mod round_rect;
 mod traits;
 mod unit;
 
-pub use circle::Circle;
-pub use path::{Path, PathBuilder, PathSegment, ToPath};
-pub use round_rect::RoundRect;
-pub use traits::*;
-pub use unit::{
+pub use self::circle::Circle;
+pub use self::path::{Path, PathBuilder, PathSegment, ToPath};
+pub use self::round_rect::RoundRect;
+pub use self::traits::*;
+pub use self::unit::{
     Dot, Inch, Mm, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT, INCH_PER_UNIT, MM_PER_UNIT,
 };
 

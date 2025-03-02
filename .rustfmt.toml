@@ -1,2 +1,5 @@
 edition = "2021"
 newline_style = "Unix"
+unstable_features = true
+imports_granularity = "Module"
+# group_imports = "StdExternalCrate" # TODO enable when rust-lang/rustfmt#5632 lands

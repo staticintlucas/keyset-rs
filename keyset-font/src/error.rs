@@ -84,10 +84,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 mod tests {
     use std::error::Error as _;
 
-    use crate::{Face, Font};
     use rustybuzz::ttf_parser;
 
     use super::*;
+    use crate::{Face, Font};
 
     #[test]
     fn error_fmt() {

@@ -145,8 +145,7 @@ const MAC_ROMAN_MAPPING: [char; (u8::MAX - ASCII_MAX) as usize] = [
 ];
 
 pub fn is_mac_roman_encoding(platform_id: PlatformId, encoding_id: u16, language_id: u16) -> bool {
-    use mac_encoding_id as enc;
-    use mac_language_id as lang;
+    use {mac_encoding_id as enc, mac_language_id as lang};
 
     // If encoding_id == roman, the below languages use modified mac-roman encodings. All others
     // languages use either standard mac-roman or encoding_id != roman (in which case we default to
@@ -187,9 +186,8 @@ mod tests {
 
     #[test]
     fn test_is_mac_roman_encoding() {
-        use mac_encoding_id as enc;
-        use mac_language_id as lang;
         use rustybuzz::ttf_parser::PlatformId as Plat;
+        use {mac_encoding_id as enc, mac_language_id as lang};
 
         assert!(!is_mac_roman_encoding(
             Plat::Unicode, // Wrong PlatformId

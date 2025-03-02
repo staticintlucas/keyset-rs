@@ -3,12 +3,11 @@ mod legend;
 
 use std::collections::HashSet;
 
-use ::key::Key;
-use ::key::Shape as KeyShape;
-use color::Color;
-use geom::{Dot, Length, ToPath, Unit, Vector};
-use geom::{Path, Point};
 use saturate::SaturatingFrom;
+
+use ::key::{Key, Shape as KeyShape};
+use color::Color;
+use geom::{Dot, Length, Path, Point, ToPath, Unit, Vector};
 
 use crate::Template;
 
@@ -98,8 +97,9 @@ impl KeyDrawing {
 
 #[cfg(test)]
 mod tests {
-    use geom::{Size, DOT_PER_UNIT};
     use isclose::assert_is_close;
+
+    use geom::{Size, DOT_PER_UNIT};
 
     use super::*;
 

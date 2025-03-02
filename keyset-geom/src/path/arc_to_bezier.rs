@@ -109,11 +109,11 @@ fn create_arc<U>(r: Vector<U>, phi0: Angle, dphi: Angle) -> (Vector<U>, Vector<U
 
 #[cfg(test)]
 mod tests {
+    use std::f32::consts::SQRT_2;
+
     use isclose::assert_is_close;
 
     use super::*;
-
-    use std::f32::consts::SQRT_2;
 
     #[test]
     fn test_arc_to_bezier() {

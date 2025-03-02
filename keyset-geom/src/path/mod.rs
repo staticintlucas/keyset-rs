@@ -5,11 +5,9 @@ mod to_path;
 use std::borrow::Borrow;
 use std::ops::{Add, Div, DivAssign, Mul, MulAssign};
 
-use arc_to_bezier::arc_to_bezier;
-
-pub use segment::PathSegment;
-pub use to_path::ToPath;
-
+use self::arc_to_bezier::arc_to_bezier;
+pub use self::segment::PathSegment;
+pub use self::to_path::ToPath;
 use crate::{Angle, Length, Point, Rect, Scale, Transform, Vector};
 
 /// A 2-dimensional path represented by a number of path segments
@@ -512,7 +510,6 @@ mod tests {
     use isclose::assert_is_close;
 
     use super::*;
-
     use crate::{Angle, Size};
 
     #[test]

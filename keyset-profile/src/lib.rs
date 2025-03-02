@@ -7,17 +7,17 @@
 #[cfg(feature = "serde")]
 mod de;
 
-use std::array;
 use std::collections::HashMap;
-use std::fmt;
+use std::{array, fmt};
+
+use interp::{interp_array, InterpMode};
+use saturate::SaturatingFrom;
 
 use geom::{
     Dot, ExtRect, Inch, Length, Mm, Point, Rect, RoundRect, SideOffsets, Size, Unit, Vector,
     DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT,
 };
-use interp::{interp_array, InterpMode};
 use key::Homing;
-use saturate::SaturatingFrom;
 
 /// The type of a profile
 #[derive(Debug, Clone, Copy)]

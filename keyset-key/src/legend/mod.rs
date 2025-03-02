@@ -1,10 +1,10 @@
+mod text;
+
 use std::ops::{Index, IndexMut};
 
 use color::Color;
 
-pub use text::Text;
-
-mod text;
+pub use self::text::Text;
 
 /// A single legend
 #[derive(Debug, Clone)]

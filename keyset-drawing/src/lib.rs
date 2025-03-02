@@ -21,9 +21,8 @@ use geom::{Dot, Length, Point, Rect, Size, Unit, DOT_PER_UNIT};
 use key::Key;
 use profile::Profile;
 
-pub use error::Error;
-
-pub(crate) use imp::{KeyDrawing, KeyPath};
+pub use self::error::Error;
+pub(crate) use self::imp::{KeyDrawing, KeyPath};
 
 /// A drawing
 #[derive(Debug, Clone)]
@@ -166,8 +165,9 @@ impl fmt::Debug for Template {
 
 #[cfg(test)]
 mod tests {
-    use geom::{Mm, DOT_PER_MM};
     use isclose::assert_is_close;
+
+    use geom::{Mm, DOT_PER_MM};
     use profile::Profile;
 
     use super::*;
