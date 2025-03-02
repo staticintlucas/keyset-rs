@@ -122,10 +122,7 @@ impl Template {
                 |rect, key| Rect::new(rect.min.min(key.min), rect.max.max(key.max)),
             );
 
-        let keys = keys
-            .iter()
-            .map(|key| KeyDrawing::new(key, self))
-            .collect();
+        let keys = keys.iter().map(|key| KeyDrawing::new(key, self)).collect();
 
         Drawing {
             bounds,
@@ -185,8 +182,8 @@ mod tests {
         let profile = Profile::default();
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
         let template = Template {
-            profile: profile,
-            font: font,
+            profile,
+            font,
             scale: 2.0,
             outline_width: Length::new(20.0),
             show_keys: false,

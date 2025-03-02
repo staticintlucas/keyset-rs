@@ -42,7 +42,8 @@ mod tests {
             tmp
         };
 
-        let error = Template::default().draw(&[key1, key2])
+        let error = Template::default()
+            .draw(&[key1, key2])
             .to_png(1.0)
             .unwrap_err();
 

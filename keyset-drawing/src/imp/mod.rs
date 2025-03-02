@@ -40,7 +40,10 @@ impl KeyDrawing {
         let step = show_key.then(|| key::step(key, template)).flatten();
         let homing = show_key.then(|| key::homing(key, template)).flatten();
 
-        let top_rect = template.profile.top_with_rect(key.shape.inner_rect()).rect();
+        let top_rect = template
+            .profile
+            .top_with_rect(key.shape.inner_rect())
+            .rect();
 
         let margin = template.show_margin.then(|| {
             // Cann't get unique margins because SideOffsets: !Hash, use unique size_idx's instead

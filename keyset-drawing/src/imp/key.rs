@@ -14,7 +14,10 @@ pub fn top(key: &key::Key, template: &Template) -> KeyPath {
         key::Shape::Normal(size) | key::Shape::Space(size) => {
             template.profile.top_with_size(size).to_path()
         }
-        key::Shape::Homing(..) => template.profile.top_with_size(Size::new(1.0, 1.0)).to_path(),
+        key::Shape::Homing(..) => template
+            .profile
+            .top_with_size(Size::new(1.0, 1.0))
+            .to_path(),
         key::Shape::SteppedCaps => template
             .profile
             .top_with_size(Size::new(1.25, 1.0))
@@ -377,7 +380,10 @@ mod tests {
             template.profile.top_with_size(Size::splat(1.0)).center(),
             Size::splat(template.profile.homing.bump.diameter.get()),
         )
-        .translate(Vector::new(0.0, template.profile.homing.bump.y_offset.get()));
+        .translate(Vector::new(
+            0.0,
+            template.profile.homing.bump.y_offset.get(),
+        ));
         assert_is_close!(bounds, expected);
 
         // Non-homing key
