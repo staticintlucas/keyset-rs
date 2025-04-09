@@ -3,7 +3,7 @@
 [test status]: https://img.shields.io/github/actions/workflow/status/staticintlucas/keyset-rs/test.yml?branch=main&label=tests&style=flat-square
 [test coverage]: https://img.shields.io/codecov/c/gh/staticintlucas/keyset-rs?style=flat-square
 [crate version]: https://img.shields.io/crates/v/keyset?style=flat-square
-[rust version]: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fstaticintlucas%2Fkeyset-rs%2Fmain%2FCargo.toml&query=%24.workspace.package%5B%22rust-version%22%5D&style=flat-square&label=rust
+[rust version]: https://img.shields.io/crates/msrv/keyset?style=flat-square
 
 [actions]: https://github.com/staticintlucas/keyset-rs/actions?query=branch%3Amain
 [codecov]: https://app.codecov.io/github/staticintlucas/keyset-rs
