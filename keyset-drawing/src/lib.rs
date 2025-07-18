@@ -151,7 +151,8 @@ impl fmt::Debug for Template {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut dbg = f.debug_struct("Template");
-        let _ = dbg.field("profile", &self.profile)
+        let _ = dbg
+            .field("profile", &self.profile)
             .field("font", &self.font)
             .field("scale", &self.scale)
             .field("outline_width", &self.outline_width)

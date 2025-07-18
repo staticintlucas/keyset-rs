@@ -1,6 +1,6 @@
 use geom::{
-    Angle, Circle, Dot, ExtRect as _, ExtVec as _, Length, Path, Point, Rect, RoundRect, Size, ToPath as _,
-    Vector, DOT_PER_UNIT,
+    Angle, Circle, Dot, ExtRect as _, ExtVec as _, Length, Path, Point, Rect, RoundRect, Size,
+    ToPath as _, Vector, DOT_PER_UNIT,
 };
 use profile::Profile;
 
