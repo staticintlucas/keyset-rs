@@ -60,21 +60,9 @@ mod tests {
     fn error_fmt() {
         #[cfg(feature = "toml")]
         {
-            #[allow(deprecated)]
             let error = Profile::from_toml("null").unwrap_err();
 
-            assert_eq!(
-                format!("{error}"),
-                indoc::indoc!(
-                    "
-                    TOML parse error at line 1, column 5
-                      |
-                    1 | null
-                      |     ^
-                    expected `.`, `=`
-                    "
-                )
-            );
+            assert_eq!(format!("{error}"), "expected = after key");
         }
         #[cfg(feature = "json")]
         {
@@ -91,21 +79,12 @@ mod tests {
     fn error_source() {
         #[cfg(feature = "toml")]
         {
-            #[allow(deprecated)]
             let error = Profile::from_toml("null").unwrap_err();
 
             assert!(error.source().is_some());
             assert_eq!(
                 format!("{}", error.source().unwrap()),
-                indoc::indoc!(
-                    "
-                    TOML parse error at line 1, column 5
-                      |
-                    1 | null
-                      |     ^
-                    expected `.`, `=`
-                    "
-                )
+                "expected = after key"
             );
         }
         #[cfg(feature = "json")]
