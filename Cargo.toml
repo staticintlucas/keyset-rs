@@ -36,7 +36,7 @@ kle-serial = "0.3"
 log = "0.4"
 miniz_oxide = "0.8"
 ouroboros = "0.18"
-pdf-writer = "0.12"
+pdf-writer = "0.13"
 rgb = { version = "0.8", default-features = false }
 rustybuzz = "0.20"
 saturate = "0.1"
