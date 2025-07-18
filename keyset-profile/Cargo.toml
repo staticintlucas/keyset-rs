@@ -21,7 +21,7 @@ all-features = true
 workspace = true
 
 [features]
-toml = ["serde", "dep:toml"]
+toml = ["serde", "dep:soml"]
 json = ["serde", "dep:serde_json"]
 serde = ["dep:serde"]
 
@@ -33,7 +33,7 @@ interp.workspace = true
 saturate.workspace = true
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
-toml = { workspace = true, optional = true }
+soml = { workspace = true, optional = true }
 
 [dev-dependencies]
 assert_matches.workspace = true

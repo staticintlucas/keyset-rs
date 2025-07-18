@@ -363,12 +363,8 @@ impl Profile {
     /// If there was an error parsing the file
     #[cfg(feature = "toml")]
     #[inline]
-    #[deprecated(
-        since = "0.4.0",
-        note = "TOML profile files are deprecated, use JSON files instead"
-    )]
     pub fn from_toml(s: &str) -> de::Result<Self> {
-        toml::from_str(s).map_err(de::Error::from)
+        soml::from_str(s).map_err(de::Error::from)
     }
 
     /// Load a profile from a JSON configuration file

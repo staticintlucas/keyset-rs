@@ -4,7 +4,7 @@ use std::fmt;
 #[non_exhaustive]
 pub enum Error {
     #[cfg(feature = "toml")]
-    TomlParseError(toml::de::Error),
+    TomlParseError(soml::de::Error),
     #[cfg(feature = "json")]
     JsonParseError(serde_json::Error),
 }
@@ -32,8 +32,8 @@ impl std::error::Error for Error {
 }
 
 #[cfg(feature = "toml")]
-impl From<toml::de::Error> for Error {
-    fn from(error: toml::de::Error) -> Self {
+impl From<soml::de::Error> for Error {
+    fn from(error: soml::de::Error) -> Self {
         Self::TomlParseError(error)
     }
 }
@@ -124,7 +124,7 @@ mod tests {
     fn error_from() {
         #[cfg(feature = "toml")]
         {
-            let result: std::result::Result<i32, toml::de::Error> = toml::from_str("null");
+            let result: std::result::Result<i32, soml::de::Error> = soml::from_str("null");
             let error: Error = result.unwrap_err().into();
 
             assert_matches!(error, Error::TomlParseError(..));
