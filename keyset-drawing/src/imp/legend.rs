@@ -1,8 +1,8 @@
 use log::warn;
-use saturate::SaturatingFrom;
+use saturate::SaturatingFrom as _;
 
 use font::Font;
-use geom::{Dot, Path, Point, Rect, ToTransform, Vector};
+use geom::{Dot, Path, Point, Rect, ToTransform as _, Vector};
 use profile::Profile;
 
 use super::KeyPath;

@@ -80,6 +80,7 @@ impl From<kle::Legend> for Legend {
 impl TryFrom<kle::Key> for Key {
     type Error = Error;
 
+    #[inline]
     fn try_from(mut key: kle::Key) -> Result<Self> {
         let position = Point::new(key.x + key.x2.min(0.0), key.y + key.y2.min(0.0));
         let shape = shape_from_kle(&key)?;
@@ -115,7 +116,7 @@ pub fn from_json(json: &str) -> Result<Box<[Key]>> {
 mod tests {
     use assert_matches::assert_matches;
     use indoc::indoc;
-    use isclose::{assert_is_close, IsClose};
+    use isclose::{assert_is_close, IsClose as _};
 
     use super::*;
 

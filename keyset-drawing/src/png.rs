@@ -1,7 +1,7 @@
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform as SkiaTransform};
 
 use geom::{
-    Dot, Inch, PathSegment, Point, Scale, ToTransform, Transform, DOT_PER_INCH, DOT_PER_UNIT,
+    Dot, Inch, PathSegment, Point, Scale, ToTransform as _, Transform, DOT_PER_INCH, DOT_PER_UNIT,
 };
 
 use crate::{Drawing, Error, KeyDrawing, KeyPath};

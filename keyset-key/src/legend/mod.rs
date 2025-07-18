@@ -36,6 +36,7 @@ pub struct Legends([Option<Legend>; 9]);
 
 impl Legends {
     /// An example non-blank set of legends
+    #[inline]
     #[must_use]
     pub fn example() -> Self {
         Self([

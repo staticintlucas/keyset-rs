@@ -152,6 +152,7 @@ impl<U, B> FromIterator<B> for Path<U>
 where
     B: Borrow<Self>,
 {
+    #[inline]
     fn from_iter<T: IntoIterator<Item = B>>(iter: T) -> Self {
         let mut iter = iter.into_iter();
 
@@ -510,7 +511,7 @@ mod tests {
     use isclose::assert_is_close;
 
     use super::*;
-    use crate::{Angle, Size};
+    use crate::Size;
 
     #[test]
     fn test_path_clone() {

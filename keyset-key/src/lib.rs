@@ -110,15 +110,16 @@ pub struct Key {
 }
 
 impl fmt::Debug for Key {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut dbg = f.debug_struct("Key");
-        dbg.field("position", &self.position)
+        let _ = dbg.field("position", &self.position)
             .field("shape", &self.shape)
             .field("color", &self.color)
             .field("legends", &self.legends);
 
         #[cfg(clippy)] // Suppress clippy::missing_fields_in_debug but only for this one field
-        dbg.field("__non_exhaustive", &"NonExhaustive");
+        let _ = dbg.field("__non_exhaustive", &"NonExhaustive");
 
         dbg.finish()
     }

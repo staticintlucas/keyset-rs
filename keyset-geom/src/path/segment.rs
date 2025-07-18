@@ -31,6 +31,7 @@ impl<U> Clone for PathSegment<U> {
 impl<U> Copy for PathSegment<U> {}
 
 impl<U> PartialEq for PathSegment<U> {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         use PathSegment::*;
         match (*self, *other) {
@@ -45,6 +46,7 @@ impl<U> PartialEq for PathSegment<U> {
 }
 
 impl<U> fmt::Debug for PathSegment<U> {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use PathSegment::*;
         match *self {

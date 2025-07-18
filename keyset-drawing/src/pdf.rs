@@ -1,8 +1,8 @@
 use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
-use pdf_writer::{Content, Filter, Finish, Pdf, Rect, Ref, TextStr};
+use pdf_writer::{Content, Filter, Finish as _, Pdf, Rect, Ref, TextStr};
 
 use geom::{
-    Dot, PathSegment, Point, Scale, ToTransform, Transform, Vector, DOT_PER_INCH, DOT_PER_UNIT,
+    Dot, PathSegment, Point, Scale, ToTransform as _, Transform, Vector, DOT_PER_INCH, DOT_PER_UNIT,
 };
 
 use crate::{Drawing, KeyDrawing, KeyPath};
@@ -41,8 +41,8 @@ pub fn draw(drawing: &Drawing) -> Vec<u8> {
     let content_id = ref_gen.next();
     let doc_info_id = ref_gen.next();
 
-    writer.catalog(catalog_id).pages(tree_id);
-    writer.pages(tree_id).kids([page_id]).count(1);
+    _ = writer.catalog(catalog_id).pages(tree_id);
+    _ = writer.pages(tree_id).kids([page_id]).count(1);
 
     writer
         .page(page_id)
@@ -97,59 +97,59 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
         let el = el * transform;
         match el {
             PathSegment::Move(p) => {
-                content.move_to(p.x, p.y);
+                _ = content.move_to(p.x, p.y);
                 origin = p;
                 point = p;
             }
             PathSegment::Line(d) => {
                 let p = point + d;
-                content.line_to(p.x, p.y);
+                _ = content.line_to(p.x, p.y);
                 point = p;
             }
             PathSegment::CubicBezier(d1, d2, d) => {
                 let (p1, p2, p) = (point + d1, point + d2, point + d);
-                content.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
+                _ = content.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
                 point = p;
             }
             PathSegment::QuadraticBezier(d1, d) => {
                 // Convert quad to cubic since PostScript doesn't have quadratic Béziers
                 let (d1, d2) = (d1 * (2.0 / 3.0), d + (d1 - d) * (2.0 / 3.0));
                 let (p1, p2, p) = (point + d1, point + d2, point + d);
-                content.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
+                _ = content.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
                 point = p;
             }
             PathSegment::Close => {
                 point = origin;
-                content.close_path();
+                _ = content.close_path();
             }
         }
     }
 
     if let Some(color) = path.fill {
         let (r, g, b) = color.into();
-        content.set_fill_rgb(r, g, b);
+        _ = content.set_fill_rgb(r, g, b);
     }
 
     if let Some(outline) = path.outline {
         let (r, g, b) = outline.color.into();
-        content.set_stroke_rgb(r, g, b);
+        _ = content.set_stroke_rgb(r, g, b);
         // Use mean of x and y scales
         let scale = Scale::<Dot, PdfUnit>::new(
             (f32::hypot(transform.m11, transform.m21) + f32::hypot(transform.m12, transform.m22))
                 / 2.0,
         );
-        content.set_line_width((outline.width * scale).get());
+        _ = content.set_line_width((outline.width * scale).get());
     }
 
     match (path.fill, path.outline) {
         (Some(_), Some(_)) => {
-            content.fill_even_odd_and_stroke();
+            _ = content.fill_even_odd_and_stroke();
         }
         (Some(_), None) => {
-            content.fill_even_odd();
+            _ = content.fill_even_odd();
         }
         (None, Some(_)) => {
-            content.stroke();
+            _ = content.stroke();
         }
         (None, None) => {} // unreachable!() ? // it makes sense to just do nothing here regardless
     }

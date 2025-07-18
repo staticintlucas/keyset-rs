@@ -6,6 +6,7 @@ use std::fmt::Display;
 pub struct Text(Box<[String]>);
 
 impl Display for Text {
+    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0.join("\\n"))
     }
@@ -15,6 +16,7 @@ impl Text {
     /// Parse a string legend. This currently supports splitting lines using the
     /// HTML `<br>` tag, but other HTML tags such as `<b>bold</b>` or
     /// `<i>italic</i>` are ignored.
+    #[inline]
     #[must_use]
     pub fn parse_from(mut string: &str) -> Self {
         // Vec of lines of text
@@ -40,6 +42,7 @@ impl Text {
     }
 
     /// Create an iterator over the lines of the legend text
+    #[inline]
     pub fn lines(&self) -> impl Iterator<Item = &str> {
         self.0.iter().map(String::as_str)
     }

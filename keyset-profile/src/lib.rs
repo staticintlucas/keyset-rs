@@ -11,10 +11,10 @@ use std::collections::HashMap;
 use std::{array, fmt};
 
 use interp::{interp_array, InterpMode};
-use saturate::SaturatingFrom;
+use saturate::SaturatingFrom as _;
 
 use geom::{
-    Dot, ExtRect, Inch, Length, Mm, Point, Rect, RoundRect, SideOffsets, Size, Unit, Vector,
+    Dot, ExtRect as _, Inch, Length, Mm, Point, Rect, RoundRect, SideOffsets, Size, Unit, Vector,
     DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT,
 };
 use key::Homing;
@@ -140,6 +140,7 @@ impl TextHeight {
     const NUM_HEIGHTS: usize = 10;
 
     /// Create a new [`TextHeight`] mapping from a [`HashMap`]
+    #[inline]
     #[must_use]
     pub fn new(heights: &HashMap<usize, Length<Dot>>) -> Self {
         if heights.is_empty() {
@@ -197,6 +198,7 @@ impl TextMargin {
     const NUM_RECTS: usize = 10;
 
     /// Create a new [`TextMargin`] mapping from a [`HashMap`]
+    #[inline]
     #[must_use]
     pub fn new(offsets: &HashMap<usize, SideOffsets<Dot>>) -> Self {
         // Get an array of all the offsets
@@ -339,9 +341,11 @@ pub struct Profile {
 }
 
 impl fmt::Debug for Profile {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut dbg = f.debug_struct("Profile");
-        dbg.field("typ", &self.typ)
+        let _ = dbg
+            .field("typ", &self.typ)
             .field("bottom", &self.bottom)
             .field("top", &self.top)
             .field("text_margin", &self.text_margin)
@@ -349,7 +353,7 @@ impl fmt::Debug for Profile {
             .field("homing", &self.homing);
 
         #[cfg(clippy)] // Suppress clippy::missing_fields_in_debug but only for this one field
-        dbg.field("__non_exhaustive", &"NonExhaustive");
+        let _ = dbg.field("__non_exhaustive", &"NonExhaustive");
 
         dbg.finish()
     }
@@ -436,7 +440,7 @@ impl Default for Profile {
 mod tests {
     use assert_matches::assert_matches;
     use indoc::indoc;
-    use isclose::{assert_is_close, IsClose};
+    use isclose::{assert_is_close, IsClose as _};
 
     use super::*;
 

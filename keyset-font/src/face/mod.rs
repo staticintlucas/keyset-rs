@@ -52,17 +52,23 @@ impl Face {
                 // Face since Face defaults to not allowed if there is no OS/2 table. We assume the
                 // user has read the font's license and knows what they're doing unless the font
                 // tells us otherwise.
-                if let Some(os2) = face.tables().os2 {
-                    if matches!(os2.permissions(), Some(ttf_parser::Permissions::Restricted)) {
-                        return Err(PermissionError::RestrictedLicense.into());
-                    } else if !os2.is_subsetting_allowed() {
-                        return Err(PermissionError::NoSubsetting.into());
-                    } else if !os2.is_outline_embedding_allowed() {
-                        return Err(PermissionError::BitmapEmbeddingOnly.into());
+                match face.tables().os2 {
+                    Some(os2)
+                        if matches!(
+                            os2.permissions(),
+                            Some(ttf_parser::Permissions::Restricted)
+                        ) =>
+                    {
+                        Err(PermissionError::RestrictedLicense.into())
                     }
+                    Some(os2) if !os2.is_subsetting_allowed() => {
+                        Err(PermissionError::NoSubsetting.into())
+                    }
+                    Some(os2) if !os2.is_outline_embedding_allowed() => {
+                        Err(PermissionError::BitmapEmbeddingOnly.into())
+                    }
+                    _ => Ok(rustybuzz::Face::from_face(face)),
                 }
-
-                Ok(rustybuzz::Face::from_face(face))
             },
         }
         .try_build()

@@ -1,7 +1,7 @@
-use isclose::IsClose;
-use saturate::SaturatingFrom;
+use isclose::IsClose as _;
+use saturate::SaturatingFrom as _;
 
-use crate::{Angle, ExtVec, Vector};
+use crate::{Angle, ExtVec as _, Vector};
 
 pub fn arc_to_bezier<U>(
     r: Vector<U>,

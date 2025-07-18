@@ -26,6 +26,7 @@ impl<U> Copy for Circle<U> {}
 
 // Impl here rather than derive so we don't require U: PartialEq
 impl<U> PartialEq for Circle<U> {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.center.eq(&other.center) && self.radius.eq(&other.radius)
     }
@@ -33,6 +34,7 @@ impl<U> PartialEq for Circle<U> {
 
 // Impl here rather than derive so we don't require U: Debug
 impl<U> fmt::Debug for Circle<U> {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Circle")
             .field("center", &self.center)

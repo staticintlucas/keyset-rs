@@ -10,7 +10,7 @@ use std::sync::{Arc, OnceLock};
 use itertools::izip;
 use rustybuzz::ttf_parser::name_id;
 use rustybuzz::{BufferClusterLevel, ShapePlan, UnicodeBuffer};
-use saturate::SaturatingInto;
+use saturate::SaturatingInto as _;
 
 use geom::{Angle, Length, Path, PathBuilder, Vector};
 
@@ -190,6 +190,7 @@ impl Font {
     }
 
     /// Renders a string of text to a path
+    #[inline]
     #[must_use]
     pub fn render_string(&self, text: &str) -> Path<FontUnit> {
         let mut buffer = UnicodeBuffer::new();

@@ -1,4 +1,4 @@
-use crate::{Angle, Circle, ExtVec, Length, Path, Rect, RoundRect, Size, Vector};
+use crate::{Angle, Circle, ExtVec as _, Length, Path, Rect, RoundRect, Size, Vector};
 
 /// Trait to allow conversion of primitive shapes to a [`Path`]
 pub trait ToPath<U> {

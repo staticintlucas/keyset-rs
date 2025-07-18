@@ -6,7 +6,7 @@ use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
 use geom::{
-    Dot, ExtRect, Length, Mm, Point, Rect, SideOffsets, Size, Vector, DOT_PER_MM, DOT_PER_UNIT,
+    Dot, ExtRect as _, Length, Mm, Point, Rect, SideOffsets, Size, Vector, DOT_PER_MM, DOT_PER_UNIT,
 };
 
 pub use self::error::{Error, Result};
@@ -14,6 +14,7 @@ use super::{BarProps, BumpProps, Profile, TopSurface};
 use crate::{BottomSurface, HomingProps, ScoopProps, TextHeight, TextMargin, Type};
 
 impl<'de> Deserialize<'de> for Type {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -47,6 +48,7 @@ impl<'de> Deserialize<'de> for Type {
 }
 
 impl<'de> Deserialize<'de> for ScoopProps {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -67,6 +69,7 @@ impl<'de> Deserialize<'de> for ScoopProps {
 }
 
 impl<'de> Deserialize<'de> for BarProps {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -90,6 +93,7 @@ impl<'de> Deserialize<'de> for BarProps {
 }
 
 impl<'de> Deserialize<'de> for BumpProps {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -112,6 +116,7 @@ impl<'de> Deserialize<'de> for BumpProps {
 }
 
 impl<'de> Deserialize<'de> for TopSurface {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -137,6 +142,7 @@ impl<'de> Deserialize<'de> for TopSurface {
 }
 
 impl<'de> Deserialize<'de> for BottomSurface {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -203,6 +209,7 @@ where
 }
 
 impl<'de> Deserialize<'de> for Profile {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -254,7 +261,7 @@ impl<'de> Deserialize<'de> for Profile {
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;
-    use isclose::{assert_is_close, IsClose};
+    use isclose::{assert_is_close, IsClose as _};
 
     use super::*;
 

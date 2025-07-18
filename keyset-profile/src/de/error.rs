@@ -63,7 +63,7 @@ mod tests {
             let error = Profile::from_toml("null").unwrap_err();
 
             assert_eq!(format!("{error}"), "expected = after key");
-        }
+        };
         #[cfg(feature = "json")]
         {
             let error = Profile::from_json("null").unwrap_err();
@@ -72,7 +72,7 @@ mod tests {
                 format!("{error}"),
                 "invalid type: null, expected struct RawProfileData at line 1 column 4"
             );
-        }
+        };
     }
 
     #[test]
@@ -86,7 +86,7 @@ mod tests {
                 format!("{}", error.source().unwrap()),
                 "expected = after key"
             );
-        }
+        };
         #[cfg(feature = "json")]
         {
             let error = Profile::from_json("null").unwrap_err();
@@ -96,7 +96,7 @@ mod tests {
                 format!("{}", error.source().unwrap()),
                 "invalid type: null, expected struct RawProfileData at line 1 column 4"
             );
-        }
+        };
     }
 
     #[test]
@@ -107,13 +107,13 @@ mod tests {
             let error: Error = result.unwrap_err().into();
 
             assert_matches!(error, Error::TomlParseError(..));
-        }
+        };
         #[cfg(feature = "json")]
         {
             let result: std::result::Result<i32, serde_json::Error> = serde_json::from_str("null");
             let error: Error = result.unwrap_err().into();
 
             assert_matches!(error, Error::JsonParseError(..));
-        }
+        };
     }
 }

@@ -47,30 +47,40 @@ svg = "0.18"
 tiny-skia = { version = "0.11", default-features = false }
 
 [workspace.lints.rust]
-deprecated-safe = "warn"
-future-incompatible = "warn"
-keyword-idents = "warn"
-let-underscore = "warn"
-nonstandard-style = "warn"
-refining-impl-trait = "warn"
-rust-2024-compatibility = "warn"
-edition-2024-expr-fragment-specifier = { level = "allow", priority = 1 }
+deprecated_safe = "warn"
+future_incompatible = "warn"
+keyword_idents = "warn"
+let_underscore = "warn"
+nonstandard_style = "warn"
+refining_impl_trait = "warn"
+rust_2024_compatibility = "warn"
+edition_2024_expr_fragment_specifier = { level = "allow", priority = 1 }
 unused = "warn"
 
-missing-copy-implementations = "warn"
-missing-debug-implementations = "warn"
-missing-docs = "warn"
-non-ascii-idents = "warn"
-single-use-lifetimes = "warn"
-trivial-casts = "warn"
-trivial-numeric-casts = "warn"
-unit-bindings = "warn"
-unstable-features = "warn"
-unused-crate-dependencies = "warn"
-unused-lifetimes = "warn"
-unused-qualifications = "warn"
-variant-size-differences = "warn"
-unsafe-code = { level = "forbid", priority = 1 }
+ambiguous_negative_literals = "warn"
+closure_returning_async_block = "warn"
+deref_into_dyn_supertrait = "warn"
+linker_messages = "warn"
+missing_copy_implementations = "warn"
+missing_debug_implementations = "warn"
+missing_docs = "warn"
+non_ascii_idents = "warn"
+redundant_imports = "warn"
+redundant_lifetimes = "warn"
+single_use_lifetimes = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(coverage)"] } # taiki-e/cargo-llvm-cov#123
+unit_bindings = "warn"
+unstable_features = "warn"
+unused_crate_dependencies = "warn"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+unused_qualifications = "warn"
+unused_results = "warn"
+variant_size_differences = "warn"
+
+unsafe_code = { level = "forbid", priority = 1 }
 
 [workspace.lints.clippy]
 all = "warn"
@@ -80,17 +90,20 @@ pedantic = "warn"
 
 allow_attributes_without_reason = "warn"
 dbg_macro = "warn"
+else_if_without_else = "warn"
 expect_used = "warn"
+if_then_some_else_none = "warn"
+missing_inline_in_public_items = "warn"
+module_name_repetitions = "warn"
 panic = "warn"
 pattern_type_mismatch = "warn"
 redundant_type_annotations = "warn"
+semicolon_outside_block = "warn"
 try_err = "warn"
 unseparated_literal_suffix = "warn"
+unused_trait_names = "warn"
 unwrap_used = "warn"
 
-enum-glob-use = { level = "allow", priority = 1 }
+enum_glob_use = { level = "allow", priority = 1 }
 
 suboptimal-flops = { level = "allow", priority = 1 } # TODO rust-lang/rust-clippy#6867
-module-name-repetitions = { level = "allow", priority = 1 } # TODO rust-lang/rust-clippy#8524
-literal-string-with-formatting-args = { level = "allow", priority = 1 } # TODO rust-lang/rust-clippy#13885, will be fixed in 1.87
-missing-const-for-fn = { level = "allow", priority = 1 } # TODO rust-lang/rust-clippy#14020, should be fixed soon

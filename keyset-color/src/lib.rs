@@ -28,7 +28,7 @@ mod rgb;
 use std::fmt::{Display, LowerHex, UpperHex};
 
 use isclose::IsClose;
-use saturate::SaturatingInto;
+use saturate::SaturatingInto as _;
 
 /// sRGB Color type.
 ///
@@ -449,7 +449,7 @@ mod tests {
             array[0] = 0.8;
             array[1] = 0.6;
             array[2] = 0.4;
-        }
+        };
 
         assert_is_close!(color.0[0], 0.8);
         assert_is_close!(color.0[1], 0.6);
@@ -461,7 +461,7 @@ mod tests {
             slice[0] = 0.2;
             slice[1] = 0.4;
             slice[2] = 0.6;
-        }
+        };
 
         assert_is_close!(color.0[0], 0.2);
         assert_is_close!(color.0[1], 0.4);

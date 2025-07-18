@@ -3,11 +3,11 @@ mod legend;
 
 use std::collections::HashSet;
 
-use saturate::SaturatingFrom;
+use saturate::SaturatingFrom as _;
 
 use ::key::{Key, Shape as KeyShape};
 use color::Color;
-use geom::{Dot, Length, Path, Point, ToPath, Unit, Vector};
+use geom::{Dot, Length, Path, Point, ToPath as _, Unit, Vector};
 
 use crate::Template;
 

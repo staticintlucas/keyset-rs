@@ -111,6 +111,7 @@ pub struct Template {
 
 impl Template {
     /// Draw the given keys using this template
+    #[inline]
     #[must_use]
     pub fn draw(&self, keys: &[Key]) -> Drawing {
         let bounds = keys
@@ -147,9 +148,10 @@ impl Default for Template {
 }
 
 impl fmt::Debug for Template {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut dbg = f.debug_struct("Template");
-        dbg.field("profile", &self.profile)
+        let _ = dbg.field("profile", &self.profile)
             .field("font", &self.font)
             .field("scale", &self.scale)
             .field("outline_width", &self.outline_width)
@@ -157,7 +159,7 @@ impl fmt::Debug for Template {
             .field("show_margin", &self.show_margin);
 
         #[cfg(clippy)] // Suppress clippy::missing_fields_in_debug but only for this one field
-        dbg.field("__non_exhaustive", &"NonExhaustive");
+        let _ = dbg.field("__non_exhaustive", &"NonExhaustive");
 
         dbg.finish()
     }
@@ -168,7 +170,6 @@ mod tests {
     use isclose::assert_is_close;
 
     use geom::{Mm, DOT_PER_MM};
-    use profile::Profile;
 
     use super::*;
 

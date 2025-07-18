@@ -3,7 +3,7 @@ use std::fmt;
 
 use isclose::IsClose;
 
-use crate::{ExtRect, Length, Point, Rect, Size};
+use crate::{ExtRect as _, Length, Point, Rect, Size};
 
 /// A rectangle with rounded corners
 pub struct RoundRect<U> {
@@ -28,6 +28,7 @@ impl<U> Copy for RoundRect<U> {}
 
 // Impl here rather than derive so we don't require U: PartialEq
 impl<U> PartialEq for RoundRect<U> {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.min.eq(&other.min) && self.max.eq(&other.max) && self.radius.eq(&other.radius)
     }
@@ -35,6 +36,7 @@ impl<U> PartialEq for RoundRect<U> {
 
 // Impl here rather than derive so we don't require U: Debug
 impl<U> fmt::Debug for RoundRect<U> {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RoundRect")
             .field("min", &self.min)
