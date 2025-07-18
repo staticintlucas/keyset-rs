@@ -12,7 +12,7 @@ jobs:
       - name: Setup toolchain
         uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: nightly-2025-02-25
+          toolchain: nightly
           components: rustfmt, clippy
       - name: Run rustfmt
         run: cargo fmt --all -- --check
@@ -44,7 +44,7 @@ jobs:
         env:
           RUSTFLAGS: -D warnings
       - name: Run cargo test
-        run: cargo test --all-features
+        run: cargo test --no-fail-fast --all-features
 
   docs:
     name: Build docs

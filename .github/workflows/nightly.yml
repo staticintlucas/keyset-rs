@@ -24,4 +24,4 @@ jobs:
       env:
         RUSTFLAGS: -D warnings
     - name: Test
-      run: cargo test --all-features
+      run: cargo test --no-fail-fast --all-features
