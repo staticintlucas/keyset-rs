@@ -170,7 +170,9 @@ impl Font {
     /// Clockwise (forward) angles are positive
     ///
     /// <div class="warning">
+    ///
     /// This function will return `0` if the slope angle is not specified in the font
+    ///
     /// </div>
     #[inline]
     #[must_use]
@@ -293,7 +295,7 @@ mod tests {
         assert_is_close!(font.descender(), Length::new(400.0));
         assert_is_close!(font.line_gap(), Length::new(0.0));
         assert_is_close!(font.line_height(), Length::new(1424.0));
-        assert_is_close!(font.slope(), Angle::degrees(0.0));
+        assert_is_close!(font.slope(), Angle::ZERO);
         assert_eq!(font.num_glyphs(), 3);
 
         let data = std::fs::read(env!("NULL_TTF")).unwrap();

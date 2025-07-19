@@ -6,12 +6,14 @@
 #![cfg_attr(coverage, expect(unstable_features))]
 #![cfg_attr(coverage, feature(coverage_attribute))]
 
+mod angle;
 mod circle;
 mod path;
 mod round_rect;
 mod traits;
 mod unit;
 
+pub use self::angle::Angle;
 pub use self::circle::Circle;
 pub use self::path::{Path, PathBuilder, PathSegment, ToPath};
 pub use self::round_rect::RoundRect;
@@ -19,9 +21,6 @@ pub use self::traits::*;
 pub use self::unit::{
     Dot, Inch, Mm, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT, INCH_PER_UNIT, MM_PER_UNIT,
 };
-
-/// An angle in radians
-pub type Angle = euclid::Angle<f32>;
 
 /// A one-dimensional distance with unit `U`
 pub type Length<U> = euclid::Length<f32, U>;

@@ -16,11 +16,11 @@ pub struct Mm;
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Inch;
 
-/// Conversion factor for Keyboard Units to Drawing Units
+/// Conversion factor for keyboard units to drawing units
 pub const DOT_PER_UNIT: Scale<Unit, Dot> = Scale::new(1000.0);
-/// Conversion factor for Keyboard Units to Millimeters
+/// Conversion factor for keyboard units to millimeters
 pub const MM_PER_UNIT: Scale<Unit, Mm> = Scale::new(19.05);
-/// Conversion factor for Keyboard Units to Inches
+/// Conversion factor for keyboard units to inches
 pub const INCH_PER_UNIT: Scale<Unit, Inch> = Scale::new(0.75);
 
 /// Conversion factor for Millimeters to Drawing Units

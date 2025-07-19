@@ -32,33 +32,33 @@ pub fn arc_to_bezier<U>(
     let phi0 = {
         // Vector::angle_from_x_axis is super inaccurate, so we use atan2 directly
         let c_r = (-c).component_div(r);
-        Angle::radians(f32::atan2(c_r.y, c_r.x))
+        Angle::atan2(c_r.y, c_r.x)
     };
     let dphi = {
         let dc_r = (d - c).component_div(r);
-        Angle::radians(f32::atan2(dc_r.y, dc_r.x)) - phi0
+        Angle::atan2(dc_r.y, dc_r.x) - phi0
     };
 
     // Add and subtract 2pi (360 deg) to make sure dphi is the correct angle to sweep
     let dphi = match (laf, sf) {
-        (true, true) if dphi < Angle::pi() => dphi + Angle::two_pi(),
-        (true, false) if dphi > -Angle::pi() => dphi - Angle::two_pi(),
-        (false, true) if dphi < Angle::zero() => dphi + Angle::two_pi(),
-        (false, false) if dphi > Angle::zero() => dphi - Angle::two_pi(),
+        (true, true) if dphi < Angle::PI => dphi + Angle::TAU,
+        (true, false) if dphi > -Angle::PI => dphi - Angle::TAU,
+        (false, true) if dphi < Angle::ZERO => dphi + Angle::TAU,
+        (false, false) if dphi > Angle::ZERO => dphi - Angle::TAU,
         _ => dphi,
     };
 
     // Double checks the quadrant of dphi. Shouldn't ever fail aside from maybe tolerance issues?
     // TODO these are failing during tests (due to tolerance) on aarch64-apple-darwin
     // match (laf, sf) {
-    //     (false, false) => debug_assert!((-Angle::pi()..=Angle::zero()).contains(&dphi)),
-    //     (false, true) => debug_assert!((Angle::zero()..=Angle::pi()).contains(&dphi)),
-    //     (true, false) => debug_assert!((-Angle::two_pi()..=-Angle::pi()).contains(&dphi)),
-    //     (true, true) => debug_assert!((Angle::pi()..=Angle::two_pi()).contains(&dphi)),
+    //     (false, false) => debug_assert!((-Angle::PI..=Angle::ZERO).contains(&dphi)),
+    //     (false, true) => debug_assert!((Angle::ZERO..=Angle::PI).contains(&dphi)),
+    //     (true, false) => debug_assert!((-Angle::TAU..=-Angle::PI).contains(&dphi)),
+    //     (true, true) => debug_assert!((Angle::PI..=Angle::TAU).contains(&dphi)),
     // }
 
     // Subtract f32::TOLERANCE so 90.0001 deg doesn't become 2 segs
-    let segments = ((dphi / Angle::frac_pi_2()).abs() - f32::ABS_TOL).ceil();
+    let segments = ((dphi / Angle::FRAC_PI_2).abs() - f32::ABS_TOL).ceil();
     let i_segments = u8::saturating_from(segments); // 0 < segments <= 4
     let dphi = dphi / segments;
 
@@ -92,7 +92,7 @@ fn get_center<U>(r: Vector<U>, laf: bool, sf: bool, d: Vector<U>) -> Vector<U> {
 }
 
 fn create_arc<U>(r: Vector<U>, phi0: Angle, dphi: Angle) -> (Vector<U>, Vector<U>, Vector<U>) {
-    let a = (4.0 / 3.0) * (dphi / 4.0).radians.tan();
+    let a = (4.0 / 3.0) * (dphi / 4.0).tan();
 
     let d1 = Vector::from(phi0.sin_cos()).yx();
     let d4 = Vector::from((phi0 + dphi).sin_cos()).yx();
@@ -237,7 +237,7 @@ mod tests {
                 dphi: Angle::degrees(dphi),
             }
         }
-        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).radians.tan();
+        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).tan();
         let params = [
             params((1.0, 1.0), 0.0, 90.0),
             params((1.0, 1.0), 90.0, 90.0),

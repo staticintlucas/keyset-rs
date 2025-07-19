@@ -69,13 +69,12 @@ impl From<[Option<Legend>; 9]> for Legends {
 
 impl From<[[Option<Legend>; 3]; 3]> for Legends {
     /// Converts from an array of arrays in row-major order
+    #[allow(clippy::many_single_char_names)]
     #[inline]
-    fn from(mut value: [[Option<Legend>; 3]; 3]) -> Self {
-        let mut arr = <[Option<Legend>; 9]>::default();
-        arr[0..3].swap_with_slice(&mut value[0]);
-        arr[3..6].swap_with_slice(&mut value[1]);
-        arr[6..9].swap_with_slice(&mut value[2]);
-        Self(arr)
+    fn from(value: [[Option<Legend>; 3]; 3]) -> Self {
+        // Unfortunately this seems to be the only way to perform this conversion efficiently
+        let [[a, b, c], [d, e, f], [g, h, i]] = value;
+        Self([a, b, c, d, e, f, g, h, i])
     }
 }
 

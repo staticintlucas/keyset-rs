@@ -1069,14 +1069,14 @@ mod tests {
         let mut arc = PathBuilder::new();
         arc.abs_arc(
             Vector::new(1.0, 1.0),
-            Angle::zero(),
+            Angle::ZERO,
             false,
             false,
             Point::new(1.0, 1.0),
         );
         arc.rel_arc(
             Vector::new(1.0, 1.0),
-            Angle::zero(),
+            Angle::ZERO,
             false,
             true,
             Vector::new(1.0, 1.0),

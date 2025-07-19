@@ -15,14 +15,14 @@ impl<U> ToPath<U> for Circle<U> {
         builder.abs_move(self.center - Size::new(radius, 0.0));
         builder.rel_arc(
             Vector::splat(radius),
-            Angle::zero(),
+            Angle::ZERO,
             false,
             true,
             Vector::new(2.0 * radius, 0.0),
         );
         builder.rel_arc(
             Vector::splat(radius),
-            Angle::zero(),
+            Angle::ZERO,
             false,
             true,
             Vector::new(-2.0 * radius, 0.0),
@@ -55,13 +55,13 @@ impl<U> ToPath<U> for RoundRect<U> {
 
         let mut builder = Path::builder_with_capacity(9);
         builder.abs_move(self.min + Size::new(0.0, radius));
-        builder.rel_arc(radii, Angle::zero(), false, true, radii.neg_y());
+        builder.rel_arc(radii, Angle::ZERO, false, true, radii.neg_y());
         builder.abs_horiz_line(Length::new(self.max.x - radius));
-        builder.rel_arc(radii, Angle::zero(), false, true, radii);
+        builder.rel_arc(radii, Angle::ZERO, false, true, radii);
         builder.abs_vert_line(Length::new(self.max.y - radius));
-        builder.rel_arc(radii, Angle::zero(), false, true, radii.neg_x());
+        builder.rel_arc(radii, Angle::ZERO, false, true, radii.neg_x());
         builder.abs_horiz_line(Length::new(self.min.x + radius));
-        builder.rel_arc(radii, Angle::zero(), false, true, -radii);
+        builder.rel_arc(radii, Angle::ZERO, false, true, -radii);
         builder.close();
 
         builder.build()
@@ -81,7 +81,7 @@ mod tests {
         let circle = Circle::<()>::new(Point::new(1.5, 2.0), Length::new(1.0));
         let path = circle.to_path();
 
-        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).radians.tan();
+        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).tan();
         let exp = [
             PathSegment::<()>::Move(Point::new(0.5, 2.0)),
             PathSegment::CubicBezier(
@@ -141,7 +141,7 @@ mod tests {
             RoundRect::<()>::new(Point::new(2.0, 4.0), Point::new(6.0, 8.0), Length::new(1.0));
         let path = rect.to_path();
 
-        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).radians.tan();
+        let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).tan();
         let exp = [
             PathSegment::<()>::Move(Point::new(2.0, 5.0)),
             PathSegment::CubicBezier(
