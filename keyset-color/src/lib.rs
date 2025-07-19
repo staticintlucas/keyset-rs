@@ -19,6 +19,9 @@
 //! [`RGB<u16>`]: ::rgb::RGB
 //! [`RGB<f32>`]: ::rgb::RGB
 
+#![cfg_attr(coverage, expect(unstable_features))]
+#![cfg_attr(coverage, feature(coverage_attribute))]
+
 #[cfg(feature = "tiny-skia")]
 mod skia;
 
@@ -298,6 +301,7 @@ impl IsClose<f32> for Color {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use isclose::assert_is_close;
 

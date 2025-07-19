@@ -252,6 +252,7 @@ impl Face {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use assert_matches::assert_matches;
     use isclose::assert_is_close;

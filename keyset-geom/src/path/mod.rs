@@ -506,6 +506,7 @@ fn calculate_bounds<U>(data: &[PathSegment<U>]) -> Rect<U> {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use euclid::Scale;
     use isclose::assert_is_close;

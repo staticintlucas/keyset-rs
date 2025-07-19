@@ -181,6 +181,7 @@ pub fn mac_roman_decode(chars: &[u8]) -> String {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use super::*;
 

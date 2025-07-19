@@ -3,6 +3,9 @@
 //!
 //! [keyset]: https://crates.io/crates/keyset
 
+#![cfg_attr(coverage, expect(unstable_features))]
+#![cfg_attr(coverage, feature(coverage_attribute))]
+
 mod circle;
 mod path;
 mod round_rect;

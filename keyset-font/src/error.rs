@@ -81,6 +81,7 @@ impl From<PermissionError> for Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use std::error::Error as _;
 

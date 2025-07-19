@@ -138,7 +138,8 @@ impl IndexMut<(usize, usize)> for Legends {
 }
 
 #[cfg(test)]
-pub mod tests {
+#[cfg_attr(coverage, coverage(off))]
+mod tests {
     use isclose::assert_is_close;
 
     use super::*;

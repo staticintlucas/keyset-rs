@@ -4,6 +4,9 @@
 //!
 //! [keyset]: https://crates.io/crates/keyset
 
+#![cfg_attr(coverage, expect(unstable_features))]
+#![cfg_attr(coverage, feature(coverage_attribute))]
+
 #[cfg(feature = "serde")]
 mod de;
 
@@ -437,6 +440,7 @@ impl Default for Profile {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use assert_matches::assert_matches;
     use indoc::indoc;

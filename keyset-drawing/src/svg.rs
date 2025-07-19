@@ -91,6 +91,7 @@ fn draw_path(path: &KeyPath) -> SvgPath {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use indoc::indoc;
 

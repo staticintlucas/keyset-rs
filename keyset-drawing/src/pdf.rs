@@ -156,6 +156,7 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use key::Key;
 

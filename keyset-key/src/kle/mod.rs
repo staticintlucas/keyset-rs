@@ -113,6 +113,7 @@ pub fn from_json(json: &str) -> Result<Box<[Key]>> {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use assert_matches::assert_matches;
     use indoc::indoc;

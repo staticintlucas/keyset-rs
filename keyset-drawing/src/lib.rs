@@ -3,6 +3,9 @@
 //!
 //! [keyset]: https://crates.io/crates/keyset
 
+#![cfg_attr(coverage, expect(unstable_features))]
+#![cfg_attr(coverage, feature(coverage_attribute))]
+
 mod error;
 mod imp;
 #[cfg(feature = "pdf")]
@@ -167,6 +170,7 @@ impl fmt::Debug for Template {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use isclose::assert_is_close;
 

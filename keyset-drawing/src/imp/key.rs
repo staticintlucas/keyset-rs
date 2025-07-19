@@ -200,6 +200,7 @@ fn step_path(rect: RoundRect<Dot>) -> Path<Dot> {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use isclose::assert_is_close;
 

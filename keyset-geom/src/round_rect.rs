@@ -141,6 +141,7 @@ impl<U> IsClose<f32> for RoundRect<U> {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use isclose::assert_is_close;
 
