@@ -7,6 +7,7 @@
 
 mod error;
 mod face;
+mod unit;
 
 use std::sync::{Arc, OnceLock};
 
@@ -19,10 +20,7 @@ use geom::{Angle, Length, Path, PathBuilder, Vector};
 
 pub use self::error::{Error, Result};
 use self::face::Face;
-
-/// Unit within a font
-#[derive(Debug, Clone, Copy)]
-pub struct FontUnit;
+use self::unit::FontUnit;
 
 /// A parsed font
 #[derive(Debug, Clone)]
