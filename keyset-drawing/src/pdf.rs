@@ -134,11 +134,10 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
         let (r, g, b) = outline.color.into();
         _ = content.set_stroke_rgb(r, g, b);
         // Use mean of x and y scales
-        let scale = Scale::<Dot, PdfUnit>::new(
-            (f32::hypot(transform.m11, transform.m21) + f32::hypot(transform.m12, transform.m22))
-                / 2.0,
-        );
-        _ = content.set_line_width((outline.width * scale).get());
+        let scale = (f32::hypot(transform.m11, transform.m21)
+            + f32::hypot(transform.m12, transform.m22))
+            / 2.0;
+        _ = content.set_line_width((outline.width * scale).into());
     }
 
     match (path.fill, path.outline) {

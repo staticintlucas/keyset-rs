@@ -7,6 +7,9 @@ use crate::Scale;
 /// Trait for Unit types
 pub trait Unit:
     Sized
+    + Copy
+    + From<f32>
+    + Into<f32>
     + ops::Add<Self, Output = Self>
     + ops::AddAssign<Self>
     + ops::Sub<Self, Output = Self>
@@ -24,6 +27,32 @@ pub trait Unit:
 {
 }
 
+/// Convenience trait for converting units
+///
+/// Used since just [`From`] will cause conflicts with generic impls in core
+pub trait FromUnit<U> {
+    /// Perform the conversion
+    fn from_unit(value: U) -> Self;
+}
+
+/// Convenience trait for converting units
+///
+/// This should not be implemented directly, implement [`FromUnit`] instead
+pub trait IntoUnit<U> {
+    /// Perform the conversion
+    fn into_unit(self) -> U;
+}
+
+impl<U, V> IntoUnit<V> for U
+where
+    V: FromUnit<U>,
+{
+    #[inline]
+    fn into_unit(self) -> V {
+        V::from_unit(self)
+    }
+}
+
 /// Keyboard Unit, usually 19.05 mm or 0.75 in
 #[derive(Clone, Copy, Debug, Default)]
 #[repr(transparent)]
@@ -35,23 +64,23 @@ impl KeyUnit {
     const PER_INCH: f32 = 1.0 / Inch::PER_UNIT;
 }
 
-impl From<Dot> for KeyUnit {
+impl FromUnit<Dot> for KeyUnit {
     #[inline]
-    fn from(value: Dot) -> Self {
+    fn from_unit(value: Dot) -> Self {
         Self(value.0 * Self::PER_DOT)
     }
 }
 
-impl From<Mm> for KeyUnit {
+impl FromUnit<Mm> for KeyUnit {
     #[inline]
-    fn from(value: Mm) -> Self {
+    fn from_unit(value: Mm) -> Self {
         Self(value.0 * Self::PER_MM)
     }
 }
 
-impl From<Inch> for KeyUnit {
+impl FromUnit<Inch> for KeyUnit {
     #[inline]
-    fn from(value: Inch) -> Self {
+    fn from_unit(value: Inch) -> Self {
         Self(value.0 * Self::PER_INCH)
     }
 }
@@ -189,23 +218,23 @@ impl Dot {
     const PER_INCH: f32 = Self::PER_UNIT / Inch::PER_UNIT;
 }
 
-impl From<KeyUnit> for Dot {
+impl FromUnit<KeyUnit> for Dot {
     #[inline]
-    fn from(value: KeyUnit) -> Self {
+    fn from_unit(value: KeyUnit) -> Self {
         Self(value.0 * Self::PER_UNIT)
     }
 }
 
-impl From<Mm> for Dot {
+impl FromUnit<Mm> for Dot {
     #[inline]
-    fn from(value: Mm) -> Self {
+    fn from_unit(value: Mm) -> Self {
         Self(value.0 * Self::PER_MM)
     }
 }
 
-impl From<Inch> for Dot {
+impl FromUnit<Inch> for Dot {
     #[inline]
-    fn from(value: Inch) -> Self {
+    fn from_unit(value: Inch) -> Self {
         Self(value.0 * Self::PER_INCH)
     }
 }
@@ -343,23 +372,23 @@ impl Mm {
     const PER_INCH: f32 = Self::PER_UNIT / Inch::PER_UNIT;
 }
 
-impl From<KeyUnit> for Mm {
+impl FromUnit<KeyUnit> for Mm {
     #[inline]
-    fn from(value: KeyUnit) -> Self {
+    fn from_unit(value: KeyUnit) -> Self {
         Self(value.0 * Self::PER_UNIT)
     }
 }
 
-impl From<Dot> for Mm {
+impl FromUnit<Dot> for Mm {
     #[inline]
-    fn from(value: Dot) -> Self {
+    fn from_unit(value: Dot) -> Self {
         Self(value.0 * Self::PER_DOT)
     }
 }
 
-impl From<Inch> for Mm {
+impl FromUnit<Inch> for Mm {
     #[inline]
-    fn from(value: Inch) -> Self {
+    fn from_unit(value: Inch) -> Self {
         Self(value.0 * Self::PER_INCH)
     }
 }
@@ -497,23 +526,23 @@ impl Inch {
     const PER_MM: f32 = Self::PER_UNIT / Mm::PER_UNIT;
 }
 
-impl From<KeyUnit> for Inch {
+impl FromUnit<KeyUnit> for Inch {
     #[inline]
-    fn from(value: KeyUnit) -> Self {
+    fn from_unit(value: KeyUnit) -> Self {
         Self(value.0 * Self::PER_UNIT)
     }
 }
 
-impl From<Dot> for Inch {
+impl FromUnit<Dot> for Inch {
     #[inline]
-    fn from(value: Dot) -> Self {
+    fn from_unit(value: Dot) -> Self {
         Self(value.0 * Self::PER_DOT)
     }
 }
 
-impl From<Mm> for Inch {
+impl FromUnit<Mm> for Inch {
     #[inline]
-    fn from(value: Mm) -> Self {
+    fn from_unit(value: Mm) -> Self {
         Self(value.0 * Self::PER_MM)
     }
 }
@@ -662,13 +691,13 @@ mod tests {
 
     #[test]
     fn key_unit() {
-        let key_unit = KeyUnit::from(Dot(500.0));
+        let key_unit = KeyUnit::from_unit(Dot(500.0));
         assert_is_close!(key_unit.0, 0.5);
 
-        let key_unit = KeyUnit::from(Mm(38.1));
+        let key_unit = KeyUnit::from_unit(Mm(38.1));
         assert_is_close!(key_unit.0, 2.0);
 
-        let key_unit = KeyUnit::from(Inch(1.0));
+        let key_unit = KeyUnit::from_unit(Inch(1.0));
         assert_is_close!(key_unit.0, 4.0 / 3.0);
 
         let key_unit = KeyUnit::from(3.0);
@@ -753,13 +782,13 @@ mod tests {
 
     #[test]
     fn dot() {
-        let dot = Dot::from(KeyUnit(0.5));
+        let dot = Dot::from_unit(KeyUnit(0.5));
         assert_is_close!(dot.0, 500.0);
 
-        let dot = Dot::from(Mm(38.1));
+        let dot = Dot::from_unit(Mm(38.1));
         assert_is_close!(dot.0, 2000.0);
 
-        let dot = Dot::from(Inch(1.0));
+        let dot = Dot::from_unit(Inch(1.0));
         assert_is_close!(dot.0, 4000.0 / 3.0);
 
         let dot = Dot::from(3.0);
@@ -844,13 +873,13 @@ mod tests {
 
     #[test]
     fn mm() {
-        let mm = Mm::from(KeyUnit(0.5));
+        let mm = Mm::from_unit(KeyUnit(0.5));
         assert_is_close!(mm.0, 9.525);
 
-        let mm = Mm::from(Dot(2000.0));
+        let mm = Mm::from_unit(Dot(2000.0));
         assert_is_close!(mm.0, 38.1);
 
-        let mm = Mm::from(Inch(1.0));
+        let mm = Mm::from_unit(Inch(1.0));
         assert_is_close!(mm.0, 25.4);
 
         let mm = Mm::from(3.0);
@@ -935,13 +964,13 @@ mod tests {
 
     #[test]
     fn inch() {
-        let inch = Inch::from(KeyUnit(4.0 / 3.0));
+        let inch = Inch::from_unit(KeyUnit(4.0 / 3.0));
         assert_is_close!(inch.0, 1.0);
 
-        let inch = Inch::from(Dot(2000.0));
+        let inch = Inch::from_unit(Dot(2000.0));
         assert_is_close!(inch.0, 1.5);
 
-        let inch = Inch::from(Mm(19.05));
+        let inch = Inch::from_unit(Mm(19.05));
         assert_is_close!(inch.0, 0.75);
 
         let inch = Inch::from(3.0);

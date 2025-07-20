@@ -1,65 +1,41 @@
 use std::borrow::Borrow;
-use std::fmt;
 
 use isclose::IsClose;
 
-use crate::{Length, Point};
+use crate::{Dist, Point, Unit};
 
 /// A circle
-pub struct Circle<U> {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Circle<U: Unit> {
     /// Center point
     pub center: Point<U>,
     /// Radius size
-    pub radius: Length<U>,
+    pub radius: Dist<U>,
 }
 
-// Impl here rather than derive so we don't require U: Clone
-impl<U> Clone for Circle<U> {
-    #[inline]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-// Impl here rather than derive so we don't require U: Copy
-impl<U> Copy for Circle<U> {}
-
-// Impl here rather than derive so we don't require U: PartialEq
-impl<U> PartialEq for Circle<U> {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        self.center.eq(&other.center) && self.radius.eq(&other.radius)
-    }
-}
-
-// Impl here rather than derive so we don't require U: Debug
-impl<U> fmt::Debug for Circle<U> {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Circle")
-            .field("center", &self.center)
-            .field("radius", &self.radius)
-            .finish()
-    }
-}
-
-impl<U> Circle<U> {
+impl<U> Circle<U>
+where
+    U: Unit,
+{
     /// Create a new circle with the given center and radius.
     #[inline]
     #[must_use]
-    pub const fn new(center: Point<U>, radius: Length<U>) -> Self {
+    pub const fn new(center: Point<U>, radius: Dist<U>) -> Self {
         Self { center, radius }
     }
 
     /// Create a new circle with the given center and diameter.
     #[inline]
     #[must_use]
-    pub fn from_center_and_diameter(center: Point<U>, diameter: Length<U>) -> Self {
+    pub fn from_center_and_diameter(center: Point<U>, diameter: Dist<U>) -> Self {
         Self::new(center, diameter / 2.0)
     }
 }
 
-impl<U> IsClose<f32> for Circle<U> {
+impl<U> IsClose<f32> for Circle<U>
+where
+    U: Unit,
+{
     const ABS_TOL: f32 = f32::ABS_TOL;
     const REL_TOL: f32 = f32::REL_TOL;
 
@@ -82,53 +58,23 @@ impl<U> IsClose<f32> for Circle<U> {
 mod tests {
     use isclose::assert_is_close;
 
+    use crate::Mm;
+
     use super::*;
 
     #[test]
-    fn circle_clone() {
-        struct NonCloneable;
-        let circle = Circle::<NonCloneable> {
-            center: Point::new(1.0, 2.0),
-            radius: Length::new(1.0),
-        };
-
-        #[allow(clippy::clone_on_copy)] // We want to test clone, not copy
-        let circle2 = circle.clone();
-
-        assert_is_close!(circle, circle2);
-    }
-
-    #[test]
-    fn circle_partial_eq() {
-        struct NonPartialEq;
-        let circle = Circle::<NonPartialEq>::new(Point::new(1.0, 2.0), Length::new(1.0));
-        let circle2 = circle;
-
-        assert_eq!(circle, circle2);
-    }
-
-    #[test]
-    fn circle_debug() {
-        struct NonDebug;
-        let circle = Circle::<NonDebug>::new(Point::new(1.0, 2.0), Length::new(1.0));
-        let dbg = format!("{circle:?}");
-
-        assert_eq!(dbg, "Circle { center: (1.0, 2.0), radius: 1.0 }");
-    }
-
-    #[test]
     fn circle_new() {
-        let circle = Circle::<()>::new(Point::new(1.0, 2.0), Length::new(0.5));
+        let circle = Circle::new(Point::new(1.0, 2.0), Dist::new(Mm(0.5)));
 
-        assert_is_close!(circle.center, Point::<()>::new(1.0, 2.0));
-        assert_is_close!(circle.radius, Length::<()>::new(0.5));
+        assert_is_close!(circle.center, Point::new(1.0, 2.0));
+        assert_is_close!(circle.radius, Dist::new(Mm(0.5)));
     }
 
     #[test]
     fn circle_from_center_and_diameter() {
-        let circle = Circle::<()>::from_center_and_diameter(Point::new(1.0, 2.0), Length::new(2.0));
+        let circle = Circle::from_center_and_diameter(Point::new(1.0, 2.0), Dist::new(Mm(2.0)));
 
-        assert_is_close!(circle.center, Point::<()>::new(1.0, 2.0));
-        assert_is_close!(circle.radius, Length::<()>::new(1.0));
+        assert_is_close!(circle.center, Point::new(1.0, 2.0));
+        assert_is_close!(circle.radius, Dist::new(Mm(1.0)));
     }
 }

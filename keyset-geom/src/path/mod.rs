@@ -8,7 +8,7 @@ use std::ops::{Add, Div, DivAssign, Mul, MulAssign};
 use self::arc_to_bezier::arc_to_bezier;
 pub use self::segment::PathSegment;
 pub use self::to_path::ToPath;
-use crate::{Angle, Length, Point, Rect, Scale, Transform, Vector};
+use crate::{Angle, Dist, Point, Rect, Scale, Transform, Unit, Vector};
 
 /// A 2-dimensional path represented by a number of path segments
 #[derive(Debug)]
@@ -40,7 +40,10 @@ impl<U> Default for Path<U> {
     }
 }
 
-impl<U> Path<U> {
+impl<U> Path<U>
+where
+    U: Unit,
+{
     /// Create a new empty path
     #[inline]
     #[must_use]
@@ -117,7 +120,10 @@ impl<U> Path<U> {
     }
 }
 
-impl<'a, U> IntoIterator for &'a Path<U> {
+impl<'a, U> IntoIterator for &'a Path<U>
+where
+    U: Unit,
+{
     type Item = &'a PathSegment<U>;
     type IntoIter = std::slice::Iter<'a, PathSegment<U>>;
 
@@ -127,7 +133,10 @@ impl<'a, U> IntoIterator for &'a Path<U> {
     }
 }
 
-impl<'a, U> IntoIterator for &'a mut Path<U> {
+impl<'a, U> IntoIterator for &'a mut Path<U>
+where
+    U: Unit,
+{
     type Item = &'a mut PathSegment<U>;
     type IntoIter = std::slice::IterMut<'a, PathSegment<U>>;
 
@@ -182,7 +191,10 @@ where
     }
 }
 
-impl<U, V> Mul<Scale<U, V>> for Path<U> {
+impl<U, V> Mul<Scale<U, V>> for Path<U>
+where
+    U: Unit,
+{
     type Output = Path<V>;
 
     #[inline]
@@ -221,7 +233,10 @@ impl<U> MulAssign<Transform<U, U>> for Path<U> {
     }
 }
 
-impl<U, V> Div<Scale<V, U>> for Path<U> {
+impl<U, V> Div<Scale<V, U>> for Path<U>
+where
+    U: Unit,
+{
     type Output = Path<V>;
 
     #[inline]
@@ -263,14 +278,20 @@ impl<U> Clone for PathBuilder<U> {
     }
 }
 
-impl<U> Default for PathBuilder<U> {
+impl<U> Default for PathBuilder<U>
+where
+    U: Unit,
+{
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<U> PathBuilder<U> {
+impl<U> PathBuilder<U>
+where
+    U: Unit,
+{
     /// Create a new [`PathBuilder`]
     #[inline]
     #[must_use]
@@ -341,14 +362,14 @@ impl<U> PathBuilder<U> {
 
     /// Add a horizontal line segment with relative distance
     #[inline]
-    pub fn rel_horiz_line(&mut self, dx: Length<U>) {
-        self.rel_line(Vector::new(dx.get(), 0.0));
+    pub fn rel_horiz_line(&mut self, dx: Dist<U>) {
+        self.rel_line(Vector::new(dx.into(), 0.0));
     }
 
     /// Add a vertical line segment with relative distance
     #[inline]
-    pub fn rel_vert_line(&mut self, dy: Length<U>) {
-        self.rel_line(Vector::new(0.0, dy.get()));
+    pub fn rel_vert_line(&mut self, dy: Dist<U>) {
+        self.rel_line(Vector::new(0.0, dy.into()));
     }
 
     /// Add a cubic Bézier segment with relative control points and distance
@@ -425,14 +446,14 @@ impl<U> PathBuilder<U> {
 
     /// Add a horizontal line segment with absolute distance
     #[inline]
-    pub fn abs_horiz_line(&mut self, x: Length<U>) {
-        self.rel_horiz_line(x - Length::new(self.point.x));
+    pub fn abs_horiz_line(&mut self, x: Dist<U>) {
+        self.rel_horiz_line(x - Dist::new(self.point.x.into()));
     }
 
     /// Add a vertical line segment with absolute distance
     #[inline]
-    pub fn abs_vert_line(&mut self, y: Length<U>) {
-        self.rel_vert_line(y - Length::new(self.point.y));
+    pub fn abs_vert_line(&mut self, y: Dist<U>) {
+        self.rel_vert_line(y - Dist::new(self.point.y.into()));
     }
 
     /// Add a cubic Bézier segment with absolute control points and distance
@@ -466,7 +487,10 @@ impl<U> PathBuilder<U> {
     }
 }
 
-impl<U> Add for PathBuilder<U> {
+impl<U> Add for PathBuilder<U>
+where
+    U: Unit,
+{
     type Output = Self;
 
     /// Return a new [`PathBuilder`] by appending another [`PathBuilder`] to `self`
@@ -512,7 +536,7 @@ mod tests {
     use isclose::assert_is_close;
 
     use super::*;
-    use crate::Size;
+    use crate::{Mm, Size};
 
     #[test]
     fn test_path_clone() {
@@ -539,7 +563,7 @@ mod tests {
 
     #[test]
     fn test_path_empty() {
-        let paths = [Path::<()>::default(), Path::empty()];
+        let paths = [Path::<Mm>::default(), Path::empty()];
 
         for path in paths {
             assert!(path.data.is_empty());
@@ -550,7 +574,7 @@ mod tests {
     #[test]
     fn test_path_from_slice() {
         let paths = [
-            Path::<()>::empty(),
+            Path::<Mm>::empty(),
             Path {
                 data: Box::new([
                     PathSegment::Move(Point::zero()),
@@ -592,7 +616,7 @@ mod tests {
 
     #[test]
     fn test_path_len() {
-        let path = Path::<()> {
+        let path = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -611,7 +635,7 @@ mod tests {
 
     #[test]
     fn test_path_is_empty() {
-        let path = Path::<()> {
+        let path = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -625,14 +649,14 @@ mod tests {
             bounds: Rect::new(Point::zero(), Point::splat(3.0)),
         };
 
-        assert!(Path::<()>::empty().is_empty());
+        assert!(Path::<Mm>::empty().is_empty());
         assert!(!path.is_empty());
     }
 
     #[test]
     fn test_path_from_iter() {
         let paths = [
-            Path::<()>::empty(),
+            Path::<Mm>::empty(),
             Path {
                 data: Box::new([
                     PathSegment::Move(Point::zero()),
@@ -674,7 +698,7 @@ mod tests {
 
     #[test]
     fn test_path_translate() {
-        let path = Path::<()> {
+        let path = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -689,7 +713,7 @@ mod tests {
         }
         .translate(Vector::new(1.0, 2.0));
 
-        let exp = Path::<()> {
+        let exp = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::new(1.0, 2.0)),
                 PathSegment::Line(Vector::one()),
@@ -711,7 +735,7 @@ mod tests {
 
     #[test]
     fn test_path_scale() {
-        let path = Path::<()> {
+        let path = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -726,7 +750,7 @@ mod tests {
         }
         .scale(0.5, 0.5);
 
-        let exp = Path::<()> {
+        let exp = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::splat(0.5)),
@@ -748,7 +772,7 @@ mod tests {
 
     #[test]
     fn test_path_iter() {
-        let path = Path::<()> {
+        let path = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -769,7 +793,7 @@ mod tests {
 
     #[test]
     fn test_path_iter_mut() {
-        let path = Path::<()> {
+        let path = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -793,7 +817,7 @@ mod tests {
 
     #[test]
     fn test_path_into_iter() {
-        let path = Path::<()> {
+        let path = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -829,7 +853,7 @@ mod tests {
 
     #[test]
     fn test_path_mul() {
-        let path = Path::<()> {
+        let path = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -873,7 +897,7 @@ mod tests {
 
     #[test]
     fn test_path_div() {
-        let path = Path::<()> {
+        let path = Path::<Mm> {
             data: Box::new([
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -931,7 +955,7 @@ mod tests {
     #[test]
     fn test_path_builder_new() {
         let builders = [
-            PathBuilder::<()>::new(),
+            PathBuilder::<Mm>::new(),
             PathBuilder::default(),
             PathBuilder::with_capacity(0),
             Path::builder(),
@@ -948,7 +972,7 @@ mod tests {
 
     #[test]
     fn test_path_builder_build() {
-        let builder = PathBuilder::<()> {
+        let builder = PathBuilder::<Mm> {
             data: vec![
                 PathSegment::Move(Point::zero()),
                 PathSegment::Line(Vector::one()),
@@ -972,7 +996,7 @@ mod tests {
 
     #[test]
     fn test_path_builder_extend() {
-        let empty = PathBuilder::<()>::new();
+        let empty = PathBuilder::<Mm>::new();
         let mut line1 = PathBuilder::new();
         line1.abs_line(Point::new(1.0, 1.0));
 
@@ -1014,7 +1038,7 @@ mod tests {
 
     #[test]
     fn test_commands() {
-        let mut mov = PathBuilder::<()>::new();
+        let mut mov = PathBuilder::<Mm>::new();
         mov.abs_move(Point::origin());
         mov.rel_move(Vector::new(2.0, 2.0));
         mov.close();
@@ -1025,13 +1049,13 @@ mod tests {
         line.close();
 
         let mut vert_horiz = PathBuilder::new();
-        vert_horiz.abs_vert_line(Length::new(2.0));
-        vert_horiz.rel_horiz_line(Length::new(2.0));
+        vert_horiz.abs_vert_line(Dist::new(Mm(2.0)));
+        vert_horiz.rel_horiz_line(Dist::new(Mm(2.0)));
         vert_horiz.close();
 
         let mut horiz_vert = PathBuilder::new();
-        horiz_vert.abs_horiz_line(Length::new(2.0));
-        horiz_vert.rel_vert_line(Length::new(2.0));
+        horiz_vert.abs_horiz_line(Dist::new(Mm(2.0)));
+        horiz_vert.rel_vert_line(Dist::new(Mm(2.0)));
         horiz_vert.close();
 
         let mut curve1 = PathBuilder::new();
@@ -1093,7 +1117,7 @@ mod tests {
 
     #[test]
     fn test_path_builder_add() {
-        let empty = PathBuilder::<()>::new();
+        let empty = PathBuilder::<Mm>::new();
         let mut line1 = PathBuilder::new();
         line1.abs_line(Point::new(1.0, 1.0));
 

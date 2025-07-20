@@ -1,4 +1,5 @@
-use std::{f32::consts, ops};
+use std::f32::consts;
+use std::ops;
 
 use isclose::IsClose;
 

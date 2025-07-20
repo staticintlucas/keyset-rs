@@ -8,6 +8,7 @@
 
 mod angle;
 mod circle;
+mod dist;
 mod path;
 mod round_rect;
 mod traits;
@@ -15,16 +16,14 @@ mod unit;
 
 pub use self::angle::Angle;
 pub use self::circle::Circle;
+pub use self::dist::Dist;
 pub use self::path::{Path, PathBuilder, PathSegment, ToPath};
 pub use self::round_rect::RoundRect;
 pub use self::traits::*;
 pub use self::unit::{
-    Dot, Inch, KeyUnit, Mm, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT, INCH_PER_UNIT,
-    MM_PER_UNIT,
+    Dot, FromUnit, Inch, IntoUnit, KeyUnit, Mm, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT,
+    INCH_PER_UNIT, MM_PER_UNIT,
 };
-
-/// A one-dimensional distance with unit `U`
-pub type Length<U> = euclid::Length<f32, U>;
 
 /// A 2-dimensional point with unit `U`
 pub type Point<U> = euclid::Point2D<f32, U>;

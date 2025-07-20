@@ -7,14 +7,14 @@ use saturate::SaturatingFrom as _;
 
 use ::key::{Key, Shape as KeyShape};
 use color::Color;
-use geom::{Dot, KeyUnit, Length, Path, Point, ToPath as _, Vector};
+use geom::{Dist, Dot, KeyUnit, Path, Point, ToPath as _, Vector};
 
 use crate::Template;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Outline {
     pub color: Color,
-    pub width: Length<Dot>,
+    pub width: Dist<Dot>,
 }
 
 #[derive(Debug, Clone)]
@@ -61,7 +61,7 @@ impl KeyDrawing {
                 data: path,
                 outline: Some(Outline {
                     color: Color::new(1.0, 0.0, 0.0),
-                    width: Length::new(5.0),
+                    width: Dist::new(Dot(5.0)),
                 }),
                 fill: None,
             }
