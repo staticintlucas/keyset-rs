@@ -4,6 +4,26 @@ use isclose::IsClose;
 
 use crate::Scale;
 
+/// Trait for Unit types
+pub trait Unit:
+    Sized
+    + ops::Add<Self, Output = Self>
+    + ops::AddAssign<Self>
+    + ops::Sub<Self, Output = Self>
+    + ops::SubAssign<Self>
+    + ops::Mul<f32, Output = Self>
+    + ops::MulAssign<f32>
+    + ops::Div<Self, Output = f32>
+    + ops::Div<f32, Output = Self>
+    + ops::DivAssign<f32>
+    + ops::Neg<Output = Self>
+    + IsClose<f32>
+// TODO: seems to trigger rust-lang/rust#96634
+// where
+//     f32: ops::Mul<Self, Output = Self>,
+{
+}
+
 /// Keyboard Unit, usually 19.05 mm or 0.75 in
 #[derive(Clone, Copy, Debug, Default)]
 #[repr(transparent)]
@@ -155,6 +175,8 @@ impl IsClose<f32> for KeyUnit {
         self.0.is_close_tol(other.borrow().0, abs_tol, rel_tol)
     }
 }
+
+impl Unit for KeyUnit {}
 
 /// Dot, a.k.a. drawing unit
 #[derive(Clone, Copy, Debug, Default)]
@@ -308,6 +330,8 @@ impl IsClose<f32> for Dot {
     }
 }
 
+impl Unit for Dot {}
+
 /// Millimeter
 #[derive(Clone, Copy, Debug, Default)]
 #[repr(transparent)]
@@ -460,6 +484,8 @@ impl IsClose<f32> for Mm {
     }
 }
 
+impl Unit for Mm {}
+
 /// Inch
 #[derive(Clone, Copy, Debug, Default)]
 #[repr(transparent)]
@@ -611,6 +637,8 @@ impl IsClose<f32> for Inch {
         self.0.is_close_tol(other.borrow().0, abs_tol, rel_tol)
     }
 }
+
+impl Unit for Inch {}
 
 // TODO: delete these when no longer used
 /// Conversion factor for keyboard units to drawing units
