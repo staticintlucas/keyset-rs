@@ -17,8 +17,8 @@ use interp::{interp_array, InterpMode};
 use saturate::SaturatingFrom as _;
 
 use geom::{
-    Dot, ExtRect as _, Inch, Length, Mm, Point, Rect, RoundRect, SideOffsets, Size, Unit, Vector,
-    DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT,
+    Dot, ExtRect as _, Inch, KeyUnit, Length, Mm, Point, Rect, RoundRect, SideOffsets, Size,
+    Vector, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT,
 };
 use key::Homing;
 
@@ -187,7 +187,7 @@ impl Default for TextHeight {
         // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5/kb.css#L113
         Self(
             array::from_fn(|i| 6.0 + 2.0 * f32::saturating_from(i))
-                .map(|sz| Length::<Unit>::new(sz / 72.0) * DOT_PER_UNIT),
+                .map(|sz| Length::<KeyUnit>::new(sz / 72.0) * DOT_PER_UNIT),
         )
     }
 }
@@ -250,7 +250,7 @@ impl TextMargin {
 impl Default for TextMargin {
     #[inline]
     fn default() -> Self {
-        Self([SideOffsets::<Unit>::new_all_same(0.05) * DOT_PER_UNIT; Self::NUM_RECTS])
+        Self([SideOffsets::<KeyUnit>::new_all_same(0.05) * DOT_PER_UNIT; Self::NUM_RECTS])
     }
 }
 
@@ -282,9 +282,9 @@ impl Default for TopSurface {
     #[inline]
     fn default() -> Self {
         Self {
-            size: Size::<Unit>::new(0.660, 0.735) * DOT_PER_UNIT,
-            radius: Length::<Unit>::new(0.065) * DOT_PER_UNIT,
-            y_offset: Length::<Unit>::new(-0.0775) * DOT_PER_UNIT,
+            size: Size::<KeyUnit>::new(0.660, 0.735) * DOT_PER_UNIT,
+            radius: Length::<KeyUnit>::new(0.065) * DOT_PER_UNIT,
+            y_offset: Length::<KeyUnit>::new(-0.0775) * DOT_PER_UNIT,
         }
     }
 }
@@ -300,7 +300,7 @@ pub struct BottomSurface {
 
 impl BottomSurface {
     pub(crate) fn rect(&self) -> Rect<Dot> {
-        Rect::from_center_and_size(Point::<Unit>::new(0.5, 0.5) * DOT_PER_UNIT, self.size)
+        Rect::from_center_and_size(Point::<KeyUnit>::new(0.5, 0.5) * DOT_PER_UNIT, self.size)
     }
 
     pub(crate) fn round_rect(&self) -> RoundRect<Dot> {
@@ -312,8 +312,8 @@ impl Default for BottomSurface {
     #[inline]
     fn default() -> Self {
         Self {
-            size: Size::<Unit>::splat(0.95) * DOT_PER_UNIT,
-            radius: Length::<Unit>::new(0.065) * DOT_PER_UNIT,
+            size: Size::<KeyUnit>::splat(0.95) * DOT_PER_UNIT,
+            radius: Length::<KeyUnit>::new(0.065) * DOT_PER_UNIT,
         }
     }
 }
@@ -388,7 +388,7 @@ impl Profile {
     /// Get the key top rectangle for a given key size
     #[inline]
     #[must_use]
-    pub fn top_with_size(&self, size: Size<Unit>) -> RoundRect<Dot> {
+    pub fn top_with_size(&self, size: Size<KeyUnit>) -> RoundRect<Dot> {
         let RoundRect { min, max, radius } = self.top.round_rect();
         let max = max + (size - Size::splat(1.0)) * DOT_PER_UNIT;
         RoundRect::new(min, max, radius)
@@ -397,7 +397,7 @@ impl Profile {
     /// Get the key top rectangle for a given key rect
     #[inline]
     #[must_use]
-    pub fn top_with_rect(&self, rect: Rect<Unit>) -> RoundRect<Dot> {
+    pub fn top_with_rect(&self, rect: Rect<KeyUnit>) -> RoundRect<Dot> {
         let RoundRect { min, max, radius } = self.top.round_rect();
         let min = min + rect.min.to_vector() * DOT_PER_UNIT;
         let max = max + (rect.max.to_vector() - Vector::splat(1.0)) * DOT_PER_UNIT;
@@ -407,7 +407,7 @@ impl Profile {
     /// Get the key bottom rectangle for a given key size
     #[inline]
     #[must_use]
-    pub fn bottom_with_size(&self, size: Size<Unit>) -> RoundRect<Dot> {
+    pub fn bottom_with_size(&self, size: Size<KeyUnit>) -> RoundRect<Dot> {
         let RoundRect { min, max, radius } = self.bottom.round_rect();
         let max = max + (size - Size::splat(1.0)) * DOT_PER_UNIT;
         RoundRect::new(min, max, radius)
@@ -416,7 +416,7 @@ impl Profile {
     /// Get the key bottom rectangle for a given key rectangle
     #[inline]
     #[must_use]
-    pub fn bottom_with_rect(&self, rect: Rect<Unit>) -> RoundRect<Dot> {
+    pub fn bottom_with_rect(&self, rect: Rect<KeyUnit>) -> RoundRect<Dot> {
         let RoundRect { min, max, radius } = self.bottom.round_rect();
         let min = min + rect.min.to_vector() * DOT_PER_UNIT;
         let max = max + (rect.max.to_vector() - Vector::splat(1.0)) * DOT_PER_UNIT;

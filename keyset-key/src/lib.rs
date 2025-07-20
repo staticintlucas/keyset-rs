@@ -14,7 +14,7 @@ pub mod kle;
 use std::fmt;
 
 use color::Color;
-use geom::{Point, Rect, Size, Unit};
+use geom::{KeyUnit, Point, Rect, Size};
 
 pub use self::legend::{Legend, Legends, Text};
 
@@ -34,11 +34,11 @@ pub enum Homing {
 pub enum Shape {
     /// Not a *key* per se, but only a legend. This is usually used for labels and is the same as a
     /// decal in KLE
-    None(Size<Unit>),
+    None(Size<KeyUnit>),
     /// A regular key of the given size
-    Normal(Size<Unit>),
+    Normal(Size<KeyUnit>),
     /// A spacebar of the given size
-    Space(Size<Unit>),
+    Space(Size<KeyUnit>),
     /// A homing key with the given homing type. If the homing type is [`None`] the profile's
     /// default homing type is assumed to be used
     Homing(Option<Homing>),
@@ -58,7 +58,7 @@ impl Shape {
     /// keys, L-shaped keys, etc.
     #[inline]
     #[must_use]
-    pub fn outer_rect(self) -> Rect<Unit> {
+    pub fn outer_rect(self) -> Rect<KeyUnit> {
         match self {
             Self::None(size) | Self::Normal(size) | Self::Space(size) => {
                 Rect::from_origin_and_size(Point::origin(), size)
@@ -76,7 +76,7 @@ impl Shape {
     /// are different for stepped keys, L-shaped keys, etc.
     #[inline]
     #[must_use]
-    pub fn inner_rect(self) -> Rect<Unit> {
+    pub fn inner_rect(self) -> Rect<KeyUnit> {
         match self {
             Self::None(size) | Self::Normal(size) | Self::Space(size) => {
                 Rect::from_origin_and_size(Point::origin(), size)
@@ -98,7 +98,7 @@ struct NonExhaustive;
 #[derive(Clone)]
 pub struct Key {
     /// The position of the key
-    pub position: Point<Unit>,
+    pub position: Point<KeyUnit>,
     /// The key's shape
     pub shape: Shape,
     /// The key's colour
@@ -240,7 +240,7 @@ mod tests {
             format!("{key:?}"),
             format!(
                 "Key {{ position: {:?}, shape: {:?}, color: {:?}, legends: {:?} }}",
-                Point::<Unit>::origin(),
+                Point::<KeyUnit>::origin(),
                 Shape::Normal(Size::splat(1.0)),
                 Color::new(0.8, 0.8, 0.8),
                 Legends::default(),

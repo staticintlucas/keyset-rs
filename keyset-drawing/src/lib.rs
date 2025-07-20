@@ -20,7 +20,7 @@ compile_error!("no output format is enabled");
 use std::fmt;
 
 use font::Font;
-use geom::{Dot, Length, Point, Rect, Size, Unit, DOT_PER_UNIT};
+use geom::{Dot, KeyUnit, Length, Point, Rect, Size, DOT_PER_UNIT};
 use key::Key;
 use profile::Profile;
 
@@ -30,7 +30,7 @@ pub(crate) use self::imp::{KeyDrawing, KeyPath};
 /// A drawing
 #[derive(Debug, Clone)]
 pub struct Drawing {
-    bounds: Rect<Unit>,
+    bounds: Rect<KeyUnit>,
     keys: Box<[KeyDrawing]>,
     scale: f32,
 }

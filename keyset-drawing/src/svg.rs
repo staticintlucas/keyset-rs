@@ -1,7 +1,7 @@
 use svg::node::element::{Group, Path as SvgPath};
 use svg::Document;
 
-use geom::{PathSegment, Scale, Unit, DOT_PER_UNIT, MM_PER_UNIT};
+use geom::{KeyUnit, PathSegment, Scale, DOT_PER_UNIT, MM_PER_UNIT};
 
 use super::{Drawing, KeyDrawing, KeyPath};
 
@@ -27,7 +27,7 @@ macro_rules! float {
 }
 
 pub fn draw(drawing: &Drawing) -> String {
-    let size = drawing.bounds.size() * Scale::<Unit, Unit>::new(drawing.scale) * MM_PER_UNIT;
+    let size = drawing.bounds.size() * Scale::<KeyUnit, KeyUnit>::new(drawing.scale) * MM_PER_UNIT;
     let view_box = drawing.bounds * DOT_PER_UNIT; // Use 1000 user units per key
 
     let document = Document::new()

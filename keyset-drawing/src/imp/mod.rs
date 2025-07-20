@@ -7,7 +7,7 @@ use saturate::SaturatingFrom as _;
 
 use ::key::{Key, Shape as KeyShape};
 use color::Color;
-use geom::{Dot, Length, Path, Point, ToPath as _, Unit, Vector};
+use geom::{Dot, KeyUnit, Length, Path, Point, ToPath as _, Vector};
 
 use crate::Template;
 
@@ -26,7 +26,7 @@ pub struct KeyPath {
 
 #[derive(Debug, Clone)]
 pub struct KeyDrawing {
-    pub origin: Point<Unit>,
+    pub origin: Point<KeyUnit>,
     pub paths: Box<[KeyPath]>,
 }
 

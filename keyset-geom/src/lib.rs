@@ -19,7 +19,7 @@ pub use self::path::{Path, PathBuilder, PathSegment, ToPath};
 pub use self::round_rect::RoundRect;
 pub use self::traits::*;
 pub use self::unit::{
-    Dot, Inch, Mm, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT, INCH_PER_UNIT, MM_PER_UNIT,
+    Dot, Inch, KeyUnit, Mm, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT, INCH_PER_UNIT, MM_PER_UNIT,
 };
 
 /// A one-dimensional distance with unit `U`

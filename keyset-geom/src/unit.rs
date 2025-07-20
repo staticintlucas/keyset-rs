@@ -7,50 +7,50 @@ use crate::Scale;
 /// Keyboard Unit, usually 19.05 mm or 0.75 in
 #[derive(Clone, Copy, Debug, Default)]
 #[repr(transparent)]
-pub struct Unit(pub f32);
+pub struct KeyUnit(pub f32);
 
-impl Unit {
+impl KeyUnit {
     const PER_DOT: f32 = 1.0 / Dot::PER_UNIT;
     const PER_MM: f32 = 1.0 / Mm::PER_UNIT;
     const PER_INCH: f32 = 1.0 / Inch::PER_UNIT;
 }
 
-impl From<Dot> for Unit {
+impl From<Dot> for KeyUnit {
     #[inline]
     fn from(value: Dot) -> Self {
         Self(value.0 * Self::PER_DOT)
     }
 }
 
-impl From<Mm> for Unit {
+impl From<Mm> for KeyUnit {
     #[inline]
     fn from(value: Mm) -> Self {
         Self(value.0 * Self::PER_MM)
     }
 }
 
-impl From<Inch> for Unit {
+impl From<Inch> for KeyUnit {
     #[inline]
     fn from(value: Inch) -> Self {
         Self(value.0 * Self::PER_INCH)
     }
 }
 
-impl From<f32> for Unit {
+impl From<f32> for KeyUnit {
     #[inline]
     fn from(value: f32) -> Self {
         Self(value)
     }
 }
 
-impl From<Unit> for f32 {
+impl From<KeyUnit> for f32 {
     #[inline]
-    fn from(value: Unit) -> Self {
+    fn from(value: KeyUnit) -> Self {
         value.0
     }
 }
 
-impl ops::Add for Unit {
+impl ops::Add for KeyUnit {
     type Output = Self;
 
     #[inline]
@@ -59,14 +59,14 @@ impl ops::Add for Unit {
     }
 }
 
-impl ops::AddAssign for Unit {
+impl ops::AddAssign for KeyUnit {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0;
     }
 }
 
-impl ops::Sub for Unit {
+impl ops::Sub for KeyUnit {
     type Output = Self;
 
     #[inline]
@@ -75,14 +75,14 @@ impl ops::Sub for Unit {
     }
 }
 
-impl ops::SubAssign for Unit {
+impl ops::SubAssign for KeyUnit {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         self.0 -= rhs.0;
     }
 }
 
-impl ops::Mul<f32> for Unit {
+impl ops::Mul<f32> for KeyUnit {
     type Output = Self;
 
     #[inline]
@@ -91,23 +91,23 @@ impl ops::Mul<f32> for Unit {
     }
 }
 
-impl ops::Mul<Unit> for f32 {
-    type Output = Unit;
+impl ops::Mul<KeyUnit> for f32 {
+    type Output = KeyUnit;
 
     #[inline]
-    fn mul(self, rhs: Unit) -> Unit {
-        Unit(self * rhs.0)
+    fn mul(self, rhs: KeyUnit) -> KeyUnit {
+        KeyUnit(self * rhs.0)
     }
 }
 
-impl ops::MulAssign<f32> for Unit {
+impl ops::MulAssign<f32> for KeyUnit {
     #[inline]
     fn mul_assign(&mut self, rhs: f32) {
         self.0 *= rhs;
     }
 }
 
-impl ops::Div for Unit {
+impl ops::Div for KeyUnit {
     type Output = f32;
 
     #[inline]
@@ -116,7 +116,7 @@ impl ops::Div for Unit {
     }
 }
 
-impl ops::Div<f32> for Unit {
+impl ops::Div<f32> for KeyUnit {
     type Output = Self;
 
     #[inline]
@@ -125,14 +125,14 @@ impl ops::Div<f32> for Unit {
     }
 }
 
-impl ops::DivAssign<f32> for Unit {
+impl ops::DivAssign<f32> for KeyUnit {
     #[inline]
     fn div_assign(&mut self, rhs: f32) {
         self.0 /= rhs;
     }
 }
 
-impl ops::Neg for Unit {
+impl ops::Neg for KeyUnit {
     type Output = Self;
 
     #[inline]
@@ -141,7 +141,7 @@ impl ops::Neg for Unit {
     }
 }
 
-impl IsClose<f32> for Unit {
+impl IsClose<f32> for KeyUnit {
     const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
     const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
 
@@ -167,9 +167,9 @@ impl Dot {
     const PER_INCH: f32 = Self::PER_UNIT / Inch::PER_UNIT;
 }
 
-impl From<Unit> for Dot {
+impl From<KeyUnit> for Dot {
     #[inline]
-    fn from(value: Unit) -> Self {
+    fn from(value: KeyUnit) -> Self {
         Self(value.0 * Self::PER_UNIT)
     }
 }
@@ -319,9 +319,9 @@ impl Mm {
     const PER_INCH: f32 = Self::PER_UNIT / Inch::PER_UNIT;
 }
 
-impl From<Unit> for Mm {
+impl From<KeyUnit> for Mm {
     #[inline]
-    fn from(value: Unit) -> Self {
+    fn from(value: KeyUnit) -> Self {
         Self(value.0 * Self::PER_UNIT)
     }
 }
@@ -471,9 +471,9 @@ impl Inch {
     const PER_MM: f32 = Self::PER_UNIT / Mm::PER_UNIT;
 }
 
-impl From<Unit> for Inch {
+impl From<KeyUnit> for Inch {
     #[inline]
-    fn from(value: Unit) -> Self {
+    fn from(value: KeyUnit) -> Self {
         Self(value.0 * Self::PER_UNIT)
     }
 }
@@ -614,11 +614,11 @@ impl IsClose<f32> for Inch {
 
 // TODO: delete these when no longer used
 /// Conversion factor for keyboard units to drawing units
-pub const DOT_PER_UNIT: Scale<Unit, Dot> = Scale::new(Dot::PER_UNIT);
+pub const DOT_PER_UNIT: Scale<KeyUnit, Dot> = Scale::new(Dot::PER_UNIT);
 /// Conversion factor for keyboard units to millimeters
-pub const MM_PER_UNIT: Scale<Unit, Mm> = Scale::new(Mm::PER_UNIT);
+pub const MM_PER_UNIT: Scale<KeyUnit, Mm> = Scale::new(Mm::PER_UNIT);
 /// Conversion factor for keyboard units to inches
-pub const INCH_PER_UNIT: Scale<Unit, Inch> = Scale::new(Inch::PER_UNIT);
+pub const INCH_PER_UNIT: Scale<KeyUnit, Inch> = Scale::new(Inch::PER_UNIT);
 
 /// Conversion factor for Millimeters to Drawing Units
 pub const DOT_PER_MM: Scale<Mm, Dot> = Scale::new(Dot::PER_MM);
@@ -633,109 +633,109 @@ mod tests {
     use super::*;
 
     #[test]
-    fn unit() {
-        let unit = Unit::from(Dot(500.0));
-        assert_is_close!(unit.0, 0.5);
+    fn key_unit() {
+        let key_unit = KeyUnit::from(Dot(500.0));
+        assert_is_close!(key_unit.0, 0.5);
 
-        let unit = Unit::from(Mm(38.1));
-        assert_is_close!(unit.0, 2.0);
+        let key_unit = KeyUnit::from(Mm(38.1));
+        assert_is_close!(key_unit.0, 2.0);
 
-        let unit = Unit::from(Inch(1.0));
-        assert_is_close!(unit.0, 4.0 / 3.0);
+        let key_unit = KeyUnit::from(Inch(1.0));
+        assert_is_close!(key_unit.0, 4.0 / 3.0);
 
-        let unit = Unit::from(3.0);
-        assert_is_close!(unit.0, 3.0);
+        let key_unit = KeyUnit::from(3.0);
+        assert_is_close!(key_unit.0, 3.0);
 
-        let flt = f32::from(Unit(2.5));
+        let flt = f32::from(KeyUnit(2.5));
         assert_is_close!(flt, 2.5);
 
-        let flt = f32::from(Unit(2.5));
+        let flt = f32::from(KeyUnit(2.5));
         assert_is_close!(flt, 2.5);
     }
 
     #[test]
-    fn unit_add() {
-        let unit = Unit(2.0) + Unit(1.0);
-        assert_is_close!(unit.0, 3.0);
+    fn key_unit_add() {
+        let key_unit = KeyUnit(2.0) + KeyUnit(1.0);
+        assert_is_close!(key_unit.0, 3.0);
     }
 
     #[test]
-    fn unit_add_assign() {
-        let mut unit = Unit(2.0);
-        unit += Unit(1.0);
-        assert_is_close!(unit.0, 3.0);
+    fn key_unit_add_assign() {
+        let mut key_unit = KeyUnit(2.0);
+        key_unit += KeyUnit(1.0);
+        assert_is_close!(key_unit.0, 3.0);
     }
 
     #[test]
-    fn unit_sub() {
-        let unit = Unit(2.0) - Unit(1.0);
-        assert_is_close!(unit.0, 1.0);
+    fn key_unit_sub() {
+        let key_unit = KeyUnit(2.0) - KeyUnit(1.0);
+        assert_is_close!(key_unit.0, 1.0);
     }
 
     #[test]
-    fn unit_sub_assign() {
-        let mut unit = Unit(2.0);
-        unit -= Unit(1.0);
-        assert_is_close!(unit.0, 1.0);
+    fn key_unit_sub_assign() {
+        let mut key_unit = KeyUnit(2.0);
+        key_unit -= KeyUnit(1.0);
+        assert_is_close!(key_unit.0, 1.0);
     }
 
     #[test]
-    fn unit_mul() {
-        let unit = Unit(2.0) * 1.5;
-        assert_is_close!(unit.0, 3.0);
+    fn key_unit_mul() {
+        let key_unit = KeyUnit(2.0) * 1.5;
+        assert_is_close!(key_unit.0, 3.0);
 
-        let unit = 2.0 * Unit(1.5);
-        assert_is_close!(unit.0, 3.0);
+        let key_unit = 2.0 * KeyUnit(1.5);
+        assert_is_close!(key_unit.0, 3.0);
     }
 
     #[test]
-    fn unit_mul_assign() {
-        let mut unit = Unit(2.0);
-        unit *= 1.5;
-        assert_is_close!(unit.0, 3.0);
+    fn key_unit_mul_assign() {
+        let mut key_unit = KeyUnit(2.0);
+        key_unit *= 1.5;
+        assert_is_close!(key_unit.0, 3.0);
     }
 
     #[test]
-    fn unit_div() {
-        let unit = Unit(3.0) / 1.5;
-        assert_is_close!(unit.0, 2.0);
+    fn key_unit_div() {
+        let key_unit = KeyUnit(3.0) / 1.5;
+        assert_is_close!(key_unit.0, 2.0);
 
-        let ratio = Unit(3.0) / Unit(2.0);
+        let ratio = KeyUnit(3.0) / KeyUnit(2.0);
         assert_is_close!(ratio, 1.5);
     }
 
     #[test]
-    fn unit_div_assign() {
-        let mut unit = Unit(3.0);
-        unit /= 1.5;
-        assert_is_close!(unit.0, 2.0);
+    fn key_unit_div_assign() {
+        let mut key_unit = KeyUnit(3.0);
+        key_unit /= 1.5;
+        assert_is_close!(key_unit.0, 2.0);
     }
 
     #[test]
-    fn unit_neg() {
-        let unit = -Unit(2.0);
-        assert_is_close!(unit.0, -2.0);
+    fn key_unit_neg() {
+        let key_unit = -KeyUnit(2.0);
+        assert_is_close!(key_unit.0, -2.0);
     }
 
     #[test]
-    fn unit_is_close() {
-        assert!(Unit(2.5).is_close(Unit(5.0 / 2.0)));
-        assert!(!Unit(2.5).is_close(Unit(5.1 / 2.0)));
+    fn key_unit_is_close() {
+        assert!(KeyUnit(2.5).is_close(KeyUnit(5.0 / 2.0)));
+        assert!(!KeyUnit(2.5).is_close(KeyUnit(5.1 / 2.0)));
     }
 
     #[test]
     fn dot() {
-        let unit = Dot::from(Unit(0.5));
-        assert_is_close!(unit.0, 500.0);
+        let dot = Dot::from(KeyUnit(0.5));
+        assert_is_close!(dot.0, 500.0);
 
-        let unit = Dot::from(Mm(38.1));
-        assert_is_close!(unit.0, 2000.0);
+        let dot = Dot::from(Mm(38.1));
+        assert_is_close!(dot.0, 2000.0);
 
-        let unit = Dot::from(Inch(1.0));
-        assert_is_close!(unit.0, 4000.0 / 3.0);
+        let dot = Dot::from(Inch(1.0));
+        assert_is_close!(dot.0, 4000.0 / 3.0);
 
-        let unit = Dot::from(3.0);
-        assert_is_close!(unit.0, 3.0);
+        let dot = Dot::from(3.0);
+        assert_is_close!(dot.0, 3.0);
 
         let flt = f32::from(Dot(2.5));
         assert_is_close!(flt, 2.5);
@@ -816,17 +816,17 @@ mod tests {
 
     #[test]
     fn mm() {
-        let unit = Mm::from(Unit(0.5));
-        assert_is_close!(unit.0, 9.525);
+        let mm = Mm::from(KeyUnit(0.5));
+        assert_is_close!(mm.0, 9.525);
 
-        let unit = Mm::from(Dot(2000.0));
-        assert_is_close!(unit.0, 38.1);
+        let mm = Mm::from(Dot(2000.0));
+        assert_is_close!(mm.0, 38.1);
 
-        let unit = Mm::from(Inch(1.0));
-        assert_is_close!(unit.0, 25.4);
+        let mm = Mm::from(Inch(1.0));
+        assert_is_close!(mm.0, 25.4);
 
-        let unit = Mm::from(3.0);
-        assert_is_close!(unit.0, 3.0);
+        let mm = Mm::from(3.0);
+        assert_is_close!(mm.0, 3.0);
 
         let flt = f32::from(Mm(2.5));
         assert_is_close!(flt, 2.5);
@@ -907,17 +907,17 @@ mod tests {
 
     #[test]
     fn inch() {
-        let unit = Inch::from(Unit(4.0 / 3.0));
-        assert_is_close!(unit.0, 1.0);
+        let inch = Inch::from(KeyUnit(4.0 / 3.0));
+        assert_is_close!(inch.0, 1.0);
 
-        let unit = Inch::from(Dot(2000.0));
-        assert_is_close!(unit.0, 1.5);
+        let inch = Inch::from(Dot(2000.0));
+        assert_is_close!(inch.0, 1.5);
 
-        let unit = Inch::from(Mm(19.05));
-        assert_is_close!(unit.0, 0.75);
+        let inch = Inch::from(Mm(19.05));
+        assert_is_close!(inch.0, 0.75);
 
-        let unit = Inch::from(3.0);
-        assert_is_close!(unit.0, 3.0);
+        let inch = Inch::from(3.0);
+        assert_is_close!(inch.0, 3.0);
 
         let flt = f32::from(Inch(2.5));
         assert_is_close!(flt, 2.5);
