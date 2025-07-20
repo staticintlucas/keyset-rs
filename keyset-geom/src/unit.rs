@@ -4,6 +4,7 @@ use crate::Scale;
 
 /// Keyboard Unit, usually 19.05 mm or 0.75 in
 #[derive(Clone, Copy, Debug, Default)]
+#[repr(transparent)]
 pub struct Unit(pub f32);
 
 impl Unit {
@@ -64,6 +65,7 @@ impl IsClose<f32> for Unit {
 
 /// Dot, a.k.a. drawing unit
 #[derive(Clone, Copy, Debug, Default)]
+#[repr(transparent)]
 pub struct Dot(pub f32);
 
 impl Dot {
@@ -124,6 +126,7 @@ impl IsClose<f32> for Dot {
 
 /// Millimeter
 #[derive(Clone, Copy, Debug, Default)]
+#[repr(transparent)]
 pub struct Mm(pub f32);
 
 impl Mm {
@@ -184,6 +187,7 @@ impl IsClose<f32> for Mm {
 
 /// Inch
 #[derive(Clone, Copy, Debug, Default)]
+#[repr(transparent)]
 pub struct Inch(pub f32);
 
 impl Inch {
