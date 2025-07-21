@@ -135,7 +135,7 @@ impl Default for HomingProps {
 }
 
 /// Text height mapping. This maps a [`usize`] index (used by KLE for example)
-/// to a [`Length`] for the height of uppercase letter
+/// to a [`Dist`] for the height of uppercase letter
 #[derive(Debug, Clone, Copy)]
 pub struct TextHeight([Dist<Dot>; Self::NUM_HEIGHTS]);
 
