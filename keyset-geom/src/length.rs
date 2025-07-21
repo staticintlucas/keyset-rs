@@ -197,7 +197,7 @@ where
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::Mm;
+    use crate::{Inch, Mm};
 
     use super::*;
 
@@ -205,6 +205,25 @@ mod tests {
     fn length_new() {
         let length = Length::new(Mm(2.0));
         assert_is_close!(length.0, Mm(2.0));
+    }
+
+    #[test]
+    fn length_from_unit() {
+        let length = Length::<Mm>::from_unit(Length(Inch(0.75)));
+        assert_is_close!(length.0, Mm(19.05));
+    }
+
+    #[test]
+    fn length_from_f32() {
+        let length = Length::<Mm>::from(2.0);
+        assert_is_close!(length.0, Mm(2.0));
+    }
+
+    #[test]
+    fn length_into_f32() {
+        let length = Length(Mm(2.0));
+        let value = f32::from(length);
+        assert_is_close!(value, 2.0);
     }
 
     #[test]
@@ -276,5 +295,15 @@ mod tests {
     fn length_is_close() {
         assert!(Length(Mm(2.5)).is_close(Length(Mm(5.0 / 2.0))));
         assert!(!Length(Mm(2.5)).is_close(Length(Mm(5.1 / 2.0))));
+    }
+
+    #[test]
+    fn length_lerp() {
+        let start = Length(Mm(2.0));
+        let end = Length(Mm(4.0));
+
+        assert_is_close!(start.lerp(end, 0.0).0, Mm(2.0));
+        assert_is_close!(start.lerp(end, 0.5).0, Mm(3.0));
+        assert_is_close!(start.lerp(end, 1.0).0, Mm(4.0));
     }
 }
