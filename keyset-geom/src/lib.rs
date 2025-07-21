@@ -10,6 +10,7 @@ mod angle;
 mod circle;
 mod length;
 mod path;
+mod point;
 mod round_rect;
 mod traits;
 mod unit;
