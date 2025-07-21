@@ -1,4 +1,4 @@
-use crate::{Angle, Circle, Dist, ExtVec as _, Path, Rect, RoundRect, Size, Unit, Vector};
+use crate::{Angle, Circle, ExtVec as _, Length, Path, Rect, RoundRect, Size, Unit, Vector};
 
 /// Trait to allow conversion of primitive shapes to a [`Path`]
 pub trait ToPath<U> {
@@ -44,9 +44,9 @@ where
     fn to_path(self) -> Path<U> {
         let mut builder = Path::builder_with_capacity(5);
         builder.abs_move(self.min);
-        builder.abs_horiz_line(Dist::new(self.max.x.into()));
-        builder.abs_vert_line(Dist::new(self.max.y.into()));
-        builder.abs_horiz_line(Dist::new(self.min.x.into()));
+        builder.abs_horiz_line(Length::new(self.max.x.into()));
+        builder.abs_vert_line(Length::new(self.max.y.into()));
+        builder.abs_horiz_line(Length::new(self.min.x.into()));
         builder.close();
 
         builder.build()
@@ -65,11 +65,11 @@ where
         let mut builder = Path::builder_with_capacity(9);
         builder.abs_move(self.min + Size::new(0.0, radius));
         builder.rel_arc(radii, Angle::ZERO, false, true, radii.neg_y());
-        builder.abs_horiz_line(Dist::new((self.max.x - radius).into()));
+        builder.abs_horiz_line(Length::new((self.max.x - radius).into()));
         builder.rel_arc(radii, Angle::ZERO, false, true, radii);
-        builder.abs_vert_line(Dist::new((self.max.y - radius).into()));
+        builder.abs_vert_line(Length::new((self.max.y - radius).into()));
         builder.rel_arc(radii, Angle::ZERO, false, true, radii.neg_x());
-        builder.abs_horiz_line(Dist::new((self.min.x + radius).into()));
+        builder.abs_horiz_line(Length::new((self.min.x + radius).into()));
         builder.rel_arc(radii, Angle::ZERO, false, true, -radii);
         builder.close();
 
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn circle_to_path() {
-        let circle = Circle::<Mm>::new(Point::new(1.5, 2.0), Dist::new(Mm(1.0)));
+        let circle = Circle::<Mm>::new(Point::new(1.5, 2.0), Length::new(Mm(1.0)));
         let path = circle.to_path();
 
         let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).tan();
@@ -149,7 +149,7 @@ mod tests {
         let rect = RoundRect::<Mm>::new(
             Point::new(2.0, 4.0),
             Point::new(6.0, 8.0),
-            Dist::new(Mm(1.0)),
+            Length::new(Mm(1.0)),
         );
         let path = rect.to_path();
 

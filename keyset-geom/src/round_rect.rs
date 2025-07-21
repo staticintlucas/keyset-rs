@@ -2,7 +2,7 @@ use std::borrow::Borrow;
 
 use isclose::IsClose;
 
-use crate::{Dist, ExtRect as _, Point, Rect, Size, Unit};
+use crate::{ExtRect as _, Length, Point, Rect, Size, Unit};
 
 /// A rectangle with rounded corners
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -12,7 +12,7 @@ pub struct RoundRect<U: Unit> {
     /// Maximum point
     pub max: Point<U>,
     /// Radius size
-    pub radius: Dist<U>,
+    pub radius: Length<U>,
 }
 
 impl<U> RoundRect<U>
@@ -22,14 +22,14 @@ where
     /// Create a new rounded rectangle from minimum and maximum coordinates.
     #[inline]
     #[must_use]
-    pub const fn new(min: Point<U>, max: Point<U>, radius: Dist<U>) -> Self {
+    pub const fn new(min: Point<U>, max: Point<U>, radius: Length<U>) -> Self {
         Self { min, max, radius }
     }
 
     /// Create a new rounded rectangle from a [`crate::Rect`] and its radii.
     #[inline]
     #[must_use]
-    pub const fn from_rect(rect: Rect<U>, radius: Dist<U>) -> Self {
+    pub const fn from_rect(rect: Rect<U>, radius: Length<U>) -> Self {
         let Rect { min, max } = rect;
         Self { min, max, radius }
     }
@@ -37,14 +37,14 @@ where
     /// Create a new rounded rectangle from its origin point, size, and radii.
     #[inline]
     #[must_use]
-    pub fn from_origin_and_size(origin: Point<U>, size: Size<U>, radius: Dist<U>) -> Self {
+    pub fn from_origin_and_size(origin: Point<U>, size: Size<U>, radius: Length<U>) -> Self {
         Self::from_rect(Rect::from_origin_and_size(origin, size), radius)
     }
 
     /// Create a new rounded rectangle from its center point, size, and radii.
     #[inline]
     #[must_use]
-    pub fn from_center_and_size(origin: Point<U>, size: Size<U>, radius: Dist<U>) -> Self {
+    pub fn from_center_and_size(origin: Point<U>, size: Size<U>, radius: Length<U>) -> Self {
         Self::from_rect(Rect::from_center_and_size(origin, size), radius)
     }
 
@@ -65,7 +65,7 @@ where
     /// Returns the radii of the rounded rectangle
     #[inline]
     #[must_use]
-    pub const fn radius(&self) -> Dist<U> {
+    pub const fn radius(&self) -> Length<U> {
         self.radius
     }
 
@@ -129,24 +129,24 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
         assert_is_close!(rect.min, Point::new(1.0, 2.0));
         assert_is_close!(rect.max, Point::new(3.0, 5.0));
-        assert_is_close!(rect.radius, Dist::new(Mm(0.5)));
+        assert_is_close!(rect.radius, Length::new(Mm(0.5)));
     }
 
     #[test]
     fn round_rect_from_rect() {
         let rect = RoundRect::from_rect(
             Rect::new(Point::new(1.0, 2.0), Point::new(3.0, 5.0)),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
         assert_is_close!(rect.min, Point::new(1.0, 2.0));
         assert_is_close!(rect.max, Point::new(3.0, 5.0));
-        assert_is_close!(rect.radius, Dist::new(Mm(0.5)));
+        assert_is_close!(rect.radius, Length::new(Mm(0.5)));
     }
 
     #[test]
@@ -154,12 +154,12 @@ mod tests {
         let rect = RoundRect::from_origin_and_size(
             Point::new(1.0, 2.0),
             Size::new(2.0, 3.0),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
         assert_is_close!(rect.min, Point::new(1.0, 2.0));
         assert_is_close!(rect.max, Point::new(3.0, 5.0));
-        assert_is_close!(rect.radius, Dist::new(Mm(0.5)));
+        assert_is_close!(rect.radius, Length::new(Mm(0.5)));
     }
 
     #[test]
@@ -167,12 +167,12 @@ mod tests {
         let rect = RoundRect::from_center_and_size(
             Point::new(2.0, 3.5),
             Size::new(2.0, 3.0),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
         assert_is_close!(rect.min, Point::new(1.0, 2.0));
         assert_is_close!(rect.max, Point::new(3.0, 5.0));
-        assert_is_close!(rect.radius, Dist::new(Mm(0.5)));
+        assert_is_close!(rect.radius, Length::new(Mm(0.5)));
     }
 
     #[test]
@@ -180,7 +180,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
         assert_is_close!(rect.width(), 2.0);
@@ -191,7 +191,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
         assert_is_close!(rect.height(), 3.0);
@@ -202,10 +202,10 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
-        assert_is_close!(rect.radius(), Dist::new(Mm(0.5)));
+        assert_is_close!(rect.radius(), Length::new(Mm(0.5)));
     }
 
     #[test]
@@ -213,7 +213,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
         assert_eq!(
@@ -227,7 +227,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
         assert_eq!(rect.center(), Point::new(2.0, 3.5));
@@ -238,7 +238,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Dist::new(Mm(0.5)),
+            Length::new(Mm(0.5)),
         );
 
         assert_eq!(rect.size(), Size::new(2.0, 3.0));

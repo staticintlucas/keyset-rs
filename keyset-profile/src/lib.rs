@@ -17,8 +17,8 @@ use interp::{interp_array, InterpMode};
 use saturate::SaturatingFrom as _;
 
 use geom::{
-    Dist, Dot, ExtRect as _, Inch, IntoUnit as _, KeyUnit, Mm, Point, Rect, RoundRect, SideOffsets,
-    Size, Vector, DOT_PER_INCH, DOT_PER_UNIT,
+    Dot, ExtRect as _, Inch, IntoUnit as _, KeyUnit, Length, Mm, Point, Rect, RoundRect,
+    SideOffsets, Size, Vector, DOT_PER_INCH, DOT_PER_UNIT,
 };
 use key::Homing;
 
@@ -28,12 +28,12 @@ pub enum Type {
     /// A cylindrical profile, e.g. Cherry or OEM
     Cylindrical {
         /// The depth of the key's dish
-        depth: Dist<Dot>,
+        depth: Length<Dot>,
     },
     /// A cylindrical profile, e.g. SA or KAT
     Spherical {
         /// The depth of the key's dish
-        depth: Dist<Dot>,
+        depth: Length<Dot>,
     },
     /// A flat profile, e.g. G20 or chiclet
     Flat,
@@ -43,10 +43,10 @@ impl Type {
     /// Returns the depth of a key's dish. This is zero for [`Type::Flat`]
     #[inline]
     #[must_use]
-    pub const fn depth(self) -> Dist<Dot> {
+    pub const fn depth(self) -> Length<Dot> {
         match self {
             Self::Cylindrical { depth } | Self::Spherical { depth } => depth,
-            Self::Flat => Dist::new(Dot(0.0)),
+            Self::Flat => Length::new(Dot(0.0)),
         }
     }
 }
@@ -56,7 +56,7 @@ impl Default for Type {
     fn default() -> Self {
         Self::Cylindrical {
             // 1.0mm is approx the depth of OEM profile
-            depth: Dist::new(Mm(1.0)).into_unit(),
+            depth: Length::new(Mm(1.0)).into_unit(),
         }
     }
 }
@@ -65,7 +65,7 @@ impl Default for Type {
 #[derive(Debug, Clone, Copy)]
 pub struct ScoopProps {
     /// The depth of the scooped dish
-    pub depth: Dist<Dot>,
+    pub depth: Length<Dot>,
 }
 
 /// Homing bar properties
@@ -73,17 +73,17 @@ pub struct ScoopProps {
 pub struct BarProps {
     /// The size of the bar
     pub size: Size<Dot>,
-    /// The distance of the bar from the center of the key top
-    pub y_offset: Dist<Dot>,
+    /// The length of the bar from the center of the key top
+    pub y_offset: Length<Dot>,
 }
 
 /// Homing bump (a.k.a. nub or nipple) properties
 #[derive(Debug, Clone, Copy)]
 pub struct BumpProps {
     /// The diameter of the bump
-    pub diameter: Dist<Dot>,
-    /// The distance of the bump from the center of the key top
-    pub y_offset: Dist<Dot>,
+    pub diameter: Length<Dot>,
+    /// The length of the bump from the center of the key top
+    pub y_offset: Length<Dot>,
 }
 
 /// Struct used to deserialize [`key::Homing`]
@@ -124,20 +124,20 @@ impl Default for HomingProps {
             },
             bar: BarProps {
                 size: Size::<Inch>::new(0.15, 0.02) * DOT_PER_INCH,
-                y_offset: Dist::new(Inch(0.25)).into_unit(),
+                y_offset: Length::new(Inch(0.25)).into_unit(),
             },
             bump: BumpProps {
-                diameter: Dist::new(Inch(0.02)).into_unit(),
-                y_offset: Dist::new(Inch(0.0)).into_unit(),
+                diameter: Length::new(Inch(0.02)).into_unit(),
+                y_offset: Length::new(Inch(0.0)).into_unit(),
             },
         }
     }
 }
 
 /// Text height mapping. This maps a [`usize`] index (used by KLE for example)
-/// to a [`Dist`] for the height of uppercase letter
+/// to a [`Length`] for the height of uppercase letter
 #[derive(Debug, Clone, Copy)]
-pub struct TextHeight([Dist<Dot>; Self::NUM_HEIGHTS]);
+pub struct TextHeight([Length<Dot>; Self::NUM_HEIGHTS]);
 
 impl TextHeight {
     const NUM_HEIGHTS: usize = 10;
@@ -145,7 +145,7 @@ impl TextHeight {
     /// Create a new [`TextHeight`] mapping from a [`HashMap`]
     #[inline]
     #[must_use]
-    pub fn new(heights: &HashMap<usize, Dist<Dot>>) -> Self {
+    pub fn new(heights: &HashMap<usize, Length<Dot>>) -> Self {
         if heights.is_empty() {
             Self::default()
         } else {
@@ -165,7 +165,7 @@ impl TextHeight {
             let all_indices = array::from_fn(f32::saturating_from);
             Self(
                 interp_array(&indices, &heights, &all_indices, &InterpMode::Extrapolate)
-                    .map(Dist::<Dot>::from),
+                    .map(Length::<Dot>::from),
             )
         }
     }
@@ -173,7 +173,7 @@ impl TextHeight {
     /// Get the height of an uppercase letter for the given index
     #[inline]
     #[must_use]
-    pub fn get(&self, size_index: usize) -> Dist<Dot> {
+    pub fn get(&self, size_index: usize) -> Length<Dot> {
         *self
             .0
             .get(size_index)
@@ -187,7 +187,7 @@ impl Default for TextHeight {
         // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5/kb.css#L113
         Self(
             array::from_fn(|i| 6.0 + 2.0 * f32::saturating_from(i))
-                .map(|sz| Dist::new(KeyUnit(sz / 72.0)).into_unit()),
+                .map(|sz| Length::new(KeyUnit(sz / 72.0)).into_unit()),
         )
     }
 }
@@ -260,9 +260,9 @@ pub struct TopSurface {
     /// The size of the key top
     pub size: Size<Dot>,
     /// The corner radius for the key top
-    pub radius: Dist<Dot>,
+    pub radius: Length<Dot>,
     /// The offset of the key top relative to the key bottom
-    pub y_offset: Dist<Dot>,
+    pub y_offset: Length<Dot>,
 }
 
 impl TopSurface {
@@ -283,8 +283,8 @@ impl Default for TopSurface {
     fn default() -> Self {
         Self {
             size: Size::<KeyUnit>::new(0.660, 0.735) * DOT_PER_UNIT,
-            radius: Dist::new(KeyUnit(0.065)).into_unit(),
-            y_offset: Dist::new(KeyUnit(-0.0775)).into_unit(),
+            radius: Length::new(KeyUnit(0.065)).into_unit(),
+            y_offset: Length::new(KeyUnit(-0.0775)).into_unit(),
         }
     }
 }
@@ -295,7 +295,7 @@ pub struct BottomSurface {
     /// The size of the key bottom
     pub size: Size<Dot>,
     /// The corner radius of the key bottom
-    pub radius: Dist<Dot>,
+    pub radius: Length<Dot>,
 }
 
 impl BottomSurface {
@@ -313,7 +313,7 @@ impl Default for BottomSurface {
     fn default() -> Self {
         Self {
             size: Size::<KeyUnit>::splat(0.95) * DOT_PER_UNIT,
-            radius: Dist::new(KeyUnit(0.065)).into_unit(),
+            radius: Length::new(KeyUnit(0.065)).into_unit(),
         }
     }
 }
@@ -454,24 +454,24 @@ mod tests {
     fn test_profile_type_depth() {
         assert_is_close!(
             Type::Cylindrical {
-                depth: Dist::from(1.0)
+                depth: Length::from(1.0)
             }
             .depth(),
-            Dist::from(1.0)
+            Length::from(1.0)
         );
         assert_is_close!(
             Type::Spherical {
-                depth: Dist::from(0.5)
+                depth: Length::from(0.5)
             }
             .depth(),
-            Dist::from(0.5)
+            Length::from(0.5)
         );
-        assert_is_close!(Type::Flat.depth(), Dist::from(0.0));
+        assert_is_close!(Type::Flat.depth(), Length::from(0.0));
     }
 
     #[test]
     fn test_profile_type_default() {
-        assert_matches!(Type::default(), Type::Cylindrical { depth } if depth.is_close(Dist::new(Mm(1.0).into_unit())));
+        assert_matches!(Type::default(), Type::Cylindrical { depth } if depth.is_close(Length::new(Mm(1.0).into_unit())));
     }
 
     #[test]
@@ -479,7 +479,7 @@ mod tests {
         assert_matches!(HomingProps::default().default, Homing::Bar);
         assert_is_close!(
             HomingProps::default().scoop.depth,
-            Dist::new(Mm(2.0).into_unit())
+            Length::new(Mm(2.0).into_unit())
         );
         assert_is_close!(
             HomingProps::default().bar.size,
@@ -487,22 +487,22 @@ mod tests {
         );
         assert_is_close!(
             HomingProps::default().bar.y_offset,
-            Dist::new(Mm(6.35).into_unit())
+            Length::new(Mm(6.35).into_unit())
         );
         assert_is_close!(
             HomingProps::default().bump.diameter,
-            Dist::new(Mm(0.508).into_unit())
+            Length::new(Mm(0.508).into_unit())
         );
         assert_is_close!(
             HomingProps::default().bump.y_offset,
-            Dist::new(Mm(0.0).into_unit())
+            Length::new(Mm(0.0).into_unit())
         );
     }
 
     #[test]
     fn test_text_height_new() {
         let expected: [_; 10] = array::from_fn(|i| {
-            Dist::<Dot>::new(KeyUnit(6.0 + 2.0 * f32::saturating_from(i)).into_unit()) / 72.0
+            Length::<Dot>::new(KeyUnit(6.0 + 2.0 * f32::saturating_from(i)).into_unit()) / 72.0
         });
         let result = TextHeight::new(&HashMap::new()).0;
 
@@ -514,13 +514,13 @@ mod tests {
         let expected = [
             0.0, 60.0, 120.0, 180.0, 190.0, 210.0, 230.0, 280.0, 330.0, 380.0,
         ]
-        .map(Dist::<Dot>::from);
+        .map(Length::<Dot>::from);
         let result = TextHeight::new(&HashMap::from([
-            (1, Dist::from(60.0)),
-            (3, Dist::from(180.0)),
-            (4, Dist::from(190.0)),
-            (6, Dist::from(230.0)),
-            (9, Dist::from(380.0)),
+            (1, Length::from(60.0)),
+            (3, Length::from(180.0)),
+            (4, Length::from(190.0)),
+            (6, Length::from(230.0)),
+            (9, Length::from(380.0)),
         ]))
         .0;
 
@@ -534,14 +534,14 @@ mod tests {
     #[test]
     fn test_text_height_get() {
         let heights = TextHeight::new(&HashMap::from([
-            (1, Dist::from(3.0)),
-            (3, Dist::from(9.0)),
-            (4, Dist::from(9.5)),
-            (6, Dist::from(11.5)),
-            (9, Dist::from(19.0)),
+            (1, Length::from(3.0)),
+            (3, Length::from(9.0)),
+            (4, Length::from(9.5)),
+            (6, Length::from(11.5)),
+            (9, Length::from(19.0)),
         ]));
-        assert_is_close!(heights.get(5), Dist::from(10.5));
-        assert_is_close!(heights.get(23), Dist::from(19.0));
+        assert_is_close!(heights.get(5), Length::from(10.5));
+        assert_is_close!(heights.get(23), Length::from(19.0));
     }
 
     #[test]
@@ -551,7 +551,7 @@ mod tests {
         for (i, h) in heights.0.into_iter().enumerate() {
             assert_is_close!(
                 h,
-                Dist::<Dot>::new(KeyUnit(6.0 + 2.0 * f32::saturating_from(i)).into_unit()) / 72.0
+                Length::<Dot>::new(KeyUnit(6.0 + 2.0 * f32::saturating_from(i)).into_unit()) / 72.0
             );
         }
     }
@@ -635,7 +635,7 @@ mod tests {
             RoundRect::new(
                 Point::new(0.170, 0.055) * DOT_PER_UNIT,
                 Point::new(0.830, 0.790) * DOT_PER_UNIT,
-                Dist::new(KeyUnit(0.065)).into_unit()
+                Length::new(KeyUnit(0.065)).into_unit()
             )
         );
     }
@@ -644,8 +644,8 @@ mod tests {
     fn test_top_surface_default() {
         let surf = TopSurface::default();
         assert_is_close!(surf.size, Size::new(0.660, 0.735) * DOT_PER_UNIT);
-        assert_is_close!(surf.radius, Dist::new(KeyUnit(0.065).into_unit()));
-        assert_is_close!(surf.y_offset, Dist::new(KeyUnit(-0.0775).into_unit()));
+        assert_is_close!(surf.radius, Length::new(KeyUnit(0.065).into_unit()));
+        assert_is_close!(surf.y_offset, Length::new(KeyUnit(-0.0775).into_unit()));
     }
 
     #[test]
@@ -665,7 +665,7 @@ mod tests {
             RoundRect::new(
                 Point::new(0.025, 0.025) * DOT_PER_UNIT,
                 Point::new(0.975, 0.975) * DOT_PER_UNIT,
-                Dist::new(KeyUnit(0.065)).into_unit()
+                Length::new(KeyUnit(0.065)).into_unit()
             )
         );
     }
@@ -674,7 +674,7 @@ mod tests {
     fn test_bottom_surface_default() {
         let surf = BottomSurface::default();
         assert_is_close!(surf.size, Size::new(0.950, 0.950) * DOT_PER_UNIT);
-        assert_is_close!(surf.radius, Dist::new(KeyUnit(0.065).into_unit()));
+        assert_is_close!(surf.radius, Length::new(KeyUnit(0.065).into_unit()));
     }
 
     #[test]
@@ -747,21 +747,21 @@ mod tests {
         let profile = Profile::from_toml(PROFILE_TOML).unwrap();
 
         assert!(
-            matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(Dist::new(Mm(0.5).into_unit())))
+            matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(Length::new(Mm(0.5).into_unit())))
         );
 
         assert_is_close!(profile.bottom.size, Size::splat(18.29) * DOT_PER_MM);
-        assert_is_close!(profile.bottom.radius, Dist::new(Mm(0.38).into_unit()));
+        assert_is_close!(profile.bottom.radius, Length::new(Mm(0.38).into_unit()));
 
         assert_is_close!(profile.top.size, Size::new(11.81, 13.91) * DOT_PER_MM);
-        assert_is_close!(profile.top.radius, Dist::new(Mm(1.52).into_unit()));
-        assert_is_close!(profile.top.y_offset, Dist::new(Mm(-1.62).into_unit()));
+        assert_is_close!(profile.top.radius, Length::new(Mm(1.52).into_unit()));
+        assert_is_close!(profile.top.y_offset, Length::new(Mm(-1.62).into_unit()));
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = [
             0.0, 0.76, 1.52, 2.28, 3.18, 4.84, 6.5, 8.16, 9.82, 11.48, 13.14,
         ]
-        .map(|e| Dist::new(Mm(e).into_unit()));
+        .map(|e| Length::new(Mm(e).into_unit()));
         for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
             assert_is_close!(e, r);
         }
@@ -785,16 +785,22 @@ mod tests {
         }
 
         assert_matches!(profile.homing.default, Homing::Scoop);
-        assert_is_close!(profile.homing.scoop.depth, Dist::new(Mm(1.5).into_unit()));
+        assert_is_close!(profile.homing.scoop.depth, Length::new(Mm(1.5).into_unit()));
         assert_is_close!(
             profile.homing.bar.size,
             Size::<Mm>::new(3.85, 0.4) * DOT_PER_MM
         );
-        assert_is_close!(profile.homing.bar.y_offset, Dist::new(Mm(5.05).into_unit()));
-        assert_is_close!(profile.homing.bump.diameter, Dist::new(Mm(0.4).into_unit()));
+        assert_is_close!(
+            profile.homing.bar.y_offset,
+            Length::new(Mm(5.05).into_unit())
+        );
+        assert_is_close!(
+            profile.homing.bump.diameter,
+            Length::new(Mm(0.4).into_unit())
+        );
         assert_is_close!(
             profile.homing.bump.y_offset,
-            Dist::new(Mm(-0.2).into_unit())
+            Length::new(Mm(-0.2).into_unit())
         );
     }
 
@@ -873,20 +879,20 @@ mod tests {
 
         let profile = Profile::from_json(PROFILE_JSON).unwrap();
 
-        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(Dist::new(Mm(0.5).into_unit())));
+        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(Length::new(Mm(0.5).into_unit())));
 
         assert_is_close!(profile.bottom.size, Size::splat(18.29) * DOT_PER_MM);
-        assert_is_close!(profile.bottom.radius, Dist::new(Mm(0.38).into_unit()));
+        assert_is_close!(profile.bottom.radius, Length::new(Mm(0.38).into_unit()));
 
         assert_is_close!(profile.top.size, Size::new(11.81, 13.91) * DOT_PER_MM);
-        assert_is_close!(profile.top.radius, Dist::new(Mm(1.52).into_unit()));
-        assert_is_close!(profile.top.y_offset, Dist::new(Mm(-1.62).into_unit()));
+        assert_is_close!(profile.top.radius, Length::new(Mm(1.52).into_unit()));
+        assert_is_close!(profile.top.y_offset, Length::new(Mm(-1.62).into_unit()));
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = [
             0.0, 0.76, 1.52, 2.28, 3.18, 4.84, 6.5, 8.16, 9.82, 11.48, 13.14,
         ]
-        .map(|e| Dist::new(Mm(e).into_unit()));
+        .map(|e| Length::new(Mm(e).into_unit()));
         for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
             assert_is_close!(e, r);
         }
@@ -910,16 +916,22 @@ mod tests {
         }
 
         assert_matches!(profile.homing.default, Homing::Scoop);
-        assert_is_close!(profile.homing.scoop.depth, Dist::new(Mm(1.5).into_unit()));
+        assert_is_close!(profile.homing.scoop.depth, Length::new(Mm(1.5).into_unit()));
         assert_is_close!(
             profile.homing.bar.size,
             Size::<Mm>::new(3.85, 0.4) * DOT_PER_MM
         );
-        assert_is_close!(profile.homing.bar.y_offset, Dist::new(Mm(5.05).into_unit()));
-        assert_is_close!(profile.homing.bump.diameter, Dist::new(Mm(0.4).into_unit()));
+        assert_is_close!(
+            profile.homing.bar.y_offset,
+            Length::new(Mm(5.05).into_unit())
+        );
+        assert_is_close!(
+            profile.homing.bump.diameter,
+            Length::new(Mm(0.4).into_unit())
+        );
         assert_is_close!(
             profile.homing.bump.y_offset,
-            Dist::new(Mm(-0.2).into_unit())
+            Length::new(Mm(-0.2).into_unit())
         );
     }
 
@@ -975,16 +987,19 @@ mod tests {
     fn test_profile_default() {
         let profile = Profile::default();
 
-        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(Dist::new(Mm(1.0).into_unit())));
+        assert_matches!(profile.typ, Type::Cylindrical { depth } if depth.is_close(Length::new(Mm(1.0).into_unit())));
 
         assert_is_close!(profile.bottom.size, Size::splat(0.950) * DOT_PER_UNIT);
-        assert_is_close!(profile.bottom.radius, Dist::new(KeyUnit(0.065).into_unit()));
+        assert_is_close!(
+            profile.bottom.radius,
+            Length::new(KeyUnit(0.065).into_unit())
+        );
 
         assert_is_close!(profile.top.size, Size::new(0.660, 0.735) * DOT_PER_UNIT);
-        assert_is_close!(profile.top.radius, Dist::new(KeyUnit(0.065).into_unit()));
+        assert_is_close!(profile.top.radius, Length::new(KeyUnit(0.065).into_unit()));
         assert_is_close!(
             profile.top.y_offset,
-            Dist::new(KeyUnit(-0.0775).into_unit())
+            Length::new(KeyUnit(-0.0775).into_unit())
         );
 
         assert_eq!(profile.text_height.0.len(), 10);

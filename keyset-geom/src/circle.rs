@@ -2,7 +2,7 @@ use std::borrow::Borrow;
 
 use isclose::IsClose;
 
-use crate::{Dist, Point, Unit};
+use crate::{Length, Point, Unit};
 
 /// A circle
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -10,7 +10,7 @@ pub struct Circle<U: Unit> {
     /// Center point
     pub center: Point<U>,
     /// Radius size
-    pub radius: Dist<U>,
+    pub radius: Length<U>,
 }
 
 impl<U> Circle<U>
@@ -20,14 +20,14 @@ where
     /// Create a new circle with the given center and radius.
     #[inline]
     #[must_use]
-    pub const fn new(center: Point<U>, radius: Dist<U>) -> Self {
+    pub const fn new(center: Point<U>, radius: Length<U>) -> Self {
         Self { center, radius }
     }
 
     /// Create a new circle with the given center and diameter.
     #[inline]
     #[must_use]
-    pub fn from_center_and_diameter(center: Point<U>, diameter: Dist<U>) -> Self {
+    pub fn from_center_and_diameter(center: Point<U>, diameter: Length<U>) -> Self {
         Self::new(center, diameter / 2.0)
     }
 }
@@ -64,17 +64,17 @@ mod tests {
 
     #[test]
     fn circle_new() {
-        let circle = Circle::new(Point::new(1.0, 2.0), Dist::new(Mm(0.5)));
+        let circle = Circle::new(Point::new(1.0, 2.0), Length::new(Mm(0.5)));
 
         assert_is_close!(circle.center, Point::new(1.0, 2.0));
-        assert_is_close!(circle.radius, Dist::new(Mm(0.5)));
+        assert_is_close!(circle.radius, Length::new(Mm(0.5)));
     }
 
     #[test]
     fn circle_from_center_and_diameter() {
-        let circle = Circle::from_center_and_diameter(Point::new(1.0, 2.0), Dist::new(Mm(2.0)));
+        let circle = Circle::from_center_and_diameter(Point::new(1.0, 2.0), Length::new(Mm(2.0)));
 
         assert_is_close!(circle.center, Point::new(1.0, 2.0));
-        assert_is_close!(circle.radius, Dist::new(Mm(1.0)));
+        assert_is_close!(circle.radius, Length::new(Mm(1.0)));
     }
 }

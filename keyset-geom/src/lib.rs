@@ -8,7 +8,7 @@
 
 mod angle;
 mod circle;
-mod dist;
+mod length;
 mod path;
 mod round_rect;
 mod traits;
@@ -16,7 +16,7 @@ mod unit;
 
 pub use self::angle::Angle;
 pub use self::circle::Circle;
-pub use self::dist::Dist;
+pub use self::length::Length;
 pub use self::path::{Path, PathBuilder, PathSegment, ToPath};
 pub use self::round_rect::RoundRect;
 pub use self::traits::*;
