@@ -29,6 +29,7 @@ where
 
     /// Swap the `x` and `y` coordinates of the vector
     #[inline]
+    #[must_use]
     pub const fn swap_xy(self) -> Self {
         Self {
             x: self.y,
@@ -38,6 +39,7 @@ where
 
     /// Linearly interpolate between two vectors
     #[inline]
+    #[must_use]
     pub fn lerp(self, other: Self, factor: f32) -> Self {
         self + (other - self) * factor
     }

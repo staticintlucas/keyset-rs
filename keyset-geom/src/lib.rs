@@ -27,6 +27,13 @@ pub use self::unit::{
     INCH_PER_UNIT, MM_PER_UNIT,
 };
 
+/// Temporary re-exports for the new API
+pub mod new_api {
+    pub use crate::length::Length;
+    pub use crate::point::Point;
+    pub use crate::vector::Vector;
+}
+
 /// A 2-dimensional point with unit `U`
 pub type Point<U> = euclid::Point2D<f32, U>;
 

@@ -2,7 +2,8 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::{FromUnit, IntoUnit as _, Size, Unit, Vector};
+use crate::new_api::Vector;
+use crate::{FromUnit, IntoUnit as _, Unit};
 
 /// A 2 dimensional point
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -29,6 +30,7 @@ where
 
     /// Swap the `x` and `y` coordinates of the point
     #[inline]
+    #[must_use]
     pub const fn swap_xy(self) -> Self {
         Self {
             x: self.y,
@@ -38,6 +40,7 @@ where
 
     /// Linearly interpolate between two points
     #[inline]
+    #[must_use]
     pub fn lerp(self, other: Self, factor: f32) -> Self {
         self + (other - self) * factor
     }
@@ -106,23 +109,8 @@ where
     #[inline]
     fn add(self, rhs: Vector<U>) -> Self::Output {
         Self {
-            x: self.x + U::from(rhs.x),
-            y: self.y + U::from(rhs.y),
-        }
-    }
-}
-
-impl<U> ops::Add<Size<U>> for Point<U>
-where
-    U: Unit,
-{
-    type Output = Self;
-
-    #[inline]
-    fn add(self, rhs: Size<U>) -> Self::Output {
-        Self {
-            x: self.x + U::from(rhs.width),
-            y: self.y + U::from(rhs.height),
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
         }
     }
 }
@@ -133,19 +121,8 @@ where
 {
     #[inline]
     fn add_assign(&mut self, rhs: Vector<U>) {
-        self.x += U::from(rhs.x);
-        self.y += U::from(rhs.y);
-    }
-}
-
-impl<U> ops::AddAssign<Size<U>> for Point<U>
-where
-    U: Unit,
-{
-    #[inline]
-    fn add_assign(&mut self, rhs: Size<U>) {
-        self.x += U::from(rhs.width);
-        self.y += U::from(rhs.height);
+        self.x += rhs.x;
+        self.y += rhs.y;
     }
 }
 
@@ -158,23 +135,8 @@ where
     #[inline]
     fn sub(self, rhs: Vector<U>) -> Self::Output {
         Self {
-            x: self.x - U::from(rhs.x),
-            y: self.y - U::from(rhs.y),
-        }
-    }
-}
-
-impl<U> ops::Sub<Size<U>> for Point<U>
-where
-    U: Unit,
-{
-    type Output = Self;
-
-    #[inline]
-    fn sub(self, rhs: Size<U>) -> Self::Output {
-        Self {
-            x: self.x - U::from(rhs.width),
-            y: self.y - U::from(rhs.height),
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
         }
     }
 }
@@ -187,7 +149,10 @@ where
 
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        Vector::new((self.x - rhs.x).into(), (self.y - rhs.y).into())
+        Vector {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
     }
 }
 
@@ -197,19 +162,8 @@ where
 {
     #[inline]
     fn sub_assign(&mut self, rhs: Vector<U>) {
-        self.x -= U::from(rhs.x);
-        self.y -= U::from(rhs.y);
-    }
-}
-
-impl<U> ops::SubAssign<Size<U>> for Point<U>
-where
-    U: Unit,
-{
-    #[inline]
-    fn sub_assign(&mut self, rhs: Size<U>) {
-        self.x -= U::from(rhs.width);
-        self.y -= U::from(rhs.height);
+        self.x -= rhs.x;
+        self.y -= rhs.y;
     }
 }
 
@@ -406,14 +360,10 @@ mod tests {
         let point = Point {
             x: Mm(2.0),
             y: Mm(3.0),
-        } + Vector::new(1.0, 0.5);
-        assert_is_close!(point.x, Mm(3.0));
-        assert_is_close!(point.y, Mm(3.5));
-
-        let point = Point {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        } + Size::new(1.0, 0.5);
+        } + Vector {
+            x: Mm(1.0),
+            y: Mm(0.5),
+        };
         assert_is_close!(point.x, Mm(3.0));
         assert_is_close!(point.y, Mm(3.5));
     }
@@ -424,15 +374,10 @@ mod tests {
             x: Mm(2.0),
             y: Mm(3.0),
         };
-        point += Vector::new(1.0, 0.5);
-        assert_is_close!(point.x, Mm(3.0));
-        assert_is_close!(point.y, Mm(3.5));
-
-        let mut point = Point {
-            x: Mm(2.0),
-            y: Mm(3.0),
+        point += Vector {
+            x: Mm(1.0),
+            y: Mm(0.5),
         };
-        point += Size::new(1.0, 0.5);
         assert_is_close!(point.x, Mm(3.0));
         assert_is_close!(point.y, Mm(3.5));
     }
@@ -442,14 +387,10 @@ mod tests {
         let point = Point {
             x: Mm(2.0),
             y: Mm(3.0),
-        } - Vector::new(1.0, 0.5);
-        assert_is_close!(point.x, Mm(1.0));
-        assert_is_close!(point.y, Mm(2.5));
-
-        let point = Point {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        } - Size::new(1.0, 0.5);
+        } - Vector {
+            x: Mm(1.0),
+            y: Mm(0.5),
+        };
         assert_is_close!(point.x, Mm(1.0));
         assert_is_close!(point.y, Mm(2.5));
 
@@ -460,8 +401,8 @@ mod tests {
             x: Mm(1.0),
             y: Mm(0.5),
         };
-        assert_is_close!(vec.x, 1.0);
-        assert_is_close!(vec.y, 2.5);
+        assert_is_close!(vec.x, Mm(1.0));
+        assert_is_close!(vec.y, Mm(2.5));
     }
 
     #[test]
@@ -470,7 +411,10 @@ mod tests {
             x: Mm(2.0),
             y: Mm(3.0),
         };
-        point -= Vector::new(1.0, 0.5);
+        point -= Vector {
+            x: Mm(1.0),
+            y: Mm(0.5),
+        };
         assert_is_close!(point.x, Mm(1.0));
         assert_is_close!(point.y, Mm(2.5));
 
@@ -478,7 +422,10 @@ mod tests {
             x: Mm(2.0),
             y: Mm(3.0),
         };
-        point -= Vector::new(1.0, 0.5);
+        point -= Vector {
+            x: Mm(1.0),
+            y: Mm(0.5),
+        };
         assert_is_close!(point.x, Mm(1.0));
         assert_is_close!(point.y, Mm(2.5));
     }
