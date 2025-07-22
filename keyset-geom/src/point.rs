@@ -242,15 +242,9 @@ where
     const REL_TOL: f32 = <U as IsClose<f32>>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(
-        &self,
-        other: impl std::borrow::Borrow<Self>,
-        rel_tol: impl std::borrow::Borrow<f32>,
-        abs_tol: impl std::borrow::Borrow<f32>,
-    ) -> bool {
-        let (other, rel_tol, abs_tol) = (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
-        self.x.is_close_tol(other.x, rel_tol, abs_tol)
-            && self.x.is_close_tol(other.y, rel_tol, abs_tol)
+    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.x.is_close_impl(&other.x, rel_tol, abs_tol)
+            && self.y.is_close_impl(&other.y, rel_tol, abs_tol)
     }
 }
 

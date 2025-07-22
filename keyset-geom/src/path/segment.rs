@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::fmt;
 use std::ops::{Div, DivAssign, Mul, MulAssign};
 
@@ -71,26 +70,18 @@ impl<U> IsClose<f32> for PathSegment<U> {
     const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(
-        &self,
-        other: impl Borrow<Self>,
-        rel_tol: impl Borrow<f32>,
-        abs_tol: impl Borrow<f32>,
-    ) -> bool {
+    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
         use PathSegment::*;
-        // TODO need type hints here to help rust-analyzer; see: rust-lang/rust-analyzer#5514
-        let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
-            (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
         match (*self, *other) {
-            (Move(ref s), Move(ref o)) => s.is_close_tol(o, rel_tol, abs_tol),
-            (Line(ref s), Line(ref o)) => s.is_close_tol(o, rel_tol, abs_tol),
+            (Move(ref s), Move(ref o)) => s.is_close_impl(o, rel_tol, abs_tol),
+            (Line(ref s), Line(ref o)) => s.is_close_impl(o, rel_tol, abs_tol),
             (CubicBezier(ref s1, ref s2, ref s), CubicBezier(ref o1, ref o2, ref o)) => {
-                s1.is_close_tol(o1, rel_tol, abs_tol)
-                    && s2.is_close_tol(o2, rel_tol, abs_tol)
-                    && s.is_close_tol(o, rel_tol, abs_tol)
+                s1.is_close_impl(o1, rel_tol, abs_tol)
+                    && s2.is_close_impl(o2, rel_tol, abs_tol)
+                    && s.is_close_impl(o, rel_tol, abs_tol)
             }
             (QuadraticBezier(ref s1, ref s), QuadraticBezier(ref o1, ref o)) => {
-                s1.is_close_tol(o1, rel_tol, abs_tol) && s.is_close_tol(o, rel_tol, abs_tol)
+                s1.is_close_impl(o1, rel_tol, abs_tol) && s.is_close_impl(o, rel_tol, abs_tol)
             }
             (Close, Close) => true,
             _ => false,

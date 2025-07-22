@@ -286,17 +286,10 @@ impl IsClose<f32> for Color {
     const REL_TOL: f32 = f32::REL_TOL;
 
     #[inline]
-    fn is_close_tol(
-        &self,
-        other: impl std::borrow::Borrow<Self>,
-        rel_tol: impl std::borrow::Borrow<f32>,
-        abs_tol: impl std::borrow::Borrow<f32>,
-    ) -> bool {
-        let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
-            (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
-        self.r().is_close_tol(other.r(), rel_tol, abs_tol)
-            && self.g().is_close_tol(other.g(), rel_tol, abs_tol)
-            && self.b().is_close_tol(other.b(), rel_tol, abs_tol)
+    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.r().is_close_impl(&other.r(), rel_tol, abs_tol)
+            && self.g().is_close_impl(&other.g(), rel_tol, abs_tol)
+            && self.b().is_close_impl(&other.b(), rel_tol, abs_tol)
     }
 }
 

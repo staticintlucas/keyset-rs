@@ -227,13 +227,8 @@ impl IsClose<f32> for Angle {
     const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(
-        &self,
-        other: impl std::borrow::Borrow<Self>,
-        rel_tol: impl std::borrow::Borrow<f32>,
-        abs_tol: impl std::borrow::Borrow<f32>,
-    ) -> bool {
-        <f32 as IsClose>::is_close_tol(&self.radians, other.borrow().radians, rel_tol, abs_tol)
+    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.radians.is_close_impl(&other.radians, rel_tol, abs_tol)
     }
 }
 

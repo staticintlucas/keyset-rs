@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 use isclose::IsClose;
 
 use crate::{ExtRect as _, Length, Point, Rect, Size, Unit};
@@ -101,17 +99,10 @@ where
     const REL_TOL: f32 = f32::REL_TOL;
 
     #[inline]
-    fn is_close_tol(
-        &self,
-        other: impl Borrow<Self>,
-        rel_tol: impl Borrow<f32>,
-        abs_tol: impl Borrow<f32>,
-    ) -> bool {
-        let (other, rel_tol, abs_tol): (&Self, &f32, &f32) =
-            (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
-        self.min.is_close_tol(other.min, rel_tol, abs_tol)
-            && self.max.is_close_tol(other.max, rel_tol, abs_tol)
-            && self.radius.is_close_tol(other.radius, rel_tol, abs_tol)
+    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.min.is_close_impl(&other.min, rel_tol, abs_tol)
+            && self.max.is_close_impl(&other.max, rel_tol, abs_tol)
+            && self.radius.is_close_impl(&other.radius, rel_tol, abs_tol)
     }
 }
 

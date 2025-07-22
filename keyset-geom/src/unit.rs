@@ -195,13 +195,8 @@ impl IsClose<f32> for KeyUnit {
     const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(
-        &self,
-        other: impl std::borrow::Borrow<Self>,
-        rel_tol: impl std::borrow::Borrow<f32>,
-        abs_tol: impl std::borrow::Borrow<f32>,
-    ) -> bool {
-        self.0.is_close_tol(other.borrow().0, abs_tol, rel_tol)
+    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.0.is_close_impl(&other.0, abs_tol, rel_tol)
     }
 }
 
@@ -349,13 +344,8 @@ impl IsClose<f32> for Dot {
     const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(
-        &self,
-        other: impl std::borrow::Borrow<Self>,
-        rel_tol: impl std::borrow::Borrow<f32>,
-        abs_tol: impl std::borrow::Borrow<f32>,
-    ) -> bool {
-        self.0.is_close_tol(other.borrow().0, abs_tol, rel_tol)
+    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.0.is_close_impl(&other.0, abs_tol, rel_tol)
     }
 }
 
@@ -503,13 +493,8 @@ impl IsClose<f32> for Mm {
     const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(
-        &self,
-        other: impl std::borrow::Borrow<Self>,
-        rel_tol: impl std::borrow::Borrow<f32>,
-        abs_tol: impl std::borrow::Borrow<f32>,
-    ) -> bool {
-        self.0.is_close_tol(other.borrow().0, abs_tol, rel_tol)
+    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.0.is_close_impl(&other.0, abs_tol, rel_tol)
     }
 }
 
@@ -657,13 +642,8 @@ impl IsClose<f32> for Inch {
     const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(
-        &self,
-        other: impl std::borrow::Borrow<Self>,
-        rel_tol: impl std::borrow::Borrow<f32>,
-        abs_tol: impl std::borrow::Borrow<f32>,
-    ) -> bool {
-        self.0.is_close_tol(other.borrow().0, abs_tol, rel_tol)
+    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.0.is_close_impl(&other.0, abs_tol, rel_tol)
     }
 }
 
