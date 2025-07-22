@@ -14,6 +14,7 @@ mod point;
 mod round_rect;
 mod traits;
 mod unit;
+mod vector;
 
 pub use self::angle::Angle;
 pub use self::circle::Circle;
