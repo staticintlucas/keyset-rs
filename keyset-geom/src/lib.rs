@@ -11,6 +11,7 @@ mod circle;
 mod length;
 mod path;
 mod point;
+mod rect;
 mod round_rect;
 mod traits;
 mod unit;
@@ -31,6 +32,7 @@ pub use self::unit::{
 pub mod new_api {
     pub use crate::length::Length;
     pub use crate::point::Point;
+    pub use crate::rect::{Rect, RoundRect};
     pub use crate::vector::Vector;
 }
 
