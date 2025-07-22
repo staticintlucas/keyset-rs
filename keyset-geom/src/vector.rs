@@ -26,6 +26,21 @@ where
     pub const fn splat(v: U) -> Self {
         Self { x: v, y: v }
     }
+
+    /// Swap the `x` and `y` coordinates of the vector
+    #[inline]
+    pub const fn swap_xy(self) -> Self {
+        Self {
+            x: self.y,
+            y: self.x,
+        }
+    }
+
+    /// Linearly interpolate between two vectors
+    #[inline]
+    pub fn lerp(self, other: Self, factor: f32) -> Self {
+        self + (other - self) * factor
+    }
 }
 
 impl<U, V> FromUnit<Vector<V>> for Vector<U>
@@ -221,26 +236,6 @@ where
     }
 }
 
-impl<U> Vector<U>
-where
-    U: Unit,
-{
-    /// Swap the `x` and `y` coordinates of the vector
-    #[inline]
-    pub const fn swap(self) -> Self {
-        Self {
-            x: self.y,
-            y: self.x,
-        }
-    }
-
-    /// Linearly interpolate between two vectors
-    #[inline]
-    pub fn lerp(self, other: Self, factor: f32) -> Self {
-        self + (other - self) * factor
-    }
-}
-
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
@@ -262,6 +257,38 @@ mod tests {
         let vector = Vector::splat(Mm(2.0));
         assert_is_close!(vector.x, Mm(2.0));
         assert_is_close!(vector.y, Mm(2.0));
+    }
+
+    #[test]
+    fn vector_swap_xy() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        }
+        .swap_xy();
+        assert_is_close!(vector.x, Mm(3.0));
+        assert_is_close!(vector.y, Mm(2.0));
+    }
+
+    #[test]
+    fn vector_lerp() {
+        let start = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        let end = Vector {
+            x: Mm(1.0),
+            y: Mm(0.5),
+        };
+
+        assert_is_close!(start.lerp(end, 0.0).x, Mm(2.0));
+        assert_is_close!(start.lerp(end, 0.0).y, Mm(3.0));
+
+        assert_is_close!(start.lerp(end, 0.5).x, Mm(1.5));
+        assert_is_close!(start.lerp(end, 0.5).y, Mm(1.75));
+
+        assert_is_close!(start.lerp(end, 1.0).x, Mm(1.0));
+        assert_is_close!(start.lerp(end, 1.0).y, Mm(0.5));
     }
 
     #[test]
@@ -447,37 +474,5 @@ mod tests {
             x: Mm(4.0 * 0.5),
             y: Mm(2.1 * 1.5)
         }));
-    }
-
-    #[test]
-    fn vector_swap() {
-        let vector = Vector {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        }
-        .swap();
-        assert_is_close!(vector.x, Mm(3.0));
-        assert_is_close!(vector.y, Mm(2.0));
-    }
-
-    #[test]
-    fn vector_lerp() {
-        let start = Vector {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        };
-        let end = Vector {
-            x: Mm(1.0),
-            y: Mm(0.5),
-        };
-
-        assert_is_close!(start.lerp(end, 0.0).x, Mm(2.0));
-        assert_is_close!(start.lerp(end, 0.0).y, Mm(3.0));
-
-        assert_is_close!(start.lerp(end, 0.5).x, Mm(1.5));
-        assert_is_close!(start.lerp(end, 0.5).y, Mm(1.75));
-
-        assert_is_close!(start.lerp(end, 1.0).x, Mm(1.0));
-        assert_is_close!(start.lerp(end, 1.0).y, Mm(0.5));
     }
 }

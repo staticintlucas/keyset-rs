@@ -7,8 +7,8 @@ use crate::{FromUnit, IntoUnit as _, Size, Unit, Vector};
 /// A 2 dimensional point
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Point<U: Unit> {
-    x: U,
-    y: U,
+    pub(crate) x: U,
+    pub(crate) y: U,
 }
 
 impl<U> Point<U>
@@ -25,6 +25,21 @@ where
     #[inline]
     pub const fn splat(v: U) -> Self {
         Self { x: v, y: v }
+    }
+
+    /// Swap the `x` and `y` coordinates of the point
+    #[inline]
+    pub const fn swap_xy(self) -> Self {
+        Self {
+            x: self.y,
+            y: self.x,
+        }
+    }
+
+    /// Linearly interpolate between two points
+    #[inline]
+    pub fn lerp(self, other: Self, factor: f32) -> Self {
+        self + (other - self) * factor
     }
 }
 
@@ -279,37 +294,9 @@ where
         rel_tol: impl std::borrow::Borrow<f32>,
         abs_tol: impl std::borrow::Borrow<f32>,
     ) -> bool {
-        <U as IsClose<f32>>::is_close_tol(
-            &self.x,
-            other.borrow().x,
-            rel_tol.borrow(),
-            abs_tol.borrow(),
-        ) && <U as IsClose<f32>>::is_close_tol(
-            &self.y,
-            other.borrow().y,
-            rel_tol.borrow(),
-            abs_tol.borrow(),
-        )
-    }
-}
-
-impl<U> Point<U>
-where
-    U: Unit,
-{
-    /// Swap the `x` and `y` coordinates of the point
-    #[inline]
-    pub const fn swap(self) -> Self {
-        Self {
-            x: self.y,
-            y: self.x,
-        }
-    }
-
-    /// Linearly interpolate between two points
-    #[inline]
-    pub fn lerp(self, other: Self, factor: f32) -> Self {
-        self + (other - self) * factor
+        let (other, rel_tol, abs_tol) = (other.borrow(), rel_tol.borrow(), abs_tol.borrow());
+        self.x.is_close_tol(other.x, rel_tol, abs_tol)
+            && self.x.is_close_tol(other.y, rel_tol, abs_tol)
     }
 }
 
@@ -334,6 +321,38 @@ mod tests {
         let point = Point::splat(Mm(2.0));
         assert_is_close!(point.x, Mm(2.0));
         assert_is_close!(point.y, Mm(2.0));
+    }
+
+    #[test]
+    fn point_swap_xy() {
+        let point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        }
+        .swap_xy();
+        assert_is_close!(point.x, Mm(3.0));
+        assert_is_close!(point.y, Mm(2.0));
+    }
+
+    #[test]
+    fn point_lerp() {
+        let start = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        let end = Point {
+            x: Mm(1.0),
+            y: Mm(0.5),
+        };
+
+        assert_is_close!(start.lerp(end, 0.0).x, Mm(2.0));
+        assert_is_close!(start.lerp(end, 0.0).y, Mm(3.0));
+
+        assert_is_close!(start.lerp(end, 0.5).x, Mm(1.5));
+        assert_is_close!(start.lerp(end, 0.5).y, Mm(1.75));
+
+        assert_is_close!(start.lerp(end, 1.0).x, Mm(1.0));
+        assert_is_close!(start.lerp(end, 1.0).y, Mm(0.5));
     }
 
     #[test]
@@ -547,37 +566,5 @@ mod tests {
             x: Mm(4.0 * 0.5),
             y: Mm(2.1 * 1.5)
         }));
-    }
-
-    #[test]
-    fn point_swap() {
-        let point = Point {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        }
-        .swap();
-        assert_is_close!(point.x, Mm(3.0));
-        assert_is_close!(point.y, Mm(2.0));
-    }
-
-    #[test]
-    fn point_lerp() {
-        let start = Point {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        };
-        let end = Point {
-            x: Mm(1.0),
-            y: Mm(0.5),
-        };
-
-        assert_is_close!(start.lerp(end, 0.0).x, Mm(2.0));
-        assert_is_close!(start.lerp(end, 0.0).y, Mm(3.0));
-
-        assert_is_close!(start.lerp(end, 0.5).x, Mm(1.5));
-        assert_is_close!(start.lerp(end, 0.5).y, Mm(1.75));
-
-        assert_is_close!(start.lerp(end, 1.0).x, Mm(1.0));
-        assert_is_close!(start.lerp(end, 1.0).y, Mm(0.5));
     }
 }
