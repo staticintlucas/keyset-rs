@@ -1,5 +1,6 @@
 use std::ops;
 
+use geom::new_api::Conversion;
 use geom::Unit;
 use isclose::IsClose;
 
@@ -123,4 +124,14 @@ impl IsClose<f32> for FontUnit {
     }
 }
 
-impl Unit for FontUnit {}
+impl Unit for FontUnit {
+    #[inline]
+    fn new(value: f32) -> Self {
+        Self(value)
+    }
+
+    #[inline]
+    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
+        V::new(self.0 * conversion.get())
+    }
+}

@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::ops;
 
 use isclose::IsClose;
@@ -25,6 +26,11 @@ pub trait Unit:
 // where
 //     f32: ops::Mul<Self, Output = Self>,
 {
+    /// Create a new instance of the unit from a value
+    fn new(value: f32) -> Self;
+
+    /// Convert the unit to another unit using the given conversion
+    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V;
 }
 
 /// Convenience trait for converting units
@@ -200,7 +206,17 @@ impl IsClose<f32> for KeyUnit {
     }
 }
 
-impl Unit for KeyUnit {}
+impl Unit for KeyUnit {
+    #[inline]
+    fn new(value: f32) -> Self {
+        Self(value)
+    }
+
+    #[inline]
+    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
+        V::new(self.0 * conversion.get())
+    }
+}
 
 /// Dot, a.k.a. drawing unit
 #[derive(Clone, Copy, Debug, Default)]
@@ -349,7 +365,17 @@ impl IsClose<f32> for Dot {
     }
 }
 
-impl Unit for Dot {}
+impl Unit for Dot {
+    #[inline]
+    fn new(value: f32) -> Self {
+        Self(value)
+    }
+
+    #[inline]
+    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
+        V::new(self.0 * conversion.get())
+    }
+}
 
 /// Millimeter
 #[derive(Clone, Copy, Debug, Default)]
@@ -498,7 +524,17 @@ impl IsClose<f32> for Mm {
     }
 }
 
-impl Unit for Mm {}
+impl Unit for Mm {
+    #[inline]
+    fn new(value: f32) -> Self {
+        Self(value)
+    }
+
+    #[inline]
+    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
+        V::new(self.0 * conversion.get())
+    }
+}
 
 /// Inch
 #[derive(Clone, Copy, Debug, Default)]
@@ -647,7 +683,66 @@ impl IsClose<f32> for Inch {
     }
 }
 
-impl Unit for Inch {}
+impl Unit for Inch {
+    #[inline]
+    fn new(value: f32) -> Self {
+        Self(value)
+    }
+
+    #[inline]
+    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
+        V::new(self.0 * conversion.get())
+    }
+}
+
+/// A conversion between two units
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct Conversion<Dst: Unit, Src: Unit> {
+    factor: f32,
+    _phantom: PhantomData<(Dst, Src)>,
+}
+
+impl<Dst, Src> Conversion<Dst, Src>
+where
+    Dst: Unit,
+    Src: Unit,
+{
+    /// Create a new conversion with the given conversion factor
+    #[inline]
+    #[must_use]
+    pub const fn new(factor: f32) -> Self {
+        Self {
+            factor,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Gets the conversion factor
+    #[inline]
+    #[must_use]
+    pub const fn get(self) -> f32 {
+        self.factor
+    }
+
+    /// Create a new conversion from two equivalent values in different units
+    #[inline]
+    pub fn from(dest: Dst, source: Src) -> Self {
+        Self {
+            factor: dest.into() / source.into(),
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Inverts the conversion
+    #[inline]
+    #[must_use]
+    pub const fn inverse(self) -> Conversion<Src, Dst> {
+        Conversion {
+            factor: 1.0 / self.factor,
+            _phantom: PhantomData,
+        }
+    }
+}
 
 // TODO: delete these when no longer used
 /// Conversion factor for keyboard units to drawing units
