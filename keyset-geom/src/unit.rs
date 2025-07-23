@@ -701,7 +701,7 @@ where
     /// Inverts the conversion
     #[inline]
     #[must_use]
-    pub const fn inverse(self) -> Conversion<Src, Dst> {
+    pub fn inverse(self) -> Conversion<Src, Dst> {
         Conversion {
             factor: 1.0 / self.factor,
             _phantom: PhantomData,
