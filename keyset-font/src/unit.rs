@@ -131,6 +131,11 @@ impl Unit for FontUnit {
     }
 
     #[inline]
+    fn get(self) -> f32 {
+        self.0
+    }
+
+    #[inline]
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
     }

@@ -61,7 +61,7 @@ impl KeyDrawing {
                 data: path,
                 outline: Some(Outline {
                     color: Color::new(1.0, 0.0, 0.0),
-                    width: Length::new(Dot(5.0)),
+                    width: Length::new(5.0),
                 }),
                 fill: None,
             }

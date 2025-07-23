@@ -68,18 +68,19 @@ impl Font {
             .name(name_id::FULL_NAME)
             .ok_or_else(|| Error::MissingProperty("full font name".to_owned()))?;
 
-        let cap_height = f32::from(
+        let cap_height = Length::new(
             face.capital_height()
                 .or_else(|| Some(face.glyph_bounds(face.glyph_index('H')?)?.height()))
-                .ok_or_else(|| Error::MissingProperty("capital height".to_owned()))?,
-        )
-        .into();
-        let x_height = f32::from(
+                .ok_or_else(|| Error::MissingProperty("capital height".to_owned()))?
+                .into(),
+        );
+
+        let x_height = Length::new(
             face.x_height()
                 .or_else(|| Some(face.glyph_bounds(face.glyph_index('x')?)?.height()))
-                .ok_or_else(|| Error::MissingProperty("x height".to_owned()))?,
-        )
-        .into();
+                .ok_or_else(|| Error::MissingProperty("x height".to_owned()))?
+                .into(),
+        );
 
         let data = FontData {
             face,
@@ -110,7 +111,7 @@ impl Font {
     #[inline]
     #[must_use]
     pub fn em_size(&self) -> Length<FontUnit> {
-        f32::from(self.0.face.units_per_em()).into()
+        Length::new(self.0.face.units_per_em().into())
     }
 
     /// The capital height in font units
@@ -135,7 +136,7 @@ impl Font {
     #[inline]
     #[must_use]
     pub fn ascender(&self) -> Length<FontUnit> {
-        f32::from(self.0.face.ascender()).into()
+        Length::new(self.0.face.ascender().into())
     }
 
     /// The font's descender in font units
@@ -144,14 +145,14 @@ impl Font {
     #[inline]
     #[must_use]
     pub fn descender(&self) -> Length<FontUnit> {
-        f32::from(-self.0.face.descender()).into()
+        Length::new((-self.0.face.descender()).into())
     }
 
     /// The font's line gap in font units
     #[inline]
     #[must_use]
     pub fn line_gap(&self) -> Length<FontUnit> {
-        f32::from(self.0.face.line_gap()).into()
+        Length::new(self.0.face.line_gap().into())
     }
 
     /// The font's line height in font units
@@ -261,8 +262,8 @@ mod tests {
         assert_matches!(default.0.face.number_of_glyphs(), 1); // Only .notdef
         assert_eq!(default.0.family, "default");
         assert_eq!(default.0.name, "default regular");
-        assert_is_close!(default.0.cap_height, Length::new(FontUnit(714.0)));
-        assert_is_close!(default.0.x_height, Length::new(FontUnit(523.0)));
+        assert_is_close!(default.0.cap_height, Length::new(714.0));
+        assert_is_close!(default.0.x_height, Length::new(523.0));
     }
 
     #[test]
@@ -273,8 +274,8 @@ mod tests {
         assert_eq!(font.0.face.number_of_glyphs(), 3);
         assert_eq!(font.0.family, "demo");
         assert_eq!(font.0.name, "demo regular");
-        assert_is_close!(font.0.cap_height, Length::new(FontUnit(650.0)));
-        assert_is_close!(font.0.x_height, Length::new(FontUnit(450.0)));
+        assert_is_close!(font.0.cap_height, Length::new(650.0));
+        assert_is_close!(font.0.x_height, Length::new(450.0));
     }
 
     #[test]
@@ -284,13 +285,13 @@ mod tests {
 
         assert_eq!(font.family(), "demo");
         assert_eq!(font.name(), "demo regular");
-        assert_is_close!(font.em_size(), Length::new(FontUnit(1000.0)));
-        assert_is_close!(font.cap_height(), Length::new(FontUnit(650.0)));
-        assert_is_close!(font.x_height(), Length::new(FontUnit(450.0)));
-        assert_is_close!(font.ascender(), Length::new(FontUnit(1024.0)));
-        assert_is_close!(font.descender(), Length::new(FontUnit(400.0)));
-        assert_is_close!(font.line_gap(), Length::new(FontUnit(0.0)));
-        assert_is_close!(font.line_height(), Length::new(FontUnit(1424.0)));
+        assert_is_close!(font.em_size(), Length::new(1000.0));
+        assert_is_close!(font.cap_height(), Length::new(650.0));
+        assert_is_close!(font.x_height(), Length::new(450.0));
+        assert_is_close!(font.ascender(), Length::new(1024.0));
+        assert_is_close!(font.descender(), Length::new(400.0));
+        assert_is_close!(font.line_gap(), Length::new(0.0));
+        assert_is_close!(font.line_height(), Length::new(1424.0));
         assert_is_close!(font.slope(), Angle::ZERO);
         assert_eq!(font.num_glyphs(), 3);
 

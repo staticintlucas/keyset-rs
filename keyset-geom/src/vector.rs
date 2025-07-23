@@ -17,14 +17,41 @@ where
 {
     /// Create a new vector
     #[inline]
-    pub const fn new(x: U, y: U) -> Self {
-        Self { x, y }
+    #[must_use]
+    pub fn new(x: f32, y: f32) -> Self {
+        Self {
+            x: U::new(x),
+            y: U::new(y),
+        }
     }
 
     /// Create a vector with the same value for the `x` and `y` coordinates
     #[inline]
-    pub const fn splat(v: U) -> Self {
-        Self { x: v, y: v }
+    #[must_use]
+    pub fn splat(v: f32) -> Self {
+        Self {
+            x: U::new(v),
+            y: U::new(v),
+        }
+    }
+
+    /// Create a new vector from unit values
+    #[inline]
+    #[must_use]
+    pub const fn from_units(x: U, y: U) -> Self {
+        Self { x, y }
+    }
+
+    /// Get the x value as an `f32`
+    #[inline]
+    pub fn get_x(self) -> f32 {
+        self.x.get()
+    }
+
+    /// Get the y value as an `f32`
+    #[inline]
+    pub fn get_y(self) -> f32 {
+        self.y.get()
     }
 
     /// Swap the `x` and `y` coordinates of the vector
@@ -56,46 +83,6 @@ where
             x: value.x.convert_into(),
             y: value.y.convert_into(),
         }
-    }
-}
-
-impl<U> From<[U; 2]> for Vector<U>
-where
-    U: Unit,
-{
-    #[inline]
-    fn from([x, y]: [U; 2]) -> Self {
-        Self { x, y }
-    }
-}
-
-impl<U> From<(U, U)> for Vector<U>
-where
-    U: Unit,
-{
-    #[inline]
-    fn from((x, y): (U, U)) -> Self {
-        Self { x, y }
-    }
-}
-
-impl<U> From<Vector<U>> for [U; 2]
-where
-    U: Unit,
-{
-    #[inline]
-    fn from(value: Vector<U>) -> Self {
-        [value.x, value.y]
-    }
-}
-
-impl<U> From<Vector<U>> for (U, U)
-where
-    U: Unit,
-{
-    #[inline]
-    fn from(value: Vector<U>) -> Self {
-        (value.x, value.y)
     }
 }
 
@@ -243,16 +230,41 @@ mod tests {
 
     #[test]
     fn vector_new() {
-        let vector = Vector::new(Mm(2.0), Mm(3.0));
+        let vector = Vector::<Mm>::new(2.0, 3.0);
         assert_is_close!(vector.x, Mm(2.0));
         assert_is_close!(vector.y, Mm(3.0));
     }
 
     #[test]
     fn vector_splat() {
-        let vector = Vector::splat(Mm(2.0));
+        let vector = Vector::<Mm>::splat(2.0);
         assert_is_close!(vector.x, Mm(2.0));
         assert_is_close!(vector.y, Mm(2.0));
+    }
+
+    #[test]
+    fn vector_from_units() {
+        let vector = Vector::from_units(Mm(2.0), Mm(3.0));
+        assert_is_close!(vector.x, Mm(2.0));
+        assert_is_close!(vector.y, Mm(3.0));
+    }
+
+    #[test]
+    fn vector_get_x() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        assert_is_close!(vector.get_x(), 2.0);
+    }
+
+    #[test]
+    fn vector_get_y() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        assert_is_close!(vector.get_y(), 3.0);
     }
 
     #[test]
@@ -288,49 +300,13 @@ mod tests {
     }
 
     #[test]
-    fn vector_from_unit() {
+    fn vector_convert_from() {
         let vector = Vector::<Mm>::convert_from(Vector {
             x: Inch(0.75),
             y: Inch(1.0),
         });
         assert_is_close!(vector.x, Mm(19.05));
         assert_is_close!(vector.y, Mm(25.4));
-    }
-
-    #[test]
-    fn vector_from_array() {
-        let vector = Vector::from([Mm(2.0), Mm(3.0)]);
-        assert_is_close!(vector.x, Mm(2.0));
-        assert_is_close!(vector.y, Mm(3.0));
-    }
-
-    #[test]
-    fn vector_from_tuple() {
-        let vector = Vector::from((Mm(2.0), Mm(3.0)));
-        assert_is_close!(vector.x, Mm(2.0));
-        assert_is_close!(vector.y, Mm(3.0));
-    }
-
-    #[test]
-    fn vector_into_array() {
-        let vector = Vector {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        };
-        let [x, y] = vector.into();
-        assert_is_close!(x, Mm(2.0));
-        assert_is_close!(y, Mm(3.0));
-    }
-
-    #[test]
-    fn vector_into_tuple() {
-        let vector = Vector {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        };
-        let (x, y) = vector.into();
-        assert_is_close!(x, Mm(2.0));
-        assert_is_close!(y, Mm(3.0));
     }
 
     #[test]

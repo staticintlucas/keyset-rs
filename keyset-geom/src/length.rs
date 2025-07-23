@@ -14,8 +14,29 @@ where
 {
     /// Create a new length
     #[inline]
-    pub const fn new(length: U) -> Self {
+    #[must_use]
+    pub fn new(length: f32) -> Self {
+        Self(U::new(length))
+    }
+
+    /// Create a new length from a unit
+    #[inline]
+    #[must_use]
+    pub const fn from_unit(length: U) -> Self {
         Self(length)
+    }
+
+    /// Get the length as an `f32`
+    #[inline]
+    pub fn get(self) -> f32 {
+        self.0.get()
+    }
+
+    /// Linearly interpolate between two length values
+    #[inline]
+    #[must_use]
+    pub fn lerp(self, other: Self, factor: f32) -> Self {
+        self * (1.0 - factor) + other * factor
     }
 }
 
@@ -27,26 +48,6 @@ where
     #[inline]
     fn convert_from(value: Length<V>) -> Self {
         Self(value.0.convert_into())
-    }
-}
-
-impl<U> From<f32> for Length<U>
-where
-    U: Unit,
-{
-    #[inline]
-    fn from(value: f32) -> Self {
-        Self(U::from(value))
-    }
-}
-
-impl<U> From<Length<U>> for f32
-where
-    U: Unit,
-{
-    #[inline]
-    fn from(value: Length<U>) -> Self {
-        value.0.into()
     }
 }
 
@@ -175,18 +176,6 @@ where
     }
 }
 
-impl<U> Length<U>
-where
-    U: Unit,
-{
-    /// Linearly interpolate between two length values
-    #[inline]
-    #[must_use]
-    pub fn lerp(self, other: Self, factor: f32) -> Self {
-        self * (1.0 - factor) + other * factor
-    }
-}
-
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
@@ -198,27 +187,37 @@ mod tests {
 
     #[test]
     fn length_new() {
-        let length = Length::new(Mm(2.0));
+        let length = Length::<Mm>::new(2.0);
         assert_is_close!(length.0, Mm(2.0));
     }
 
     #[test]
     fn length_from_unit() {
-        let length = Length::<Mm>::convert_from(Length(Inch(0.75)));
-        assert_is_close!(length.0, Mm(19.05));
-    }
-
-    #[test]
-    fn length_from_f32() {
-        let length = Length::<Mm>::from(2.0);
+        let length = Length::from_unit(Mm(2.0));
         assert_is_close!(length.0, Mm(2.0));
     }
 
     #[test]
-    fn length_into_f32() {
+    fn length_get() {
         let length = Length(Mm(2.0));
-        let value = f32::from(length);
+        let value = length.get();
         assert_is_close!(value, 2.0);
+    }
+
+    #[test]
+    fn length_lerp() {
+        let start = Length(Mm(2.0));
+        let end = Length(Mm(4.0));
+
+        assert_is_close!(start.lerp(end, 0.0).0, Mm(2.0));
+        assert_is_close!(start.lerp(end, 0.5).0, Mm(3.0));
+        assert_is_close!(start.lerp(end, 1.0).0, Mm(4.0));
+    }
+
+    #[test]
+    fn length_convert_from() {
+        let length = Length::<Mm>::convert_from(Length(Inch(0.75)));
+        assert_is_close!(length.0, Mm(19.05));
     }
 
     #[test]
@@ -290,15 +289,5 @@ mod tests {
     fn length_is_close() {
         assert!(Length(Mm(2.5)).is_close(Length(Mm(5.0 / 2.0))));
         assert!(!Length(Mm(2.5)).is_close(Length(Mm(5.1 / 2.0))));
-    }
-
-    #[test]
-    fn length_lerp() {
-        let start = Length(Mm(2.0));
-        let end = Length(Mm(4.0));
-
-        assert_is_close!(start.lerp(end, 0.0).0, Mm(2.0));
-        assert_is_close!(start.lerp(end, 0.5).0, Mm(3.0));
-        assert_is_close!(start.lerp(end, 1.0).0, Mm(4.0));
     }
 }

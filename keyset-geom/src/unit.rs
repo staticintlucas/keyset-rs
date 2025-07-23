@@ -9,8 +9,6 @@ use crate::Scale;
 pub trait Unit:
     Sized
     + Copy
-    + From<f32>
-    + Into<f32>
     + ops::Add<Self, Output = Self>
     + ops::AddAssign<Self>
     + ops::Sub<Self, Output = Self>
@@ -28,6 +26,9 @@ pub trait Unit:
 {
     /// Create a new instance of the unit from a value
     fn new(value: f32) -> Self;
+
+    /// Create a new instance of the unit from a value
+    fn get(self) -> f32;
 
     /// Convert the unit to another unit using the given conversion
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V;
@@ -88,20 +89,6 @@ impl ConvertFrom<Inch> for KeyUnit {
     #[inline]
     fn convert_from(value: Inch) -> Self {
         Self(value.0 * Self::PER_INCH)
-    }
-}
-
-impl From<f32> for KeyUnit {
-    #[inline]
-    fn from(value: f32) -> Self {
-        Self(value)
-    }
-}
-
-impl From<KeyUnit> for f32 {
-    #[inline]
-    fn from(value: KeyUnit) -> Self {
-        value.0
     }
 }
 
@@ -213,6 +200,11 @@ impl Unit for KeyUnit {
     }
 
     #[inline]
+    fn get(self) -> f32 {
+        self.0
+    }
+
+    #[inline]
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
     }
@@ -247,20 +239,6 @@ impl ConvertFrom<Inch> for Dot {
     #[inline]
     fn convert_from(value: Inch) -> Self {
         Self(value.0 * Self::PER_INCH)
-    }
-}
-
-impl From<f32> for Dot {
-    #[inline]
-    fn from(value: f32) -> Self {
-        Self(value)
-    }
-}
-
-impl From<Dot> for f32 {
-    #[inline]
-    fn from(value: Dot) -> Self {
-        value.0
     }
 }
 
@@ -372,6 +350,11 @@ impl Unit for Dot {
     }
 
     #[inline]
+    fn get(self) -> f32 {
+        self.0
+    }
+
+    #[inline]
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
     }
@@ -406,20 +389,6 @@ impl ConvertFrom<Inch> for Mm {
     #[inline]
     fn convert_from(value: Inch) -> Self {
         Self(value.0 * Self::PER_INCH)
-    }
-}
-
-impl From<f32> for Mm {
-    #[inline]
-    fn from(value: f32) -> Self {
-        Self(value)
-    }
-}
-
-impl From<Mm> for f32 {
-    #[inline]
-    fn from(value: Mm) -> Self {
-        value.0
     }
 }
 
@@ -531,6 +500,11 @@ impl Unit for Mm {
     }
 
     #[inline]
+    fn get(self) -> f32 {
+        self.0
+    }
+
+    #[inline]
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
     }
@@ -565,20 +539,6 @@ impl ConvertFrom<Mm> for Inch {
     #[inline]
     fn convert_from(value: Mm) -> Self {
         Self(value.0 * Self::PER_MM)
-    }
-}
-
-impl From<f32> for Inch {
-    #[inline]
-    fn from(value: f32) -> Self {
-        Self(value)
-    }
-}
-
-impl From<Inch> for f32 {
-    #[inline]
-    fn from(value: Inch) -> Self {
-        value.0
     }
 }
 
@@ -690,6 +650,11 @@ impl Unit for Inch {
     }
 
     #[inline]
+    fn get(self) -> f32 {
+        self.0
+    }
+
+    #[inline]
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
     }
@@ -728,7 +693,7 @@ where
     #[inline]
     pub fn from(dest: Dst, source: Src) -> Self {
         Self {
-            factor: dest.into() / source.into(),
+            factor: dest.get() / source.get(),
             _phantom: PhantomData,
         }
     }
@@ -775,14 +740,11 @@ mod tests {
         let key_unit = KeyUnit::convert_from(Inch(1.0));
         assert_is_close!(key_unit.0, 4.0 / 3.0);
 
-        let key_unit = KeyUnit::from(3.0);
+        let key_unit = KeyUnit::new(3.0);
         assert_is_close!(key_unit.0, 3.0);
 
-        let flt = f32::from(KeyUnit(2.5));
-        assert_is_close!(flt, 2.5);
-
-        let flt = f32::from(KeyUnit(2.5));
-        assert_is_close!(flt, 2.5);
+        let key_unit = KeyUnit(2.5);
+        assert_is_close!(key_unit.get(), 2.5);
     }
 
     #[test]
@@ -866,14 +828,11 @@ mod tests {
         let dot = Dot::convert_from(Inch(1.0));
         assert_is_close!(dot.0, 4000.0 / 3.0);
 
-        let dot = Dot::from(3.0);
+        let dot = Dot::new(3.0);
         assert_is_close!(dot.0, 3.0);
 
-        let flt = f32::from(Dot(2.5));
-        assert_is_close!(flt, 2.5);
-
-        let flt = f32::from(Dot(2.5));
-        assert_is_close!(flt, 2.5);
+        let dot = Dot(2.5);
+        assert_is_close!(dot.get(), 2.5);
     }
 
     #[test]
@@ -957,14 +916,11 @@ mod tests {
         let mm = Mm::convert_from(Inch(1.0));
         assert_is_close!(mm.0, 25.4);
 
-        let mm = Mm::from(3.0);
+        let mm = Mm::new(3.0);
         assert_is_close!(mm.0, 3.0);
 
-        let flt = f32::from(Mm(2.5));
-        assert_is_close!(flt, 2.5);
-
-        let flt = f32::from(Mm(2.5));
-        assert_is_close!(flt, 2.5);
+        let mm = Mm(2.5);
+        assert_is_close!(mm.get(), 2.5);
     }
 
     #[test]
@@ -1048,14 +1004,11 @@ mod tests {
         let inch = Inch::convert_from(Mm(19.05));
         assert_is_close!(inch.0, 0.75);
 
-        let inch = Inch::from(3.0);
+        let inch = Inch::new(3.0);
         assert_is_close!(inch.0, 3.0);
 
-        let flt = f32::from(Inch(2.5));
-        assert_is_close!(flt, 2.5);
-
-        let flt = f32::from(Inch(2.5));
-        assert_is_close!(flt, 2.5);
+        let inch = Inch(2.5);
+        assert_is_close!(inch.get(), 2.5);
     }
 
     #[test]

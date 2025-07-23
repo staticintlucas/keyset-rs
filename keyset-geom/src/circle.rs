@@ -55,17 +55,17 @@ mod tests {
 
     #[test]
     fn circle_new() {
-        let circle = Circle::new(Point::new(1.0, 2.0), Length::new(Mm(0.5)));
+        let circle = Circle::<Mm>::new(Point::new(1.0, 2.0), Length::new(0.5));
 
         assert_is_close!(circle.center, Point::new(1.0, 2.0));
-        assert_is_close!(circle.radius, Length::new(Mm(0.5)));
+        assert_is_close!(circle.radius, Length::new(0.5));
     }
 
     #[test]
     fn circle_from_center_and_diameter() {
-        let circle = Circle::from_center_and_diameter(Point::new(1.0, 2.0), Length::new(Mm(2.0)));
+        let circle = Circle::<Mm>::from_center_and_diameter(Point::new(1.0, 2.0), Length::new(2.0));
 
         assert_is_close!(circle.center, Point::new(1.0, 2.0));
-        assert_is_close!(circle.radius, Length::new(Mm(1.0)));
+        assert_is_close!(circle.radius, Length::new(1.0));
     }
 }

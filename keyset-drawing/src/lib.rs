@@ -142,7 +142,7 @@ impl Default for Template {
             profile: Profile::default(),
             font: Font::default(),
             scale: 1.0,
-            outline_width: Length::new(KeyUnit(0.01).convert_into()),
+            outline_width: Length::<KeyUnit>::new(0.01).convert_into(),
             show_keys: true,
             show_margin: false,
             __non_exhaustive: NonExhaustive,
@@ -191,7 +191,7 @@ mod tests {
             profile,
             font,
             scale: 2.0,
-            outline_width: Length::new(Mm(20.0).convert_into()),
+            outline_width: Length::<Mm>::new(20.0).convert_into(),
             show_keys: false,
             show_margin: true,
             ..Template::default()
@@ -199,7 +199,7 @@ mod tests {
 
         assert_is_close!(
             template.profile.typ.depth(),
-            Length::new(Mm(1.0).convert_into())
+            Length::from_unit(Mm(1.0).convert_into())
         );
         assert_eq!(template.font.num_glyphs(), 3); // .notdef, A, V
         assert_is_close!(template.scale, 2.0);
@@ -217,7 +217,7 @@ mod tests {
                 Profile::default(),
                 Font::default(),
                 1.0,
-                Length::new(Dot(10.0)),
+                Length::<Dot>::new(10.0),
                 true,
                 false
             ),

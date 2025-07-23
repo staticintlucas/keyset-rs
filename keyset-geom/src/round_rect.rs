@@ -120,24 +120,24 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
         assert_is_close!(rect.min, Point::new(1.0, 2.0));
         assert_is_close!(rect.max, Point::new(3.0, 5.0));
-        assert_is_close!(rect.radius, Length::new(Mm(0.5)));
+        assert_is_close!(rect.radius, Length::new(0.5));
     }
 
     #[test]
     fn round_rect_from_rect() {
         let rect = RoundRect::from_rect(
             Rect::new(Point::new(1.0, 2.0), Point::new(3.0, 5.0)),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
         assert_is_close!(rect.min, Point::new(1.0, 2.0));
         assert_is_close!(rect.max, Point::new(3.0, 5.0));
-        assert_is_close!(rect.radius, Length::new(Mm(0.5)));
+        assert_is_close!(rect.radius, Length::new(0.5));
     }
 
     #[test]
@@ -145,12 +145,12 @@ mod tests {
         let rect = RoundRect::from_origin_and_size(
             Point::new(1.0, 2.0),
             Size::new(2.0, 3.0),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
         assert_is_close!(rect.min, Point::new(1.0, 2.0));
         assert_is_close!(rect.max, Point::new(3.0, 5.0));
-        assert_is_close!(rect.radius, Length::new(Mm(0.5)));
+        assert_is_close!(rect.radius, Length::new(0.5));
     }
 
     #[test]
@@ -158,12 +158,12 @@ mod tests {
         let rect = RoundRect::from_center_and_size(
             Point::new(2.0, 3.5),
             Size::new(2.0, 3.0),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
         assert_is_close!(rect.min, Point::new(1.0, 2.0));
         assert_is_close!(rect.max, Point::new(3.0, 5.0));
-        assert_is_close!(rect.radius, Length::new(Mm(0.5)));
+        assert_is_close!(rect.radius, Length::new(0.5));
     }
 
     #[test]
@@ -171,7 +171,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
         assert_is_close!(rect.width(), 2.0);
@@ -182,7 +182,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
         assert_is_close!(rect.height(), 3.0);
@@ -193,10 +193,10 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
-        assert_is_close!(rect.radius(), Length::new(Mm(0.5)));
+        assert_is_close!(rect.radius(), Length::new(0.5));
     }
 
     #[test]
@@ -204,7 +204,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
         assert_eq!(
@@ -218,7 +218,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
         assert_eq!(rect.center(), Point::new(2.0, 3.5));
@@ -229,7 +229,7 @@ mod tests {
         let rect = RoundRect::new(
             Point::new(1.0, 2.0),
             Point::new(3.0, 5.0),
-            Length::new(Mm(0.5)),
+            Length::<Mm>::new(0.5),
         );
 
         assert_eq!(rect.size(), Size::new(2.0, 3.0));
