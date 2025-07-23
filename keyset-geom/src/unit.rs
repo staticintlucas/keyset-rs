@@ -748,6 +748,17 @@ mod tests {
     }
 
     #[test]
+    fn key_unit_convert() {
+        let conversion = Conversion::<Mm, KeyUnit> {
+            factor: 19.05,
+            _phantom: PhantomData,
+        };
+
+        let key_unit = KeyUnit(4.0 / 3.0);
+        assert_is_close!(key_unit.convert(conversion), Mm(25.4));
+    }
+
+    #[test]
     fn key_unit_add() {
         let key_unit = KeyUnit(2.0) + KeyUnit(1.0);
         assert_is_close!(key_unit.0, 3.0);
@@ -833,6 +844,17 @@ mod tests {
 
         let dot = Dot(2.5);
         assert_is_close!(dot.get(), 2.5);
+    }
+
+    #[test]
+    fn dot_convert() {
+        let conversion = Conversion::<KeyUnit, Dot> {
+            factor: 1.0 / 1000.0,
+            _phantom: PhantomData,
+        };
+
+        let dot = Dot(2500.0);
+        assert_is_close!(dot.convert(conversion), KeyUnit(2.5));
     }
 
     #[test]
@@ -924,6 +946,17 @@ mod tests {
     }
 
     #[test]
+    fn mm_convert() {
+        let conversion = Conversion::<Dot, Mm> {
+            factor: 100_000.0 / 1905.0,
+            _phantom: PhantomData,
+        };
+
+        let mm = Mm(25.4);
+        assert_is_close!(mm.convert(conversion), Dot(4000.0 / 3.0));
+    }
+
+    #[test]
     fn mm_add() {
         let mm = Mm(2.0) + Mm(1.0);
         assert_is_close!(mm.0, 3.0);
@@ -1012,6 +1045,17 @@ mod tests {
     }
 
     #[test]
+    fn inch_convert() {
+        let conversion = Conversion::<Mm, Inch> {
+            factor: 25.4,
+            _phantom: PhantomData,
+        };
+
+        let inch = Inch(0.75);
+        assert_is_close!(inch.convert(conversion), Mm(19.05));
+    }
+
+    #[test]
     fn inch_add() {
         let inch = Inch(2.0) + Inch(1.0);
         assert_is_close!(inch.0, 3.0);
@@ -1079,5 +1123,36 @@ mod tests {
     fn inch_is_close() {
         assert!(Inch(2.5).is_close(Inch(5.0 / 2.0)));
         assert!(!Inch(2.5).is_close(Inch(5.1 / 2.0)));
+    }
+
+    #[test]
+    fn conversion_new() {
+        let conversion = Conversion::<Mm, Inch>::new(25.4);
+        assert_is_close!(conversion.factor, 25.4);
+    }
+
+    #[test]
+    fn conversion_get() {
+        let conversion = Conversion::<Mm, Inch> {
+            factor: 25.4,
+            _phantom: PhantomData,
+        };
+        assert_is_close!(conversion.get(), 25.4);
+    }
+
+    #[test]
+    fn conversion_from() {
+        let conversion = Conversion::from(Mm(25.4), Inch(1.0));
+        assert_is_close!(conversion.factor, 25.4);
+    }
+
+    #[test]
+    fn conversion_inverse() {
+        let conversion = Conversion::<Mm, Inch> {
+            factor: 25.4,
+            _phantom: PhantomData,
+        }
+        .inverse();
+        assert_is_close!(conversion.factor, 1.0 / 25.4);
     }
 }
