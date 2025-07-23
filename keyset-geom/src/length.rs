@@ -2,7 +2,7 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::{FromUnit, IntoUnit as _, Unit};
+use crate::{ConvertFrom, ConvertInto as _, Unit};
 
 /// A one-dimensional length with unit `U`
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd)]
@@ -19,14 +19,14 @@ where
     }
 }
 
-impl<U, V> FromUnit<Length<V>> for Length<U>
+impl<U, V> ConvertFrom<Length<V>> for Length<U>
 where
-    U: Unit + FromUnit<V>,
+    U: Unit + ConvertFrom<V>,
     V: Unit,
 {
     #[inline]
-    fn from_unit(value: Length<V>) -> Self {
-        Self(value.0.into_unit())
+    fn convert_from(value: Length<V>) -> Self {
+        Self(value.0.convert_into())
     }
 }
 
@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     fn length_from_unit() {
-        let length = Length::<Mm>::from_unit(Length(Inch(0.75)));
+        let length = Length::<Mm>::convert_from(Length(Inch(0.75)));
         assert_is_close!(length.0, Mm(19.05));
     }
 

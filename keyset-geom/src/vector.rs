@@ -2,7 +2,7 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::{FromUnit, IntoUnit as _, Unit};
+use crate::{ConvertFrom, ConvertInto as _, Unit};
 
 /// A 2 dimensional vector
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -45,16 +45,16 @@ where
     }
 }
 
-impl<U, V> FromUnit<Vector<V>> for Vector<U>
+impl<U, V> ConvertFrom<Vector<V>> for Vector<U>
 where
-    U: Unit + FromUnit<V>,
+    U: Unit + ConvertFrom<V>,
     V: Unit,
 {
     #[inline]
-    fn from_unit(value: Vector<V>) -> Self {
+    fn convert_from(value: Vector<V>) -> Self {
         Self {
-            x: value.x.into_unit(),
-            y: value.y.into_unit(),
+            x: value.x.convert_into(),
+            y: value.y.convert_into(),
         }
     }
 }
@@ -289,7 +289,7 @@ mod tests {
 
     #[test]
     fn vector_from_unit() {
-        let vector = Vector::<Mm>::from_unit(Vector {
+        let vector = Vector::<Mm>::convert_from(Vector {
             x: Inch(0.75),
             y: Inch(1.0),
         });

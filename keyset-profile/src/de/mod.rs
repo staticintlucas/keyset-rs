@@ -6,7 +6,7 @@ use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
 use geom::{
-    Dot, ExtRect as _, IntoUnit as _, Length, Mm, Point, Rect, SideOffsets, Size, Vector,
+    ConvertInto as _, Dot, ExtRect as _, Length, Mm, Point, Rect, SideOffsets, Size, Vector,
     DOT_PER_MM, DOT_PER_UNIT,
 };
 
@@ -37,10 +37,10 @@ impl<'de> Deserialize<'de> for Type {
             // Convert to Length
             match typ {
                 RawType::Cylindrical { depth } => Self::Cylindrical {
-                    depth: Length::new(Mm(depth).into_unit()),
+                    depth: Length::new(Mm(depth).convert_into()),
                 },
                 RawType::Spherical { depth } => Self::Spherical {
-                    depth: Length::new(Mm(depth).into_unit()),
+                    depth: Length::new(Mm(depth).convert_into()),
                 },
                 RawType::Flat => Self::Flat,
             }
@@ -63,7 +63,7 @@ impl<'de> Deserialize<'de> for ScoopProps {
         RawScoopProps::deserialize(deserializer).map(|props| {
             // Convert to Dist
             Self {
-                depth: Length::new(Mm(props.depth).into_unit()),
+                depth: Length::new(Mm(props.depth).convert_into()),
             }
         })
     }
@@ -87,7 +87,7 @@ impl<'de> Deserialize<'de> for BarProps {
             // Convert to Length
             Self {
                 size: Size::<Mm>::new(props.width, props.height) * DOT_PER_MM,
-                y_offset: Length::new(Mm(props.y_offset).into_unit()),
+                y_offset: Length::new(Mm(props.y_offset).convert_into()),
             }
         })
     }
@@ -109,8 +109,8 @@ impl<'de> Deserialize<'de> for BumpProps {
         RawBumpProps::deserialize(deserializer).map(|props| {
             // Convert to Length
             Self {
-                diameter: Length::new(Mm(props.diameter).into_unit()),
-                y_offset: Length::new(Mm(props.y_offset).into_unit()),
+                diameter: Length::new(Mm(props.diameter).convert_into()),
+                y_offset: Length::new(Mm(props.y_offset).convert_into()),
             }
         })
     }
@@ -135,8 +135,8 @@ impl<'de> Deserialize<'de> for TopSurface {
             // Convert to Length
             Self {
                 size: Size::<Mm>::new(surface.width, surface.height) * DOT_PER_MM,
-                radius: Length::new(Mm(surface.radius).into_unit()),
-                y_offset: Length::new(Mm(surface.y_offset).into_unit()),
+                radius: Length::new(Mm(surface.radius).convert_into()),
+                y_offset: Length::new(Mm(surface.y_offset).convert_into()),
             }
         })
     }
@@ -160,7 +160,7 @@ impl<'de> Deserialize<'de> for BottomSurface {
             // Convert to Length
             Self {
                 size: Size::<Mm>::new(surface.width, surface.height) * DOT_PER_MM,
-                radius: Length::new(Mm(surface.radius).into_unit()),
+                radius: Length::new(Mm(surface.radius).convert_into()),
             }
         })
     }
@@ -274,8 +274,8 @@ mod tests {
         let chc: Type = serde_json::from_str(r#"{ "type": "chiclet" }"#).unwrap();
         let flt: Type = serde_json::from_str(r#"{ "type": "flat" }"#).unwrap();
 
-        assert_matches!(cyl, Type::Cylindrical { depth } if depth.is_close(Length::new(Mm(0.5).into_unit())));
-        assert_matches!(sph, Type::Spherical { depth } if depth.is_close(Length::new(Mm(0.8).into_unit())));
+        assert_matches!(cyl, Type::Cylindrical { depth } if depth.is_close(Length::new(Mm(0.5).convert_into())));
+        assert_matches!(sph, Type::Spherical { depth } if depth.is_close(Length::new(Mm(0.8).convert_into())));
         assert_matches!(chc, Type::Flat);
         assert_matches!(flt, Type::Flat);
     }
@@ -284,7 +284,7 @@ mod tests {
     fn deserialize_scoop_props() {
         let scoop_props: ScoopProps = serde_json::from_str(r#"{ "depth": 0.8 }"#).unwrap();
 
-        assert_is_close!(scoop_props.depth, Length::new(Mm(0.8).into_unit()));
+        assert_is_close!(scoop_props.depth, Length::new(Mm(0.8).convert_into()));
     }
 
     #[test]
@@ -293,7 +293,7 @@ mod tests {
             serde_json::from_str(r#"{ "width": 3.85, "height": 0.4, "y-offset": 5.05 }"#).unwrap();
 
         assert_is_close!(bar_props.size, Size::<Mm>::new(3.85, 0.4) * DOT_PER_MM);
-        assert_is_close!(bar_props.y_offset, Length::new(Mm(5.05).into_unit()));
+        assert_is_close!(bar_props.y_offset, Length::new(Mm(5.05).convert_into()));
     }
 
     #[test]
@@ -301,8 +301,8 @@ mod tests {
         let bar_props: BumpProps =
             serde_json::from_str(r#"{ "diameter": 0.4, "y-offset": -0.2 }"#).unwrap();
 
-        assert_is_close!(bar_props.diameter, Length::new(Mm(0.4).into_unit()));
-        assert_is_close!(bar_props.y_offset, Length::new(Mm(-0.2).into_unit()));
+        assert_is_close!(bar_props.diameter, Length::new(Mm(0.4).convert_into()));
+        assert_is_close!(bar_props.y_offset, Length::new(Mm(-0.2).convert_into()));
     }
 
     #[test]
@@ -313,8 +313,8 @@ mod tests {
         .unwrap();
 
         assert_is_close!(surf.size, Size::new(11.81, 13.91) * DOT_PER_MM);
-        assert_is_close!(surf.radius, Length::new(Mm(1.52).into_unit()));
-        assert_is_close!(surf.y_offset, Length::new(Mm(-1.62).into_unit()));
+        assert_is_close!(surf.radius, Length::new(Mm(1.52).convert_into()));
+        assert_is_close!(surf.y_offset, Length::new(Mm(-1.62).convert_into()));
     }
 
     #[test]
@@ -323,6 +323,6 @@ mod tests {
             serde_json::from_str(r#"{ "width": 18.29, "height": 18.29, "radius": 0.38 }"#).unwrap();
 
         assert_is_close!(surf.size, Size::splat(18.29) * DOT_PER_MM);
-        assert_is_close!(surf.radius, Length::new(Mm(0.38).into_unit()));
+        assert_is_close!(surf.radius, Length::new(Mm(0.38).convert_into()));
     }
 }

@@ -3,7 +3,7 @@ use std::ops;
 use isclose::IsClose;
 
 use crate::new_api::Vector;
-use crate::{FromUnit, IntoUnit as _, Unit};
+use crate::{ConvertFrom, ConvertInto as _, Unit};
 
 /// A 2 dimensional point
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -46,16 +46,16 @@ where
     }
 }
 
-impl<U, V> FromUnit<Point<V>> for Point<U>
+impl<U, V> ConvertFrom<Point<V>> for Point<U>
 where
-    U: Unit + FromUnit<V>,
+    U: Unit + ConvertFrom<V>,
     V: Unit,
 {
     #[inline]
-    fn from_unit(value: Point<V>) -> Self {
+    fn convert_from(value: Point<V>) -> Self {
         Self {
-            x: value.x.into_unit(),
-            y: value.y.into_unit(),
+            x: value.x.convert_into(),
+            y: value.y.convert_into(),
         }
     }
 }
@@ -305,7 +305,7 @@ mod tests {
 
     #[test]
     fn point_from_unit() {
-        let point = Point::<Mm>::from_unit(Point {
+        let point = Point::<Mm>::convert_from(Point {
             x: Inch(0.75),
             y: Inch(1.0),
         });

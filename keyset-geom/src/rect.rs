@@ -3,7 +3,7 @@ use std::ops;
 use isclose::IsClose;
 
 use crate::new_api::{Point, Vector};
-use crate::{FromUnit, IntoUnit as _, Unit};
+use crate::{ConvertFrom, ConvertInto as _, Unit};
 
 /// A 2 dimensional rectangle
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -66,16 +66,16 @@ where
     }
 }
 
-impl<U, V> FromUnit<Rect<V>> for Rect<U>
+impl<U, V> ConvertFrom<Rect<V>> for Rect<U>
 where
-    U: Unit + FromUnit<V>,
+    U: Unit + ConvertFrom<V>,
     V: Unit,
 {
     #[inline]
-    fn from_unit(value: Rect<V>) -> Self {
+    fn convert_from(value: Rect<V>) -> Self {
         Self {
-            min: value.min.into_unit(),
-            max: value.max.into_unit(),
+            min: value.min.convert_into(),
+            max: value.max.convert_into(),
         }
     }
 }
@@ -210,17 +210,17 @@ where
     }
 }
 
-impl<U, V> FromUnit<RoundRect<V>> for RoundRect<U>
+impl<U, V> ConvertFrom<RoundRect<V>> for RoundRect<U>
 where
-    U: Unit + FromUnit<V>,
+    U: Unit + ConvertFrom<V>,
     V: Unit,
 {
     #[inline]
-    fn from_unit(value: RoundRect<V>) -> Self {
+    fn convert_from(value: RoundRect<V>) -> Self {
         Self {
-            min: value.min.into_unit(),
-            max: value.max.into_unit(),
-            radii: value.radii.into_unit(),
+            min: value.min.convert_into(),
+            max: value.max.convert_into(),
+            radii: value.radii.convert_into(),
         }
     }
 }
@@ -366,7 +366,7 @@ mod tests {
 
     #[test]
     fn rect_from_unit() {
-        let rect = Rect::<Mm>::from_unit(Rect {
+        let rect = Rect::<Mm>::convert_from(Rect {
             min: Point::new(Inch(0.0), Inch(0.75)),
             max: Point::new(Inch(1.0), Inch(1.5)),
         });
@@ -546,7 +546,7 @@ mod tests {
 
     #[test]
     fn round_rect_from_unit() {
-        let rect = RoundRect::<Mm>::from_unit(RoundRect {
+        let rect = RoundRect::<Mm>::convert_from(RoundRect {
             min: Point::new(Inch(0.0), Inch(0.75)),
             max: Point::new(Inch(1.0), Inch(1.5)),
             radii: Vector::new(Inch(0.25), Inch(0.5)),

@@ -24,7 +24,7 @@ pub use self::path::{Path, PathBuilder, PathSegment, ToPath};
 pub use self::round_rect::RoundRect;
 pub use self::traits::*;
 pub use self::unit::{
-    Dot, FromUnit, Inch, IntoUnit, KeyUnit, Mm, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT,
+    ConvertFrom, ConvertInto, Dot, Inch, KeyUnit, Mm, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT,
     INCH_PER_UNIT, MM_PER_UNIT,
 };
 
