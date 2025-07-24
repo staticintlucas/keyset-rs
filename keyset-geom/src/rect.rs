@@ -185,6 +185,25 @@ where
         }
     }
 
+    /// Create a new rounded rectangle from an existing rectangle and corner radii
+    #[inline]
+    pub const fn from_rect_and_radii(rect: Rect<U>, radii: Vector<U>) -> Self {
+        Self {
+            min: rect.min,
+            max: rect.max,
+            radii,
+        }
+    }
+
+    /// Returns an equivalent rectangle without rounded corners
+    #[inline]
+    pub const fn to_rect(&self) -> Rect<U> {
+        Rect {
+            min: self.min,
+            max: self.max,
+        }
+    }
+
     /// Returns the size of the rectangle
     #[inline]
     pub fn size(&self) -> Vector<U> {
@@ -479,7 +498,7 @@ mod tests {
     }
 
     #[test]
-    fn round_rect_from_origin_and_size() {
+    fn round_rect_from_origin_size_and_radii() {
         let rect = RoundRect::<Mm>::from_origin_size_and_radii(
             Point::new(0.0, 1.0),
             Vector::new(2.0, 3.0),
@@ -491,7 +510,7 @@ mod tests {
     }
 
     #[test]
-    fn round_rect_from_center_and_size() {
+    fn round_rect_from_center_size_and_radii() {
         let rect = RoundRect::<Mm>::from_center_size_and_radii(
             Point::new(1.0, 2.5),
             Vector::new(2.0, 3.0),
@@ -500,6 +519,29 @@ mod tests {
         assert_is_close!(rect.min, Point::new(0.0, 1.0));
         assert_is_close!(rect.max, Point::new(2.0, 4.0));
         assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+    }
+
+    #[test]
+    fn round_rect_from_rect_and_radii() {
+        let rect = RoundRect::<Mm>::from_rect_and_radii(
+            Rect::new(Point::new(0.0, 1.0), Point::new(2.0, 4.0)),
+            Vector::new(0.5, 1.0),
+        );
+        assert_is_close!(rect.min, Point::new(0.0, 1.0));
+        assert_is_close!(rect.max, Point::new(2.0, 4.0));
+        assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+    }
+
+    #[test]
+    fn round_rect_to_rect() {
+        let rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        }
+        .to_rect();
+        assert_is_close!(rect.min, Point::new(0.0, 1.0));
+        assert_is_close!(rect.max, Point::new(2.0, 4.0));
     }
 
     #[test]
