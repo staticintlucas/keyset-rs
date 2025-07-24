@@ -16,6 +16,7 @@ license.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
+rustdoc-args = ["--html-in-header", "katex.html"]
 
 [lints]
 workspace = true

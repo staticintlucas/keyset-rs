@@ -279,14 +279,16 @@ impl IsClose<f32> for Rotate {
 
 /// A 2-dimensional affine transformation matrix in the form:
 ///
-/// ```text
-/// | a_xx  a_xy  t_x |
-/// | a_yx  a_yy  t_y |
-/// |  0     0     1  |
-/// ```
+/// $$
+/// \\begin{bmatrix}
+/// a_{xx} & a_{xy} & t_{x} \\\\
+/// a_{yx} & a_{yy} & t_{y} \\\\
+///   0    &   0    &   1
+/// \\end{bmatrix}
+/// $$
 ///
 /// Note: only the first 2 rows of the matrix are stored as the last row is
-/// a constant [0, 0, 1]
+/// a constant \\([0, 0, 1]\\).
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Transform<U: Unit> {
     /// Element of the affine transform matrix
