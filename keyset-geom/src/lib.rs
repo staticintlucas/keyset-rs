@@ -8,6 +8,7 @@
 
 mod angle;
 mod circle;
+mod ellipse;
 mod length;
 mod path;
 mod point;
@@ -30,9 +31,12 @@ pub use self::unit::{
 
 /// Temporary re-exports for the new API
 pub mod new_api {
+    pub use crate::angle::Angle;
+    pub use crate::ellipse::Ellipse;
     pub use crate::length::Length;
     pub use crate::point::Point;
-    pub use crate::rect::{Rect, RoundRect};
+    pub use crate::rect::{Rect, RoundRect /* , OffsetRect */};
+    // pub use crate::transform::{Scale, Translate, Transform};
     pub use crate::unit::Conversion;
     pub use crate::vector::Vector;
 }
