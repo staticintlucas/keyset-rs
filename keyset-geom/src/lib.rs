@@ -35,7 +35,7 @@ pub mod new_api {
     pub use crate::ellipse::Ellipse;
     pub use crate::length::Length;
     pub use crate::point::Point;
-    pub use crate::rect::{Rect, RoundRect /* , OffsetRect */};
+    pub use crate::rect::{OffsetRect, Rect, RoundRect};
     // pub use crate::transform::{Scale, Translate, Transform};
     pub use crate::unit::Conversion;
     pub use crate::vector::Vector;
