@@ -12,7 +12,7 @@ where
 {
     #[inline]
     fn to_path(self) -> Path<U> {
-        let radius = self.radius.get();
+        let radius = self.radius.length.get();
 
         let mut builder = Path::builder_with_capacity(4);
         builder.abs_move(self.center - Size::new(radius, 0.0));
@@ -59,7 +59,7 @@ where
 {
     #[inline]
     fn to_path(self) -> Path<U> {
-        let radius = self.radius.get();
+        let radius = self.radius.length.get();
         let radii = Vector::splat(radius);
 
         let mut builder = Path::builder_with_capacity(9);

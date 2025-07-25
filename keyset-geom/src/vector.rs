@@ -7,8 +7,10 @@ use crate::{ConvertFrom, ConvertInto as _, Unit};
 /// A 2 dimensional vector
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Vector<U: Unit> {
-    pub(crate) x: U,
-    pub(crate) y: U,
+    /// The `x` coordinate of the vector
+    pub x: U,
+    /// The `x` coordinate of the vector
+    pub y: U,
 }
 
 impl<U> Vector<U>
@@ -40,18 +42,6 @@ where
     #[must_use]
     pub const fn from_units(x: U, y: U) -> Self {
         Self { x, y }
-    }
-
-    /// Get the x value as an `f32`
-    #[inline]
-    pub fn get_x(self) -> f32 {
-        self.x.get()
-    }
-
-    /// Get the y value as an `f32`
-    #[inline]
-    pub fn get_y(self) -> f32 {
-        self.y.get()
     }
 
     /// Swap the `x` and `y` coordinates of the vector
@@ -247,24 +237,6 @@ mod tests {
         let vector = Vector::from_units(Mm(2.0), Mm(3.0));
         assert_is_close!(vector.x, Mm(2.0));
         assert_is_close!(vector.y, Mm(3.0));
-    }
-
-    #[test]
-    fn vector_get_x() {
-        let vector = Vector {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        };
-        assert_is_close!(vector.get_x(), 2.0);
-    }
-
-    #[test]
-    fn vector_get_y() {
-        let vector = Vector {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        };
-        assert_is_close!(vector.get_y(), 3.0);
     }
 
     #[test]

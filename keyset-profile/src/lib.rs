@@ -18,7 +18,7 @@ use saturate::SaturatingFrom as _;
 
 use geom::{
     ConvertInto as _, Dot, ExtRect as _, Inch, KeyUnit, Length, Mm, Point, Rect, RoundRect,
-    SideOffsets, Size, Vector, DOT_PER_INCH, DOT_PER_UNIT,
+    SideOffsets, Size, Unit as _, Vector, DOT_PER_INCH, DOT_PER_UNIT,
 };
 use key::Homing;
 
@@ -155,7 +155,7 @@ impl TextHeight {
                 // use 0.0 font size for 0
                 let mut vec = Vec::with_capacity(heights.len().saturating_add(1));
                 vec.push((0, 0.0));
-                vec.extend(heights.iter().map(|(&i, &h)| (i, h.get())));
+                vec.extend(heights.iter().map(|(&i, &h)| (i, h.length.get())));
                 vec.sort_unstable_by_key(|&(i, _h)| i);
                 vec.into_iter()
                     .map(|(i, h)| (f32::saturating_from(i), h))
@@ -268,7 +268,7 @@ pub struct TopSurface {
 impl TopSurface {
     pub(crate) fn rect(&self) -> Rect<Dot> {
         Rect::from_center_and_size(
-            (Point::new(0.5, 0.5) * DOT_PER_UNIT) + Vector::new(0.0, self.y_offset.get()),
+            (Point::new(0.5, 0.5) * DOT_PER_UNIT) + Vector::new(0.0, self.y_offset.length.get()),
             self.size,
         )
     }
@@ -997,7 +997,7 @@ mod tests {
 
         let top = profile.top_with_size(Size::new(1.0, 1.0));
         let exp = RoundRect::from_center_and_size(
-            Point::splat(0.5) * DOT_PER_UNIT + Vector::new(0.0, profile.top.y_offset.get()),
+            Point::splat(0.5) * DOT_PER_UNIT + Vector::new(0.0, profile.top.y_offset.length.get()),
             profile.top.size,
             profile.top.radius,
         );
@@ -1013,7 +1013,8 @@ mod tests {
 
         let top = profile.top_with_size(Size::new(3.0, 2.0));
         let exp = RoundRect::from_center_and_size(
-            Point::new(1.5, 1.0) * DOT_PER_UNIT + Vector::new(0.0, profile.top.y_offset.get()),
+            Point::new(1.5, 1.0) * DOT_PER_UNIT
+                + Vector::new(0.0, profile.top.y_offset.length.get()),
             profile.top.size + Size::new(2.0, 1.0) * DOT_PER_UNIT,
             profile.top.radius,
         );

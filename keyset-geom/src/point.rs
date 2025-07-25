@@ -8,8 +8,10 @@ use crate::{ConvertFrom, ConvertInto as _, Unit};
 /// A 2 dimensional point
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Point<U: Unit> {
-    pub(crate) x: U,
-    pub(crate) y: U,
+    /// The `x` coordinate of the point
+    pub x: U,
+    /// The `y` coordinate of the point
+    pub y: U,
 }
 
 impl<U> Point<U>
@@ -41,18 +43,6 @@ where
     #[must_use]
     pub const fn from_units(x: U, y: U) -> Self {
         Self { x, y }
-    }
-
-    /// Get the x value as an `f32`
-    #[inline]
-    pub fn get_x(self) -> f32 {
-        self.x.get()
-    }
-
-    /// Get the y value as an `f32`
-    #[inline]
-    pub fn get_y(self) -> f32 {
-        self.y.get()
     }
 
     /// Swap the `x` and `y` coordinates of the point
@@ -263,24 +253,6 @@ mod tests {
         let point = Point::from_units(Mm(2.0), Mm(3.0));
         assert_is_close!(point.x, Mm(2.0));
         assert_is_close!(point.y, Mm(3.0));
-    }
-
-    #[test]
-    fn point_get_x() {
-        let point = Point {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        };
-        assert_is_close!(point.get_x(), 2.0);
-    }
-
-    #[test]
-    fn point_get_y() {
-        let point = Point {
-            x: Mm(2.0),
-            y: Mm(3.0),
-        };
-        assert_is_close!(point.get_y(), 3.0);
     }
 
     #[test]

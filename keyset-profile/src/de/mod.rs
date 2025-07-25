@@ -6,8 +6,8 @@ use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
 use geom::{
-    ConvertInto as _, Dot, ExtRect as _, Length, Mm, Point, Rect, SideOffsets, Size, Vector,
-    DOT_PER_MM, DOT_PER_UNIT,
+    ConvertInto as _, Dot, ExtRect as _, Length, Mm, Point, Rect, SideOffsets, Size, Unit as _,
+    Vector, DOT_PER_MM, DOT_PER_UNIT,
 };
 
 pub use self::error::{Error, Result};
@@ -180,7 +180,7 @@ impl LegendProps {
     fn rect(&self, top_offset: Length<Dot>) -> Rect<Dot> {
         Rect::from_center_and_size(
             Point::new(0.5, 0.5) * DOT_PER_UNIT
-                + Vector::new(0.0, top_offset.get() + self.y_offset),
+                + Vector::new(0.0, top_offset.length.get() + self.y_offset),
             Size::new(self.width, self.height),
         )
     }

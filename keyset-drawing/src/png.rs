@@ -1,7 +1,8 @@
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform as SkiaTransform};
 
 use geom::{
-    Dot, Inch, PathSegment, Point, Scale, ToTransform as _, Transform, DOT_PER_INCH, DOT_PER_UNIT,
+    Dot, Inch, PathSegment, Point, Scale, ToTransform as _, Transform, Unit as _, DOT_PER_INCH,
+    DOT_PER_UNIT,
 };
 
 use crate::{Drawing, Error, KeyDrawing, KeyPath};
@@ -108,7 +109,7 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
             ..Default::default()
         };
         let stroke = Stroke {
-            width: outline.width.get(),
+            width: outline.width.length.get(),
             ..Default::default()
         };
         pixmap.stroke_path(&skia_path, &paint, &stroke, skia_transform, None);

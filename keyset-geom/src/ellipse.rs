@@ -8,8 +8,10 @@ use crate::{ConvertFrom, ConvertInto as _, Unit};
 /// An ellipse
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Ellipse<U: Unit> {
-    pub(crate) center: Point<U>,
-    pub(crate) radii: Vector<U>,
+    /// The center point of the ellipse
+    pub center: Point<U>,
+    /// The radii of the ellipse
+    pub radii: Vector<U>,
 }
 
 impl<U> Ellipse<U>
@@ -40,18 +42,6 @@ where
     #[inline]
     pub fn height(&self) -> U {
         self.radii.y * 2.0
-    }
-
-    /// Returns the center point of the ellipse
-    #[inline]
-    pub const fn center(&self) -> Point<U> {
-        self.center
-    }
-
-    /// Returns the center point of the ellipse
-    #[inline]
-    pub const fn radii(&self) -> Vector<U> {
-        self.radii
     }
 }
 
@@ -174,24 +164,6 @@ mod tests {
             radii: Vector::new(1.0, 2.0),
         };
         assert_is_close!(ellipse.height(), Mm(4.0));
-    }
-
-    #[test]
-    fn ellipse_center() {
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
-        };
-        assert_is_close!(ellipse.center(), Point::new(1.5, 3.0));
-    }
-
-    #[test]
-    fn ellipse_radii() {
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
-        };
-        assert_is_close!(ellipse.radii(), Vector::new(1.0, 2.0));
     }
 
     #[test]

@@ -363,13 +363,13 @@ where
     /// Add a horizontal line segment with relative distance
     #[inline]
     pub fn rel_horiz_line(&mut self, dx: Length<U>) {
-        self.rel_line(Vector::new(dx.get(), 0.0));
+        self.rel_line(Vector::new(dx.length.get(), 0.0));
     }
 
     /// Add a vertical line segment with relative distance
     #[inline]
     pub fn rel_vert_line(&mut self, dy: Length<U>) {
-        self.rel_line(Vector::new(0.0, dy.get()));
+        self.rel_line(Vector::new(0.0, dy.length.get()));
     }
 
     /// Add a cubic Bézier segment with relative control points and distance

@@ -6,7 +6,10 @@ use crate::{ConvertFrom, ConvertInto as _, Unit};
 
 /// A one-dimensional length with unit `U`
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd)]
-pub struct Length<U: Unit>(U);
+pub struct Length<U: Unit> {
+    /// The length value in units of `U`
+    pub length: U,
+}
 
 impl<U> Length<U>
 where
@@ -16,20 +19,16 @@ where
     #[inline]
     #[must_use]
     pub fn new(length: f32) -> Self {
-        Self(U::new(length))
+        Self {
+            length: U::new(length),
+        }
     }
 
     /// Create a new length from a unit
     #[inline]
     #[must_use]
     pub const fn from_unit(length: U) -> Self {
-        Self(length)
-    }
-
-    /// Get the length as an `f32`
-    #[inline]
-    pub fn get(self) -> f32 {
-        self.0.get()
+        Self { length }
     }
 
     /// Linearly interpolate between two length values
@@ -47,7 +46,9 @@ where
 {
     #[inline]
     fn convert_from(value: Length<V>) -> Self {
-        Self(value.0.convert_into())
+        Self {
+            length: value.length.convert_into(),
+        }
     }
 }
 
@@ -59,7 +60,9 @@ where
 
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
+        Self {
+            length: self.length + rhs.length,
+        }
     }
 }
 
@@ -69,7 +72,7 @@ where
 {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
+        self.length += rhs.length;
     }
 }
 
@@ -81,7 +84,9 @@ where
 
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0)
+        Self {
+            length: self.length - rhs.length,
+        }
     }
 }
 
@@ -91,7 +96,7 @@ where
 {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
-        self.0 -= rhs.0;
+        self.length -= rhs.length;
     }
 }
 
@@ -103,7 +108,9 @@ where
 
     #[inline]
     fn mul(self, rhs: f32) -> Self::Output {
-        Self(self.0 * rhs)
+        Self {
+            length: self.length * rhs,
+        }
     }
 }
 
@@ -113,7 +120,7 @@ where
 {
     #[inline]
     fn mul_assign(&mut self, rhs: f32) {
-        self.0 *= rhs;
+        self.length *= rhs;
     }
 }
 
@@ -125,7 +132,9 @@ where
 
     #[inline]
     fn div(self, rhs: f32) -> Self::Output {
-        Self(self.0 / rhs)
+        Self {
+            length: self.length / rhs,
+        }
     }
 }
 
@@ -137,7 +146,7 @@ where
 
     #[inline]
     fn div(self, rhs: Self) -> Self::Output {
-        self.0 / rhs.0
+        self.length / rhs.length
     }
 }
 
@@ -147,7 +156,7 @@ where
 {
     #[inline]
     fn div_assign(&mut self, rhs: f32) {
-        self.0 /= rhs;
+        self.length /= rhs;
     }
 }
 
@@ -159,7 +168,9 @@ where
 
     #[inline]
     fn neg(self) -> Self::Output {
-        Self(-self.0)
+        Self {
+            length: -self.length,
+        }
     }
 }
 
@@ -172,7 +183,7 @@ where
 
     #[inline]
     fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_impl(&other.0, rel_tol, abs_tol)
+        self.length.is_close_impl(&other.length, rel_tol, abs_tol)
     }
 }
 
@@ -188,106 +199,103 @@ mod tests {
     #[test]
     fn length_new() {
         let length = Length::<Mm>::new(2.0);
-        assert_is_close!(length.0, Mm(2.0));
+        assert_is_close!(length.length, Mm(2.0));
     }
 
     #[test]
     fn length_from_unit() {
         let length = Length::from_unit(Mm(2.0));
-        assert_is_close!(length.0, Mm(2.0));
-    }
-
-    #[test]
-    fn length_get() {
-        let length = Length(Mm(2.0));
-        let value = length.get();
-        assert_is_close!(value, 2.0);
+        assert_is_close!(length.length, Mm(2.0));
     }
 
     #[test]
     fn length_lerp() {
-        let start = Length(Mm(2.0));
-        let end = Length(Mm(4.0));
+        let start = Length { length: Mm(2.0) };
+        let end = Length { length: Mm(4.0) };
 
-        assert_is_close!(start.lerp(end, 0.0).0, Mm(2.0));
-        assert_is_close!(start.lerp(end, 0.5).0, Mm(3.0));
-        assert_is_close!(start.lerp(end, 1.0).0, Mm(4.0));
+        assert_is_close!(start.lerp(end, 0.0).length, Mm(2.0));
+        assert_is_close!(start.lerp(end, 0.5).length, Mm(3.0));
+        assert_is_close!(start.lerp(end, 1.0).length, Mm(4.0));
     }
 
     #[test]
     fn length_convert_from() {
-        let length = Length::<Mm>::convert_from(Length(Inch(0.75)));
-        assert_is_close!(length.0, Mm(19.05));
+        let length = Length::<Mm>::convert_from(Length { length: Inch(0.75) });
+        assert_is_close!(length.length, Mm(19.05));
     }
 
     #[test]
     fn length_add() {
-        let length = Length(Mm(2.0)) + Length(Mm(1.0));
-        assert_is_close!(length.0, Mm(3.0));
+        let length = Length { length: Mm(2.0) } + Length { length: Mm(1.0) };
+        assert_is_close!(length.length, Mm(3.0));
     }
 
     #[test]
     fn length_add_assign() {
-        let mut length = Length(Mm(2.0));
-        length += Length(Mm(1.0));
-        assert_is_close!(length.0, Mm(3.0));
+        let mut length = Length { length: Mm(2.0) };
+        length += Length { length: Mm(1.0) };
+        assert_is_close!(length.length, Mm(3.0));
     }
 
     #[test]
     fn length_sub() {
-        let length = Length(Mm(2.0)) - Length(Mm(1.0));
-        assert_is_close!(length.0, Mm(1.0));
+        let length = Length { length: Mm(2.0) } - Length { length: Mm(1.0) };
+        assert_is_close!(length.length, Mm(1.0));
     }
 
     #[test]
     fn length_sub_assign() {
-        let mut length = Length(Mm(2.0));
-        length -= Length(Mm(1.0));
-        assert_is_close!(length.0, Mm(1.0));
+        let mut length = Length { length: Mm(2.0) };
+        length -= Length { length: Mm(1.0) };
+        assert_is_close!(length.length, Mm(1.0));
     }
 
     #[test]
     fn length_mul() {
-        let length = Length(Mm(2.0)) * 1.5;
-        assert_is_close!(length.0, Mm(3.0));
+        let length = Length { length: Mm(2.0) } * 1.5;
+        assert_is_close!(length.length, Mm(3.0));
 
         // TODO: see comment by Unit
         // let length = 2.0 * Dist (Mm(1.5));
-        // assert_is_close!(length.0, Mm(3.0));
+        // assert_is_close!(length.length, Mm(3.0));
     }
 
     #[test]
     fn length_mul_assign() {
-        let mut length = Length(Mm(2.0));
+        let mut length = Length { length: Mm(2.0) };
         length *= 1.5;
-        assert_is_close!(length.0, Mm(3.0));
+        assert_is_close!(length.length, Mm(3.0));
     }
 
     #[test]
     fn length_div() {
-        let length = Length(Mm(3.0)) / 1.5;
-        assert_is_close!(length.0, Mm(2.0));
+        let length = Length { length: Mm(3.0) } / 1.5;
+        assert_is_close!(length.length, Mm(2.0));
 
-        let ratio = Length(Mm(3.0)) / Length(Mm(2.0));
+        let ratio = Length { length: Mm(3.0) } / Length { length: Mm(2.0) };
         assert_is_close!(ratio, 1.5);
     }
 
     #[test]
     fn length_div_assign() {
-        let mut length = Length(Mm(3.0));
+        let mut length = Length { length: Mm(3.0) };
         length /= 1.5;
-        assert_is_close!(length.0, Mm(2.0));
+        assert_is_close!(length.length, Mm(2.0));
     }
 
     #[test]
     fn length_neg() {
-        let length = -Length(Mm(2.0));
-        assert_is_close!(length.0, Mm(-2.0));
+        let length = -Length { length: Mm(2.0) };
+        assert_is_close!(length.length, Mm(-2.0));
     }
 
     #[test]
     fn length_is_close() {
-        assert!(Length(Mm(2.5)).is_close(Length(Mm(5.0 / 2.0))));
-        assert!(!Length(Mm(2.5)).is_close(Length(Mm(5.1 / 2.0))));
+        assert!(Length { length: Mm(2.5) }.is_close(Length {
+            length: Mm(5.0 / 2.0)
+        }));
+        assert!(!Length { length: Mm(2.5) }.is_close(Length {
+            length: Mm(5.1 / 2.0)
+        }));
     }
 }

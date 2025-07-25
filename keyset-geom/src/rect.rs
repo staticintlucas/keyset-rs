@@ -8,8 +8,10 @@ use crate::{ConvertFrom, ConvertInto as _, Unit};
 /// A 2 dimensional rectangle
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Rect<U: Unit> {
-    pub(crate) min: Point<U>,
-    pub(crate) max: Point<U>,
+    /// The minimum pont (top left corner) of the rectangle
+    pub min: Point<U>,
+    /// The maximum pont (bottom right corner) of the rectangle
+    pub max: Point<U>,
 }
 
 impl<U> Rect<U>
@@ -201,9 +203,12 @@ where
 /// A 2 dimensional rectangle with rounded corners
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct RoundRect<U: Unit> {
-    pub(crate) min: Point<U>,
-    pub(crate) max: Point<U>,
-    pub(crate) radii: Vector<U>,
+    /// The minimum point (top left corner) of the rectangle
+    pub min: Point<U>,
+    /// The maximum point (bottom right corner) of the rectangle
+    pub max: Point<U>,
+    /// The radii for the corners of the rectangle
+    pub radii: Vector<U>,
 }
 
 impl<U> RoundRect<U>

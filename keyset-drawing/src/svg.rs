@@ -1,7 +1,7 @@
 use svg::node::element::{Group, Path as SvgPath};
 use svg::Document;
 
-use geom::{KeyUnit, PathSegment, Scale, DOT_PER_UNIT, MM_PER_UNIT};
+use geom::{KeyUnit, PathSegment, Scale, Unit as _, DOT_PER_UNIT, MM_PER_UNIT};
 
 use super::{Drawing, KeyDrawing, KeyPath};
 
@@ -84,7 +84,7 @@ fn draw_path(path: &KeyPath) -> SvgPath {
     if let Some(outline) = path.outline {
         svg_path
             .set("stroke", format!("{:x}", outline.color))
-            .set("stroke-width", float!(outline.width.get()))
+            .set("stroke-width", float!(outline.width.length.get()))
     } else {
         svg_path.set("stroke", "none")
     }

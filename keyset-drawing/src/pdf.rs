@@ -2,7 +2,8 @@ use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
 use pdf_writer::{Content, Filter, Finish as _, Pdf, Rect, Ref, TextStr};
 
 use geom::{
-    Dot, PathSegment, Point, Scale, ToTransform as _, Transform, Vector, DOT_PER_INCH, DOT_PER_UNIT,
+    Dot, PathSegment, Point, Scale, ToTransform as _, Transform, Unit as _, Vector, DOT_PER_INCH,
+    DOT_PER_UNIT,
 };
 
 use crate::{Drawing, KeyDrawing, KeyPath};
@@ -137,7 +138,7 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
         let scale = (f32::hypot(transform.m11, transform.m21)
             + f32::hypot(transform.m12, transform.m22))
             / 2.0;
-        _ = content.set_line_width((outline.width * scale).get());
+        _ = content.set_line_width((outline.width * scale).length.get());
     }
 
     match (path.fill, path.outline) {
