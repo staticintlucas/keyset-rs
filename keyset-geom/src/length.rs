@@ -31,6 +31,24 @@ where
         Self { length }
     }
 
+    /// Returns the minimum length from `self` and `other`
+    #[inline]
+    #[must_use]
+    pub fn min(self, other: Self) -> Self {
+        Self {
+            length: self.length.min(other.length),
+        }
+    }
+
+    /// Returns the maximum lengthfrom `self` and `other`
+    #[inline]
+    #[must_use]
+    pub fn max(self, other: Self) -> Self {
+        Self {
+            length: self.length.max(other.length),
+        }
+    }
+
     /// Linearly interpolate between two length values
     #[inline]
     #[must_use]

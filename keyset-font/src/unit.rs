@@ -139,4 +139,14 @@ impl Unit for FontUnit {
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
     }
+
+    #[inline]
+    fn min(self, rhs: Self) -> Self {
+        Self(self.0.min(rhs.0))
+    }
+
+    #[inline]
+    fn max(self, rhs: Self) -> Self {
+        Self(self.0.max(rhs.0))
+    }
 }

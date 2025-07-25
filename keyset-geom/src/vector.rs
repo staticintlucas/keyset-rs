@@ -54,6 +54,26 @@ where
         }
     }
 
+    /// Returns the minimum values `x` and `y` components from `self` and `other`
+    #[inline]
+    #[must_use]
+    pub fn min(self, other: Self) -> Self {
+        Self {
+            x: self.x.min(other.x),
+            y: self.y.min(other.y),
+        }
+    }
+
+    /// Returns the maximum values `x` and `y` components from `self` and `other`
+    #[inline]
+    #[must_use]
+    pub fn max(self, other: Self) -> Self {
+        Self {
+            x: self.x.max(other.x),
+            y: self.y.max(other.y),
+        }
+    }
+
     /// Linearly interpolate between two vectors
     #[inline]
     #[must_use]

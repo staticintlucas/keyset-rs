@@ -32,6 +32,14 @@ pub trait Unit:
 
     /// Convert the unit to another unit using the given conversion
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V;
+
+    /// Return the minimum of two units
+    #[must_use]
+    fn min(self, rhs: Self) -> Self;
+
+    /// Return the maximum of two units
+    #[must_use]
+    fn max(self, rhs: Self) -> Self;
 }
 
 /// Convenience trait for converting units
@@ -208,6 +216,16 @@ impl Unit for KeyUnit {
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
     }
+
+    #[inline]
+    fn min(self, rhs: Self) -> Self {
+        Self(self.0.min(rhs.0))
+    }
+
+    #[inline]
+    fn max(self, rhs: Self) -> Self {
+        Self(self.0.max(rhs.0))
+    }
 }
 
 /// Dot, a.k.a. drawing unit
@@ -357,6 +375,16 @@ impl Unit for Dot {
     #[inline]
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
+    }
+
+    #[inline]
+    fn min(self, rhs: Self) -> Self {
+        Self(self.0.min(rhs.0))
+    }
+
+    #[inline]
+    fn max(self, rhs: Self) -> Self {
+        Self(self.0.max(rhs.0))
     }
 }
 
@@ -508,6 +536,16 @@ impl Unit for Mm {
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
     }
+
+    #[inline]
+    fn min(self, rhs: Self) -> Self {
+        Self(self.0.min(rhs.0))
+    }
+
+    #[inline]
+    fn max(self, rhs: Self) -> Self {
+        Self(self.0.max(rhs.0))
+    }
 }
 
 /// Inch
@@ -657,6 +695,16 @@ impl Unit for Inch {
     #[inline]
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
         V::new(self.0 * conversion.get())
+    }
+
+    #[inline]
+    fn min(self, rhs: Self) -> Self {
+        Self(self.0.min(rhs.0))
+    }
+
+    #[inline]
+    fn max(self, rhs: Self) -> Self {
+        Self(self.0.max(rhs.0))
     }
 }
 

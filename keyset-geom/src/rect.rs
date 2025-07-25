@@ -66,6 +66,16 @@ where
     pub fn center(&self) -> Point<U> {
         self.min.lerp(self.max, 0.5)
     }
+
+    /// Returns the union of two rectangles
+    #[inline]
+    #[must_use]
+    pub fn union(self, rhs: Self) -> Self {
+        Self {
+            min: self.min.min(rhs.min),
+            max: self.max.max(rhs.max),
+        }
+    }
 }
 
 impl<U, V> ConvertFrom<Rect<V>> for Rect<U>
