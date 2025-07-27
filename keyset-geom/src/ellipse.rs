@@ -2,8 +2,8 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::new_api::{Point, Vector};
-use crate::{ConvertFrom, ConvertInto as _, Unit};
+use crate::new_api::{Point, Rotate, Scale, Transform, Translate, Vector};
+use crate::{ConvertFrom, ConvertInto as _, Path, Unit};
 
 /// An ellipse
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -122,6 +122,84 @@ where
     fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
         self.center.is_close_impl(&other.center, rel_tol, abs_tol)
             && self.radii.is_close_impl(&other.radii, rel_tol, abs_tol)
+    }
+}
+
+impl<U> ops::Mul<Rotate> for Ellipse<U>
+where
+    U: Unit,
+{
+    type Output = Path<U>;
+
+    #[inline]
+    fn mul(self, _rhs: Rotate) -> Self::Output {
+        // self.to_path() * rhs
+        todo!()
+    }
+}
+
+impl<U> ops::Mul<Scale> for Ellipse<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Scale) -> Self::Output {
+        Self {
+            center: self.center * rhs,
+            radii: self.radii * rhs,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Scale> for Ellipse<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Scale) {
+        self.center *= rhs;
+        self.radii *= rhs;
+    }
+}
+
+impl<U> ops::Mul<Translate<U>> for Ellipse<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Translate<U>) -> Self::Output {
+        Self {
+            center: self.center * rhs,
+            radii: self.radii * rhs,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Translate<U>> for Ellipse<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Translate<U>) {
+        self.center *= rhs;
+        self.radii *= rhs;
+    }
+}
+
+impl<U> ops::Mul<Transform<U>> for Ellipse<U>
+where
+    U: Unit,
+{
+    type Output = Path<U>;
+
+    #[inline]
+    fn mul(self, _rhs: Transform<U>) -> Self::Output {
+        // self.to_path() * rhs
+        todo!()
     }
 }
 
@@ -268,5 +346,68 @@ mod tests {
             center: Point::new(1.0, 2.0) * 1.5,
             radii: Vector::new(2.0, 4.1) / 2.0,
         }));
+    }
+
+    #[test]
+    #[should_panic(expected = "not yet implemented")]
+    fn ellipse_rotate() {
+        let ellipse = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        };
+        let rotate = Rotate::degrees(135.0);
+        let path = ellipse * rotate;
+        assert!(matches!(path, Path::<Mm> { .. }));
+    }
+
+    #[test]
+    fn ellipse_scale() {
+        let ellipse = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        } * Scale::new(2.0, 0.5);
+
+        assert_is_close!(ellipse.center, Point::new(3.0, 1.5));
+        assert_is_close!(ellipse.radii, Vector::new(2.0, 1.0));
+
+        let mut ellipse = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        };
+        ellipse *= Scale::new(2.0, 0.5);
+
+        assert_is_close!(ellipse.center, Point::new(3.0, 1.5));
+        assert_is_close!(ellipse.radii, Vector::new(2.0, 1.0));
+    }
+
+    #[test]
+    fn ellipse_translate() {
+        let ellipse = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        } * Translate::new(2.0, -1.0);
+
+        assert_is_close!(ellipse.center, Point::new(3.5, 2.0));
+        assert_is_close!(ellipse.radii, Vector::new(1.0, 2.0));
+
+        let mut ellipse = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        };
+        ellipse *= Translate::new(2.0, -1.0);
+
+        assert_is_close!(ellipse.center, Point::new(3.5, 2.0));
+        assert_is_close!(ellipse.radii, Vector::new(1.0, 2.0));
+    }
+
+    #[test]
+    #[should_panic(expected = "not yet implemented")]
+    fn ellipse_transform() {
+        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let path = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        } * transform;
+        assert!(matches!(path, Path::<Mm> { .. }));
     }
 }

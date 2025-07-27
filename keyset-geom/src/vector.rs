@@ -2,6 +2,7 @@ use std::ops;
 
 use isclose::IsClose;
 
+use crate::new_api::{Rotate, Scale, Transform, Translate};
 use crate::{ConvertFrom, ConvertInto as _, Unit};
 
 /// A 2 dimensional vector
@@ -260,6 +261,148 @@ where
     fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
         self.x.is_close_impl(&other.x, rel_tol, abs_tol)
             && self.y.is_close_impl(&other.y, rel_tol, abs_tol)
+    }
+}
+
+impl<U> ops::Mul<Rotate> for Vector<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Rotate) -> Self::Output {
+        let (sin, cos) = rhs.angle.sin_cos();
+        Self {
+            x: self.x * cos - self.y * sin,
+            y: self.x * sin + self.y * cos,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Rotate> for Vector<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Rotate) {
+        *self = *self * rhs;
+    }
+}
+
+impl<U> ops::Mul<Scale> for Vector<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Scale) -> Self::Output {
+        Self {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Scale> for Vector<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Scale) {
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+    }
+}
+
+impl<U> ops::Mul<Translate<U>> for Vector<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, _rhs: Translate<U>) -> Self::Output {
+        // Vectors are relative, so ignore translation
+        self
+    }
+}
+
+impl<U> ops::MulAssign<Translate<U>> for Vector<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, _rhs: Translate<U>) {
+        // Vectors are relative, so ignore translation
+    }
+}
+
+impl<U> ops::Mul<Transform<U>> for Vector<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Transform<U>) -> Self::Output {
+        // Vectors are relative, so ignore translation
+        Self {
+            x: self.x * rhs.a_xx + self.y * rhs.a_xy,
+            y: self.x * rhs.a_yx + self.y * rhs.a_yy,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Transform<U>> for Vector<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Transform<U>) {
+        *self = *self * rhs;
+    }
+}
+
+impl<U> ops::Div<Self> for Vector<U>
+where
+    U: Unit,
+{
+    type Output = Scale;
+
+    #[inline]
+    fn div(self, rhs: Self) -> Self::Output {
+        Scale {
+            x: self.x / rhs.x,
+            y: self.y / rhs.y,
+        }
+    }
+}
+
+impl<U> From<Translate<U>> for Vector<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn from(value: Translate<U>) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+        }
+    }
+}
+
+impl<U> From<Vector<U>> for Translate<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn from(value: Vector<U>) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+        }
     }
 }
 
@@ -531,5 +674,126 @@ mod tests {
             x: Mm(4.0 * 0.5),
             y: Mm(2.1 * 1.5)
         }));
+    }
+
+    #[test]
+    fn vector_rotate() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * Rotate::degrees(135.0);
+
+        assert_is_close!(vector.x, Mm(-2.5 * std::f32::consts::SQRT_2));
+        assert_is_close!(vector.y, Mm(-0.5 * std::f32::consts::SQRT_2));
+
+        let mut vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        vector *= Rotate::degrees(135.0);
+
+        assert_is_close!(vector.x, Mm(-2.5 * std::f32::consts::SQRT_2));
+        assert_is_close!(vector.y, Mm(-0.5 * std::f32::consts::SQRT_2));
+    }
+
+    #[test]
+    fn vector_scale() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * Scale::new(2.0, 0.5);
+
+        assert_is_close!(vector.x, Mm(4.0));
+        assert_is_close!(vector.y, Mm(1.5));
+
+        let mut vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        vector *= Scale::new(2.0, 0.5);
+
+        assert_is_close!(vector.x, Mm(4.0));
+        assert_is_close!(vector.y, Mm(1.5));
+    }
+
+    #[test]
+    fn vector_translate() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * Translate::new(2.0, -1.0);
+
+        assert_is_close!(vector.x, Mm(2.0));
+        assert_is_close!(vector.y, Mm(3.0));
+
+        let mut vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        vector *= Translate::new(2.0, -1.0);
+
+        assert_is_close!(vector.x, Mm(2.0));
+        assert_is_close!(vector.y, Mm(3.0));
+    }
+
+    #[test]
+    fn vector_transform() {
+        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * transform;
+
+        assert_is_close!(vector.x, Mm(3.5));
+        assert_is_close!(vector.y, Mm(3.5));
+
+        let mut vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        vector *= transform;
+
+        assert_is_close!(vector.x, Mm(3.5));
+        assert_is_close!(vector.y, Mm(3.5));
+    }
+
+    #[test]
+    fn vector_div_vector() {
+        let vector1 = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        let vector2 = Vector {
+            x: Mm(4.0),
+            y: Mm(1.5),
+        };
+        let scale = vector1 / vector2;
+
+        assert_is_close!(scale.x, 0.5);
+        assert_is_close!(scale.y, 2.0);
+    }
+
+    #[test]
+    fn vector_into_translate() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        let translate = Translate::from(vector);
+
+        assert_is_close!(translate.x, Mm(2.0));
+        assert_is_close!(translate.y, Mm(3.0));
+    }
+
+    #[test]
+    fn vector_from_translate() {
+        let translate = Translate {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        let vector = Vector::from(translate);
+
+        assert_is_close!(vector.x, Mm(2.0));
+        assert_is_close!(vector.y, Mm(3.0));
     }
 }

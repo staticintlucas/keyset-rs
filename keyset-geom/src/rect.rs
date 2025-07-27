@@ -2,8 +2,8 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::new_api::{Point, Vector};
-use crate::{ConvertFrom, ConvertInto as _, Unit};
+use crate::new_api::{Point, Rotate, Scale, Transform, Translate, Vector};
+use crate::{ConvertFrom, ConvertInto as _, Path, Unit};
 
 /// A 2 dimensional rectangle
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -220,6 +220,84 @@ where
     }
 }
 
+impl<U> ops::Mul<Rotate> for Rect<U>
+where
+    U: Unit,
+{
+    type Output = Path<U>;
+
+    #[inline]
+    fn mul(self, _rhs: Rotate) -> Self::Output {
+        // self.to_path() * rhs
+        todo!()
+    }
+}
+
+impl<U> ops::Mul<Scale> for Rect<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Scale) -> Self::Output {
+        Self {
+            min: self.min * rhs,
+            max: self.max * rhs,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Scale> for Rect<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Scale) {
+        self.min *= rhs;
+        self.max *= rhs;
+    }
+}
+
+impl<U> ops::Mul<Translate<U>> for Rect<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Translate<U>) -> Self::Output {
+        Self {
+            min: self.min * rhs,
+            max: self.max * rhs,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Translate<U>> for Rect<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Translate<U>) {
+        self.min *= rhs;
+        self.max *= rhs;
+    }
+}
+
+impl<U> ops::Mul<Transform<U>> for Rect<U>
+where
+    U: Unit,
+{
+    type Output = Path<U>;
+
+    #[inline]
+    fn mul(self, _rhs: Transform<U>) -> Self::Output {
+        // self.to_path() * rhs
+        todo!()
+    }
+}
+
 /// A 2 dimensional rectangle with rounded corners
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct RoundRect<U: Unit> {
@@ -389,6 +467,88 @@ where
         self.min.is_close_impl(&other.min, rel_tol, abs_tol)
             && self.max.is_close_impl(&other.max, rel_tol, abs_tol)
             && self.radii.is_close_impl(&other.radii, rel_tol, abs_tol)
+    }
+}
+
+impl<U> ops::Mul<Rotate> for RoundRect<U>
+where
+    U: Unit,
+{
+    type Output = Path<U>;
+
+    #[inline]
+    fn mul(self, _rhs: Rotate) -> Self::Output {
+        // self.to_path() * rhs
+        todo!()
+    }
+}
+
+impl<U> ops::Mul<Scale> for RoundRect<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Scale) -> Self::Output {
+        Self {
+            min: self.min * rhs,
+            max: self.max * rhs,
+            radii: self.radii * rhs,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Scale> for RoundRect<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Scale) {
+        self.min *= rhs;
+        self.max *= rhs;
+        self.radii *= rhs;
+    }
+}
+
+impl<U> ops::Mul<Translate<U>> for RoundRect<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Translate<U>) -> Self::Output {
+        Self {
+            min: self.min * rhs,
+            max: self.max * rhs,
+            radii: self.radii * rhs,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Translate<U>> for RoundRect<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Translate<U>) {
+        self.min *= rhs;
+        self.max *= rhs;
+        self.radii *= rhs;
+    }
+}
+
+impl<U> ops::Mul<Transform<U>> for RoundRect<U>
+where
+    U: Unit,
+{
+    type Output = Path<U>;
+
+    #[inline]
+    fn mul(self, _rhs: Transform<U>) -> Self::Output {
+        // self.to_path() * rhs
+        todo!()
     }
 }
 
@@ -835,6 +995,69 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "not yet implemented")]
+    fn rect_rotate() {
+        let rect = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        };
+        let rotate = Rotate::degrees(135.0);
+        let path = rect * rotate;
+        assert!(matches!(path, Path::<Mm> { .. }));
+    }
+
+    #[test]
+    fn rect_scale() {
+        let rect = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        } * Scale::new(2.0, 0.5);
+
+        assert_is_close!(rect.min, Point::new(0.0, 0.5));
+        assert_is_close!(rect.max, Point::new(4.0, 2.0));
+
+        let mut rect = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        };
+        rect *= Scale::new(2.0, 0.5);
+
+        assert_is_close!(rect.min, Point::new(0.0, 0.5));
+        assert_is_close!(rect.max, Point::new(4.0, 2.0));
+    }
+
+    #[test]
+    fn rect_translate() {
+        let rect = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        } * Translate::new(2.0, -1.0);
+
+        assert_is_close!(rect.min, Point::new(2.0, 0.0));
+        assert_is_close!(rect.max, Point::new(4.0, 3.0));
+
+        let mut rect = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        };
+        rect *= Translate::new(2.0, -1.0);
+
+        assert_is_close!(rect.min, Point::new(2.0, 0.0));
+        assert_is_close!(rect.max, Point::new(4.0, 3.0));
+    }
+
+    #[test]
+    #[should_panic(expected = "not yet implemented")]
+    fn rect_transform() {
+        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let path = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        } * transform;
+        assert!(matches!(path, Path::<Mm> { .. }));
+    }
+
+    #[test]
     fn round_rect_new() {
         let rect = RoundRect::<Mm>::new(
             Point::new(0.0, 1.0),
@@ -1077,6 +1300,79 @@ mod tests {
             max: Point::new(1.0, 2.0) * 2.0,
             radii: Vector::new(1.5, 3.1) / 3.0,
         }));
+    }
+
+    #[test]
+    #[should_panic(expected = "not yet implemented")]
+    fn round_rect_rotate() {
+        let rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        };
+        let rotate = Rotate::degrees(135.0);
+        let path = rect * rotate;
+        assert!(matches!(path, Path::<Mm> { .. }));
+    }
+
+    #[test]
+    fn round_rect_scale() {
+        let rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        } * Scale::new(2.0, 0.5);
+
+        assert_is_close!(rect.min, Point::new(0.0, 0.5));
+        assert_is_close!(rect.max, Point::new(4.0, 2.0));
+        assert_is_close!(rect.radii, Vector::new(1.0, 0.5));
+
+        let mut rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        };
+        rect *= Scale::new(2.0, 0.5);
+
+        assert_is_close!(rect.min, Point::new(0.0, 0.5));
+        assert_is_close!(rect.max, Point::new(4.0, 2.0));
+        assert_is_close!(rect.radii, Vector::new(1.0, 0.5));
+    }
+
+    #[test]
+    fn round_rect_translate() {
+        let rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        } * Translate::new(2.0, -1.0);
+
+        assert_is_close!(rect.min, Point::new(2.0, 0.0));
+        assert_is_close!(rect.max, Point::new(4.0, 3.0));
+        assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+
+        let mut rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        };
+        rect *= Translate::new(2.0, -1.0);
+
+        assert_is_close!(rect.min, Point::new(2.0, 0.0));
+        assert_is_close!(rect.max, Point::new(4.0, 3.0));
+        assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+    }
+
+    #[test]
+    #[should_panic(expected = "not yet implemented")]
+    fn round_rect_transform() {
+        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let path = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        } * transform;
+        assert!(matches!(path, Path::<Mm> { .. }));
     }
 
     #[test]

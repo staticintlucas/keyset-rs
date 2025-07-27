@@ -2,7 +2,7 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::new_api::Vector;
+use crate::new_api::{Rotate, Scale, Transform, Translate, Vector};
 use crate::{ConvertFrom, ConvertInto as _, Unit};
 
 /// A 2 dimensional point
@@ -252,6 +252,109 @@ where
     fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
         self.x.is_close_impl(&other.x, rel_tol, abs_tol)
             && self.y.is_close_impl(&other.y, rel_tol, abs_tol)
+    }
+}
+
+impl<U> ops::Mul<Rotate> for Point<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Rotate) -> Self::Output {
+        let (sin, cos) = rhs.angle.sin_cos();
+        Self {
+            x: self.x * cos - self.y * sin,
+            y: self.x * sin + self.y * cos,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Rotate> for Point<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Rotate) {
+        *self = *self * rhs;
+    }
+}
+
+impl<U> ops::Mul<Scale> for Point<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Scale) -> Self::Output {
+        Self {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Scale> for Point<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Scale) {
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+    }
+}
+
+impl<U> ops::Mul<Translate<U>> for Point<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Translate<U>) -> Self::Output {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Translate<U>> for Point<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Translate<U>) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
+impl<U> ops::Mul<Transform<U>> for Point<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: Transform<U>) -> Self::Output {
+        Self {
+            x: self.x * rhs.a_xx + self.y * rhs.a_xy + rhs.t_x,
+            y: self.x * rhs.a_yx + self.y * rhs.a_yy + rhs.t_y,
+        }
+    }
+}
+
+impl<U> ops::MulAssign<Transform<U>> for Point<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn mul_assign(&mut self, rhs: Transform<U>) {
+        *self = *self * rhs;
     }
 }
 
@@ -510,5 +613,86 @@ mod tests {
             x: Mm(4.0 * 0.5),
             y: Mm(2.1 * 1.5)
         }));
+    }
+
+    #[test]
+    fn point_rotate() {
+        let point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * Rotate::degrees(135.0);
+
+        assert_is_close!(point.x, Mm(-2.5 * std::f32::consts::SQRT_2));
+        assert_is_close!(point.y, Mm(-0.5 * std::f32::consts::SQRT_2));
+
+        let mut point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        point *= Rotate::degrees(135.0);
+
+        assert_is_close!(point.x, Mm(-2.5 * std::f32::consts::SQRT_2));
+        assert_is_close!(point.y, Mm(-0.5 * std::f32::consts::SQRT_2));
+    }
+
+    #[test]
+    fn point_scale() {
+        let point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * Scale::new(2.0, 0.5);
+
+        assert_is_close!(point.x, Mm(4.0));
+        assert_is_close!(point.y, Mm(1.5));
+
+        let mut point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        point *= Scale::new(2.0, 0.5);
+
+        assert_is_close!(point.x, Mm(4.0));
+        assert_is_close!(point.y, Mm(1.5));
+    }
+
+    #[test]
+    fn point_translate() {
+        let point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * Translate::new(2.0, -1.0);
+
+        assert_is_close!(point.x, Mm(4.0));
+        assert_is_close!(point.y, Mm(2.0));
+
+        let mut point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        point *= Translate::new(2.0, -1.0);
+
+        assert_is_close!(point.x, Mm(4.0));
+        assert_is_close!(point.y, Mm(2.0));
+    }
+
+    #[test]
+    fn point_transform() {
+        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * transform;
+
+        assert_is_close!(point.x, Mm(2.5));
+        assert_is_close!(point.y, Mm(5.5));
+
+        let mut point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        point *= transform;
+
+        assert_is_close!(point.x, Mm(2.5));
+        assert_is_close!(point.y, Mm(5.5));
     }
 }

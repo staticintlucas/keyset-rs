@@ -323,6 +323,92 @@ where
             t_y: U::new(t_y),
         }
     }
+
+    /// Create a single affine transform from applying the other transform after self
+    ///
+    /// Equivalent to `other * self`
+    #[inline]
+    #[must_use]
+    #[allow(clippy::suspicious_operation_groupings)]
+    pub fn then(self, other: impl Into<Self>) -> Self {
+        let other: Self = other.into();
+        Self {
+            a_xx: self.a_xx * other.a_xx + self.a_yx * other.a_xy, // + 0.0 * other.t_x,
+            a_xy: self.a_xy * other.a_xx + self.a_yy * other.a_xy, // + 0.0 * other.t_x,
+            t_x: self.t_x * other.a_xx + self.t_y * other.a_xy + /* 1.0 * */ other.t_x,
+            a_yx: self.a_xx * other.a_yx + self.a_yx * other.a_yy, // + 0.0 * other.t_y,
+            a_yy: self.a_xy * other.a_yx + self.a_yy * other.a_yy, // + 0.0 * other.t_y,
+            t_y: self.t_x * other.a_yx + self.t_y * other.a_yy + /* 1.0 * */ other.t_y,
+            // 0.0: self.a_xx * 0.0 + self.a_yx * 0.0 + 0.0 * other.t_x,
+            // 0.0: self.a_xy * 0.0 + self.a_yy * 0.0 + 0.0 * other.t_y,
+            // 1.0: self.t_x * 0.0 + self.t_y * 0.0 + 1.0 * 1.0,
+        }
+    }
+}
+
+impl<U> From<Scale> for Transform<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn from(value: Scale) -> Self {
+        Self {
+            a_xx: value.x,
+            a_xy: 0.0,
+            t_x: U::new(0.0),
+            a_yx: 0.0,
+            a_yy: value.y,
+            t_y: U::new(0.0),
+        }
+    }
+}
+
+impl<U> From<Translate<U>> for Transform<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn from(value: Translate<U>) -> Self {
+        Self {
+            a_xx: 1.0,
+            a_xy: 0.0,
+            t_x: value.x,
+            a_yx: 0.0,
+            a_yy: 1.0,
+            t_y: value.y,
+        }
+    }
+}
+
+impl<U> From<Rotate> for Transform<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn from(value: Rotate) -> Self {
+        let (sin, cos) = value.angle.sin_cos();
+        Self {
+            a_xx: cos,
+            a_xy: -sin,
+            t_x: U::new(0.0),
+            a_yx: sin,
+            a_yy: cos,
+            t_y: U::new(0.0),
+        }
+    }
+}
+
+impl<U, T> ops::Mul<T> for Transform<U>
+where
+    U: Unit,
+    T: Into<Self>,
+{
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: T) -> Self::Output {
+        rhs.into().then(self)
+    }
 }
 
 impl<U> IsClose<f32> for Transform<U>
@@ -583,6 +669,102 @@ mod tests {
         assert_is_close!(transform.a_yx, 4.0);
         assert_is_close!(transform.a_yy, 5.0);
         assert_is_close!(transform.t_y, Mm(6.0));
+    }
+
+    #[test]
+    fn transform_then() {
+        let transform1 = Transform::<Mm> {
+            a_xx: 1.0,
+            a_xy: 2.0,
+            t_x: Mm(3.0),
+            a_yx: 4.0,
+            a_yy: 5.0,
+            t_y: Mm(6.0),
+        };
+        let transform2 = Transform {
+            a_xx: 1.0,
+            a_xy: 0.5,
+            t_x: Mm(-1.0),
+            a_yx: -0.5,
+            a_yy: 1.5,
+            t_y: Mm(2.0),
+        };
+        let transform = transform1.then(transform2);
+
+        assert_is_close!(transform.a_xx, 3.0);
+        assert_is_close!(transform.a_xy, 4.5);
+        assert_is_close!(transform.t_x, Mm(5.0));
+        assert_is_close!(transform.a_yx, 5.5);
+        assert_is_close!(transform.a_yy, 6.5);
+        assert_is_close!(transform.t_y, Mm(9.5));
+    }
+
+    #[test]
+    fn transform_from_scale() {
+        let scale = Scale::new(2.0, 0.5);
+        let transform = Transform::<Mm>::from(scale);
+
+        assert_is_close!(transform.a_xx, 2.0);
+        assert_is_close!(transform.a_xy, 0.0);
+        assert_is_close!(transform.t_x, Mm(0.0));
+        assert_is_close!(transform.a_yx, 0.0);
+        assert_is_close!(transform.a_yy, 0.5);
+        assert_is_close!(transform.t_y, Mm(0.0));
+    }
+
+    #[test]
+    fn transform_from_translate() {
+        let translate = Translate::new(2.0, -1.0);
+        let transform = Transform::<Mm>::from(translate);
+
+        assert_is_close!(transform.a_xx, 1.0);
+        assert_is_close!(transform.a_xy, 0.0);
+        assert_is_close!(transform.t_x, Mm(2.0));
+        assert_is_close!(transform.a_yx, 0.0);
+        assert_is_close!(transform.a_yy, 1.0);
+        assert_is_close!(transform.t_y, Mm(-1.0));
+    }
+
+    #[test]
+    fn transform_from_rotate() {
+        let rotate = Rotate::degrees(135.0);
+        let transform = Transform::<Mm>::from(rotate);
+
+        let sq12 = std::f32::consts::FRAC_1_SQRT_2;
+        assert_is_close!(transform.a_xx, -sq12);
+        assert_is_close!(transform.a_xy, -sq12);
+        assert_is_close!(transform.t_x, Mm(0.0));
+        assert_is_close!(transform.a_yx, sq12);
+        assert_is_close!(transform.a_yy, -sq12);
+        assert_is_close!(transform.t_y, Mm(0.0));
+    }
+
+    #[test]
+    fn transform_mul() {
+        let transform1 = Transform::<Mm> {
+            a_xx: 1.0,
+            a_xy: 2.0,
+            t_x: Mm(3.0),
+            a_yx: 4.0,
+            a_yy: 5.0,
+            t_y: Mm(6.0),
+        };
+        let transform2 = Transform {
+            a_xx: 1.0,
+            a_xy: 0.5,
+            t_x: Mm(-1.0),
+            a_yx: -0.5,
+            a_yy: 1.5,
+            t_y: Mm(2.0),
+        };
+        let transform = transform1 * transform2;
+
+        assert_is_close!(transform.a_xx, 0.0);
+        assert_is_close!(transform.a_xy, 3.5);
+        assert_is_close!(transform.t_x, Mm(6.0));
+        assert_is_close!(transform.a_yx, 1.5);
+        assert_is_close!(transform.a_yy, 9.5);
+        assert_is_close!(transform.t_y, Mm(12.0));
     }
 
     #[allow(clippy::too_many_lines)]
