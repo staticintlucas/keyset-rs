@@ -40,12 +40,21 @@ where
         }
     }
 
-    /// Returns the maximum lengthfrom `self` and `other`
+    /// Returns the maximum length from `self` and `other`
     #[inline]
     #[must_use]
     pub fn max(self, other: Self) -> Self {
         Self {
             length: self.length.max(other.length),
+        }
+    }
+
+    /// Returns the absolute value of the length
+    #[inline]
+    #[must_use]
+    pub fn abs(self) -> Self {
+        Self {
+            length: self.length.abs(),
         }
     }
 
@@ -224,6 +233,26 @@ mod tests {
     fn length_from_unit() {
         let length = Length::from_unit(Mm(2.0));
         assert_is_close!(length.length, Mm(2.0));
+    }
+
+    #[test]
+    fn length_cmp() {
+        let length1 = Length {
+            length: Mm(4.0 / 3.0),
+        };
+        let length2 = Length { length: Mm(1.5) };
+
+        assert_is_close!(length1.max(length2).length, Mm(1.5));
+        assert_is_close!(length1.min(length2).length, Mm(4.0 / 3.0));
+    }
+
+    #[test]
+    fn length_abs() {
+        let length = Length { length: Mm(2.5) };
+        assert_is_close!(length.abs().length, Mm(2.5));
+
+        let length = Length { length: Mm(-2.5) };
+        assert_is_close!(length.abs().length, Mm(2.5));
     }
 
     #[test]

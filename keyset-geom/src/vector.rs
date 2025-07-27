@@ -37,6 +37,16 @@ where
         }
     }
 
+    /// Create a new zero-length vector
+    #[inline]
+    #[must_use]
+    pub fn zero() -> Self {
+        Self {
+            x: U::new(0.0),
+            y: U::new(0.0),
+        }
+    }
+
     /// Create a new vector from unit values
     #[inline]
     #[must_use]
@@ -72,6 +82,30 @@ where
             x: self.x.max(other.x),
             y: self.y.max(other.y),
         }
+    }
+
+    /// Returns the absolute value of the vector
+    #[inline]
+    #[must_use]
+    pub fn abs(self) -> Self {
+        Self {
+            x: self.x.abs(),
+            y: self.y.abs(),
+        }
+    }
+
+    /// Returns the length of the vector
+    #[inline]
+    #[must_use]
+    pub fn hypot(self) -> f32 {
+        self.hypot2().sqrt()
+    }
+
+    /// Returns the square of the length of the vector
+    #[inline]
+    #[must_use]
+    pub fn hypot2(self) -> f32 {
+        self.x.get() * self.x.get() + self.y.get() * self.y.get()
     }
 
     /// Linearly interpolate between two vectors
@@ -253,6 +287,13 @@ mod tests {
     }
 
     #[test]
+    fn vector_zero() {
+        let vector = Vector::<Mm>::zero();
+        assert_is_close!(vector.x, Mm(0.0));
+        assert_is_close!(vector.y, Mm(0.0));
+    }
+
+    #[test]
     fn vector_from_units() {
         let vector = Vector::from_units(Mm(2.0), Mm(3.0));
         assert_is_close!(vector.x, Mm(2.0));
@@ -268,6 +309,58 @@ mod tests {
         .swap_xy();
         assert_is_close!(vector.x, Mm(3.0));
         assert_is_close!(vector.y, Mm(2.0));
+    }
+
+    #[test]
+    fn vector_cmp() {
+        let vector1 = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        let vector2 = Vector {
+            x: Mm(4.0),
+            y: Mm(-3.5),
+        };
+
+        assert_is_close!(vector1.max(vector2).x, Mm(4.0));
+        assert_is_close!(vector1.max(vector2).y, Mm(3.0));
+
+        assert_is_close!(vector1.min(vector2).x, Mm(2.0));
+        assert_is_close!(vector1.min(vector2).y, Mm(-3.5));
+    }
+
+    #[test]
+    fn vector_abs() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        assert_is_close!(vector.abs().x, Mm(2.0));
+        assert_is_close!(vector.abs().y, Mm(3.0));
+
+        let vector = Vector {
+            x: Mm(4.0),
+            y: Mm(-3.5),
+        };
+        assert_is_close!(vector.abs().x, Mm(4.0));
+        assert_is_close!(vector.abs().y, Mm(3.5));
+    }
+
+    #[test]
+    fn vector_hypot() {
+        let vector = Vector {
+            x: Mm(3.0),
+            y: Mm(4.0),
+        };
+        assert_is_close!(vector.hypot(), 5.0);
+        assert_is_close!(vector.hypot2(), 25.0);
+
+        let vector = Vector {
+            x: Mm(12.0),
+            y: Mm(-5.0),
+        };
+        assert_is_close!(vector.hypot(), 13.0);
+        assert_is_close!(vector.hypot2(), 169.0);
     }
 
     #[test]

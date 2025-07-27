@@ -38,6 +38,16 @@ where
         }
     }
 
+    /// Create a point at the origin (0, 0)
+    #[inline]
+    #[must_use]
+    pub fn origin() -> Self {
+        Self {
+            x: U::new(0.0),
+            y: U::new(0.0),
+        }
+    }
+
     /// Create a new point from unit values
     #[inline]
     #[must_use]
@@ -269,6 +279,13 @@ mod tests {
     }
 
     #[test]
+    fn point_origin() {
+        let point = Point::<Mm>::origin();
+        assert_is_close!(point.x, Mm(0.0));
+        assert_is_close!(point.y, Mm(0.0));
+    }
+
+    #[test]
     fn point_from_units() {
         let point = Point::from_units(Mm(2.0), Mm(3.0));
         assert_is_close!(point.x, Mm(2.0));
@@ -284,6 +301,24 @@ mod tests {
         .swap_xy();
         assert_is_close!(point.x, Mm(3.0));
         assert_is_close!(point.y, Mm(2.0));
+    }
+
+    #[test]
+    fn point_cmp() {
+        let point1 = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        let point2 = Point {
+            x: Mm(4.0),
+            y: Mm(-3.5),
+        };
+
+        assert_is_close!(point1.max(point2).x, Mm(4.0));
+        assert_is_close!(point1.max(point2).y, Mm(3.0));
+
+        assert_is_close!(point1.min(point2).x, Mm(2.0));
+        assert_is_close!(point1.min(point2).y, Mm(-3.5));
     }
 
     #[test]

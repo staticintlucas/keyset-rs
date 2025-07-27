@@ -43,6 +43,16 @@ where
         }
     }
 
+    /// Create a new empty rectangle
+    #[inline]
+    #[must_use]
+    pub fn empty() -> Self {
+        Self {
+            min: Point::origin(),
+            max: Point::origin(),
+        }
+    }
+
     /// Returns the size of the rectangle
     #[inline]
     pub fn size(&self) -> Vector<U> {
@@ -602,6 +612,13 @@ mod tests {
     }
 
     #[test]
+    fn rect_empty() {
+        let rect = Rect::<Mm>::empty();
+        assert_is_close!(rect.min, Point::new(0.0, 0.0));
+        assert_is_close!(rect.max, Point::new(0.0, 0.0));
+    }
+
+    #[test]
     fn rect_size() {
         let rect = Rect::<Mm> {
             min: Point::new(0.0, 1.0),
@@ -635,6 +652,20 @@ mod tests {
             max: Point::new(2.0, 4.0),
         };
         assert_is_close!(rect.center(), Point::new(1.0, 2.5));
+    }
+
+    #[test]
+    fn rect_union() {
+        let rect1 = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        };
+        let rect2 = Rect::<Mm> {
+            min: Point::new(0.2, 0.5),
+            max: Point::new(1.0, 6.5),
+        };
+        assert_is_close!(rect1.union(rect2).min, Point::new(0.0, 0.5));
+        assert_is_close!(rect1.union(rect2).max, Point::new(2.0, 6.5));
     }
 
     #[test]

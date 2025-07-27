@@ -31,15 +31,31 @@ pub trait Unit:
     fn get(self) -> f32;
 
     /// Convert the unit to another unit using the given conversion
-    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V;
+    #[inline]
+    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
+        V::new(self.get() * conversion.get())
+    }
 
     /// Return the minimum of two units
+    #[inline]
     #[must_use]
-    fn min(self, rhs: Self) -> Self;
+    fn min(self, rhs: Self) -> Self {
+        Self::new(f32::min(self.get(), rhs.get()))
+    }
 
     /// Return the maximum of two units
+    #[inline]
     #[must_use]
-    fn max(self, rhs: Self) -> Self;
+    fn max(self, rhs: Self) -> Self {
+        Self::new(f32::max(self.get(), rhs.get()))
+    }
+
+    /// Return the absolute value of the unit
+    #[inline]
+    #[must_use]
+    fn abs(self) -> Self {
+        Self::new(self.get().abs())
+    }
 }
 
 /// Convenience trait for converting units
@@ -211,21 +227,6 @@ impl Unit for KeyUnit {
     fn get(self) -> f32 {
         self.0
     }
-
-    #[inline]
-    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
-        V::new(self.0 * conversion.get())
-    }
-
-    #[inline]
-    fn min(self, rhs: Self) -> Self {
-        Self(self.0.min(rhs.0))
-    }
-
-    #[inline]
-    fn max(self, rhs: Self) -> Self {
-        Self(self.0.max(rhs.0))
-    }
 }
 
 /// Dot, a.k.a. drawing unit
@@ -370,21 +371,6 @@ impl Unit for Dot {
     #[inline]
     fn get(self) -> f32 {
         self.0
-    }
-
-    #[inline]
-    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
-        V::new(self.0 * conversion.get())
-    }
-
-    #[inline]
-    fn min(self, rhs: Self) -> Self {
-        Self(self.0.min(rhs.0))
-    }
-
-    #[inline]
-    fn max(self, rhs: Self) -> Self {
-        Self(self.0.max(rhs.0))
     }
 }
 
@@ -531,21 +517,6 @@ impl Unit for Mm {
     fn get(self) -> f32 {
         self.0
     }
-
-    #[inline]
-    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
-        V::new(self.0 * conversion.get())
-    }
-
-    #[inline]
-    fn min(self, rhs: Self) -> Self {
-        Self(self.0.min(rhs.0))
-    }
-
-    #[inline]
-    fn max(self, rhs: Self) -> Self {
-        Self(self.0.max(rhs.0))
-    }
 }
 
 /// Inch
@@ -691,21 +662,6 @@ impl Unit for Inch {
     fn get(self) -> f32 {
         self.0
     }
-
-    #[inline]
-    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
-        V::new(self.0 * conversion.get())
-    }
-
-    #[inline]
-    fn min(self, rhs: Self) -> Self {
-        Self(self.0.min(rhs.0))
-    }
-
-    #[inline]
-    fn max(self, rhs: Self) -> Self {
-        Self(self.0.max(rhs.0))
-    }
 }
 
 /// A conversion between two units
@@ -804,6 +760,24 @@ mod tests {
 
         let key_unit = KeyUnit(4.0 / 3.0);
         assert_is_close!(key_unit.convert(conversion), Mm(25.4));
+    }
+
+    #[test]
+    fn key_unit_cmp() {
+        let key_unit1 = KeyUnit(4.0 / 3.0);
+        let key_unit2 = KeyUnit(1.5);
+
+        assert_is_close!(key_unit1.max(key_unit2).0, 1.5);
+        assert_is_close!(key_unit1.min(key_unit2).0, 4.0 / 3.0);
+    }
+
+    #[test]
+    fn key_unit_abs() {
+        let key_unit = KeyUnit(2.5);
+        assert_is_close!(key_unit.abs().0, 2.5);
+
+        let key_unit = KeyUnit(-2.5);
+        assert_is_close!(key_unit.abs().0, 2.5);
     }
 
     #[test]
@@ -906,6 +880,24 @@ mod tests {
     }
 
     #[test]
+    fn dot_cmp() {
+        let dot1 = Dot(4.0 / 3.0);
+        let dot2 = Dot(1.5);
+
+        assert_is_close!(dot1.max(dot2).0, 1.5);
+        assert_is_close!(dot1.min(dot2).0, 4.0 / 3.0);
+    }
+
+    #[test]
+    fn dot_abs() {
+        let key_unit = Dot(2.5);
+        assert_is_close!(key_unit.abs().0, 2.5);
+
+        let key_unit = Dot(-2.5);
+        assert_is_close!(key_unit.abs().0, 2.5);
+    }
+
+    #[test]
     fn dot_add() {
         let dot = Dot(2.0) + Dot(1.0);
         assert_is_close!(dot.0, 3.0);
@@ -1005,6 +997,24 @@ mod tests {
     }
 
     #[test]
+    fn mm_cmp() {
+        let mm1 = Mm(4.0 / 3.0);
+        let mm2 = Mm(1.5);
+
+        assert_is_close!(mm1.max(mm2).0, 1.5);
+        assert_is_close!(mm1.min(mm2).0, 4.0 / 3.0);
+    }
+
+    #[test]
+    fn mm_abs() {
+        let mm = Mm(2.5);
+        assert_is_close!(mm.abs().0, 2.5);
+
+        let mm = Mm(-2.5);
+        assert_is_close!(mm.abs().0, 2.5);
+    }
+
+    #[test]
     fn mm_add() {
         let mm = Mm(2.0) + Mm(1.0);
         assert_is_close!(mm.0, 3.0);
@@ -1101,6 +1111,24 @@ mod tests {
 
         let inch = Inch(0.75);
         assert_is_close!(inch.convert(conversion), Mm(19.05));
+    }
+
+    #[test]
+    fn inch_cmp() {
+        let inch1 = Inch(4.0 / 3.0);
+        let inch2 = Inch(1.5);
+
+        assert_is_close!(inch1.max(inch2).0, 1.5);
+        assert_is_close!(inch1.min(inch2).0, 4.0 / 3.0);
+    }
+
+    #[test]
+    fn inch_abs() {
+        let inch = Inch(2.5);
+        assert_is_close!(inch.abs().0, 2.5);
+
+        let inch = Inch(-2.5);
+        assert_is_close!(inch.abs().0, 2.5);
     }
 
     #[test]
