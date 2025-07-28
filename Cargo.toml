@@ -27,7 +27,6 @@ key = { package = "keyset-key", path = "keyset-key", version = "0.3.2" }
 profile = { package = "keyset-profile", path = "keyset-profile", version = "0.3.2" }
 
 assert_matches = "1.5"
-euclid = "0.22"
 indoc = "2.0"
 interp = "2.0"
 isclose = "0.2"

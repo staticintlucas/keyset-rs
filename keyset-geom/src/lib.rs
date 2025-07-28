@@ -7,58 +7,21 @@
 #![cfg_attr(coverage, feature(coverage_attribute))]
 
 mod angle;
-mod circle;
 mod ellipse;
 mod length;
 mod path;
 mod point;
 mod rect;
-mod round_rect;
-mod traits;
 mod transform;
 mod unit;
 mod vector;
 
 pub use self::angle::Angle;
-pub use self::circle::Circle;
+pub use self::ellipse::Ellipse;
 pub use self::length::Length;
 pub use self::path::{Path, PathBuilder, PathSegment, ToPath};
-pub use self::round_rect::RoundRect;
-pub use self::traits::*;
-pub use self::unit::{
-    ConvertFrom, ConvertInto, Dot, Inch, KeyUnit, Mm, Unit, DOT_PER_INCH, DOT_PER_MM, DOT_PER_UNIT,
-    INCH_PER_UNIT, MM_PER_UNIT,
-};
-
-/// Temporary re-exports for the new API
-pub mod new_api {
-    pub use crate::angle::Angle;
-    pub use crate::ellipse::Ellipse;
-    pub use crate::length::Length;
-    pub use crate::point::Point;
-    pub use crate::rect::{OffsetRect, Rect, RoundRect};
-    pub use crate::transform::{Rotate, Scale, Transform, Translate};
-    pub use crate::unit::Conversion;
-    pub use crate::vector::Vector;
-}
-
-/// A 2-dimensional point with unit `U`
-pub type Point<U> = euclid::Point2D<f32, U>;
-
-/// A 2-dimensional rectangle with unit `U`
-pub type Rect<U> = euclid::Box2D<f32, U>;
-
-/// A scale to convert between different units
-pub type Scale<U, V> = euclid::Scale<f32, U, V>;
-
-/// A set of 2-dimensional side offsets for top/right/bottom/left borders, padding, and margins
-pub type SideOffsets<U> = euclid::SideOffsets2D<f32, U>;
-
-/// A 2-dimensional size with unit `U`
-pub type Size<U> = euclid::Size2D<f32, U>;
-
-/// A 2-dimensional transformation with conversion from `U` to `V`
-pub type Transform<U, V> = euclid::Transform2D<f32, U, V>;
-
-/// A 2-dimensional vector with unit `U`
-pub type Vector<U> = euclid::Vector2D<f32, U>;
+pub use self::point::Point;
+pub use self::rect::{OffsetRect, Rect, RoundRect};
+pub use self::transform::{Rotate, Scale, Transform, Translate};
+pub use self::unit::{Conversion, ConvertFrom, ConvertInto, Dot, Inch, KeyUnit, Mm, Unit};
+pub use self::vector::Vector;

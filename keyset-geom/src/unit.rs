@@ -3,8 +3,6 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::Scale;
-
 /// Trait for Unit types
 pub trait Unit:
     Sized
@@ -712,19 +710,6 @@ where
         }
     }
 }
-
-// TODO: delete these when no longer used
-/// Conversion factor for keyboard units to drawing units
-pub const DOT_PER_UNIT: Scale<KeyUnit, Dot> = Scale::new(Dot::PER_UNIT);
-/// Conversion factor for keyboard units to millimeters
-pub const MM_PER_UNIT: Scale<KeyUnit, Mm> = Scale::new(Mm::PER_UNIT);
-/// Conversion factor for keyboard units to inches
-pub const INCH_PER_UNIT: Scale<KeyUnit, Inch> = Scale::new(Inch::PER_UNIT);
-
-/// Conversion factor for Millimeters to Drawing Units
-pub const DOT_PER_MM: Scale<Mm, Dot> = Scale::new(Dot::PER_MM);
-/// Conversion factor for Inches to Drawing Units
-pub const DOT_PER_INCH: Scale<Inch, Dot> = Scale::new(Dot::PER_INCH);
 
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]

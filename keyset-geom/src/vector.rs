@@ -2,8 +2,7 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::new_api::{Rotate, Scale, Transform, Translate};
-use crate::{ConvertFrom, ConvertInto as _, Unit};
+use crate::{ConvertFrom, ConvertInto as _, Rotate, Scale, Transform, Translate, Unit};
 
 /// A 2 dimensional vector
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]

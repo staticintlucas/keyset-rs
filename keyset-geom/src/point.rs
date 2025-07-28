@@ -2,8 +2,7 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::new_api::{Rotate, Scale, Transform, Translate, Vector};
-use crate::{ConvertFrom, ConvertInto as _, Unit};
+use crate::{ConvertFrom, ConvertInto as _, Rotate, Scale, Transform, Translate, Unit, Vector};
 
 /// A 2 dimensional point
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
