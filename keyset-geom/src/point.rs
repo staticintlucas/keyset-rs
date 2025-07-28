@@ -42,8 +42,8 @@ where
     #[must_use]
     pub fn origin() -> Self {
         Self {
-            x: U::new(0.0),
-            y: U::new(0.0),
+            x: U::zero(),
+            y: U::zero(),
         }
     }
 
@@ -303,6 +303,32 @@ where
     fn mul_assign(&mut self, rhs: Scale) {
         self.x *= rhs.x;
         self.y *= rhs.y;
+    }
+}
+
+impl<U> ops::Div<Scale> for Point<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn div(self, rhs: Scale) -> Self::Output {
+        Self {
+            x: self.x / rhs.x,
+            y: self.y / rhs.y,
+        }
+    }
+}
+
+impl<U> ops::DivAssign<Scale> for Point<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn div_assign(&mut self, rhs: Scale) {
+        self.x /= rhs.x;
+        self.y /= rhs.y;
     }
 }
 
@@ -652,6 +678,23 @@ mod tests {
 
         assert_is_close!(point.x, Mm(4.0));
         assert_is_close!(point.y, Mm(1.5));
+
+        let point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } / Scale::new(2.0, 0.5);
+
+        assert_is_close!(point.x, Mm(1.0));
+        assert_is_close!(point.y, Mm(6.0));
+
+        let mut point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        point /= Scale::new(2.0, 0.5);
+
+        assert_is_close!(point.x, Mm(1.0));
+        assert_is_close!(point.y, Mm(6.0));
     }
 
     #[test]

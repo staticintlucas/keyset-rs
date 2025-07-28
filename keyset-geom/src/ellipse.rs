@@ -165,6 +165,32 @@ where
     }
 }
 
+impl<U> ops::Div<Scale> for Ellipse<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn div(self, rhs: Scale) -> Self::Output {
+        Self {
+            center: self.center / rhs,
+            radii: self.radii / rhs,
+        }
+    }
+}
+
+impl<U> ops::DivAssign<Scale> for Ellipse<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn div_assign(&mut self, rhs: Scale) {
+        self.center /= rhs;
+        self.radii /= rhs;
+    }
+}
+
 impl<U> ops::Mul<Translate<U>> for Ellipse<U>
 where
     U: Unit,
@@ -379,6 +405,23 @@ mod tests {
 
         assert_is_close!(ellipse.center, Point::new(3.0, 1.5));
         assert_is_close!(ellipse.radii, Vector::new(2.0, 1.0));
+
+        let ellipse = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        } / Scale::new(2.0, 0.5);
+
+        assert_is_close!(ellipse.center, Point::new(0.75, 6.0));
+        assert_is_close!(ellipse.radii, Vector::new(0.5, 4.0));
+
+        let mut ellipse = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        };
+        ellipse /= Scale::new(2.0, 0.5);
+
+        assert_is_close!(ellipse.center, Point::new(0.75, 6.0));
+        assert_is_close!(ellipse.radii, Vector::new(0.5, 4.0));
     }
 
     #[test]

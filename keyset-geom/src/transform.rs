@@ -27,6 +27,20 @@ impl Scale {
     pub const fn splat(v: f32) -> Self {
         Self { x: v, y: v }
     }
+
+    /// Returns the hypotenuse of the scale
+    #[inline]
+    #[must_use]
+    pub fn hypot(self) -> f32 {
+        self.hypot2().sqrt()
+    }
+
+    /// Returns the square of the hypotenuse of the scale
+    #[inline]
+    #[must_use]
+    pub fn hypot2(self) -> f32 {
+        self.x * self.x + self.y * self.y
+    }
 }
 
 impl ops::Mul for Scale {
@@ -355,10 +369,10 @@ where
         Self {
             a_xx: value.x,
             a_xy: 0.0,
-            t_x: U::new(0.0),
+            t_x: U::zero(),
             a_yx: 0.0,
             a_yy: value.y,
-            t_y: U::new(0.0),
+            t_y: U::zero(),
         }
     }
 }
@@ -390,10 +404,10 @@ where
         Self {
             a_xx: cos,
             a_xy: -sin,
-            t_x: U::new(0.0),
+            t_x: U::zero(),
             a_yx: sin,
             a_yy: cos,
-            t_y: U::new(0.0),
+            t_y: U::zero(),
         }
     }
 }

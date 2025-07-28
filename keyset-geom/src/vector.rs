@@ -2,7 +2,7 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::{ConvertFrom, ConvertInto as _, Rotate, Scale, Transform, Translate, Unit};
+use crate::{Angle, ConvertFrom, ConvertInto as _, Rotate, Scale, Transform, Translate, Unit};
 
 /// A 2 dimensional vector
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -42,8 +42,8 @@ where
     #[must_use]
     pub fn zero() -> Self {
         Self {
-            x: U::new(0.0),
-            y: U::new(0.0),
+            x: U::zero(),
+            y: U::zero(),
         }
     }
 
@@ -106,6 +106,13 @@ where
     #[must_use]
     pub fn hypot2(self) -> f32 {
         self.x.get() * self.x.get() + self.y.get() * self.y.get()
+    }
+
+    /// Returns the angle of the vector from the x axis
+    #[inline]
+    #[must_use]
+    pub fn angle(self) -> Angle {
+        Angle::atan2(self.y.get(), self.x.get())
     }
 
     /// Linearly interpolate between two vectors
@@ -315,6 +322,32 @@ where
     }
 }
 
+impl<U> ops::Div<Scale> for Vector<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn div(self, rhs: Scale) -> Self::Output {
+        Self {
+            x: self.x / rhs.x,
+            y: self.y / rhs.y,
+        }
+    }
+}
+
+impl<U> ops::DivAssign<Scale> for Vector<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn div_assign(&mut self, rhs: Scale) {
+        self.x /= rhs.x;
+        self.y /= rhs.y;
+    }
+}
+
 impl<U> ops::Mul<Translate<U>> for Vector<U>
 where
     U: Unit,
@@ -503,6 +536,15 @@ mod tests {
         };
         assert_is_close!(vector.hypot(), 13.0);
         assert_is_close!(vector.hypot2(), 169.0);
+    }
+
+    #[test]
+    fn vector_angle() {
+        let vector = Vector {
+            x: Mm(12.0_f32.sqrt()),
+            y: Mm(2.0),
+        };
+        assert_is_close!(vector.angle(), Angle::degrees(30.0));
     }
 
     #[test]
@@ -713,6 +755,23 @@ mod tests {
 
         assert_is_close!(vector.x, Mm(4.0));
         assert_is_close!(vector.y, Mm(1.5));
+
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } / Scale::new(2.0, 0.5);
+
+        assert_is_close!(vector.x, Mm(1.0));
+        assert_is_close!(vector.y, Mm(6.0));
+
+        let mut vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        };
+        vector /= Scale::new(2.0, 0.5);
+
+        assert_is_close!(vector.x, Mm(1.0));
+        assert_is_close!(vector.y, Mm(6.0));
     }
 
     #[test]

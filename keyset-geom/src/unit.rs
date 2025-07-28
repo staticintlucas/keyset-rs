@@ -28,6 +28,13 @@ pub trait Unit:
     /// Create a new instance of the unit from a value
     fn get(self) -> f32;
 
+    /// Return a zero value
+    #[inline]
+    #[must_use]
+    fn zero() -> Self {
+        Self::new(0.0)
+    }
+
     /// Convert the unit to another unit using the given conversion
     #[inline]
     fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
@@ -734,6 +741,9 @@ mod tests {
 
         let key_unit = KeyUnit(2.5);
         assert_is_close!(key_unit.get(), 2.5);
+
+        let key_unit = KeyUnit::zero();
+        assert_is_close!(key_unit.0, 0.0);
     }
 
     #[test]
@@ -851,6 +861,9 @@ mod tests {
 
         let dot = Dot(2.5);
         assert_is_close!(dot.get(), 2.5);
+
+        let dot = Dot::zero();
+        assert_is_close!(dot.0, 0.0);
     }
 
     #[test]
@@ -968,6 +981,9 @@ mod tests {
 
         let mm = Mm(2.5);
         assert_is_close!(mm.get(), 2.5);
+
+        let mm = Mm::zero();
+        assert_is_close!(mm.0, 0.0);
     }
 
     #[test]
@@ -1085,6 +1101,9 @@ mod tests {
 
         let inch = Inch(2.5);
         assert_is_close!(inch.get(), 2.5);
+
+        let inch = Inch::zero();
+        assert_is_close!(inch.0, 0.0);
     }
 
     #[test]

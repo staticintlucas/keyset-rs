@@ -260,6 +260,32 @@ where
     }
 }
 
+impl<U> ops::Div<Scale> for Rect<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn div(self, rhs: Scale) -> Self::Output {
+        Self {
+            min: self.min / rhs,
+            max: self.max / rhs,
+        }
+    }
+}
+
+impl<U> ops::DivAssign<Scale> for Rect<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn div_assign(&mut self, rhs: Scale) {
+        self.min /= rhs;
+        self.max /= rhs;
+    }
+}
+
 impl<U> ops::Mul<Translate<U>> for Rect<U>
 where
     U: Unit,
@@ -509,6 +535,34 @@ where
         self.min *= rhs;
         self.max *= rhs;
         self.radii *= rhs;
+    }
+}
+
+impl<U> ops::Div<Scale> for RoundRect<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+
+    #[inline]
+    fn div(self, rhs: Scale) -> Self::Output {
+        Self {
+            min: self.min / rhs,
+            max: self.max / rhs,
+            radii: self.radii / rhs,
+        }
+    }
+}
+
+impl<U> ops::DivAssign<Scale> for RoundRect<U>
+where
+    U: Unit,
+{
+    #[inline]
+    fn div_assign(&mut self, rhs: Scale) {
+        self.min /= rhs;
+        self.max /= rhs;
+        self.radii /= rhs;
     }
 }
 
@@ -1025,6 +1079,23 @@ mod tests {
 
         assert_is_close!(rect.min, Point::new(0.0, 0.5));
         assert_is_close!(rect.max, Point::new(4.0, 2.0));
+
+        let rect = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        } / Scale::new(2.0, 0.5);
+
+        assert_is_close!(rect.min, Point::new(0.0, 2.0));
+        assert_is_close!(rect.max, Point::new(1.0, 8.0));
+
+        let mut rect = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        };
+        rect /= Scale::new(2.0, 0.5);
+
+        assert_is_close!(rect.min, Point::new(0.0, 2.0));
+        assert_is_close!(rect.max, Point::new(1.0, 8.0));
     }
 
     #[test]
@@ -1338,6 +1409,27 @@ mod tests {
         assert_is_close!(rect.min, Point::new(0.0, 0.5));
         assert_is_close!(rect.max, Point::new(4.0, 2.0));
         assert_is_close!(rect.radii, Vector::new(1.0, 0.5));
+
+        let rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        } / Scale::new(2.0, 0.5);
+
+        assert_is_close!(rect.min, Point::new(0.0, 2.0));
+        assert_is_close!(rect.max, Point::new(1.0, 8.0));
+        assert_is_close!(rect.radii, Vector::new(0.25, 2.0));
+
+        let mut rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        };
+        rect /= Scale::new(2.0, 0.5);
+
+        assert_is_close!(rect.min, Point::new(0.0, 2.0));
+        assert_is_close!(rect.max, Point::new(1.0, 8.0));
+        assert_is_close!(rect.radii, Vector::new(0.25, 2.0));
     }
 
     #[test]
