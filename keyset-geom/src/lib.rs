@@ -19,7 +19,7 @@ mod vector;
 pub use self::angle::Angle;
 pub use self::ellipse::Ellipse;
 pub use self::length::Length;
-pub use self::path::{Path, PathBuilder, PathSegment, ToPath};
+pub use self::path::{Path, PathBuilder, PathSegment};
 pub use self::point::Point;
 pub use self::rect::{OffsetRect, Rect, RoundRect};
 pub use self::transform::{Rotate, Scale, Transform, Translate};
