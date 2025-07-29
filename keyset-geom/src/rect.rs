@@ -3,7 +3,8 @@ use std::ops;
 use isclose::IsClose;
 
 use crate::{
-    ConvertFrom, ConvertInto as _, Path, Point, Rotate, Scale, Transform, Translate, Unit, Vector,
+    ConvertFrom, ConvertInto as _, Path, PathSegment, Point, Rotate, Scale, Transform, Translate,
+    Unit, Vector,
 };
 
 /// A 2 dimensional rectangle
@@ -85,6 +86,21 @@ where
         Self {
             min: self.min.min(rhs.min),
             max: self.max.max(rhs.max),
+        }
+    }
+
+    /// Converts the rectangle to a [`Path`]
+    #[inline]
+    pub fn to_path(self) -> Path<U> {
+        Path {
+            data: Box::new([
+                PathSegment::Move(self.min),
+                PathSegment::Line(Vector::from_units(self.width(), U::zero())),
+                PathSegment::Line(Vector::from_units(U::zero(), self.height())),
+                PathSegment::Line(Vector::from_units(-self.width(), U::zero())),
+                PathSegment::Close,
+            ]),
+            bounds: self,
         }
     }
 }
@@ -408,6 +424,46 @@ where
     #[inline]
     pub fn center(&self) -> Point<U> {
         self.min.lerp(self.max, 0.5)
+    }
+
+    /// Converts the rectangle to a [`Path`]
+    #[inline]
+    pub fn to_path(self) -> Path<U> {
+        const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
+
+        let (mx, my) = (self.min.x, self.min.y);
+        let (rx, ry) = (self.radii.x, self.radii.y);
+
+        Path {
+            data: Box::new([
+                PathSegment::Move(Point::from_units(mx, my + ry)),
+                PathSegment::CubicBezier(
+                    Vector::from_units(U::zero(), -ry * A),
+                    Vector::from_units(rx * (1.0 - A), -ry),
+                    Vector::from_units(rx, -ry),
+                ),
+                PathSegment::Line(Vector::from_units(self.width() - rx * 2.0, U::zero())),
+                PathSegment::CubicBezier(
+                    Vector::from_units(rx * A, U::zero()),
+                    Vector::from_units(rx, ry * (1.0 - A)),
+                    Vector::from_units(rx, ry),
+                ),
+                PathSegment::Line(Vector::from_units(U::zero(), self.height() - ry * 2.0)),
+                PathSegment::CubicBezier(
+                    Vector::from_units(U::zero(), ry * A),
+                    Vector::from_units(-rx * (1.0 - A), ry),
+                    Vector::from_units(-rx, ry),
+                ),
+                PathSegment::Line(Vector::from_units(-(self.width() - rx * 2.0), U::zero())),
+                PathSegment::CubicBezier(
+                    Vector::from_units(-rx * A, U::zero()),
+                    Vector::from_units(-rx, -ry * (1.0 - A)),
+                    Vector::from_units(-rx, -ry),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: self.to_rect(),
+        }
     }
 }
 
@@ -801,7 +857,7 @@ where
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::{Inch, Mm};
+    use crate::{Angle, Inch, Length, Mm, PathBuilder};
 
     use super::*;
 
@@ -881,6 +937,27 @@ mod tests {
         };
         assert_is_close!(rect1.union(rect2).min, Point::new(0.0, 0.5));
         assert_is_close!(rect1.union(rect2).max, Point::new(2.0, 6.5));
+    }
+
+    #[test]
+    fn rect_to_path() {
+        let rect = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        };
+        let mut builder = PathBuilder::new();
+        builder.abs_move(Point::new(0.0, 1.0));
+        builder.rel_horiz_line(Length::new(2.0));
+        builder.rel_vert_line(Length::new(3.0));
+        builder.rel_horiz_line(Length::new(-2.0));
+        builder.close();
+        let expected = builder.build();
+
+        assert_eq!(rect.to_path().len(), expected.len());
+        assert_is_close!(rect.to_path().bounds, expected.bounds);
+        for (&res, &exp) in rect.to_path().iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
     }
 
     #[test]
@@ -1226,6 +1303,56 @@ mod tests {
             radii: Vector::new(0.5, 1.0),
         };
         assert_is_close!(rect.center(), Point::new(1.0, 2.5));
+    }
+
+    #[test]
+    fn round_rect_to_path() {
+        let rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        };
+        let mut builder = PathBuilder::new();
+        builder.abs_move(Point::new(0.0, 2.0));
+        builder.rel_arc(
+            Vector::new(0.5, 1.0),
+            Angle::new(0.0),
+            false,
+            true,
+            Vector::new(0.5, -1.0),
+        );
+        builder.rel_horiz_line(Length::new(1.0));
+        builder.rel_arc(
+            Vector::new(0.5, 1.0),
+            Angle::new(0.0),
+            false,
+            true,
+            Vector::new(0.5, 1.0),
+        );
+        builder.rel_vert_line(Length::new(1.0));
+        builder.rel_arc(
+            Vector::new(0.5, 1.0),
+            Angle::new(0.0),
+            false,
+            true,
+            Vector::new(-0.5, 1.0),
+        );
+        builder.rel_horiz_line(Length::new(-1.0));
+        builder.rel_arc(
+            Vector::new(0.5, 1.0),
+            Angle::new(0.0),
+            false,
+            true,
+            Vector::new(-0.5, -1.0),
+        );
+        builder.close();
+        let expected = builder.build();
+
+        assert_eq!(rect.to_path().len(), expected.len());
+        assert_is_close!(rect.to_path().bounds, expected.bounds);
+        for (&res, &exp) in rect.to_path().iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
     }
 
     #[test]

@@ -3,7 +3,8 @@ use std::ops;
 use isclose::IsClose;
 
 use crate::{
-    ConvertFrom, ConvertInto as _, Path, Point, Rotate, Scale, Transform, Translate, Unit, Vector,
+    ConvertFrom, ConvertInto as _, Path, PathSegment, Point, Rect, Rotate, Scale, Transform,
+    Translate, Unit, Vector,
 };
 
 /// An ellipse
@@ -43,6 +44,43 @@ where
     #[inline]
     pub fn height(&self) -> U {
         self.radii.y * 2.0
+    }
+
+    /// Converts the ellipse to a [`Path`]
+    #[inline]
+    pub fn to_path(self) -> Path<U> {
+        const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
+
+        let (cx, cy) = (self.center.x, self.center.y);
+        let (rx, ry) = (self.radii.x, self.radii.y);
+
+        Path {
+            data: Box::new([
+                PathSegment::Move(Point::from_units(cx - rx, cy)),
+                PathSegment::CubicBezier(
+                    Vector::from_units(U::zero(), -ry * A),
+                    Vector::from_units(rx * (1.0 - A), -ry),
+                    Vector::from_units(rx, -ry),
+                ),
+                PathSegment::CubicBezier(
+                    Vector::from_units(rx * A, U::zero()),
+                    Vector::from_units(rx, ry * (1.0 - A)),
+                    Vector::from_units(rx, ry),
+                ),
+                PathSegment::CubicBezier(
+                    Vector::from_units(U::zero(), ry * A),
+                    Vector::from_units(-rx * (1.0 - A), ry),
+                    Vector::from_units(-rx, ry),
+                ),
+                PathSegment::CubicBezier(
+                    Vector::from_units(-rx * A, U::zero()),
+                    Vector::from_units(-rx, -ry * (1.0 - A)),
+                    Vector::from_units(-rx, -ry),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::from_center_and_size(self.center, self.radii * 2.0),
+        }
     }
 }
 
@@ -235,7 +273,7 @@ where
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::{Inch, Mm};
+    use crate::{Angle, Inch, Mm, PathBuilder};
 
     use super::*;
 
@@ -269,6 +307,52 @@ mod tests {
             radii: Vector::new(1.0, 2.0),
         };
         assert_is_close!(ellipse.height(), Mm(4.0));
+    }
+
+    #[test]
+    fn ellipse_to_path() {
+        let ellipse = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        };
+        let mut builder = PathBuilder::new();
+        builder.abs_move(Point::new(0.5, 3.0));
+        builder.rel_arc(
+            Vector::new(1.0, 2.0),
+            Angle::new(0.0),
+            false,
+            true,
+            Vector::new(1.0, -2.0),
+        );
+        builder.rel_arc(
+            Vector::new(1.0, 2.0),
+            Angle::new(0.0),
+            false,
+            true,
+            Vector::new(1.0, 2.0),
+        );
+        builder.rel_arc(
+            Vector::new(1.0, 2.0),
+            Angle::new(0.0),
+            false,
+            true,
+            Vector::new(-1.0, 2.0),
+        );
+        builder.rel_arc(
+            Vector::new(1.0, 2.0),
+            Angle::new(0.0),
+            false,
+            true,
+            Vector::new(-1.0, -2.0),
+        );
+        builder.close();
+        let expected = builder.build();
+
+        assert_eq!(ellipse.to_path().len(), expected.len());
+        assert_is_close!(ellipse.to_path().bounds, expected.bounds);
+        for (&res, &exp) in ellipse.to_path().iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
     }
 
     #[test]
