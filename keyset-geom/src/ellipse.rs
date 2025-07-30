@@ -171,9 +171,8 @@ where
     type Output = Path<U>;
 
     #[inline]
-    fn mul(self, _rhs: Rotate) -> Self::Output {
-        // self.to_path() * rhs
-        todo!()
+    fn mul(self, rhs: Rotate) -> Self::Output {
+        self.to_path() * rhs
     }
 }
 
@@ -262,9 +261,8 @@ where
     type Output = Path<U>;
 
     #[inline]
-    fn mul(self, _rhs: Transform<U>) -> Self::Output {
-        // self.to_path() * rhs
-        todo!()
+    fn mul(self, rhs: Transform<U>) -> Self::Output {
+        self.to_path() * rhs
     }
 }
 
@@ -460,15 +458,54 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn ellipse_rotate() {
+        use std::f32::consts::SQRT_2;
+
         let ellipse = Ellipse::<Mm> {
             center: Point::new(1.5, 3.0),
             radii: Vector::new(1.0, 2.0),
         };
         let rotate = Rotate::degrees(135.0);
         let path = ellipse * rotate;
-        assert!(matches!(path, Path::<Mm> { .. }));
+
+        let mut exp_bldr = PathBuilder::<Mm>::new();
+        exp_bldr.abs_move(Point::new(-1.75 * SQRT_2, -1.25 * SQRT_2));
+        exp_bldr.rel_arc(
+            Vector::new(1.0, 2.0),
+            Angle::degrees(135.0),
+            false,
+            true,
+            Vector::new(0.5 * SQRT_2, 1.5 * SQRT_2),
+        );
+        exp_bldr.rel_arc(
+            Vector::new(1.0, 2.0),
+            Angle::degrees(135.0),
+            false,
+            true,
+            Vector::new(-1.5 * SQRT_2, -0.5 * SQRT_2),
+        );
+        exp_bldr.rel_arc(
+            Vector::new(1.0, 2.0),
+            Angle::degrees(135.0),
+            false,
+            true,
+            Vector::new(-0.5 * SQRT_2, -1.5 * SQRT_2),
+        );
+        exp_bldr.rel_arc(
+            Vector::new(1.0, 2.0),
+            Angle::degrees(135.0),
+            false,
+            true,
+            Vector::new(1.5 * SQRT_2, 0.5 * SQRT_2),
+        );
+        exp_bldr.close();
+        let expected = exp_bldr.build();
+
+        assert_eq!(path.len(), expected.len());
+        assert_is_close!(path.bounds, expected.bounds);
+        for (&res, &exp) in path.iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
     }
 
     #[test]
@@ -529,13 +566,45 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn ellipse_transform() {
-        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
-        let path = Ellipse::<Mm> {
+        const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
+
+        let ellipse = Ellipse::<Mm> {
             center: Point::new(1.5, 3.0),
             radii: Vector::new(1.0, 2.0),
-        } * transform;
-        assert!(matches!(path, Path::<Mm> { .. }));
+        };
+        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let path = ellipse * transform;
+
+        let mut exp_bldr = PathBuilder::<Mm>::new();
+        exp_bldr.abs_move(Point::new(1.0, 6.25));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(-A, -3.0 * A),
+            Vector::new(-A, -3.5 + 0.5 * A),
+            Vector::new(0.0, -3.5),
+        );
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(A, -0.5 * A),
+            Vector::new(2.0 - A, 2.5 - 3.0 * A),
+            Vector::new(2.0, 2.5),
+        );
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(A, 3.0 * A),
+            Vector::new(A, 3.5 - 0.5 * A),
+            Vector::new(0.0, 3.5),
+        );
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(-A, 0.5 * A),
+            Vector::new(-2.0 + A, -2.5 + 3.0 * A),
+            Vector::new(-2.0, -2.5),
+        );
+        exp_bldr.close();
+        let expected = exp_bldr.build();
+
+        assert_eq!(path.len(), expected.len());
+        assert_is_close!(path.bounds, expected.bounds);
+        for (&res, &exp) in path.iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
     }
 }

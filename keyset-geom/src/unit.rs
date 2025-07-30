@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops;
 
@@ -7,6 +8,8 @@ use isclose::IsClose;
 pub trait Unit:
     Sized
     + Copy
+    + Clone
+    + Debug
     + ops::Add<Self, Output = Self>
     + ops::AddAssign<Self>
     + ops::Sub<Self, Output = Self>

@@ -244,9 +244,8 @@ where
     type Output = Path<U>;
 
     #[inline]
-    fn mul(self, _rhs: Rotate) -> Self::Output {
-        // self.to_path() * rhs
-        todo!()
+    fn mul(self, rhs: Rotate) -> Self::Output {
+        self.to_path() * rhs
     }
 }
 
@@ -335,9 +334,8 @@ where
     type Output = Path<U>;
 
     #[inline]
-    fn mul(self, _rhs: Transform<U>) -> Self::Output {
-        // self.to_path() * rhs
-        todo!()
+    fn mul(self, rhs: Transform<U>) -> Self::Output {
+        self.to_path() * rhs
     }
 }
 
@@ -560,9 +558,8 @@ where
     type Output = Path<U>;
 
     #[inline]
-    fn mul(self, _rhs: Rotate) -> Self::Output {
-        // self.to_path() * rhs
-        todo!()
+    fn mul(self, rhs: Rotate) -> Self::Output {
+        self.to_path() * rhs
     }
 }
 
@@ -657,9 +654,8 @@ where
     type Output = Path<U>;
 
     #[inline]
-    fn mul(self, _rhs: Transform<U>) -> Self::Output {
-        // self.to_path() * rhs
-        todo!()
+    fn mul(self, rhs: Transform<U>) -> Self::Output {
+        self.to_path() * rhs
     }
 }
 
@@ -1127,15 +1123,29 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn rect_rotate() {
+        use std::f32::consts::SQRT_2;
+
         let rect = Rect::<Mm> {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
         };
         let rotate = Rotate::degrees(135.0);
         let path = rect * rotate;
-        assert!(matches!(path, Path::<Mm> { .. }));
+
+        let mut exp_bldr = PathBuilder::<Mm>::new();
+        exp_bldr.abs_move(Point::new(-0.5 * SQRT_2, -0.5 * SQRT_2));
+        exp_bldr.rel_line(Vector::new(-SQRT_2, SQRT_2));
+        exp_bldr.rel_line(Vector::new(-1.5 * SQRT_2, -1.5 * SQRT_2));
+        exp_bldr.rel_line(Vector::new(SQRT_2, -SQRT_2));
+        exp_bldr.close();
+        let expected = exp_bldr.build();
+
+        assert_eq!(path.len(), expected.len());
+        assert_is_close!(path.bounds, expected.bounds);
+        for (&res, &exp) in path.iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
     }
 
     #[test]
@@ -1196,14 +1206,27 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn rect_transform() {
-        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
-        let path = Rect::<Mm> {
+        let rect = Rect::<Mm> {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
-        } * transform;
-        assert!(matches!(path, Path::<Mm> { .. }));
+        };
+        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let path = rect * transform;
+
+        let mut exp_bldr = PathBuilder::<Mm>::new();
+        exp_bldr.abs_move(Point::new(-0.5, 3.5));
+        exp_bldr.rel_line(Vector::new(2.0, -1.0));
+        exp_bldr.rel_line(Vector::new(1.5, 4.5));
+        exp_bldr.rel_line(Vector::new(-2.0, 1.0));
+        exp_bldr.close();
+        let expected = exp_bldr.build();
+
+        assert_eq!(path.len(), expected.len());
+        assert_is_close!(path.bounds, expected.bounds);
+        for (&res, &exp) in path.iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
     }
 
     #[test]
@@ -1502,8 +1525,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn round_rect_rotate() {
+        use std::f32::consts::SQRT_2;
+
         let rect = RoundRect::<Mm> {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
@@ -1511,7 +1535,48 @@ mod tests {
         };
         let rotate = Rotate::degrees(135.0);
         let path = rect * rotate;
-        assert!(matches!(path, Path::<Mm> { .. }));
+
+        let mut exp_bldr = PathBuilder::<Mm>::new();
+        exp_bldr.abs_move(Point::new(-SQRT_2, -SQRT_2));
+        exp_bldr.rel_arc(
+            Vector::new(0.5, 1.0),
+            Angle::degrees(135.0),
+            false,
+            true,
+            Vector::new(0.25 * SQRT_2, 0.75 * SQRT_2),
+        );
+        exp_bldr.rel_line(Vector::new(-0.5 * SQRT_2, 0.5 * SQRT_2));
+        exp_bldr.rel_arc(
+            Vector::new(0.5, 1.0),
+            Angle::degrees(135.0),
+            false,
+            true,
+            Vector::new(-0.75 * SQRT_2, -0.25 * SQRT_2),
+        );
+        exp_bldr.rel_line(Vector::new(-0.5 * SQRT_2, -0.5 * SQRT_2));
+        exp_bldr.rel_arc(
+            Vector::new(0.5, 1.0),
+            Angle::degrees(135.0),
+            false,
+            true,
+            Vector::new(-0.25 * SQRT_2, -0.75 * SQRT_2),
+        );
+        exp_bldr.rel_line(Vector::new(0.5 * SQRT_2, -0.5 * SQRT_2));
+        exp_bldr.rel_arc(
+            Vector::new(0.5, 1.0),
+            Angle::degrees(135.0),
+            false,
+            true,
+            Vector::new(0.75 * SQRT_2, 0.25 * SQRT_2),
+        );
+        exp_bldr.close();
+        let expected = exp_bldr.build();
+
+        assert_eq!(path.len(), expected.len());
+        assert_is_close!(path.bounds, expected.bounds);
+        for (&res, &exp) in path.iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
     }
 
     #[test]
@@ -1584,15 +1649,50 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "not yet implemented")]
     fn round_rect_transform() {
-        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
-        let path = RoundRect::<Mm> {
+        const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
+
+        let rect = RoundRect::<Mm> {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
             radii: Vector::new(0.5, 1.0),
-        } * transform;
-        assert!(matches!(path, Path::<Mm> { .. }));
+        };
+        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let path = rect * transform;
+
+        let mut exp_bldr = PathBuilder::<Mm>::new();
+        exp_bldr.abs_move(Point::new(0.0, 5.0));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(-0.5 * A, -1.5 * A),
+            Vector::new(-0.5 * A, -1.75 + 0.25 * A),
+            Vector::new(0.0, -1.75),
+        );
+        exp_bldr.rel_line(Vector::new(1.0, -0.5));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(0.5 * A, -0.25 * A),
+            Vector::new(1.0 - 0.5 * A, 1.25 - 1.5 * A),
+            Vector::new(1.0, 1.25),
+        );
+        exp_bldr.rel_line(Vector::new(0.5, 1.5));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(0.5 * A, 1.5 * A),
+            Vector::new(0.5 * A, 1.75 - 0.25 * A),
+            Vector::new(0.0, 1.75),
+        );
+        exp_bldr.rel_line(Vector::new(-1.0, 0.5));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(-0.5 * A, 0.25 * A),
+            Vector::new(-1.0 + 0.5 * A, -1.25 + 1.5 * A),
+            Vector::new(-1.0, -1.25),
+        );
+        exp_bldr.close();
+        let expected = exp_bldr.build();
+
+        assert_eq!(path.len(), expected.len());
+        // assert_is_close!(path.bounds, expected.bounds);
+        for (&res, &exp) in path.iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
     }
 
     #[test]
