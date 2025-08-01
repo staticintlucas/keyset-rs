@@ -19,26 +19,28 @@ pub enum PathSegment<U: Unit> {
     Close,
 }
 
-impl<U> IsClose<f32> for PathSegment<U>
+impl<U> IsClose for PathSegment<U>
 where
     U: Unit,
 {
-    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
-    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
         use PathSegment::*;
         match (*self, *other) {
-            (Move(ref s), Move(ref o)) => s.is_close_impl(o, rel_tol, abs_tol),
-            (Line(ref s), Line(ref o)) => s.is_close_impl(o, rel_tol, abs_tol),
+            (Move(ref s), Move(ref o)) => s.is_close_tol(o, rel_tol, abs_tol),
+            (Line(ref s), Line(ref o)) => s.is_close_tol(o, rel_tol, abs_tol),
             (CubicBezier(ref s1, ref s2, ref s), CubicBezier(ref o1, ref o2, ref o)) => {
-                s1.is_close_impl(o1, rel_tol, abs_tol)
-                    && s2.is_close_impl(o2, rel_tol, abs_tol)
-                    && s.is_close_impl(o, rel_tol, abs_tol)
+                s1.is_close_tol(o1, rel_tol, abs_tol)
+                    && s2.is_close_tol(o2, rel_tol, abs_tol)
+                    && s.is_close_tol(o, rel_tol, abs_tol)
             }
             (QuadraticBezier(ref s1, ref s), QuadraticBezier(ref o1, ref o)) => {
-                s1.is_close_impl(o1, rel_tol, abs_tol) && s.is_close_impl(o, rel_tol, abs_tol)
+                s1.is_close_tol(o1, rel_tol, abs_tol) && s.is_close_tol(o, rel_tol, abs_tol)
             }
             (Close, Close) => true,
             _ => false,
@@ -377,7 +379,7 @@ mod tests {
         let segs2 = segs.map(|s| s * 3.0 / 3.0);
 
         for (seg, seg2) in segs.into_iter().zip(segs2) {
-            assert!(seg.is_close(seg2));
+            assert!(seg.is_close(&seg2));
         }
 
         let segs2 = {
@@ -387,7 +389,7 @@ mod tests {
         };
 
         for (seg, seg2) in segs.into_iter().zip(segs2) {
-            assert!(!seg.is_close(seg2));
+            assert!(!seg.is_close(&seg2));
         }
     }
 

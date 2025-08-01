@@ -114,13 +114,15 @@ impl ops::Neg for FontUnit {
     }
 }
 
-impl IsClose<f32> for FontUnit {
-    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
-    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
+impl IsClose for FontUnit {
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_impl(&other.0, abs_tol, rel_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.0.is_close_tol(&other.0, abs_tol, rel_tol)
     }
 }
 

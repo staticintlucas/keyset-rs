@@ -83,14 +83,16 @@ impl ops::DivAssign for Scale {
     }
 }
 
-impl IsClose<f32> for Scale {
-    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
-    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
+impl IsClose for Scale {
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.x.is_close_impl(&other.x, rel_tol, abs_tol)
-            && self.y.is_close_impl(&other.y, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.x.is_close_tol(&other.x, rel_tol, abs_tol)
+            && self.y.is_close_tol(&other.y, rel_tol, abs_tol)
     }
 }
 
@@ -187,17 +189,19 @@ where
     }
 }
 
-impl<U> IsClose<f32> for Translate<U>
+impl<U> IsClose for Translate<U>
 where
     U: Unit,
 {
-    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
-    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.x.is_close_impl(&other.x, rel_tol, abs_tol)
-            && self.y.is_close_impl(&other.y, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.x.is_close_tol(&other.x, rel_tol, abs_tol)
+            && self.y.is_close_tol(&other.y, rel_tol, abs_tol)
     }
 }
 
@@ -281,13 +285,15 @@ impl ops::SubAssign for Rotate {
     }
 }
 
-impl IsClose<f32> for Rotate {
-    const ABS_TOL: f32 = <Angle as IsClose<f32>>::ABS_TOL;
-    const REL_TOL: f32 = <Angle as IsClose<f32>>::REL_TOL;
+impl IsClose for Rotate {
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.angle.is_close_impl(&other.angle, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.angle.is_close_tol(&other.angle, rel_tol, abs_tol)
     }
 }
 
@@ -425,21 +431,23 @@ where
     }
 }
 
-impl<U> IsClose<f32> for Transform<U>
+impl<U> IsClose for Transform<U>
 where
     U: Unit,
 {
-    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
-    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.a_xx.is_close_impl(&other.a_xx, rel_tol, abs_tol)
-            && self.a_xy.is_close_impl(&other.a_xy, rel_tol, abs_tol)
-            && self.t_x.is_close_impl(&other.t_x, rel_tol, abs_tol)
-            && self.a_yx.is_close_impl(&other.a_yx, rel_tol, abs_tol)
-            && self.a_yy.is_close_impl(&other.a_yy, rel_tol, abs_tol)
-            && self.t_y.is_close_impl(&other.t_y, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.a_xx.is_close_tol(&other.a_xx, rel_tol, abs_tol)
+            && self.a_xy.is_close_tol(&other.a_xy, rel_tol, abs_tol)
+            && self.t_x.is_close_tol(&other.t_x, rel_tol, abs_tol)
+            && self.a_yx.is_close_tol(&other.a_yx, rel_tol, abs_tol)
+            && self.a_yy.is_close_tol(&other.a_yy, rel_tol, abs_tol)
+            && self.t_y.is_close_tol(&other.t_y, rel_tol, abs_tol)
     }
 }
 
@@ -498,15 +506,15 @@ mod tests {
 
     #[test]
     fn scale_is_close() {
-        assert!(Scale { x: 1.0, y: 3.0 }.is_close(Scale {
+        assert!(Scale { x: 1.0, y: 3.0 }.is_close(&Scale {
             x: 2.0 * 0.5,
             y: 1.5 / 0.5
         }));
-        assert!(!Scale { x: 1.0, y: 3.0 }.is_close(Scale {
+        assert!(!Scale { x: 1.0, y: 3.0 }.is_close(&Scale {
             x: 2.1 * 0.5,
             y: 1.5 / 0.5
         }));
-        assert!(!Scale { x: 1.0, y: 3.0 }.is_close(Scale {
+        assert!(!Scale { x: 1.0, y: 3.0 }.is_close(&Scale {
             x: 2.0 * 0.5,
             y: 1.6 / 0.5
         }));
@@ -593,7 +601,7 @@ mod tests {
             x: Mm(1.0),
             y: Mm(3.0)
         }
-        .is_close(Translate {
+        .is_close(&Translate {
             x: Mm(2.0) * 0.5,
             y: Mm(1.5) / 0.5
         }));
@@ -601,7 +609,7 @@ mod tests {
             x: Mm(1.0),
             y: Mm(3.0)
         }
-        .is_close(Translate {
+        .is_close(&Translate {
             x: Mm(2.1) * 0.5,
             y: Mm(1.5) / 0.5
         }));
@@ -609,7 +617,7 @@ mod tests {
             x: Mm(1.0),
             y: Mm(3.0)
         }
-        .is_close(Translate {
+        .is_close(&Translate {
             x: Mm(2.0) * 0.5,
             y: Mm(1.6) / 0.5
         }));
@@ -671,7 +679,7 @@ mod tests {
             Rotate::radians(std::f32::consts::FRAC_PI_2),
             Rotate::degrees(90.0)
         );
-        assert!(!Rotate::radians(1.5).is_close(Rotate::radians(std::f32::consts::FRAC_PI_2)));
+        assert!(!Rotate::radians(1.5).is_close(&Rotate::radians(std::f32::consts::FRAC_PI_2)));
     }
 
     #[test]
@@ -792,7 +800,7 @@ mod tests {
             a_yy: 5.0,
             t_y: Mm(6.0),
         }
-        .is_close(Transform {
+        .is_close(&Transform {
             a_xx: 2.0 * 0.5,
             a_xy: 1.0 * 2.0,
             t_x: Mm(2.0) * 1.5,
@@ -808,7 +816,7 @@ mod tests {
             a_yy: 5.0,
             t_y: Mm(6.0),
         }
-        .is_close(Transform {
+        .is_close(&Transform {
             a_xx: 2.1 * 0.5,
             a_xy: 1.0 * 2.0,
             t_x: Mm(2.0) * 1.5,
@@ -824,7 +832,7 @@ mod tests {
             a_yy: 5.0,
             t_y: Mm(6.0),
         }
-        .is_close(Transform {
+        .is_close(&Transform {
             a_xx: 2.0 * 0.5,
             a_xy: 1.2 * 2.0,
             t_x: Mm(2.0) * 1.5,
@@ -840,7 +848,7 @@ mod tests {
             a_yy: 5.0,
             t_y: Mm(6.0),
         }
-        .is_close(Transform {
+        .is_close(&Transform {
             a_xx: 2.0 * 0.5,
             a_xy: 1.0 * 2.0,
             t_x: Mm(2.1) * 1.5,
@@ -856,7 +864,7 @@ mod tests {
             a_yy: 5.0,
             t_y: Mm(6.0),
         }
-        .is_close(Transform {
+        .is_close(&Transform {
             a_xx: 2.0 * 0.5,
             a_xy: 1.0 * 2.0,
             t_x: Mm(2.0) * 1.5,
@@ -872,7 +880,7 @@ mod tests {
             a_yy: 5.0,
             t_y: Mm(6.0),
         }
-        .is_close(Transform {
+        .is_close(&Transform {
             a_xx: 2.0 * 0.5,
             a_xy: 1.0 * 2.0,
             t_x: Mm(2.0) * 1.5,
@@ -888,7 +896,7 @@ mod tests {
             a_yy: 5.0,
             t_y: Mm(6.0),
         }
-        .is_close(Transform {
+        .is_close(&Transform {
             a_xx: 2.0 * 0.5,
             a_xy: 1.0 * 2.0,
             t_x: Mm(2.0) * 1.5,

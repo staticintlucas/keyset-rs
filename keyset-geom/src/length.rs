@@ -201,16 +201,18 @@ where
     }
 }
 
-impl<U> IsClose<f32> for Length<U>
+impl<U> IsClose for Length<U>
 where
     U: Unit,
 {
-    const ABS_TOL: f32 = <U as IsClose<f32>>::ABS_TOL;
-    const REL_TOL: f32 = <U as IsClose<f32>>::REL_TOL;
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.length.is_close_impl(&other.length, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.length.is_close_tol(&other.length, rel_tol, abs_tol)
     }
 }
 
@@ -338,10 +340,10 @@ mod tests {
 
     #[test]
     fn length_is_close() {
-        assert!(Length { length: Mm(2.5) }.is_close(Length {
+        assert!(Length { length: Mm(2.5) }.is_close(&Length {
             length: Mm(5.0 / 2.0)
         }));
-        assert!(!Length { length: Mm(2.5) }.is_close(Length {
+        assert!(!Length { length: Mm(2.5) }.is_close(&Length {
             length: Mm(5.1 / 2.0)
         }));
     }

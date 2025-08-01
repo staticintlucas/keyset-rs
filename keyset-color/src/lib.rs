@@ -281,15 +281,17 @@ impl Color {
     }
 }
 
-impl IsClose<f32> for Color {
-    const ABS_TOL: f32 = f32::ABS_TOL;
-    const REL_TOL: f32 = f32::REL_TOL;
+impl IsClose for Color {
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.r().is_close_impl(&other.r(), rel_tol, abs_tol)
-            && self.g().is_close_impl(&other.g(), rel_tol, abs_tol)
-            && self.b().is_close_impl(&other.b(), rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.r().is_close_tol(&other.r(), rel_tol, abs_tol)
+            && self.g().is_close_tol(&other.g(), rel_tol, abs_tol)
+            && self.b().is_close_tol(&other.b(), rel_tol, abs_tol)
     }
 }
 

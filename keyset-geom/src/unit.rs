@@ -20,7 +20,7 @@ pub trait Unit:
     + ops::Div<f32, Output = Self>
     + ops::DivAssign<f32>
     + ops::Neg<Output = Self>
-    + IsClose<f32>
+    + IsClose<Self, Tolerance = f32>
 // TODO: seems to trigger rust-lang/rust#96634
 // where
 //     f32: ops::Mul<Self, Output = Self>,
@@ -215,13 +215,15 @@ impl ops::Neg for KeyUnit {
     }
 }
 
-impl IsClose<f32> for KeyUnit {
-    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
-    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
+impl IsClose for KeyUnit {
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_impl(&other.0, abs_tol, rel_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.0.is_close_tol(&other.0, abs_tol, rel_tol)
     }
 }
 
@@ -360,13 +362,15 @@ impl ops::Neg for Dot {
     }
 }
 
-impl IsClose<f32> for Dot {
-    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
-    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
+impl IsClose for Dot {
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_impl(&other.0, abs_tol, rel_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.0.is_close_tol(&other.0, abs_tol, rel_tol)
     }
 }
 
@@ -505,13 +509,15 @@ impl ops::Neg for Mm {
     }
 }
 
-impl IsClose<f32> for Mm {
-    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
-    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
+impl IsClose for Mm {
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_impl(&other.0, abs_tol, rel_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.0.is_close_tol(&other.0, abs_tol, rel_tol)
     }
 }
 
@@ -650,13 +656,15 @@ impl ops::Neg for Inch {
     }
 }
 
-impl IsClose<f32> for Inch {
-    const ABS_TOL: f32 = <f32 as IsClose>::ABS_TOL;
-    const REL_TOL: f32 = <f32 as IsClose>::REL_TOL;
+impl IsClose for Inch {
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_impl(&other.0, abs_tol, rel_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.0.is_close_tol(&other.0, abs_tol, rel_tol)
     }
 }
 
@@ -844,8 +852,8 @@ mod tests {
 
     #[test]
     fn key_unit_is_close() {
-        assert!(KeyUnit(2.5).is_close(KeyUnit(5.0 / 2.0)));
-        assert!(!KeyUnit(2.5).is_close(KeyUnit(5.1 / 2.0)));
+        assert!(KeyUnit(2.5).is_close(&KeyUnit(5.0 / 2.0)));
+        assert!(!KeyUnit(2.5).is_close(&KeyUnit(5.1 / 2.0)));
     }
 
     #[test]
@@ -964,8 +972,8 @@ mod tests {
 
     #[test]
     fn dots_close() {
-        assert!(Dot(2.5).is_close(Dot(5.0 / 2.0)));
-        assert!(!Dot(2.5).is_close(Dot(5.1 / 2.0)));
+        assert!(Dot(2.5).is_close(&Dot(5.0 / 2.0)));
+        assert!(!Dot(2.5).is_close(&Dot(5.1 / 2.0)));
     }
 
     #[test]
@@ -1084,8 +1092,8 @@ mod tests {
 
     #[test]
     fn mm_is_close() {
-        assert!(Mm(2.5).is_close(Mm(5.0 / 2.0)));
-        assert!(!Mm(2.5).is_close(Mm(5.1 / 2.0)));
+        assert!(Mm(2.5).is_close(&Mm(5.0 / 2.0)));
+        assert!(!Mm(2.5).is_close(&Mm(5.1 / 2.0)));
     }
 
     #[test]
@@ -1204,8 +1212,8 @@ mod tests {
 
     #[test]
     fn inch_is_close() {
-        assert!(Inch(2.5).is_close(Inch(5.0 / 2.0)));
-        assert!(!Inch(2.5).is_close(Inch(5.1 / 2.0)));
+        assert!(Inch(2.5).is_close(&Inch(5.0 / 2.0)));
+        assert!(!Inch(2.5).is_close(&Inch(5.1 / 2.0)));
     }
 
     #[test]

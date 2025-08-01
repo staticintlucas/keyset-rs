@@ -256,17 +256,19 @@ where
     }
 }
 
-impl<U> IsClose<f32> for Vector<U>
+impl<U> IsClose for Vector<U>
 where
     U: Unit,
 {
-    const ABS_TOL: f32 = <U as IsClose<f32>>::ABS_TOL;
-    const REL_TOL: f32 = <U as IsClose<f32>>::REL_TOL;
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.x.is_close_impl(&other.x, rel_tol, abs_tol)
-            && self.y.is_close_impl(&other.y, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.x.is_close_tol(&other.x, rel_tol, abs_tol)
+            && self.y.is_close_tol(&other.y, rel_tol, abs_tol)
     }
 }
 
@@ -695,7 +697,7 @@ mod tests {
             x: Mm(2.0),
             y: Mm(3.0)
         }
-        .is_close(Vector {
+        .is_close(&Vector {
             x: Mm(4.0 * 0.5),
             y: Mm(2.0 * 1.5)
         }));
@@ -703,7 +705,7 @@ mod tests {
             x: Mm(2.0),
             y: Mm(3.0)
         }
-        .is_close(Vector {
+        .is_close(&Vector {
             x: Mm(4.1 * 0.5),
             y: Mm(2.0 * 1.5)
         }));
@@ -711,7 +713,7 @@ mod tests {
             x: Mm(2.0),
             y: Mm(3.0)
         }
-        .is_close(Vector {
+        .is_close(&Vector {
             x: Mm(4.0 * 0.5),
             y: Mm(2.1 * 1.5)
         }));

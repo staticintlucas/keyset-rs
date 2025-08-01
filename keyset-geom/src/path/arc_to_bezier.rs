@@ -1,4 +1,4 @@
-use isclose::IsClose as _;
+use isclose::IsClose;
 use saturate::SaturatingFrom as _;
 
 use crate::{Angle, Rotate, Unit, Vector};
@@ -14,7 +14,7 @@ pub fn arc_to_bezier<U: Unit>(
     // Ensure our distance and our radii are large enough
     // If either is 0 we just return a straight line
     let r = r.abs();
-    if d.is_close(Vector::zero()) || r.x.is_close(U::zero()) || r.y.is_close(U::zero()) {
+    if d.is_close(&Vector::zero()) || r.x.is_close(&U::zero()) || r.y.is_close(&U::zero()) {
         cb(d / 3.0, d * (2.0 / 3.0), d);
         return;
     }
@@ -55,7 +55,7 @@ pub fn arc_to_bezier<U: Unit>(
     // }
 
     // Subtract f32::TOLERANCE so 90.0001 deg doesn't become 2 segs
-    let segments = ((dphi / Angle::FRAC_PI_2).abs() - f32::ABS_TOL).ceil();
+    let segments = ((dphi / Angle::FRAC_PI_2).abs() - <f32 as IsClose>::ABS_TOL).ceil();
     let i_segments = u8::saturating_from(segments); // 0 < segments <= 4
     let dphi = dphi / segments;
 
@@ -81,7 +81,7 @@ fn get_center<U: Unit>(laf: bool, sf: bool, d: Vector<U>) -> Vector<U> {
     let expr = d_2x * d_2x + d_2y * d_2y;
     let v = (1.0 - expr) / expr;
 
-    let co = if v.is_close(0.0) {
+    let co = if v.is_close(&0.0) {
         0.0
     } else {
         sign * v.sqrt()

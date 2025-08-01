@@ -150,17 +150,19 @@ where
     }
 }
 
-impl<U> IsClose<f32> for Ellipse<U>
+impl<U> IsClose for Ellipse<U>
 where
     U: Unit,
 {
-    const ABS_TOL: f32 = <U as IsClose<f32>>::ABS_TOL;
-    const REL_TOL: f32 = <U as IsClose<f32>>::REL_TOL;
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.center.is_close_impl(&other.center, rel_tol, abs_tol)
-            && self.radii.is_close_impl(&other.radii, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.center.is_close_tol(&other.center, rel_tol, abs_tol)
+            && self.radii.is_close_tol(&other.radii, rel_tol, abs_tol)
     }
 }
 
@@ -419,7 +421,7 @@ mod tests {
             center: Point::new(1.5, 3.0),
             radii: Vector::new(1.0, 2.0),
         }
-        .is_close(Ellipse {
+        .is_close(&Ellipse {
             center: Point::new(1.0, 2.0) * 1.5,
             radii: Vector::new(2.0, 4.0) / 2.0,
         }));
@@ -427,7 +429,7 @@ mod tests {
             center: Point::new(1.5, 3.0),
             radii: Vector::new(1.0, 2.0),
         }
-        .is_close(Ellipse {
+        .is_close(&Ellipse {
             center: Point::new(1.1, 2.0) * 1.5,
             radii: Vector::new(2.0, 4.0) / 2.0,
         }));
@@ -435,7 +437,7 @@ mod tests {
             center: Point::new(1.5, 3.0),
             radii: Vector::new(1.0, 2.0),
         }
-        .is_close(Ellipse {
+        .is_close(&Ellipse {
             center: Point::new(1.0, 2.1) * 1.5,
             radii: Vector::new(2.0, 4.0) / 2.0,
         }));
@@ -443,7 +445,7 @@ mod tests {
             center: Point::new(1.5, 3.0),
             radii: Vector::new(1.0, 2.0),
         }
-        .is_close(Ellipse {
+        .is_close(&Ellipse {
             center: Point::new(1.0, 2.0) * 1.5,
             radii: Vector::new(2.1, 4.0) / 2.0,
         }));
@@ -451,7 +453,7 @@ mod tests {
             center: Point::new(1.5, 3.0),
             radii: Vector::new(1.0, 2.0),
         }
-        .is_close(Ellipse {
+        .is_close(&Ellipse {
             center: Point::new(1.0, 2.0) * 1.5,
             radii: Vector::new(2.0, 4.1) / 2.0,
         }));

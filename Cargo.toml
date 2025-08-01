@@ -29,7 +29,7 @@ profile = { package = "keyset-profile", path = "keyset-profile", version = "0.3.
 assert_matches = "1.5"
 indoc = "2.0"
 interp = "2.0"
-isclose = "0.2"
+isclose = "0.3"
 itertools = "0.14"
 kle-serial = "0.3"
 log = "0.4"

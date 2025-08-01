@@ -223,17 +223,19 @@ where
     }
 }
 
-impl<U> IsClose<f32> for Rect<U>
+impl<U> IsClose for Rect<U>
 where
     U: Unit,
 {
-    const ABS_TOL: f32 = <U as IsClose<f32>>::ABS_TOL;
-    const REL_TOL: f32 = <U as IsClose<f32>>::REL_TOL;
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.min.is_close_impl(&other.min, rel_tol, abs_tol)
-            && self.max.is_close_impl(&other.max, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.min.is_close_tol(&other.min, rel_tol, abs_tol)
+            && self.max.is_close_tol(&other.max, rel_tol, abs_tol)
     }
 }
 
@@ -536,18 +538,20 @@ where
     }
 }
 
-impl<U> IsClose<f32> for RoundRect<U>
+impl<U> IsClose for RoundRect<U>
 where
     U: Unit,
 {
-    const ABS_TOL: f32 = <U as IsClose<f32>>::ABS_TOL;
-    const REL_TOL: f32 = <U as IsClose<f32>>::REL_TOL;
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.min.is_close_impl(&other.min, rel_tol, abs_tol)
-            && self.max.is_close_impl(&other.max, rel_tol, abs_tol)
-            && self.radii.is_close_impl(&other.radii, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.min.is_close_tol(&other.min, rel_tol, abs_tol)
+            && self.max.is_close_tol(&other.max, rel_tol, abs_tol)
+            && self.radii.is_close_tol(&other.radii, rel_tol, abs_tol)
     }
 }
 
@@ -832,19 +836,21 @@ where
     }
 }
 
-impl<U> IsClose<f32> for OffsetRect<U>
+impl<U> IsClose for OffsetRect<U>
 where
     U: Unit,
 {
-    const ABS_TOL: f32 = <U as IsClose<f32>>::ABS_TOL;
-    const REL_TOL: f32 = <U as IsClose<f32>>::REL_TOL;
+    type Tolerance = f32;
+    const ZERO_TOL: Self::Tolerance = 0.0;
+    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
 
     #[inline]
-    fn is_close_impl(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.top.is_close_impl(&other.top, rel_tol, abs_tol)
-            && self.right.is_close_impl(&other.right, rel_tol, abs_tol)
-            && self.bottom.is_close_impl(&other.bottom, rel_tol, abs_tol)
-            && self.left.is_close_impl(&other.left, rel_tol, abs_tol)
+    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+        self.top.is_close_tol(&other.top, rel_tol, abs_tol)
+            && self.right.is_close_tol(&other.right, rel_tol, abs_tol)
+            && self.bottom.is_close_tol(&other.bottom, rel_tol, abs_tol)
+            && self.left.is_close_tol(&other.left, rel_tol, abs_tol)
     }
 }
 
@@ -1084,7 +1090,7 @@ mod tests {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
         }
-        .is_close(Rect {
+        .is_close(&Rect {
             min: Point::new(0.0, 2.0) * 0.5,
             max: Point::new(1.0, 2.0) * 2.0,
         }));
@@ -1092,7 +1098,7 @@ mod tests {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
         }
-        .is_close(Rect {
+        .is_close(&Rect {
             min: Point::new(0.1, 2.0) * 0.5,
             max: Point::new(1.0, 2.0) * 2.0,
         }));
@@ -1100,7 +1106,7 @@ mod tests {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
         }
-        .is_close(Rect {
+        .is_close(&Rect {
             min: Point::new(0.0, 2.1) * 0.5,
             max: Point::new(1.0, 2.0) * 2.0,
         }));
@@ -1108,7 +1114,7 @@ mod tests {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
         }
-        .is_close(Rect {
+        .is_close(&Rect {
             min: Point::new(0.0, 2.0) * 0.5,
             max: Point::new(1.1, 2.0) * 2.0,
         }));
@@ -1116,7 +1122,7 @@ mod tests {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
         }
-        .is_close(Rect {
+        .is_close(&Rect {
             min: Point::new(0.0, 2.0) * 0.5,
             max: Point::new(1.0, 2.1) * 2.0,
         }));
@@ -1457,7 +1463,7 @@ mod tests {
             max: Point::new(2.0, 4.0),
             radii: Vector::new(0.5, 1.0),
         }
-        .is_close(RoundRect {
+        .is_close(&RoundRect {
             min: Point::new(0.0, 2.0) * 0.5,
             max: Point::new(1.0, 2.0) * 2.0,
             radii: Vector::new(1.5, 3.0) / 3.0,
@@ -1467,7 +1473,7 @@ mod tests {
             max: Point::new(2.0, 4.0),
             radii: Vector::new(0.5, 1.0),
         }
-        .is_close(RoundRect {
+        .is_close(&RoundRect {
             min: Point::new(0.1, 2.0) * 0.5,
             max: Point::new(1.0, 2.0) * 2.0,
             radii: Vector::new(1.5, 3.0) / 3.0,
@@ -1477,7 +1483,7 @@ mod tests {
             max: Point::new(2.0, 4.0),
             radii: Vector::new(0.5, 1.0),
         }
-        .is_close(RoundRect {
+        .is_close(&RoundRect {
             min: Point::new(0.0, 2.1) * 0.5,
             max: Point::new(1.0, 2.0) * 2.0,
             radii: Vector::new(1.5, 3.0) / 3.0,
@@ -1487,7 +1493,7 @@ mod tests {
             max: Point::new(2.0, 4.0),
             radii: Vector::new(0.5, 1.0),
         }
-        .is_close(RoundRect {
+        .is_close(&RoundRect {
             min: Point::new(0.0, 2.0) * 0.5,
             max: Point::new(1.1, 2.0) * 2.0,
             radii: Vector::new(1.5, 3.0) / 3.0,
@@ -1497,7 +1503,7 @@ mod tests {
             max: Point::new(2.0, 4.0),
             radii: Vector::new(0.5, 1.0),
         }
-        .is_close(RoundRect {
+        .is_close(&RoundRect {
             min: Point::new(0.0, 2.0) * 0.5,
             max: Point::new(1.0, 2.1) * 2.0,
             radii: Vector::new(1.5, 3.0) / 3.0,
@@ -1507,7 +1513,7 @@ mod tests {
             max: Point::new(2.0, 4.0),
             radii: Vector::new(0.5, 1.0),
         }
-        .is_close(RoundRect {
+        .is_close(&RoundRect {
             min: Point::new(0.0, 2.0) * 0.5,
             max: Point::new(1.0, 2.0) * 2.0,
             radii: Vector::new(1.6, 3.0) / 3.0,
@@ -1517,7 +1523,7 @@ mod tests {
             max: Point::new(2.0, 4.0),
             radii: Vector::new(0.5, 1.0),
         }
-        .is_close(RoundRect {
+        .is_close(&RoundRect {
             min: Point::new(0.0, 2.0) * 0.5,
             max: Point::new(1.0, 2.0) * 2.0,
             radii: Vector::new(1.5, 3.1) / 3.0,
@@ -1872,7 +1878,7 @@ mod tests {
             bottom: Mm(1.0),
             left: Mm(0.5),
         }
-        .is_close(OffsetRect {
+        .is_close(&OffsetRect {
             top: Mm(1.0) * 2.0,
             right: Mm(3.0) / 2.0,
             bottom: Mm(0.5) * 2.0,
@@ -1884,7 +1890,7 @@ mod tests {
             bottom: Mm(1.0),
             left: Mm(0.5),
         }
-        .is_close(OffsetRect {
+        .is_close(&OffsetRect {
             top: Mm(1.1) * 2.0,
             right: Mm(3.0) / 2.0,
             bottom: Mm(0.5) * 2.0,
@@ -1896,7 +1902,7 @@ mod tests {
             bottom: Mm(1.0),
             left: Mm(0.5),
         }
-        .is_close(OffsetRect {
+        .is_close(&OffsetRect {
             top: Mm(1.0) * 2.0,
             right: Mm(3.1) / 2.0,
             bottom: Mm(0.5) * 2.0,
@@ -1908,7 +1914,7 @@ mod tests {
             bottom: Mm(1.0),
             left: Mm(0.5),
         }
-        .is_close(OffsetRect {
+        .is_close(&OffsetRect {
             top: Mm(1.0) * 2.0,
             right: Mm(3.0) / 2.0,
             bottom: Mm(0.6) * 2.0,
@@ -1920,7 +1926,7 @@ mod tests {
             bottom: Mm(1.0),
             left: Mm(0.5),
         }
-        .is_close(OffsetRect {
+        .is_close(&OffsetRect {
             top: Mm(1.0) * 2.0,
             right: Mm(3.0) / 2.0,
             bottom: Mm(0.5) * 2.0,
