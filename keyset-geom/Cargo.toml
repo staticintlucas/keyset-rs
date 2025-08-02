@@ -23,4 +23,5 @@ workspace = true
 
 [dependencies]
 isclose = { workspace = true, features = ["euclid"] }
+paste.workspace = true
 saturate.workspace = true

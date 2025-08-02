@@ -92,592 +92,197 @@ where
     }
 }
 
-/// Keyboard Unit, usually 19.05 mm or 0.75 in
-#[derive(Clone, Copy, Debug, Default)]
-#[repr(transparent)]
-pub struct KeyUnit(pub f32);
-
-impl KeyUnit {
-    const PER_DOT: f32 = 1.0 / Dot::PER_UNIT;
-    const PER_MM: f32 = 1.0 / Mm::PER_UNIT;
-    const PER_INCH: f32 = 1.0 / Inch::PER_UNIT;
-}
-
-impl ConvertFrom<Dot> for KeyUnit {
-    #[inline]
-    fn convert_from(value: Dot) -> Self {
-        Self(value.0 * Self::PER_DOT)
-    }
-}
-
-impl ConvertFrom<Mm> for KeyUnit {
-    #[inline]
-    fn convert_from(value: Mm) -> Self {
-        Self(value.0 * Self::PER_MM)
-    }
-}
-
-impl ConvertFrom<Inch> for KeyUnit {
-    #[inline]
-    fn convert_from(value: Inch) -> Self {
-        Self(value.0 * Self::PER_INCH)
-    }
-}
-
-impl ops::Add for KeyUnit {
-    type Output = Self;
-
-    #[inline]
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
-    }
-}
-
-impl ops::AddAssign for KeyUnit {
-    #[inline]
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
-    }
-}
-
-impl ops::Sub for KeyUnit {
-    type Output = Self;
-
-    #[inline]
-    fn sub(self, rhs: Self) -> Self {
-        Self(self.0 - rhs.0)
-    }
-}
-
-impl ops::SubAssign for KeyUnit {
-    #[inline]
-    fn sub_assign(&mut self, rhs: Self) {
-        self.0 -= rhs.0;
-    }
-}
-
-impl ops::Mul<f32> for KeyUnit {
-    type Output = Self;
-
-    #[inline]
-    fn mul(self, rhs: f32) -> Self {
-        Self(self.0 * rhs)
-    }
-}
-
-impl ops::Mul<KeyUnit> for f32 {
-    type Output = KeyUnit;
-
-    #[inline]
-    fn mul(self, rhs: KeyUnit) -> KeyUnit {
-        KeyUnit(self * rhs.0)
-    }
-}
-
-impl ops::MulAssign<f32> for KeyUnit {
-    #[inline]
-    fn mul_assign(&mut self, rhs: f32) {
-        self.0 *= rhs;
-    }
-}
-
-impl ops::Div for KeyUnit {
-    type Output = f32;
-
-    #[inline]
-    fn div(self, rhs: Self) -> f32 {
-        self.0 / rhs.0
-    }
-}
-
-impl ops::Div<f32> for KeyUnit {
-    type Output = Self;
-
-    #[inline]
-    fn div(self, rhs: f32) -> Self {
-        Self(self.0 / rhs)
-    }
-}
-
-impl ops::DivAssign<f32> for KeyUnit {
-    #[inline]
-    fn div_assign(&mut self, rhs: f32) {
-        self.0 /= rhs;
-    }
-}
-
-impl ops::Neg for KeyUnit {
-    type Output = Self;
-
-    #[inline]
-    fn neg(self) -> Self {
-        Self(-self.0)
-    }
-}
-
-impl IsClose for KeyUnit {
-    type Tolerance = f32;
-    const ZERO_TOL: Self::Tolerance = 0.0;
-    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
-    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
-
-    #[inline]
-    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_tol(&other.0, abs_tol, rel_tol)
-    }
-}
-
-impl Unit for KeyUnit {
-    #[inline]
-    fn new(value: f32) -> Self {
-        Self(value)
-    }
-
-    #[inline]
-    fn get(self) -> f32 {
-        self.0
-    }
-}
-
-/// Dot, a.k.a. drawing unit
-#[derive(Clone, Copy, Debug, Default)]
-#[repr(transparent)]
-pub struct Dot(pub f32);
-
-impl Dot {
-    const PER_UNIT: f32 = 1000.0;
-    const PER_MM: f32 = Self::PER_UNIT / Mm::PER_UNIT;
-    const PER_INCH: f32 = Self::PER_UNIT / Inch::PER_UNIT;
-}
-
-impl ConvertFrom<KeyUnit> for Dot {
-    #[inline]
-    fn convert_from(value: KeyUnit) -> Self {
-        Self(value.0 * Self::PER_UNIT)
-    }
-}
-
-impl ConvertFrom<Mm> for Dot {
-    #[inline]
-    fn convert_from(value: Mm) -> Self {
-        Self(value.0 * Self::PER_MM)
-    }
-}
-
-impl ConvertFrom<Inch> for Dot {
-    #[inline]
-    fn convert_from(value: Inch) -> Self {
-        Self(value.0 * Self::PER_INCH)
-    }
-}
-
-impl ops::Add for Dot {
-    type Output = Self;
-
-    #[inline]
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
-    }
-}
-
-impl ops::AddAssign for Dot {
-    #[inline]
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
-    }
-}
-
-impl ops::Sub for Dot {
-    type Output = Self;
-
-    #[inline]
-    fn sub(self, rhs: Self) -> Self {
-        Self(self.0 - rhs.0)
-    }
-}
-
-impl ops::SubAssign for Dot {
-    #[inline]
-    fn sub_assign(&mut self, rhs: Self) {
-        self.0 -= rhs.0;
-    }
-}
-
-impl ops::Mul<f32> for Dot {
-    type Output = Self;
-
-    #[inline]
-    fn mul(self, rhs: f32) -> Self {
-        Self(self.0 * rhs)
-    }
-}
-
-impl ops::Mul<Dot> for f32 {
-    type Output = Dot;
-
-    #[inline]
-    fn mul(self, rhs: Dot) -> Dot {
-        Dot(self * rhs.0)
-    }
-}
-
-impl ops::MulAssign<f32> for Dot {
-    #[inline]
-    fn mul_assign(&mut self, rhs: f32) {
-        self.0 *= rhs;
-    }
-}
-
-impl ops::Div for Dot {
-    type Output = f32;
-
-    #[inline]
-    fn div(self, rhs: Self) -> f32 {
-        self.0 / rhs.0
-    }
-}
-
-impl ops::Div<f32> for Dot {
-    type Output = Self;
-
-    #[inline]
-    fn div(self, rhs: f32) -> Self {
-        Self(self.0 / rhs)
-    }
-}
-
-impl ops::DivAssign<f32> for Dot {
-    #[inline]
-    fn div_assign(&mut self, rhs: f32) {
-        self.0 /= rhs;
-    }
-}
-
-impl ops::Neg for Dot {
-    type Output = Self;
-
-    #[inline]
-    fn neg(self) -> Self {
-        Self(-self.0)
-    }
-}
-
-impl IsClose for Dot {
-    type Tolerance = f32;
-    const ZERO_TOL: Self::Tolerance = 0.0;
-    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
-    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
-
-    #[inline]
-    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_tol(&other.0, abs_tol, rel_tol)
-    }
-}
-
-impl Unit for Dot {
-    #[inline]
-    fn new(value: f32) -> Self {
-        Self(value)
-    }
-
-    #[inline]
-    fn get(self) -> f32 {
-        self.0
-    }
-}
-
-/// Millimeter
-#[derive(Clone, Copy, Debug, Default)]
-#[repr(transparent)]
-pub struct Mm(pub f32);
-
-impl Mm {
-    const PER_UNIT: f32 = 19.05;
-    const PER_DOT: f32 = Self::PER_UNIT / Dot::PER_UNIT;
-    const PER_INCH: f32 = Self::PER_UNIT / Inch::PER_UNIT;
-}
-
-impl ConvertFrom<KeyUnit> for Mm {
-    #[inline]
-    fn convert_from(value: KeyUnit) -> Self {
-        Self(value.0 * Self::PER_UNIT)
-    }
-}
-
-impl ConvertFrom<Dot> for Mm {
-    #[inline]
-    fn convert_from(value: Dot) -> Self {
-        Self(value.0 * Self::PER_DOT)
-    }
-}
-
-impl ConvertFrom<Inch> for Mm {
-    #[inline]
-    fn convert_from(value: Inch) -> Self {
-        Self(value.0 * Self::PER_INCH)
-    }
-}
-
-impl ops::Add for Mm {
-    type Output = Self;
-
-    #[inline]
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
-    }
-}
-
-impl ops::AddAssign for Mm {
-    #[inline]
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
-    }
-}
-
-impl ops::Sub for Mm {
-    type Output = Self;
-
-    #[inline]
-    fn sub(self, rhs: Self) -> Self {
-        Self(self.0 - rhs.0)
-    }
-}
-
-impl ops::SubAssign for Mm {
-    #[inline]
-    fn sub_assign(&mut self, rhs: Self) {
-        self.0 -= rhs.0;
-    }
-}
-
-impl ops::Mul<f32> for Mm {
-    type Output = Self;
-
-    #[inline]
-    fn mul(self, rhs: f32) -> Self {
-        Self(self.0 * rhs)
-    }
-}
-
-impl ops::Mul<Mm> for f32 {
-    type Output = Mm;
-
-    #[inline]
-    fn mul(self, rhs: Mm) -> Mm {
-        Mm(self * rhs.0)
-    }
-}
-
-impl ops::MulAssign<f32> for Mm {
-    #[inline]
-    fn mul_assign(&mut self, rhs: f32) {
-        self.0 *= rhs;
-    }
-}
-
-impl ops::Div for Mm {
-    type Output = f32;
-
-    #[inline]
-    fn div(self, rhs: Self) -> f32 {
-        self.0 / rhs.0
-    }
-}
-
-impl ops::Div<f32> for Mm {
-    type Output = Self;
-
-    #[inline]
-    fn div(self, rhs: f32) -> Self {
-        Self(self.0 / rhs)
-    }
-}
-
-impl ops::DivAssign<f32> for Mm {
-    #[inline]
-    fn div_assign(&mut self, rhs: f32) {
-        self.0 /= rhs;
-    }
-}
-
-impl ops::Neg for Mm {
-    type Output = Self;
-
-    #[inline]
-    fn neg(self) -> Self {
-        Self(-self.0)
-    }
-}
-
-impl IsClose for Mm {
-    type Tolerance = f32;
-    const ZERO_TOL: Self::Tolerance = 0.0;
-    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
-    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
-
-    #[inline]
-    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_tol(&other.0, abs_tol, rel_tol)
-    }
-}
-
-impl Unit for Mm {
-    #[inline]
-    fn new(value: f32) -> Self {
-        Self(value)
-    }
-
-    #[inline]
-    fn get(self) -> f32 {
-        self.0
-    }
-}
-
-/// Inch
-#[derive(Clone, Copy, Debug, Default)]
-#[repr(transparent)]
-pub struct Inch(pub f32);
-
-impl Inch {
-    const PER_UNIT: f32 = 0.75;
-    const PER_DOT: f32 = Self::PER_UNIT / Dot::PER_UNIT;
-    const PER_MM: f32 = Self::PER_UNIT / Mm::PER_UNIT;
-}
-
-impl ConvertFrom<KeyUnit> for Inch {
-    #[inline]
-    fn convert_from(value: KeyUnit) -> Self {
-        Self(value.0 * Self::PER_UNIT)
-    }
-}
-
-impl ConvertFrom<Dot> for Inch {
-    #[inline]
-    fn convert_from(value: Dot) -> Self {
-        Self(value.0 * Self::PER_DOT)
-    }
-}
-
-impl ConvertFrom<Mm> for Inch {
-    #[inline]
-    fn convert_from(value: Mm) -> Self {
-        Self(value.0 * Self::PER_MM)
-    }
-}
-
-impl ops::Add for Inch {
-    type Output = Self;
-
-    #[inline]
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
-    }
-}
-
-impl ops::AddAssign for Inch {
-    #[inline]
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
-    }
-}
-
-impl ops::Sub for Inch {
-    type Output = Self;
-
-    #[inline]
-    fn sub(self, rhs: Self) -> Self {
-        Self(self.0 - rhs.0)
-    }
-}
-
-impl ops::SubAssign for Inch {
-    #[inline]
-    fn sub_assign(&mut self, rhs: Self) {
-        self.0 -= rhs.0;
-    }
-}
-
-impl ops::Mul<f32> for Inch {
-    type Output = Self;
-
-    #[inline]
-    fn mul(self, rhs: f32) -> Self {
-        Self(self.0 * rhs)
-    }
-}
-
-impl ops::Mul<Inch> for f32 {
-    type Output = Inch;
-
-    #[inline]
-    fn mul(self, rhs: Inch) -> Inch {
-        Inch(self * rhs.0)
-    }
-}
-
-impl ops::MulAssign<f32> for Inch {
-    #[inline]
-    fn mul_assign(&mut self, rhs: f32) {
-        self.0 *= rhs;
-    }
-}
-
-impl ops::Div for Inch {
-    type Output = f32;
-
-    #[inline]
-    fn div(self, rhs: Self) -> f32 {
-        self.0 / rhs.0
-    }
-}
-
-impl ops::Div<f32> for Inch {
-    type Output = Self;
-
-    #[inline]
-    fn div(self, rhs: f32) -> Self {
-        Self(self.0 / rhs)
-    }
-}
-
-impl ops::DivAssign<f32> for Inch {
-    #[inline]
-    fn div_assign(&mut self, rhs: f32) {
-        self.0 /= rhs;
-    }
-}
-
-impl ops::Neg for Inch {
-    type Output = Self;
-
-    #[inline]
-    fn neg(self) -> Self {
-        Self(-self.0)
-    }
-}
-
-impl IsClose for Inch {
-    type Tolerance = f32;
-    const ZERO_TOL: Self::Tolerance = 0.0;
-    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
-    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
-
-    #[inline]
-    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.0.is_close_tol(&other.0, abs_tol, rel_tol)
-    }
-}
-
-impl Unit for Inch {
-    #[inline]
-    fn new(value: f32) -> Self {
-        Self(value)
-    }
-
-    #[inline]
-    fn get(self) -> f32 {
-        self.0
-    }
+/// Declares a unit system used for all types in the geom crate.
+///
+/// Each unit is given a name and an equivalent measure which is used to
+/// implement conversion functions. Each unit can also optionally be given a
+/// set of attributes (for doc comments, for example) and a visibility.
+///
+/// # Example
+///
+/// ```
+/// declare_units! {
+///     #[doc  = "Keyboard Unit, usually 19.05 mm or 0.75 in"]
+///     pub KeyUnit = 1.0;
+///
+///     #[doc  = "Dot, a.k.a. drawing unit"]
+///     pub Dot = 1000.0;
+///
+///     #[doc = "Millimeter"]
+///     pub Mm = 19.05;
+///
+///     #[doc = "Inch"]
+///     pub Inch = 0.75;
+/// }
+/// ```
+#[macro_export]
+macro_rules! declare_units {
+    ($($(#[$attr:meta])* $vis:vis $name:ident = $conv:literal);+ $(;)?) => {
+        macro_rules! per_consts {
+            ($self_name:ident, $self_conv:literal) => {
+                impl $self_name {
+                    $crate::__paste! {
+                        $(const [<PER_ $name:snake:upper>]: f32 = $self_conv / $conv;)+
+                    }
+                }
+            }
+        }
+
+        macro_rules! convert_from_impls {
+            ($self_name:ident) => {
+                $(
+                    impl $crate::ConvertFrom<$name> for $self_name {
+                        #[inline]
+                        fn convert_from(value: $name) -> Self {
+                            $crate::__paste! {
+                                Self(value.0 * Self::[<PER_ $name:snake:upper>])
+                            }
+                        }
+                    }
+                )+
+            }
+        }
+
+        $(
+            $(#[$attr])*
+            #[derive(Clone, Copy, Debug, Default)]
+            #[repr(transparent)]
+            $vis struct $name (pub f32);
+
+            per_consts!($name, $conv);
+
+            convert_from_impls!($name);
+
+            impl ::std::ops::Add for $name {
+                type Output = Self;
+
+                #[inline]
+                fn add(self, rhs: Self) -> Self::Output {
+                    Self(self.0 + rhs.0)
+                }
+            }
+
+            impl ::std::ops::AddAssign for $name {
+                #[inline]
+                fn add_assign(&mut self, rhs: Self) {
+                    self.0 += rhs.0;
+                }
+            }
+
+            impl ::std::ops::Sub for $name {
+                type Output = Self;
+
+                #[inline]
+                fn sub(self, rhs: Self) -> Self {
+                    Self(self.0 - rhs.0)
+                }
+            }
+
+            impl ::std::ops::SubAssign for $name {
+                #[inline]
+                fn sub_assign(&mut self, rhs: Self) {
+                    self.0 -= rhs.0;
+                }
+            }
+
+            impl ::std::ops::Mul<f32> for $name {
+                type Output = Self;
+
+                #[inline]
+                fn mul(self, rhs: f32) -> Self {
+                    Self(self.0 * rhs)
+                }
+            }
+
+            impl ::std::ops::Mul<$name> for f32 {
+                type Output = $name;
+
+                #[inline]
+                fn mul(self, rhs: $name) -> $name {
+                    $name(self * rhs.0)
+                }
+            }
+
+            impl ::std::ops::MulAssign<f32> for $name {
+                #[inline]
+                fn mul_assign(&mut self, rhs: f32) {
+                    self.0 *= rhs;
+                }
+            }
+
+            impl ::std::ops::Div for $name {
+                type Output = f32;
+
+                #[inline]
+                fn div(self, rhs: Self) -> f32 {
+                    self.0 / rhs.0
+                }
+            }
+
+            impl ::std::ops::Div<f32> for $name {
+                type Output = Self;
+
+                #[inline]
+                fn div(self, rhs: f32) -> Self {
+                    Self(self.0 / rhs)
+                }
+            }
+
+            impl ::std::ops::DivAssign<f32> for $name {
+                #[inline]
+                fn div_assign(&mut self, rhs: f32) {
+                    self.0 /= rhs;
+                }
+            }
+
+            impl ::std::ops::Neg for $name {
+                type Output = Self;
+
+                #[inline]
+                fn neg(self) -> Self {
+                    Self(-self.0)
+                }
+            }
+
+            impl $crate::__IsClose for $name {
+                type Tolerance = f32;
+                const ZERO_TOL: Self::Tolerance = 0.0;
+                const ABS_TOL: Self::Tolerance = <Self::Tolerance as $crate::__IsClose>::ABS_TOL;
+                const REL_TOL: Self::Tolerance = <Self::Tolerance as $crate::__IsClose>::REL_TOL;
+
+                #[inline]
+                fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+                    self.0.is_close_tol(&other.0, abs_tol, rel_tol)
+                }
+            }
+
+            impl $crate::Unit for $name {
+                #[inline]
+                fn new(value: f32) -> Self {
+                    Self(value)
+                }
+
+                #[inline]
+                fn get(self) -> f32 {
+                    self.0
+                }
+            }
+        )+
+    };
+}
+
+declare_units! {
+    #[doc  = "Keyboard Unit, usually 19.05 mm or 0.75 in"]
+    pub KeyUnit = 1.0;
+
+    #[doc  = "Dot, a.k.a. drawing unit"]
+    pub Dot = 1000.0;
+
+    #[doc = "Millimeter"]
+    pub Mm = 19.05;
+
+    #[doc = "Inch"]
+    pub Inch = 0.75;
 }
 
 /// A conversion between two units
