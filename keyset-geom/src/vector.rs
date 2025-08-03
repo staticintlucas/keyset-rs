@@ -66,6 +66,26 @@ where
         }
     }
 
+    /// Negate only the `x` coordinate of the vector
+    #[inline]
+    #[must_use]
+    pub fn neg_x(self) -> Self {
+        Self {
+            x: -self.x,
+            y: self.y,
+        }
+    }
+
+    /// Negate only the `y` coordinate of the vector
+    #[inline]
+    #[must_use]
+    pub fn neg_y(self) -> Self {
+        Self {
+            x: self.x,
+            y: -self.y,
+        }
+    }
+
     /// Returns the minimum values `x` and `y` components from `self` and `other`
     #[inline]
     #[must_use]
@@ -505,6 +525,28 @@ mod tests {
         .swap_xy();
         assert_is_close!(vector.x, Mm(3.0));
         assert_is_close!(vector.y, Mm(2.0));
+    }
+
+    #[test]
+    fn vector_neg_x() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        }
+        .neg_x();
+        assert_is_close!(vector.x, Mm(-2.0));
+        assert_is_close!(vector.y, Mm(3.0));
+    }
+
+    #[test]
+    fn vector_neg_y() {
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        }
+        .neg_y();
+        assert_is_close!(vector.x, Mm(2.0));
+        assert_is_close!(vector.y, Mm(-3.0));
     }
 
     #[test]

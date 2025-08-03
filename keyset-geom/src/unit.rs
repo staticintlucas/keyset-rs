@@ -12,6 +12,8 @@ pub trait Unit:
     + Copy
     + Clone
     + Debug
+    + PartialEq
+    + PartialOrd
     + ops::Add<Self, Output = Self>
     + ops::AddAssign<Self>
     + ops::Sub<Self, Output = Self>
@@ -146,7 +148,7 @@ macro_rules! declare_units {
 
         $(
             $(#[$attr])*
-            #[derive(Clone, Copy, Debug, Default)]
+            #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
             #[repr(transparent)]
             $vis struct $name (pub f32);
 
