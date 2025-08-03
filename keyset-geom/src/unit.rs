@@ -394,7 +394,7 @@ where
     /// Apply the given scaling factors after the current conversion
     #[inline]
     #[must_use]
-    pub const fn then_scale(self, x: f32, y: f32) -> Self {
+    pub fn then_scale(self, x: f32, y: f32) -> Self {
         Self {
             a_xx: self.a_xx * x,
             a_xy: self.a_xy * x,
@@ -440,7 +440,7 @@ where
     /// Apply the given scaling factors before the current conversion
     #[inline]
     #[must_use]
-    pub const fn pre_scale(self, x: f32, y: f32) -> Self {
+    pub fn pre_scale(self, x: f32, y: f32) -> Self {
         Self {
             a_xx: self.a_xx * x,
             a_xy: self.a_xy * x,
