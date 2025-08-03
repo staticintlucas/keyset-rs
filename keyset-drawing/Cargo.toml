@@ -36,7 +36,7 @@ log.workspace = true
 miniz_oxide = { workspace = true, optional = true }
 pdf-writer = { workspace = true, optional = true }
 saturate.workspace = true
-tiny-skia = { workspace = true, features = ["default"], optional = true }
+tiny-skia = { workspace = true, optional = true }
 svg = { workspace = true, optional = true }
 
 [dev-dependencies]

@@ -30,4 +30,4 @@ saturate.workspace = true
 
 [dev-dependencies]
 assert_matches.workspace = true
-isclose = { workspace = true, features = ["euclid"] }
+isclose.workspace = true

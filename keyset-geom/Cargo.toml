@@ -22,6 +22,6 @@ rustdoc-args = ["--html-in-header", "katex.html"]
 workspace = true
 
 [dependencies]
-isclose = { workspace = true, features = ["euclid"] }
+isclose.workspace = true
 paste.workspace = true
 saturate.workspace = true
