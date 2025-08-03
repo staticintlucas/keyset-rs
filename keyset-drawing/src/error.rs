@@ -1,6 +1,6 @@
 use std::fmt;
 
-use geom::Size;
+use geom::Vector;
 
 #[cfg(feature = "png")]
 use crate::png::Pixel;
@@ -11,7 +11,7 @@ use crate::png::Pixel;
 pub enum Error {
     /// The drawing is larger than the maximum PNG dimensions
     #[cfg(feature = "png")]
-    PngDimensionsError(Size<Pixel>),
+    PngDimensionsError(Vector<Pixel>),
 }
 
 impl fmt::Display for Error {

@@ -20,7 +20,7 @@ use geom::{Angle, Length, Path, PathBuilder, Vector};
 
 pub use self::error::{Error, Result};
 use self::face::Face;
-use self::unit::FontUnit;
+pub use self::unit::FontUnit;
 
 /// A parsed font
 #[derive(Debug, Clone)]

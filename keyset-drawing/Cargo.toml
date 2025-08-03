@@ -41,5 +41,5 @@ svg = { workspace = true, optional = true }
 
 [dev-dependencies]
 indoc.workspace = true
-isclose = { workspace = true, features = ["euclid"] }
+isclose.workspace = true
 itertools.workspace = true

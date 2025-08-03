@@ -1,17 +1,19 @@
 use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
-use pdf_writer::{Content, Filter, Finish as _, Pdf, Rect, Ref, TextStr};
+use pdf_writer::{Content, Filter, Finish as _, Pdf, Rect as PdfRect, Ref, TextStr};
 
 use geom::{
-    Dot, PathSegment, Point, Scale, ToTransform as _, Transform, Unit as _, Vector, DOT_PER_INCH,
-    DOT_PER_UNIT,
+    declare_units, Conversion, ConvertFrom as _, ConvertInto as _, Dot, PathSegment, Point,
+    Unit as _, Vector,
 };
 
 use crate::{Drawing, KeyDrawing, KeyPath};
 
-#[derive(Debug, Clone, Copy)]
-struct PdfUnit;
+declare_units! {
+    pub PdfUnit = 1.0;
+}
 
-const PDF_SCALE: Scale<Dot, PdfUnit> = Scale::new(72.0 / DOT_PER_INCH.0); // PDF uses 72 dpi
+const PDF_DPI: f32 = 72.0; // PDF uses 72 dpi
+const PDF_SCALE: f32 = PDF_DPI / Dot::PER_INCH;
 const COMPRESSION_LEVEL: u8 = CompressionLevel::DefaultLevel as u8;
 
 struct RefGen(i32);
@@ -28,8 +30,12 @@ impl RefGen {
 }
 
 pub fn draw(drawing: &Drawing) -> Vec<u8> {
-    let scale = PDF_SCALE * Scale::<PdfUnit, PdfUnit>::new(drawing.scale);
-    let size = drawing.bounds.size() * DOT_PER_UNIT * scale;
+    let scale = PDF_SCALE * drawing.scale;
+    let size = Vector::<Dot>::convert_from(drawing.bounds.size());
+
+    // Flip origin since PDF has rising Y axis
+    let conv = Conversion::from_translate(0.0, size.y.get()).then_scale(scale, -scale);
+    let size: Vector<PdfUnit> = size * conv;
 
     let mut ref_gen = RefGen::new();
 
@@ -47,20 +53,15 @@ pub fn draw(drawing: &Drawing) -> Vec<u8> {
 
     writer
         .page(page_id)
-        .media_box(Rect::new(0.0, 0.0, size.width, size.height))
+        .media_box(PdfRect::new(0.0, 0.0, size.x.get(), size.x.get()))
         .parent(tree_id)
         .contents(content_id)
         .finish();
 
     let mut content = Content::new();
 
-    // Flip origin since PDF has rising Y axis
-    let transform = scale
-        .to_transform()
-        .then_scale(1.0, -1.0)
-        .then_translate(Vector::new(0.0, size.height));
     for key in &drawing.keys {
-        draw_key(&mut content, key, transform);
+        draw_key(&mut content, key, conv);
     }
 
     let data = compress_to_vec_zlib(&content.finish(), COMPRESSION_LEVEL);
@@ -79,44 +80,60 @@ pub fn draw(drawing: &Drawing) -> Vec<u8> {
     writer.finish()
 }
 
-fn draw_key(content: &mut Content, key: &KeyDrawing, transform: Transform<Dot, PdfUnit>) {
-    let transform = (key.origin.to_vector() * DOT_PER_UNIT)
-        .to_transform()
-        .then(&transform);
+fn draw_key(content: &mut Content, key: &KeyDrawing, conv: Conversion<PdfUnit, Dot>) {
+    // Convert global conversion to local (per-key) conversion
+    let conv = conv.pre_translate(Vector::from_units(
+        key.origin.x.convert_into(),
+        key.origin.y.convert_into(),
+    ));
     for path in &key.paths {
-        draw_path(content, path, transform);
+        draw_path(content, path, conv);
     }
 }
 
-fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, PdfUnit>) {
+fn draw_path(content: &mut Content, path: &KeyPath, conv: Conversion<PdfUnit, Dot>) {
     // origin needed for close; previous point needed for distance => point and quad => cubic
     // Bézier conversion
     let mut origin = Point::origin();
     let mut point = Point::origin();
 
     for &el in &path.data {
-        let el = el * transform;
+        let el = el * conv;
         match el {
             PathSegment::Move(p) => {
-                _ = content.move_to(p.x, p.y);
+                _ = content.move_to(p.x.get(), p.y.get());
                 origin = p;
                 point = p;
             }
             PathSegment::Line(d) => {
                 let p = point + d;
-                _ = content.line_to(p.x, p.y);
+                _ = content.line_to(p.x.get(), p.y.get());
                 point = p;
             }
             PathSegment::CubicBezier(d1, d2, d) => {
                 let (p1, p2, p) = (point + d1, point + d2, point + d);
-                _ = content.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
+                _ = content.cubic_to(
+                    p1.x.get(),
+                    p1.y.get(),
+                    p2.x.get(),
+                    p2.y.get(),
+                    p.x.get(),
+                    p.y.get(),
+                );
                 point = p;
             }
             PathSegment::QuadraticBezier(d1, d) => {
                 // Convert quad to cubic since PostScript doesn't have quadratic Béziers
                 let (d1, d2) = (d1 * (2.0 / 3.0), d + (d1 - d) * (2.0 / 3.0));
                 let (p1, p2, p) = (point + d1, point + d2, point + d);
-                _ = content.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
+                _ = content.cubic_to(
+                    p1.x.get(),
+                    p1.y.get(),
+                    p2.x.get(),
+                    p2.y.get(),
+                    p.x.get(),
+                    p.y.get(),
+                );
                 point = p;
             }
             PathSegment::Close => {
@@ -135,9 +152,7 @@ fn draw_path(content: &mut Content, path: &KeyPath, transform: Transform<Dot, Pd
         let (r, g, b) = outline.color.into();
         _ = content.set_stroke_rgb(r, g, b);
         // Use mean of x and y scales
-        let scale = (f32::hypot(transform.m11, transform.m21)
-            + f32::hypot(transform.m12, transform.m22))
-            / 2.0;
+        let scale = (f32::hypot(conv.a_xx, conv.a_yx) + f32::hypot(conv.a_xy, conv.a_yy)) / 2.0;
         _ = content.set_line_width((outline.width * scale).length.get());
     }
 

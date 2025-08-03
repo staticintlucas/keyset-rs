@@ -17,8 +17,8 @@ use interp::{interp_array, InterpMode};
 use saturate::SaturatingFrom as _;
 
 use geom::{
-    ConvertInto as _, Dot, ExtRect as _, Inch, KeyUnit, Length, Mm, Point, Rect, RoundRect,
-    SideOffsets, Size, Unit as _, Vector, DOT_PER_INCH, DOT_PER_UNIT,
+    ConvertFrom as _, ConvertInto as _, Dot, Inch, KeyUnit, Length, Mm, OffsetRect, Point, Rect,
+    RoundRect, Unit as _, Vector,
 };
 use key::Homing;
 
@@ -72,7 +72,7 @@ pub struct ScoopProps {
 #[derive(Debug, Clone, Copy)]
 pub struct BarProps {
     /// The size of the bar
-    pub size: Size<Dot>,
+    pub size: Vector<Dot>,
     /// The length of the bar from the center of the key top
     pub y_offset: Length<Dot>,
 }
@@ -123,7 +123,7 @@ impl Default for HomingProps {
                 depth: Type::default().depth() * 2.0, // 2x the regular depth
             },
             bar: BarProps {
-                size: Size::<Inch>::new(0.15, 0.02) * DOT_PER_INCH,
+                size: Vector::<Inch>::new(0.15, 0.02).convert_into(),
                 y_offset: Length::<Inch>::new(0.25).convert_into(),
             },
             bump: BumpProps {
@@ -193,9 +193,9 @@ impl Default for TextHeight {
 }
 
 /// Text margin mapping. This maps a [`usize`] index (used by KLE for example)
-/// to a [`SideOffsets`] for the text alignment relative to the key top
+/// to a [`OffsetRect`] for the text alignment relative to the key top
 #[derive(Debug, Clone, Copy)]
-pub struct TextMargin([SideOffsets<Dot>; Self::NUM_RECTS]);
+pub struct TextMargin([OffsetRect<Dot>; Self::NUM_RECTS]);
 
 impl TextMargin {
     const NUM_RECTS: usize = 10;
@@ -203,7 +203,7 @@ impl TextMargin {
     /// Create a new [`TextMargin`] mapping from a [`HashMap`]
     #[inline]
     #[must_use]
-    pub fn new(offsets: &HashMap<usize, SideOffsets<Dot>>) -> Self {
+    pub fn new(offsets: &HashMap<usize, OffsetRect<Dot>>) -> Self {
         // Get an array of all the offsets
         let mut offsets = array::from_fn(|i| offsets.get(&i));
 
@@ -238,7 +238,7 @@ impl TextMargin {
     /// Get the text alignment for the given index relative to the key top
     #[inline]
     #[must_use]
-    pub const fn get(&self, size_index: usize) -> SideOffsets<Dot> {
+    pub const fn get(&self, size_index: usize) -> OffsetRect<Dot> {
         if size_index < self.0.len() {
             self.0[size_index]
         } else {
@@ -250,7 +250,7 @@ impl TextMargin {
 impl Default for TextMargin {
     #[inline]
     fn default() -> Self {
-        Self([SideOffsets::<KeyUnit>::new_all_same(0.05) * DOT_PER_UNIT; Self::NUM_RECTS])
+        Self([OffsetRect::<KeyUnit>::splat(0.05).convert_into(); Self::NUM_RECTS])
     }
 }
 
@@ -258,7 +258,7 @@ impl Default for TextMargin {
 #[derive(Debug, Clone, Copy)]
 pub struct TopSurface {
     /// The size of the key top
-    pub size: Size<Dot>,
+    pub size: Vector<Dot>,
     /// The corner radius for the key top
     pub radius: Length<Dot>,
     /// The offset of the key top relative to the key bottom
@@ -268,13 +268,14 @@ pub struct TopSurface {
 impl TopSurface {
     pub(crate) fn rect(&self) -> Rect<Dot> {
         Rect::from_center_and_size(
-            (Point::new(0.5, 0.5) * DOT_PER_UNIT) + Vector::new(0.0, self.y_offset.length.get()),
+            Point::<Dot>::convert_from(Point::<KeyUnit>::splat(0.5))
+                + Vector::new(0.0, self.y_offset.length.get()),
             self.size,
         )
     }
 
     pub(crate) fn round_rect(&self) -> RoundRect<Dot> {
-        RoundRect::from_rect(self.rect(), self.radius)
+        RoundRect::from_rect_and_radii(self.rect(), Vector::splat(self.radius.length.get()))
     }
 }
 
@@ -282,7 +283,7 @@ impl Default for TopSurface {
     #[inline]
     fn default() -> Self {
         Self {
-            size: Size::<KeyUnit>::new(0.660, 0.735) * DOT_PER_UNIT,
+            size: Vector::<KeyUnit>::new(0.660, 0.735).convert_into(),
             radius: Length::<KeyUnit>::new(0.065).convert_into(),
             y_offset: Length::<KeyUnit>::new(-0.0775).convert_into(),
         }
@@ -293,18 +294,18 @@ impl Default for TopSurface {
 #[derive(Debug, Clone, Copy)]
 pub struct BottomSurface {
     /// The size of the key bottom
-    pub size: Size<Dot>,
+    pub size: Vector<Dot>,
     /// The corner radius of the key bottom
     pub radius: Length<Dot>,
 }
 
 impl BottomSurface {
     pub(crate) fn rect(&self) -> Rect<Dot> {
-        Rect::from_center_and_size(Point::<KeyUnit>::new(0.5, 0.5) * DOT_PER_UNIT, self.size)
+        Rect::from_center_and_size(Point::<KeyUnit>::new(0.5, 0.5).convert_into(), self.size)
     }
 
     pub(crate) fn round_rect(&self) -> RoundRect<Dot> {
-        RoundRect::from_rect(self.rect(), self.radius)
+        RoundRect::from_rect_and_radii(self.rect(), Vector::splat(self.radius.length.get()))
     }
 }
 
@@ -312,7 +313,7 @@ impl Default for BottomSurface {
     #[inline]
     fn default() -> Self {
         Self {
-            size: Size::<KeyUnit>::splat(0.95) * DOT_PER_UNIT,
+            size: Vector::<KeyUnit>::splat(0.95).convert_into(),
             radius: Length::<KeyUnit>::new(0.065).convert_into(),
         }
     }
@@ -388,39 +389,50 @@ impl Profile {
     /// Get the key top rectangle for a given key size
     #[inline]
     #[must_use]
-    pub fn top_with_size(&self, size: Size<KeyUnit>) -> RoundRect<Dot> {
-        let RoundRect { min, max, radius } = self.top.round_rect();
-        let max = max + (size - Size::splat(1.0)) * DOT_PER_UNIT;
-        RoundRect::new(min, max, radius)
+    pub fn top_with_size(&self, size: Vector<KeyUnit>) -> RoundRect<Dot> {
+        let dmax = size - Vector::splat(1.0);
+
+        let RoundRect { min, max, radii } = self.top.round_rect();
+        let max = max + dmax.convert_into();
+
+        RoundRect::new(min, max, radii)
     }
 
     /// Get the key top rectangle for a given key rect
     #[inline]
     #[must_use]
     pub fn top_with_rect(&self, rect: Rect<KeyUnit>) -> RoundRect<Dot> {
-        let RoundRect { min, max, radius } = self.top.round_rect();
-        let min = min + rect.min.to_vector() * DOT_PER_UNIT;
-        let max = max + (rect.max.to_vector() - Vector::splat(1.0)) * DOT_PER_UNIT;
-        RoundRect::new(min, max, radius)
+        let Rect { min, max } = rect;
+        let (dmin, dmax) = (min - Point::origin(), max - Point::splat(1.0));
+
+        let RoundRect { min, max, radii } = self.top.round_rect();
+        let (min, max) = (min + dmin.convert_into(), max + dmax.convert_into());
+
+        RoundRect::new(min, max, radii)
     }
 
     /// Get the key bottom rectangle for a given key size
     #[inline]
     #[must_use]
-    pub fn bottom_with_size(&self, size: Size<KeyUnit>) -> RoundRect<Dot> {
-        let RoundRect { min, max, radius } = self.bottom.round_rect();
-        let max = max + (size - Size::splat(1.0)) * DOT_PER_UNIT;
-        RoundRect::new(min, max, radius)
+    pub fn bottom_with_size(&self, size: Vector<KeyUnit>) -> RoundRect<Dot> {
+        let dmax = size - Vector::splat(1.0);
+
+        let RoundRect { min, max, radii } = self.bottom.round_rect();
+        let max = max + dmax.convert_into();
+        RoundRect::new(min, max, radii)
     }
 
     /// Get the key bottom rectangle for a given key rectangle
     #[inline]
     #[must_use]
     pub fn bottom_with_rect(&self, rect: Rect<KeyUnit>) -> RoundRect<Dot> {
-        let RoundRect { min, max, radius } = self.bottom.round_rect();
-        let min = min + rect.min.to_vector() * DOT_PER_UNIT;
-        let max = max + (rect.max.to_vector() - Vector::splat(1.0)) * DOT_PER_UNIT;
-        RoundRect::new(min, max, radius)
+        let Rect { min, max } = rect;
+        let (dmin, dmax) = (min - Point::origin(), max - Point::splat(1.0));
+
+        let RoundRect { min, max, radii } = self.bottom.round_rect();
+        let (min, max) = (min + dmin.convert_into(), max + dmax.convert_into());
+
+        RoundRect::new(min, max, radii)
     }
 }
 
@@ -445,8 +457,6 @@ mod tests {
     use assert_matches::assert_matches;
     use indoc::indoc;
     use isclose::{assert_is_close, IsClose as _};
-
-    use geom::DOT_PER_MM;
 
     use super::*;
 
@@ -474,7 +484,7 @@ mod tests {
         assert_matches!(
             Type::default(),
             Type::Cylindrical { depth }
-                if depth.is_close(Length::from_unit(Mm(1.0).convert_into()))
+                if depth.is_close(&Length::from_unit(Mm(1.0).convert_into()))
         );
     }
 
@@ -487,7 +497,7 @@ mod tests {
         );
         assert_is_close!(
             HomingProps::default().bar.size,
-            Size::<Mm>::new(3.81, 0.508) * DOT_PER_MM
+            Vector::convert_from(Vector::<Mm>::new(3.81, 0.508))
         );
         assert_is_close!(
             HomingProps::default().bar.y_offset,
@@ -564,7 +574,7 @@ mod tests {
 
     #[test]
     fn test_text_margin_new() {
-        let expected = [SideOffsets::new_all_same(0.05) * DOT_PER_UNIT; 10];
+        let expected = [OffsetRect::convert_from(OffsetRect::<KeyUnit>::splat(0.05)); 10];
         let result = TextMargin::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
@@ -574,21 +584,21 @@ mod tests {
         }
 
         let expected = [
-            SideOffsets::new_all_same(0.0),
-            SideOffsets::new_all_same(0.0),
-            SideOffsets::new_all_same(0.0),
-            SideOffsets::new_all_same(-50.0),
-            SideOffsets::new_all_same(-50.0),
-            SideOffsets::new_all_same(-50.0),
-            SideOffsets::new_all_same(-100.0),
-            SideOffsets::new_all_same(-100.0),
-            SideOffsets::new_all_same(-100.0),
-            SideOffsets::new_all_same(-100.0),
+            OffsetRect::splat(0.0),
+            OffsetRect::splat(0.0),
+            OffsetRect::splat(0.0),
+            OffsetRect::splat(-50.0),
+            OffsetRect::splat(-50.0),
+            OffsetRect::splat(-50.0),
+            OffsetRect::splat(-100.0),
+            OffsetRect::splat(-100.0),
+            OffsetRect::splat(-100.0),
+            OffsetRect::splat(-100.0),
         ];
         let result = TextMargin::new(&HashMap::from([
-            (2, SideOffsets::new_all_same(0.0)),
-            (5, SideOffsets::new_all_same(-50.0)),
-            (7, SideOffsets::new_all_same(-100.0)),
+            (2, OffsetRect::splat(0.0)),
+            (5, OffsetRect::splat(-50.0)),
+            (7, OffsetRect::splat(-100.0)),
         ]))
         .0;
 
@@ -602,16 +612,16 @@ mod tests {
     #[test]
     fn test_text_margin_get() {
         let margin = TextMargin::new(&HashMap::from([
-            (2, SideOffsets::new_all_same(0.0)),
-            (5, SideOffsets::new_all_same(-50.0)),
-            (7, SideOffsets::new_all_same(-100.0)),
+            (2, OffsetRect::splat(0.0)),
+            (5, OffsetRect::splat(-50.0)),
+            (7, OffsetRect::splat(-100.0)),
         ]));
 
         let offsets = margin.get(2);
-        assert_is_close!(offsets, SideOffsets::zero());
+        assert_is_close!(offsets, OffsetRect::zero());
 
         let offsets = margin.get(62);
-        assert_is_close!(offsets, SideOffsets::new_all_same(-100.0));
+        assert_is_close!(offsets, OffsetRect::splat(-100.0));
     }
 
     #[test]
@@ -619,7 +629,10 @@ mod tests {
         let margin = TextMargin::default();
 
         for offsets in margin.0 {
-            assert_is_close!(offsets, SideOffsets::new_all_same(0.05) * DOT_PER_UNIT);
+            assert_is_close!(
+                offsets,
+                OffsetRect::convert_from(OffsetRect::<KeyUnit>::splat(0.05))
+            );
         }
     }
 
@@ -628,8 +641,10 @@ mod tests {
         let surf = TopSurface::default();
         assert_is_close!(
             surf.rect(),
-            Rect::from_origin_and_size(Point::new(0.170, 0.055), Size::new(0.660, 0.735))
-                * DOT_PER_UNIT
+            Rect::from_origin_and_size(
+                Point::<KeyUnit>::new(0.170, 0.055).convert_into(),
+                Vector::<KeyUnit>::new(0.660, 0.735).convert_into()
+            )
         );
     }
 
@@ -639,9 +654,9 @@ mod tests {
         assert_is_close!(
             surf.round_rect(),
             RoundRect::new(
-                Point::new(0.170, 0.055) * DOT_PER_UNIT,
-                Point::new(0.830, 0.790) * DOT_PER_UNIT,
-                Length::from_unit(KeyUnit(0.065).convert_into())
+                Point::<KeyUnit>::new(0.170, 0.055).convert_into(),
+                Point::<KeyUnit>::new(0.830, 0.790).convert_into(),
+                Vector::<KeyUnit>::splat(0.065).convert_into(),
             )
         );
     }
@@ -649,7 +664,10 @@ mod tests {
     #[test]
     fn test_top_surface_default() {
         let surf = TopSurface::default();
-        assert_is_close!(surf.size, Size::new(0.660, 0.735) * DOT_PER_UNIT);
+        assert_is_close!(
+            surf.size,
+            Vector::convert_from(Vector::<KeyUnit>::new(0.660, 0.735))
+        );
         assert_is_close!(
             surf.radius,
             Length::from_unit(KeyUnit(0.065).convert_into())
@@ -665,7 +683,10 @@ mod tests {
         let surf = BottomSurface::default();
         assert_is_close!(
             surf.rect(),
-            Rect::new(Point::new(0.025, 0.025), Point::new(0.975, 0.975)) * DOT_PER_UNIT
+            Rect::new(
+                Point::<KeyUnit>::new(0.025, 0.025).convert_into(),
+                Point::<KeyUnit>::new(0.975, 0.975).convert_into()
+            )
         );
     }
 
@@ -675,9 +696,9 @@ mod tests {
         assert_is_close!(
             surf.round_rect(),
             RoundRect::new(
-                Point::new(0.025, 0.025) * DOT_PER_UNIT,
-                Point::new(0.975, 0.975) * DOT_PER_UNIT,
-                Length::<KeyUnit>::new(0.065).convert_into()
+                Point::<KeyUnit>::new(0.025, 0.025).convert_into(),
+                Point::<KeyUnit>::new(0.975, 0.975).convert_into(),
+                Vector::<KeyUnit>::splat(0.065).convert_into()
             )
         );
     }
@@ -685,7 +706,10 @@ mod tests {
     #[test]
     fn test_bottom_surface_default() {
         let surf = BottomSurface::default();
-        assert_is_close!(surf.size, Size::new(0.950, 0.950) * DOT_PER_UNIT);
+        assert_is_close!(
+            surf.size,
+            Vector::convert_from(Vector::<KeyUnit>::new(0.950, 0.950))
+        );
         assert_is_close!(
             surf.radius,
             Length::from_unit(KeyUnit(0.065).convert_into())
@@ -757,23 +781,27 @@ mod tests {
     #[cfg(feature = "toml")]
     #[test]
     fn test_profile_from_toml() {
-        use geom::DOT_PER_MM;
-
         let profile = Profile::from_toml(PROFILE_TOML).unwrap();
 
         assert_matches!(
             profile.typ,
             Type::Cylindrical { depth }
-                if depth.is_close(Length::from_unit(Mm(0.5).convert_into()))
+                if depth.is_close(&Length::from_unit(Mm(0.5).convert_into()))
         );
 
-        assert_is_close!(profile.bottom.size, Size::splat(18.29) * DOT_PER_MM);
+        assert_is_close!(
+            profile.bottom.size,
+            Vector::convert_from(Vector::<Mm>::splat(18.29))
+        );
         assert_is_close!(
             profile.bottom.radius,
             Length::from_unit(Mm(0.38).convert_into())
         );
 
-        assert_is_close!(profile.top.size, Size::new(11.81, 13.91) * DOT_PER_MM);
+        assert_is_close!(
+            profile.top.size,
+            Vector::convert_from(Vector::<Mm>::new(11.81, 13.91))
+        );
         assert_is_close!(
             profile.top.radius,
             Length::from_unit(Mm(1.52).convert_into())
@@ -794,18 +822,18 @@ mod tests {
 
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = [
-            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
-            SideOffsets::new(2.575, 1.14, 1.775, 1.14),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::<Mm>::new(1.185, 1.18, 1.425, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.425, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.425, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.425, 1.18),
+            OffsetRect::new(2.575, 1.14, 1.775, 1.14),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
         ]
-        .map(|e| e * DOT_PER_MM.0);
+        .map(OffsetRect::convert_from);
         for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
             assert_is_close!(e, r);
         }
@@ -817,7 +845,7 @@ mod tests {
         );
         assert_is_close!(
             profile.homing.bar.size,
-            Size::<Mm>::new(3.85, 0.4) * DOT_PER_MM
+            Vector::convert_from(Vector::<Mm>::new(3.85, 0.4))
         );
         assert_is_close!(
             profile.homing.bar.y_offset,
@@ -904,23 +932,27 @@ mod tests {
     #[cfg(feature = "json")]
     #[test]
     fn test_profile_from_json() {
-        use geom::DOT_PER_MM;
-
         let profile = Profile::from_json(PROFILE_JSON).unwrap();
 
         assert_matches!(
             profile.typ,
             Type::Cylindrical { depth }
-                if depth.is_close(Length::from_unit(Mm(0.5).convert_into()))
+                if depth.is_close(&Length::from_unit(Mm(0.5).convert_into()))
         );
 
-        assert_is_close!(profile.bottom.size, Size::splat(18.29) * DOT_PER_MM);
+        assert_is_close!(
+            profile.bottom.size,
+            Vector::convert_from(Vector::<Mm>::splat(18.29))
+        );
         assert_is_close!(
             profile.bottom.radius,
             Length::from_unit(Mm(0.38).convert_into())
         );
 
-        assert_is_close!(profile.top.size, Size::new(11.81, 13.91) * DOT_PER_MM);
+        assert_is_close!(
+            profile.top.size,
+            Vector::convert_from(Vector::<Mm>::new(11.81, 13.91))
+        );
         assert_is_close!(
             profile.top.radius,
             Length::from_unit(Mm(1.52).convert_into())
@@ -941,18 +973,18 @@ mod tests {
 
         assert_eq!(profile.text_margin.0.len(), 10);
         let expected = [
-            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.425, 1.18),
-            SideOffsets::new(2.575, 1.14, 1.775, 1.14),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
-            SideOffsets::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::<Mm>::new(1.185, 1.18, 1.425, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.425, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.425, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.425, 1.18),
+            OffsetRect::new(2.575, 1.14, 1.775, 1.14),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
+            OffsetRect::new(1.185, 1.18, 1.185, 1.18),
         ]
-        .map(|e| e * DOT_PER_MM);
+        .map(OffsetRect::convert_from);
         for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
             assert_is_close!(e, r);
         }
@@ -964,7 +996,7 @@ mod tests {
         );
         assert_is_close!(
             profile.homing.bar.size,
-            Size::<Mm>::new(3.85, 0.4) * DOT_PER_MM
+            Vector::convert_from(Vector::<Mm>::new(3.85, 0.4))
         );
         assert_is_close!(
             profile.homing.bar.y_offset,
@@ -995,36 +1027,37 @@ mod tests {
     fn test_profile_with_size() {
         let profile = Profile::default();
 
-        let top = profile.top_with_size(Size::new(1.0, 1.0));
-        let exp = RoundRect::from_center_and_size(
-            Point::splat(0.5) * DOT_PER_UNIT + Vector::new(0.0, profile.top.y_offset.length.get()),
+        let top = profile.top_with_size(Vector::new(1.0, 1.0));
+        let exp = RoundRect::from_center_size_and_radii(
+            Point::convert_from(Point::<KeyUnit>::splat(0.5))
+                + Vector::from_units(Dot(0.0), profile.top.y_offset.length),
             profile.top.size,
-            profile.top.radius,
+            Vector::splat(profile.top.radius.length.get()),
         );
         assert_is_close!(top, exp);
 
-        let bottom = profile.bottom_with_size(Size::new(1.0, 1.0));
-        let exp = RoundRect::from_center_and_size(
-            Point::splat(0.5) * DOT_PER_UNIT,
+        let bottom = profile.bottom_with_size(Vector::new(1.0, 1.0));
+        let exp = RoundRect::from_center_size_and_radii(
+            Point::<KeyUnit>::splat(0.5).convert_into(),
             profile.bottom.size,
-            profile.bottom.radius,
+            Vector::splat(profile.bottom.radius.length.get()),
         );
         assert_is_close!(bottom, exp);
 
-        let top = profile.top_with_size(Size::new(3.0, 2.0));
-        let exp = RoundRect::from_center_and_size(
-            Point::new(1.5, 1.0) * DOT_PER_UNIT
+        let top = profile.top_with_size(Vector::new(3.0, 2.0));
+        let exp = RoundRect::from_center_size_and_radii(
+            Point::convert_from(Point::<KeyUnit>::new(1.5, 1.0))
                 + Vector::new(0.0, profile.top.y_offset.length.get()),
-            profile.top.size + Size::new(2.0, 1.0) * DOT_PER_UNIT,
-            profile.top.radius,
+            profile.top.size + Vector::<KeyUnit>::new(2.0, 1.0).convert_into(),
+            Vector::splat(profile.top.radius.length.get()),
         );
         assert_is_close!(top, exp);
 
-        let bottom = profile.bottom_with_size(Size::new(3.0, 2.0));
-        let exp = RoundRect::from_center_and_size(
-            Point::new(1.5, 1.0) * DOT_PER_UNIT,
-            profile.bottom.size + Size::new(2.0, 1.0) * DOT_PER_UNIT,
-            profile.bottom.radius,
+        let bottom = profile.bottom_with_size(Vector::new(3.0, 2.0));
+        let exp = RoundRect::from_center_size_and_radii(
+            Point::<KeyUnit>::new(1.5, 1.0).convert_into(),
+            profile.bottom.size + Vector::<KeyUnit>::new(2.0, 1.0).convert_into(),
+            Vector::splat(profile.bottom.radius.length.get()),
         );
         assert_is_close!(bottom, exp);
     }
@@ -1036,16 +1069,22 @@ mod tests {
         assert_matches!(
             profile.typ,
             Type::Cylindrical { depth }
-                if depth.is_close(Length::from_unit(Mm(1.0).convert_into()))
+                if depth.is_close(&Length::from_unit(Mm(1.0).convert_into()))
         );
 
-        assert_is_close!(profile.bottom.size, Size::splat(0.950) * DOT_PER_UNIT);
+        assert_is_close!(
+            profile.bottom.size,
+            Vector::convert_from(Vector::<KeyUnit>::splat(0.950))
+        );
         assert_is_close!(
             profile.bottom.radius,
             Length::from_unit(KeyUnit(0.065).convert_into())
         );
 
-        assert_is_close!(profile.top.size, Size::new(0.660, 0.735) * DOT_PER_UNIT);
+        assert_is_close!(
+            profile.top.size,
+            Vector::convert_from(Vector::<KeyUnit>::new(0.660, 0.735))
+        );
         assert_is_close!(
             profile.top.radius,
             Length::from_unit(KeyUnit(0.065).convert_into())

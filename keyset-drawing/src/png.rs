@@ -1,29 +1,33 @@
-use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Shader, Stroke, Transform as SkiaTransform};
+use saturate::SaturatingInto as _;
+use tiny_skia::{
+    FillRule, Paint, PathBuilder as SkPathBuilder, Pixmap, Shader, Stroke, Transform as SkTransform,
+};
 
 use geom::{
-    Dot, Inch, PathSegment, Point, Scale, ToTransform as _, Transform, Unit as _, DOT_PER_INCH,
-    DOT_PER_UNIT,
+    declare_units, Conversion, ConvertFrom as _, Dot, PathSegment, Point, Unit as _, Vector,
 };
 
 use crate::{Drawing, Error, KeyDrawing, KeyPath};
 
-#[derive(Debug, Clone, Copy)]
-pub struct Pixel;
+declare_units! {
+    pub Pixel = 1.0;
+}
 
-pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Result<Vec<u8>, Error> {
-    let scale = (DOT_PER_INCH.inverse() * ppi) * Scale::<Pixel, Pixel>::new(drawing.scale);
-    let size = drawing.bounds.size() * DOT_PER_UNIT * scale;
+pub fn draw(drawing: &Drawing, ppi: f32) -> Result<Vec<u8>, Error> {
+    let scale = (ppi / Dot::PER_INCH) * drawing.scale;
+    let conv = Conversion::<Pixel, Dot>::from_scale(scale, scale);
+    let size = Vector::<Dot>::convert_from(drawing.bounds.size()) * conv;
 
-    let mut pixmap = size
-        .try_cast()
-        .and_then(|size| Pixmap::new(size.width, size.height))
-        .ok_or(Error::PngDimensionsError(size))?;
+    let mut pixmap = Pixmap::new(
+        size.x.get().saturating_into(),
+        size.y.get().saturating_into(),
+    )
+    .ok_or(Error::PngDimensionsError(size))?;
 
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
 
-    let transform = scale.to_transform();
     for key in &drawing.keys {
-        draw_key(&mut pixmap, key, transform);
+        draw_key(&mut pixmap, key, conv);
     }
 
     Ok(pixmap
@@ -31,43 +35,50 @@ pub fn draw(drawing: &Drawing, ppi: Scale<Inch, Pixel>) -> Result<Vec<u8>, Error
         .unwrap_or_else(|_| unreachable!("writing to Vec<_> should not fail")))
 }
 
-fn draw_key(pixmap: &mut Pixmap, key: &KeyDrawing, transform: Transform<Dot, Pixel>) {
-    let transform = (key.origin.to_vector() * DOT_PER_UNIT)
-        .to_transform()
-        .then(&transform);
+fn draw_key(pixmap: &mut Pixmap, key: &KeyDrawing, conv: Conversion<Pixel, Dot>) {
+    // Convert global conversion to local (per-key) conversion
+    let conv = conv.pre_translate(Point::<Dot>::convert_from(key.origin) - Point::origin());
+
     for path in &key.paths {
-        draw_path(pixmap, path, transform);
+        draw_path(pixmap, path, conv);
     }
 }
 
-fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixel>) {
+fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, conv: Conversion<Pixel, Dot>) {
     let path_builder = {
-        let mut builder = PathBuilder::new();
+        let mut builder = SkPathBuilder::new();
 
         // origin needed for close; previous point needed for distance => point conversion
-        let mut point = Point::zero();
-        let mut origin = Point::zero();
+        let mut point = Point::origin();
+        let mut origin = Point::origin();
 
         for &el in &path.data {
             match el {
                 PathSegment::Move(p) => {
-                    builder.move_to(p.x, p.y);
+                    builder.move_to(p.x.get(), p.y.get());
                     origin = p;
                     point = p;
                 }
                 PathSegment::Line(d) => {
                     let p = point + d;
-                    builder.line_to(p.x, p.y);
+                    builder.line_to(p.x.get(), p.y.get());
                     point = p;
                 }
                 PathSegment::CubicBezier(d1, d2, d) => {
                     let (p1, p2, p) = (point + d1, point + d2, point + d);
-                    builder.cubic_to(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
+                    builder.cubic_to(
+                        p1.x.get(),
+                        p1.y.get(),
+                        p2.x.get(),
+                        p2.y.get(),
+                        p.x.get(),
+                        p.y.get(),
+                    );
                     point = p;
                 }
                 PathSegment::QuadraticBezier(d1, d) => {
                     let (p1, p) = (point + d1, point + d);
-                    builder.quad_to(p1.x, p1.y, p.x, p.y);
+                    builder.quad_to(p1.x.get(), p1.y.get(), p.x.get(), p.y.get());
                     point = p;
                 }
                 PathSegment::Close => {
@@ -84,13 +95,13 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
         return;
     };
 
-    let skia_transform = SkiaTransform {
-        sx: transform.m11,
-        kx: transform.m12,
-        ky: transform.m21,
-        sy: transform.m22,
-        tx: transform.m31,
-        ty: transform.m32,
+    let skia_transform = SkTransform {
+        sx: conv.a_xx,
+        kx: conv.a_xy,
+        ky: conv.a_yx,
+        sy: conv.a_yy,
+        tx: conv.t_x,
+        ty: conv.t_y,
     };
 
     if let Some(color) = path.fill {
@@ -119,7 +130,7 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, transform: Transform<Dot, Pixe
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
-    use isclose::assert_is_close_abs_tol;
+    use isclose::assert_is_close;
     use itertools::izip;
     use tiny_skia::{Color, Pixmap, PremultipliedColorU8};
 
@@ -159,10 +170,10 @@ mod tests {
             let (exp_r, exp_g, exp_b, exp_a) = (exp.red(), exp.green(), exp.blue(), exp.alpha());
 
             // TODO: what's a good tolerance here?
-            assert_is_close_abs_tol!(res_r, exp_r, 0.025);
-            assert_is_close_abs_tol!(res_g, exp_g, 0.025);
-            assert_is_close_abs_tol!(res_b, exp_b, 0.025);
-            assert_is_close_abs_tol!(res_a, exp_a, 0.025);
+            assert_is_close!(res_r, exp_r, abs_tol = 0.025);
+            assert_is_close!(res_g, exp_g, abs_tol = 0.025);
+            assert_is_close!(res_b, exp_b, abs_tol = 0.025);
+            assert_is_close!(res_a, exp_a, abs_tol = 0.025);
         }
     }
 }

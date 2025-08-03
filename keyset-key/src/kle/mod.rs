@@ -4,7 +4,7 @@ mod error;
 
 use kle_serial::f32 as kle;
 
-use geom::{Point, Size};
+use geom::{Point, Vector};
 
 pub use self::error::{Error, Result};
 use crate::{Homing, Key, Legend, Shape, Text};
@@ -40,13 +40,13 @@ fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
     } else if is_1u && (key.profile.contains("bump") || key.profile.contains("dot")) {
         Ok(Shape::Homing(Some(Homing::Bump)))
     } else if is_normal && key.profile.contains("space") {
-        Ok(Shape::Space(Size::new(w, h)))
+        Ok(Shape::Space(Vector::new(w, h)))
     } else if is_1u && key.homing {
         Ok(Shape::Homing(None))
     } else if key.decal {
-        Ok(Shape::None(Size::new(w, h)))
+        Ok(Shape::None(Vector::new(w, h)))
     } else if is_normal {
-        Ok(Shape::Normal(Size::new(w, h)))
+        Ok(Shape::Normal(Vector::new(w, h)))
     } else if is_close(&dims, &STEP_CAPS) {
         Ok(Shape::SteppedCaps)
     } else if is_close(&dims, &ISO_VERT) {
@@ -195,10 +195,10 @@ mod tests {
         })
         .unwrap();
 
-        assert_matches!(default_key, Shape::Normal(size) if size.is_close(Size::new(1.0, 1.0)));
-        assert_matches!(regular_key, Shape::Normal(size) if size.is_close(Size::new(2.25, 1.0)));
-        assert_matches!(decal, Shape::None(size) if size.is_close(Size::new(1.0, 1.0)));
-        assert_matches!(space, Shape::Space(size) if size.is_close(Size::new(1.0, 1.0)));
+        assert_matches!(default_key, Shape::Normal(size) if size.is_close(&Vector::new(1.0, 1.0)));
+        assert_matches!(regular_key, Shape::Normal(size) if size.is_close(&Vector::new(2.25, 1.0)));
+        assert_matches!(decal, Shape::None(size) if size.is_close(&Vector::new(1.0, 1.0)));
+        assert_matches!(space, Shape::Space(size) if size.is_close(&Vector::new(1.0, 1.0)));
         assert_matches!(homing_default, Shape::Homing(None));
         assert_matches!(homing_scoop, Shape::Homing(Some(Homing::Scoop)));
         assert_matches!(homing_bar, Shape::Homing(Some(Homing::Bar)));

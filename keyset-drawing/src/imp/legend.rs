@@ -1,8 +1,8 @@
 use log::warn;
 use saturate::SaturatingFrom as _;
 
-use font::Font;
-use geom::{Dot, Path, Point, Rect, Transform, Unit as _, Vector};
+use font::{Font, FontUnit};
+use geom::{Conversion, Dot, Path, Point, Rect, Scale, Translate, Unit as _, Vector};
 use profile::Profile;
 
 use super::KeyPath;
@@ -12,57 +12,52 @@ pub fn draw(
     font: &Font,
     profile: &Profile,
     top_rect: Rect<Dot>,
-    align: Vector<()>,
+    align: Scale, // Not really a scale, but it's a unitless vector so...
 ) -> KeyPath {
     // Get transform to correct height & flip y-axis
     let text_height = profile.text_height.get(legend.size_idx);
     let text_scale = text_height.length.get() / font.cap_height().length.get();
-    let text_xform = Transform::scale(text_scale, -text_scale);
+    let text_conv = Conversion::<Dot, FontUnit>::from_scale(text_scale, -text_scale);
 
     // Dimensions used to position text
-    let line_height = font.line_height() * text_scale;
-    let n_lines = f32::saturating_from(legend.text.lines().count());
-    let margin = top_rect.inner_box(profile.text_margin.get(legend.size_idx));
+    let line_height = Dot(font.line_height().length.get() * text_scale);
+    let n_lines = legend.text.lines().count();
+    let margin = top_rect - profile.text_margin.get(legend.size_idx);
 
     let text_path: Path<_> = legend
         .text
         .lines()
         .enumerate()
         .map(|(i, text)| {
-            let line_offset = n_lines - f32::saturating_from(i) - 1.0;
+            let line_offset = n_lines - i - 1;
 
-            let path = font.render_string(text) * text_xform;
-            let width = path.bounds.width();
+            let path = font.render_string(text) * text_conv;
 
             // Check to ensure our legend fits
-            let h_scale = if width > margin.width() {
-                let percent = 100.0 * (width / margin.width() - 1.0);
+            let width_factor = path.bounds.width() / margin.width();
+            if width_factor > 1.0 {
+                let percent = 100.0 * (width_factor - 1.0);
                 warn!(r#"legend "{text}" is {percent}% too wide; squishing legend to fit"#);
-                margin.width() / width
-            } else {
-                1.0
-            };
+            }
+            let width_factor = width_factor.max(1.0);
 
-            path.translate(Vector::new(
-                -width * align.x,
-                -line_offset * line_height.length.get(),
-            ))
-            .scale(h_scale, 1.0)
+            path * Translate::from_units(Dot(0.0), -f32::saturating_from(line_offset) * line_height)
+                * Scale::new(1.0 / width_factor, 1.0)
         })
         .collect();
 
     // Calculate legend bounds. For x this is based on actual size while for y we use the base line
     // and text height so each character (especially symbols) are still aligned across keys
-    let height: f32 = text_height.length.get() + line_height.length.get() * (n_lines - 1.0);
+    let height = text_height.length + line_height * f32::saturating_from(n_lines - 1);
     let bounds = Rect::new(
-        Point::new(text_path.bounds.min.x, -height),
-        Point::new(text_path.bounds.max.x, 0.0),
+        Point::from_units(text_path.bounds.min.x, -height),
+        Point::from_units(text_path.bounds.max.x, Dot(0.0)),
     );
 
     // Align the legend within the margins
     let size = margin.size() - bounds.size();
-    let point = margin.min + Vector::new(align.x * size.width, align.y * size.height);
-    let text_path = text_path.translate(point - bounds.min);
+    let point = margin.min + Vector::from_units(size.x * align.x, size.y * align.y);
+    let text_path = text_path * Translate::from(point - bounds.min);
 
     KeyPath {
         data: text_path,
@@ -77,7 +72,7 @@ mod tests {
     use isclose::assert_is_close;
 
     use color::Color;
-    use geom::{PathSegment, Size};
+    use geom::PathSegment;
     use key::Text;
 
     use super::*;
@@ -91,8 +86,8 @@ mod tests {
         };
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
         let profile = Profile::default();
-        let top_rect = profile.top_with_size(Size::new(1.0, 1.0)).rect();
-        let path = draw(&legend, &font, &profile, top_rect, Vector::zero());
+        let top_rect = profile.top_with_size(Vector::new(1.0, 1.0)).to_rect();
+        let path = draw(&legend, &font, &profile, top_rect, Scale::new(0.0, 0.0));
 
         assert_eq!(
             path.data
@@ -107,7 +102,7 @@ mod tests {
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
-        let path = draw(&legend, &font, &profile, top_rect, Vector::new(1.0, 1.0));
+        let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0));
 
         assert_eq!(path.data.len(), 12); // == .notdef length
 
@@ -116,15 +111,12 @@ mod tests {
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
-        let path = draw(&legend, &font, &profile, top_rect, Vector::new(1.0, 1.0));
+        let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0));
 
         assert_is_close!(
             path.data.bounds.width(),
-            (profile
-                .top_with_size(Size::new(1.0, 1.0))
-                .rect()
-                .inner_box(profile.text_margin.get(5)))
-            .width()
+            (profile.top_with_size(Vector::new(1.0, 1.0)).to_rect() - profile.text_margin.get(5))
+                .width()
         );
 
         let legend = ::key::Legend {
@@ -132,10 +124,8 @@ mod tests {
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
-        let path = draw(&legend, &font, &profile, top_rect, Vector::new(1.0, 1.0));
+        let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0));
 
-        assert!(
-            path.data.bounds.height() > profile.text_height.get(legend.size_idx).length.get() * 2.0
-        );
+        assert!(path.data.bounds.height() > profile.text_height.get(legend.size_idx).length * 2.0);
     }
 }

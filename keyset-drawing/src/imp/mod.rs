@@ -7,7 +7,7 @@ use saturate::SaturatingFrom as _;
 
 use ::key::{Key, Shape as KeyShape};
 use color::Color;
-use geom::{Dot, KeyUnit, Length, Path, Point, ToPath as _, Vector};
+use geom::{Dot, KeyUnit, Length, Path, Point, Scale};
 
 use crate::Template;
 
@@ -42,18 +42,14 @@ impl KeyDrawing {
         let top_rect = template
             .profile
             .top_with_rect(key.shape.inner_rect())
-            .rect();
+            .to_rect();
 
         let margin = template.show_margin.then(|| {
             // Cann't get unique margins because SideOffsets: !Hash, use unique size_idx's instead
             let sizes: HashSet<_> = key.legends.iter().flatten().map(|l| l.size_idx).collect();
             let paths: Vec<_> = sizes
                 .into_iter()
-                .map(|s| {
-                    top_rect
-                        .inner_box(template.profile.text_margin.get(s))
-                        .to_path()
-                })
+                .map(|s| (top_rect - template.profile.text_margin.get(s)).to_path())
                 .collect();
             let path = Path::from_slice(&paths);
 
@@ -69,7 +65,7 @@ impl KeyDrawing {
 
         let legends = key.legends.iter().enumerate().filter_map(|(i, l)| {
             l.as_ref().map(|legend| {
-                let align = Vector::new(
+                let align = Scale::new(
                     f32::saturating_from(i % 3) / 2.0,
                     f32::saturating_from(i / 3) / 2.0,
                 );
@@ -98,9 +94,8 @@ impl KeyDrawing {
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
+    use geom::{ConvertInto as _, Translate, Vector};
     use isclose::assert_is_close;
-
-    use geom::{Size, DOT_PER_UNIT};
 
     use super::*;
 
@@ -144,9 +139,9 @@ mod tests {
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = template
             .profile
-            .top_with_size(Size::new(1.5, 1.0))
-            .rect()
-            .inner_box(template.profile.text_margin.get(font_size));
+            .top_with_size(Vector::new(1.5, 1.0))
+            .to_rect()
+            - template.profile.text_margin.get(font_size);
         assert_is_close!(bounding_box, margin_rect);
 
         // ISO V
@@ -167,10 +162,13 @@ mod tests {
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = template
             .profile
-            .top_with_size(Size::new(1.25, 2.0))
-            .rect()
-            .translate(Vector::new(0.25, 0.0) * DOT_PER_UNIT)
-            .inner_box(template.profile.text_margin.get(font_size));
+            .top_with_size(Vector::new(1.25, 2.0))
+            .to_rect()
+            * Translate::<Dot>::from_units(
+                KeyUnit(0.25).convert_into(),
+                KeyUnit(0.0).convert_into(),
+            )
+            - template.profile.text_margin.get(font_size);
         assert_is_close!(bounding_box, margin_rect);
     }
 }

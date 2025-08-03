@@ -20,7 +20,7 @@ compile_error!("no output format is enabled");
 use std::fmt;
 
 use font::Font;
-use geom::{ConvertInto as _, Dot, KeyUnit, Length, Point, Rect, Size};
+use geom::{ConvertInto as _, Dot, KeyUnit, Length, Point, Rect, Translate, Vector};
 use key::Key;
 use profile::Profile;
 
@@ -53,7 +53,7 @@ impl Drawing {
     #[cfg(feature = "png")]
     #[inline]
     pub fn to_png(&self, ppi: f32) -> Result<Vec<u8>, Error> {
-        png::draw(self, geom::Scale::new(ppi))
+        png::draw(self, ppi)
     }
 
     /// Encode the drawing as a PDF
@@ -119,9 +119,9 @@ impl Template {
     pub fn draw(&self, keys: &[Key]) -> Drawing {
         let bounds = keys
             .iter()
-            .map(|k| k.shape.outer_rect().translate(k.position.to_vector()))
+            .map(|k| k.shape.outer_rect() * Translate::from_units(k.position.x, k.position.y))
             .fold(
-                Rect::from_origin_and_size(Point::origin(), Size::new(1.0, 1.0)),
+                Rect::from_origin_and_size(Point::origin(), Vector::new(1.0, 1.0)),
                 |rect, key| Rect::new(rect.min.min(key.min), rect.max.max(key.max)),
             );
 
@@ -231,8 +231,8 @@ mod tests {
 
         let drawing = template.draw(&keys);
 
-        assert_is_close!(drawing.bounds.width(), 1.0);
-        assert_is_close!(drawing.bounds.height(), 1.0);
+        assert_is_close!(drawing.bounds.width(), KeyUnit(1.0));
+        assert_is_close!(drawing.bounds.height(), KeyUnit(1.0));
         assert_eq!(drawing.keys.len(), 1);
         assert_is_close!(drawing.scale, template.scale);
     }

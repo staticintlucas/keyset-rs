@@ -1,7 +1,9 @@
 use svg::node::element::{Group, Path as SvgPath};
 use svg::Document;
 
-use geom::{KeyUnit, PathSegment, Scale, Unit as _, DOT_PER_UNIT, MM_PER_UNIT};
+use geom::{
+    ConvertFrom as _, ConvertInto as _, Dot, Mm, PathSegment, Point, Rect, Unit as _, Vector,
+};
 
 use super::{Drawing, KeyDrawing, KeyPath};
 
@@ -19,27 +21,27 @@ macro_rules! float {
         format_args!("{}{}", float!(@format $arg0), float!(@inner $($args),+))
     };
     (@format $arg:expr) => {
-        format_args!("{}{}", if $arg.is_sign_positive() { " " } else { "" }, float!(@round $arg))
+        format_args!("{}{}", if ($arg).get().is_sign_positive() { " " } else { "" }, float!(@round $arg))
     };
     (@round $arg:expr) => {
-        ($arg * 1e3).round() / 1e3
+        (($arg).get() * 1e3).round() / 1e3
     };
 }
 
 pub fn draw(drawing: &Drawing) -> String {
-    let size = drawing.bounds.size() * Scale::<KeyUnit, KeyUnit>::new(drawing.scale) * MM_PER_UNIT;
-    let view_box = drawing.bounds * DOT_PER_UNIT; // Use 1000 user units per key
+    let size = Vector::<Mm>::convert_from(drawing.bounds.size()) * drawing.scale;
+    let view_box: Rect<Dot> = drawing.bounds.convert_into(); // Use 1000 user units per key
 
     let document = Document::new()
-        .set("width", format!("{}mm", float!(size.width)))
-        .set("height", format!("{}mm", float!(size.height)))
+        .set("width", format!("{}mm", float!(size.x)))
+        .set("height", format!("{}mm", float!(size.y)))
         .set(
             "viewBox",
             float!(
                 view_box.min.x,
                 view_box.min.y,
-                view_box.size().width,
-                view_box.size().height
+                view_box.width(),
+                view_box.height(),
             ),
         );
 
@@ -53,7 +55,7 @@ pub fn draw(drawing: &Drawing) -> String {
 }
 
 fn draw_key(key: &KeyDrawing) -> Group {
-    let origin = key.origin * DOT_PER_UNIT;
+    let origin: Point<Dot> = key.origin.convert_into();
     let group = Group::new().set(
         "transform",
         format!("translate({},{})", float!(origin.x), float!(origin.y)),
@@ -84,7 +86,7 @@ fn draw_path(path: &KeyPath) -> SvgPath {
     if let Some(outline) = path.outline {
         svg_path
             .set("stroke", format!("{:x}", outline.color))
-            .set("stroke-width", float!(outline.width.length.get()))
+            .set("stroke-width", float!(outline.width.length))
     } else {
         svg_path.set("stroke", "none")
     }
@@ -120,9 +122,9 @@ mod tests {
                 <path d="M170 120c0-35.899 29.101-65 65-65l530 0c35.899 0 65 29.101 65 65l0 605c0 35.899-29.101 65-65 65l-530 0c-35.899 0-65-29.101-65-65z" fill="#cccccc" stroke="#aeaeae" stroke-width="10"/>
                 <path d="M220 105l560 0l0 635l-560 0z" fill="none" stroke="#ff0000" stroke-width="5"/>
                 <path d="M220 299.444l0-194.444l126.362 0l0 194.444l-126.362-0zM235.523 270.305l37.037-68.083l-37.037-68.083l0 136.166zM244.237 120.523l38.943 69.989l38.943-69.989l-77.887-0zM330.839 134.139l-37.037 68.083l37.037 68.083l0-136.166zM322.124 283.922l-38.943-69.989l-38.943 69.989l77.887 0z" fill="#000000" stroke="none"/>
-                <path d="M653.638 299.444l0-194.444l126.362 0l0 194.444l-126.362-0zM669.161 270.305l37.037-68.083l-37.037-68.083l0 136.166zM677.876 120.523l38.943 69.989l38.943-69.989l-77.887-0zM764.477 134.139l-37.037 68.083l37.037 68.083l0-136.166zM755.763 283.922l-38.943-69.989l-38.943 69.989l77.887 0z" fill="#000000" stroke="none"/>
+                <path d="M653.638 299.444l0-194.444l126.362 0l0 194.444l-126.362-0zM669.161 270.305l37.037-68.083l-37.037-68.083l0 136.166zM677.876 120.523l38.943 69.989l38.943-69.989l-77.887-0zM764.477 134.139l-37.037 68.083l37.037 68.083l0-136.166zM755.762 283.922l-38.943-69.989l-38.943 69.989l77.887 0z" fill="#000000" stroke="none"/>
                 <path d="M220 740l0-194.444l126.362 0l0 194.444l-126.362-0zM235.523 710.861l37.037-68.083l-37.037-68.083l0 136.166zM244.237 561.078l38.943 69.989l38.943-69.989l-77.887-0zM330.839 574.695l-37.037 68.083l37.037 68.083l0-136.166zM322.124 724.477l-38.943-69.989l-38.943 69.989l77.887 0z" fill="#000000" stroke="none"/>
-                <path d="M653.638 740l0-194.444l126.362 0l0 194.444l-126.362-0zM669.161 710.861l37.037-68.083l-37.037-68.083l0 136.166zM677.876 561.078l38.943 69.989l38.943-69.989l-77.887-0zM764.477 574.695l-37.037 68.083l37.037 68.083l0-136.166zM755.763 724.477l-38.943-69.989l-38.943 69.989l77.887 0z" fill="#000000" stroke="none"/>
+                <path d="M653.638 740l0-194.444l126.362 0l0 194.444l-126.362-0zM669.161 710.861l37.037-68.083l-37.037-68.083l0 136.166zM677.876 561.078l38.943 69.989l38.943-69.989l-77.887-0zM764.477 574.695l-37.037 68.083l37.037 68.083l0-136.166zM755.762 724.477l-38.943-69.989l-38.943 69.989l77.887 0z" fill="#000000" stroke="none"/>
                 </g>
                 </svg>"##
             )
