@@ -128,8 +128,8 @@ where
     #[inline]
     fn add(self, rhs: OffsetRect<U>) -> Self::Output {
         Self {
-            min: self.min - Vector::from_units(rhs.left, rhs.top),
-            max: self.max + Vector::from_units(rhs.right, rhs.bottom),
+            min: self.min - rhs.min,
+            max: self.max + rhs.max,
         }
     }
 }
@@ -140,8 +140,8 @@ where
 {
     #[inline]
     fn add_assign(&mut self, rhs: OffsetRect<U>) {
-        self.min -= Vector::from_units(rhs.left, rhs.top);
-        self.max += Vector::from_units(rhs.right, rhs.bottom);
+        self.min -= rhs.min;
+        self.max += rhs.max;
     }
 }
 
@@ -154,8 +154,8 @@ where
     #[inline]
     fn sub(self, rhs: OffsetRect<U>) -> Self::Output {
         Self {
-            min: self.min + Vector::from_units(rhs.left, rhs.top),
-            max: self.max - Vector::from_units(rhs.right, rhs.bottom),
+            min: self.min + rhs.min,
+            max: self.max - rhs.max,
         }
     }
 }
@@ -166,8 +166,23 @@ where
 {
     #[inline]
     fn sub_assign(&mut self, rhs: OffsetRect<U>) {
-        self.min += Vector::from_units(rhs.left, rhs.top);
-        self.max -= Vector::from_units(rhs.right, rhs.bottom);
+        self.min += rhs.min;
+        self.max -= rhs.max;
+    }
+}
+
+impl<U> ops::Sub<Self> for Rect<U>
+where
+    U: Unit,
+{
+    type Output = OffsetRect<U>;
+
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        OffsetRect {
+            min: rhs.min - self.min,
+            max: self.max - rhs.max,
+        }
     }
 }
 
@@ -692,10 +707,8 @@ where
 /// A set of offsets for the top, right, bottom, and left sides of a rectangle
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct OffsetRect<U: Unit> {
-    pub(crate) top: U,
-    pub(crate) right: U,
-    pub(crate) bottom: U,
-    pub(crate) left: U,
+    pub(crate) min: Vector<U>,
+    pub(crate) max: Vector<U>,
 }
 
 impl<U> OffsetRect<U>
@@ -707,10 +720,18 @@ where
     #[must_use]
     pub fn new(top: f32, right: f32, bottom: f32, left: f32) -> Self {
         Self {
-            top: U::new(top),
-            right: U::new(right),
-            bottom: U::new(bottom),
-            left: U::new(left),
+            min: Vector::new(left, top),
+            max: Vector::new(right, bottom),
+        }
+    }
+
+    /// Create a new offset rectangle with the same offset
+    #[inline]
+    #[must_use]
+    pub fn splat(value: f32) -> Self {
+        Self {
+            min: Vector::splat(value),
+            max: Vector::splat(value),
         }
     }
 
@@ -718,10 +739,18 @@ where
     #[inline]
     pub const fn from_units(top: U, right: U, bottom: U, left: U) -> Self {
         Self {
-            top,
-            right,
-            bottom,
-            left,
+            min: Vector::from_units(left, top),
+            max: Vector::from_units(right, bottom),
+        }
+    }
+
+    /// Create a new offset rectangle with the given offsets
+    #[inline]
+    #[must_use]
+    pub fn zero() -> Self {
+        Self {
+            min: Vector::zero(),
+            max: Vector::zero(),
         }
     }
 }
@@ -734,10 +763,8 @@ where
     #[inline]
     fn convert_from(value: OffsetRect<V>) -> Self {
         Self {
-            top: value.top.convert_into(),
-            right: value.right.convert_into(),
-            bottom: value.bottom.convert_into(),
-            left: value.left.convert_into(),
+            min: value.min.convert_into(),
+            max: value.max.convert_into(),
         }
     }
 }
@@ -751,10 +778,8 @@ where
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         Self {
-            top: self.top + rhs.top,
-            right: self.right + rhs.right,
-            bottom: self.bottom + rhs.bottom,
-            left: self.left + rhs.left,
+            min: self.min + rhs.min,
+            max: self.max + rhs.max,
         }
     }
 }
@@ -765,10 +790,8 @@ where
 {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
-        self.top += rhs.top;
-        self.right += rhs.right;
-        self.bottom += rhs.bottom;
-        self.left += rhs.left;
+        self.min += rhs.min;
+        self.max += rhs.max;
     }
 }
 
@@ -781,10 +804,8 @@ where
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
         Self {
-            top: self.top - rhs.top,
-            right: self.right - rhs.right,
-            bottom: self.bottom - rhs.bottom,
-            left: self.left - rhs.left,
+            min: self.min - rhs.min,
+            max: self.max - rhs.max,
         }
     }
 }
@@ -795,10 +816,8 @@ where
 {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
-        self.top -= rhs.top;
-        self.right -= rhs.right;
-        self.bottom -= rhs.bottom;
-        self.left -= rhs.left;
+        self.min -= rhs.min;
+        self.max -= rhs.max;
     }
 }
 
@@ -811,10 +830,8 @@ where
     #[inline]
     fn mul(self, rhs: f32) -> Self::Output {
         Self {
-            top: self.top * rhs,
-            right: self.right * rhs,
-            bottom: self.bottom * rhs,
-            left: self.left * rhs,
+            min: self.min * rhs,
+            max: self.max * rhs,
         }
     }
 }
@@ -825,10 +842,8 @@ where
 {
     #[inline]
     fn mul_assign(&mut self, rhs: f32) {
-        self.top *= rhs;
-        self.right *= rhs;
-        self.bottom *= rhs;
-        self.left *= rhs;
+        self.min *= rhs;
+        self.max *= rhs;
     }
 }
 
@@ -841,10 +856,8 @@ where
     #[inline]
     fn div(self, rhs: f32) -> Self::Output {
         Self {
-            top: self.top / rhs,
-            right: self.right / rhs,
-            bottom: self.bottom / rhs,
-            left: self.left / rhs,
+            min: self.min / rhs,
+            max: self.max / rhs,
         }
     }
 }
@@ -855,10 +868,8 @@ where
 {
     #[inline]
     fn div_assign(&mut self, rhs: f32) {
-        self.top /= rhs;
-        self.right /= rhs;
-        self.bottom /= rhs;
-        self.left /= rhs;
+        self.min /= rhs;
+        self.max /= rhs;
     }
 }
 
@@ -873,10 +884,8 @@ where
 
     #[inline]
     fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-        self.top.is_close_tol(&other.top, rel_tol, abs_tol)
-            && self.right.is_close_tol(&other.right, rel_tol, abs_tol)
-            && self.bottom.is_close_tol(&other.bottom, rel_tol, abs_tol)
-            && self.left.is_close_tol(&other.left, rel_tol, abs_tol)
+        self.min.is_close_tol(&other.min, rel_tol, abs_tol)
+            && self.max.is_close_tol(&other.max, rel_tol, abs_tol)
     }
 }
 
@@ -1004,10 +1013,8 @@ mod tests {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
         } + OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         };
         assert_is_close!(rect.min, Point::new(-0.5, -1.0));
         assert_is_close!(rect.max, Point::new(3.5, 5.0));
@@ -1020,10 +1027,8 @@ mod tests {
             max: Point::new(2.0, 4.0),
         };
         rect += OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         };
         assert_is_close!(rect.min, Point::new(-0.5, -1.0));
         assert_is_close!(rect.max, Point::new(3.5, 5.0));
@@ -1035,10 +1040,8 @@ mod tests {
             min: Point::new(0.0, 1.0),
             max: Point::new(2.0, 4.0),
         } - OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         };
         assert_is_close!(rect.min, Point::new(0.5, 3.0));
         assert_is_close!(rect.max, Point::new(0.5, 3.0));
@@ -1051,10 +1054,8 @@ mod tests {
             max: Point::new(2.0, 4.0),
         };
         rect -= OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         };
         assert_is_close!(rect.min, Point::new(0.5, 3.0));
         assert_is_close!(rect.max, Point::new(0.5, 3.0));
@@ -1809,233 +1810,165 @@ mod tests {
     #[test]
     fn offset_rect_new() {
         let rect = OffsetRect::<Mm>::new(2.0, 1.5, 1.0, 0.5);
-        assert_is_close!(rect.top, Mm(2.0));
-        assert_is_close!(rect.right, Mm(1.5));
-        assert_is_close!(rect.bottom, Mm(1.0));
-        assert_is_close!(rect.left, Mm(0.5));
+        assert_is_close!(rect.min, Vector::new(0.5, 2.0));
+        assert_is_close!(rect.max, Vector::new(1.5, 1.0));
     }
 
     #[test]
     fn offset_rect_from_units() {
         let rect = OffsetRect::from_units(Mm(2.0), Mm(1.5), Mm(1.0), Mm(0.5));
-        assert_is_close!(rect.top, Mm(2.0));
-        assert_is_close!(rect.right, Mm(1.5));
-        assert_is_close!(rect.bottom, Mm(1.0));
-        assert_is_close!(rect.left, Mm(0.5));
+        assert_is_close!(rect.min, Vector::new(0.5, 2.0));
+        assert_is_close!(rect.max, Vector::new(1.5, 1.0));
     }
 
     #[test]
     fn offset_rect_convert_from() {
-        let rect: OffsetRect<Mm> = OffsetRect {
-            top: Inch(2.0),
-            right: Inch(1.5),
-            bottom: Inch(1.0),
-            left: Inch(0.5),
+        let rect: OffsetRect<Mm> = OffsetRect::<Inch> {
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         }
         .convert_into();
-        assert_is_close!(rect.top, Mm(50.8));
-        assert_is_close!(rect.right, Mm(38.1));
-        assert_is_close!(rect.bottom, Mm(25.4));
-        assert_is_close!(rect.left, Mm(12.7));
+        assert_is_close!(rect.min, Vector::new(12.7, 50.8));
+        assert_is_close!(rect.max, Vector::new(38.1, 25.4));
     }
 
     #[test]
     fn offset_rect_add() {
-        let rect = OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+        let rect = OffsetRect::<Mm> {
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         } + OffsetRect {
-            top: Mm(1.0),
-            right: Mm(0.5),
-            bottom: Mm(-1.5),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 1.0),
+            max: Vector::new(0.5, -1.5),
         };
-        assert_is_close!(rect.top, Mm(3.0));
-        assert_is_close!(rect.right, Mm(2.0));
-        assert_is_close!(rect.bottom, Mm(-0.5));
-        assert_is_close!(rect.left, Mm(1.0));
+        assert_is_close!(rect.min, Vector::new(1.0, 3.0));
+        assert_is_close!(rect.max, Vector::new(2.0, -0.5));
     }
 
     #[test]
     fn offset_rect_add_assign() {
-        let mut rect = OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+        let mut rect = OffsetRect::<Mm> {
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         };
         rect += OffsetRect {
-            top: Mm(1.0),
-            right: Mm(0.5),
-            bottom: Mm(-1.5),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 1.0),
+            max: Vector::new(0.5, -1.5),
         };
-        assert_is_close!(rect.top, Mm(3.0));
-        assert_is_close!(rect.right, Mm(2.0));
-        assert_is_close!(rect.bottom, Mm(-0.5));
-        assert_is_close!(rect.left, Mm(1.0));
+        assert_is_close!(rect.min, Vector::new(1.0, 3.0));
+        assert_is_close!(rect.max, Vector::new(2.0, -0.5));
     }
 
     #[test]
     fn offset_rect_sub() {
-        let rect = OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+        let rect = OffsetRect::<Mm> {
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         } - OffsetRect {
-            top: Mm(1.0),
-            right: Mm(0.5),
-            bottom: Mm(-1.5),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 1.0),
+            max: Vector::new(0.5, -1.5),
         };
-        assert_is_close!(rect.top, Mm(1.0));
-        assert_is_close!(rect.right, Mm(1.0));
-        assert_is_close!(rect.bottom, Mm(2.5));
-        assert_is_close!(rect.left, Mm(0.0));
+        assert_is_close!(rect.min, Vector::new(0.0, 1.0));
+        assert_is_close!(rect.max, Vector::new(1.0, 2.5));
     }
 
     #[test]
     fn offset_rect_sub_assign() {
-        let mut rect = OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+        let mut rect = OffsetRect::<Mm> {
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         };
         rect -= OffsetRect {
-            top: Mm(1.0),
-            right: Mm(0.5),
-            bottom: Mm(-1.5),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 1.0),
+            max: Vector::new(0.5, -1.5),
         };
-        assert_is_close!(rect.top, Mm(1.0));
-        assert_is_close!(rect.right, Mm(1.0));
-        assert_is_close!(rect.bottom, Mm(2.5));
-        assert_is_close!(rect.left, Mm(0.0));
+        assert_is_close!(rect.min, Vector::new(0.0, 1.0));
+        assert_is_close!(rect.max, Vector::new(1.0, 2.5));
     }
 
     #[test]
     fn offset_rect_mul_f32() {
-        let rect = OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+        let rect = OffsetRect::<Mm> {
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         } * 1.5;
-        assert_is_close!(rect.top, Mm(3.0));
-        assert_is_close!(rect.right, Mm(2.25));
-        assert_is_close!(rect.bottom, Mm(1.5));
-        assert_is_close!(rect.left, Mm(0.75));
+        assert_is_close!(rect.min, Vector::new(0.75, 3.0));
+        assert_is_close!(rect.max, Vector::new(2.25, 1.5));
     }
 
     #[test]
     fn offset_rect_mul_assign_f32() {
-        let mut rect = OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+        let mut rect = OffsetRect::<Mm> {
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         };
         rect *= 1.5;
-        assert_is_close!(rect.top, Mm(3.0));
-        assert_is_close!(rect.right, Mm(2.25));
-        assert_is_close!(rect.bottom, Mm(1.5));
-        assert_is_close!(rect.left, Mm(0.75));
+        assert_is_close!(rect.min, Vector::new(0.75, 3.0));
+        assert_is_close!(rect.max, Vector::new(2.25, 1.5));
     }
 
     #[test]
     fn offset_rect_div_f32() {
-        let rect: OffsetRect<Mm> = OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+        let rect: OffsetRect<Mm> = OffsetRect::<Mm> {
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         } / 1.5;
-        assert_is_close!(rect.top, Mm(4.0 / 3.0));
-        assert_is_close!(rect.right, Mm(1.0));
-        assert_is_close!(rect.bottom, Mm(2.0 / 3.0));
-        assert_is_close!(rect.left, Mm(1.0 / 3.0));
+        assert_is_close!(rect.min, Vector::new(1.0 / 3.0, 4.0 / 3.0));
+        assert_is_close!(rect.max, Vector::new(1.0, 2.0 / 3.0));
     }
 
     #[test]
     fn offset_rect_div_assign_f32() {
-        let mut rect = OffsetRect {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+        let mut rect = OffsetRect::<Mm> {
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         };
         rect /= 1.5;
-        assert_is_close!(rect.top, Mm(4.0 / 3.0));
-        assert_is_close!(rect.right, Mm(1.0));
-        assert_is_close!(rect.bottom, Mm(2.0 / 3.0));
-        assert_is_close!(rect.left, Mm(1.0 / 3.0));
+        assert_is_close!(rect.min, Vector::new(1.0 / 3.0, 4.0 / 3.0));
+        assert_is_close!(rect.max, Vector::new(1.0, 2.0 / 3.0));
     }
 
     #[test]
     fn offset_rect_is_close() {
         assert!(OffsetRect::<Mm> {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         }
         .is_close(&OffsetRect {
-            top: Mm(1.0) * 2.0,
-            right: Mm(3.0) / 2.0,
-            bottom: Mm(0.5) * 2.0,
-            left: Mm(1.0) / 2.0,
+            min: Vector::new(0.25, 1.0) * 2.0,
+            max: Vector::new(3.0, 2.0) / 2.0,
         }));
         assert!(!OffsetRect::<Mm> {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         }
         .is_close(&OffsetRect {
-            top: Mm(1.1) * 2.0,
-            right: Mm(3.0) / 2.0,
-            bottom: Mm(0.5) * 2.0,
-            left: Mm(1.0) / 2.0,
+            min: Vector::new(0.3, 1.0) * 2.0,
+            max: Vector::new(3.0, 2.0) / 2.0,
         }));
         assert!(!OffsetRect::<Mm> {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         }
         .is_close(&OffsetRect {
-            top: Mm(1.0) * 2.0,
-            right: Mm(3.1) / 2.0,
-            bottom: Mm(0.5) * 2.0,
-            left: Mm(1.0) / 2.0,
+            min: Vector::new(0.25, 1.1) * 2.0,
+            max: Vector::new(3.0, 2.0) / 2.0,
         }));
         assert!(!OffsetRect::<Mm> {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         }
         .is_close(&OffsetRect {
-            top: Mm(1.0) * 2.0,
-            right: Mm(3.0) / 2.0,
-            bottom: Mm(0.6) * 2.0,
-            left: Mm(1.0) / 2.0,
+            min: Vector::new(0.25, 1.0) * 2.0,
+            max: Vector::new(3.1, 2.0) / 2.0,
         }));
         assert!(!OffsetRect::<Mm> {
-            top: Mm(2.0),
-            right: Mm(1.5),
-            bottom: Mm(1.0),
-            left: Mm(0.5),
+            min: Vector::new(0.5, 2.0),
+            max: Vector::new(1.5, 1.0),
         }
         .is_close(&OffsetRect {
-            top: Mm(1.0) * 2.0,
-            right: Mm(3.0) / 2.0,
-            bottom: Mm(0.5) * 2.0,
-            left: Mm(1.1) / 2.0,
+            min: Vector::new(0.25, 1.0) * 2.0,
+            max: Vector::new(3.0, 2.1) / 2.0,
         }));
     }
 }
