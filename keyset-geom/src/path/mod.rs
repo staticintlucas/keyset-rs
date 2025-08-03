@@ -6,7 +6,9 @@ use std::ops;
 
 use self::arc_to_bezier::arc_to_bezier;
 pub use self::segment::PathSegment;
-use crate::{Angle, Length, Point, Rect, Rotate, Scale, Transform, Translate, Unit, Vector};
+use crate::{
+    Angle, Conversion, Length, Point, Rect, Rotate, Scale, Transform, Translate, Unit, Vector,
+};
 
 /// A 2-dimensional path represented by a number of path segments
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -399,6 +401,27 @@ where
     fn mul_assign(&mut self, rhs: Transform<U>) {
         self.data.iter_mut().for_each(|seg| *seg *= rhs);
         self.bounds = calculate_bounds(&self.data);
+    }
+}
+
+impl<Dst, Src> ops::Mul<Conversion<Dst, Src>> for Path<Src>
+where
+    Dst: Unit,
+    Src: Unit,
+{
+    type Output = Path<Dst>;
+
+    #[inline]
+    fn mul(self, rhs: Conversion<Dst, Src>) -> Self::Output {
+        let data: Box<[_]> = self
+            .data
+            .into_vec()
+            .into_iter()
+            .map(|seg| seg * rhs)
+            .collect();
+        let bounds = calculate_bounds(&data);
+
+        Path { data, bounds }
     }
 }
 
@@ -850,7 +873,7 @@ mod tests {
     use isclose::assert_is_close;
 
     use super::*;
-    use crate::Mm;
+    use crate::{declare_units, Mm};
 
     #[test]
     fn path_from_slice() {
@@ -1371,6 +1394,50 @@ mod tests {
 
         let mut result = input;
         result *= transform;
+        assert_is_close!(result.bounds, expected.bounds);
+
+        for (&p1, &p2) in result.data.iter().zip(expected.data.iter()) {
+            assert_is_close!(p1, p2);
+        }
+    }
+
+    #[test]
+    fn path_convert() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+
+        let input = Path::<Mm> {
+            data: Box::new([
+                PathSegment::Move(Point::origin()),
+                PathSegment::Line(Vector::new(1.0, 1.0)),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, 0.0),
+                    Vector::new(2.0, 1.0),
+                    Vector::new(2.0, 2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::origin(), Point::new(3.0, 3.0)),
+        };
+        let expected = Path {
+            data: Box::new([
+                PathSegment::Move(Point::new(-1.0, 2.0)),
+                PathSegment::Line(Vector::new(1.5, 1.0)),
+                PathSegment::CubicBezier(
+                    Vector::new(1.0, -0.5),
+                    Vector::new(2.5, 0.5),
+                    Vector::new(3.0, 2.0),
+                ),
+                PathSegment::Close,
+            ]),
+            bounds: Rect::new(Point::new(-1.0, 2.0), Point::new(3.5, 5.0)),
+        };
+
+        let result = input * conv;
+        assert_eq!(result.len(), expected.len());
         assert_is_close!(result.bounds, expected.bounds);
 
         for (&p1, &p2) in result.data.iter().zip(expected.data.iter()) {

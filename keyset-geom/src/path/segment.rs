@@ -2,7 +2,7 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::{Point, Rotate, Scale, Transform, Translate, Unit, Vector};
+use crate::{Conversion, Point, Rotate, Scale, Transform, Translate, Unit, Vector};
 
 /// Enum representing a path segment
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -353,12 +353,35 @@ where
     }
 }
 
+impl<Dst, Src> ops::Mul<Conversion<Dst, Src>> for PathSegment<Src>
+where
+    Dst: Unit,
+    Src: Unit,
+{
+    type Output = PathSegment<Dst>;
+
+    #[inline]
+    fn mul(self, rhs: Conversion<Dst, Src>) -> Self::Output {
+        match self {
+            Self::Move(point) => PathSegment::Move(point * rhs),
+            Self::Line(dist) => PathSegment::Line(dist * rhs),
+            Self::CubicBezier(ctrl1, ctrl2, dist) => {
+                PathSegment::CubicBezier(ctrl1 * rhs, ctrl2 * rhs, dist * rhs)
+            }
+            Self::QuadraticBezier(ctrl, dist) => {
+                PathSegment::QuadraticBezier(ctrl * rhs, dist * rhs)
+            }
+            Self::Close => PathSegment::Close,
+        }
+    }
+}
+
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::Mm;
+    use crate::{declare_units, Mm};
 
     use super::PathSegment::*;
     use super::*;
@@ -635,6 +658,43 @@ mod tests {
 
             let mut res = inp;
             res *= transform;
+            assert_is_close!(res, exp);
+        }
+    }
+
+    #[test]
+    fn path_seg_convert() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+
+        let input = vec![
+            Move(Point::<Mm>::new(1.0, 1.0)),
+            Line(Vector::new(1.0, 1.0)),
+            CubicBezier(
+                Vector::new(0.0, 0.5),
+                Vector::new(0.5, 1.0),
+                Vector::new(1.0, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            Close,
+        ];
+        let expected = vec![
+            Move(Point::new(0.5, 3.0)),
+            Line(Vector::new(1.5, 1.0)),
+            CubicBezier(
+                Vector::new(0.25, 0.75),
+                Vector::new(1.0, 1.25),
+                Vector::new(1.5, 1.0),
+            ),
+            QuadraticBezier(Vector::new(0.5, 1.5), Vector::new(1.5, 1.0)),
+            Close,
+        ];
+
+        for (inp, exp) in input.into_iter().zip(expected) {
+            let res = inp * conv;
             assert_is_close!(res, exp);
         }
     }

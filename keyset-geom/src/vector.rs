@@ -2,7 +2,9 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::{Angle, ConvertFrom, ConvertInto as _, Rotate, Scale, Transform, Translate, Unit};
+use crate::{
+    Angle, Conversion, ConvertFrom, ConvertInto as _, Rotate, Scale, Transform, Translate, Unit,
+};
 
 /// A 2 dimensional vector
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -414,6 +416,23 @@ where
     }
 }
 
+impl<Dst, Src> ops::Mul<Conversion<Dst, Src>> for Vector<Src>
+where
+    Dst: Unit,
+    Src: Unit,
+{
+    type Output = Vector<Dst>;
+
+    #[inline]
+    fn mul(self, rhs: Conversion<Dst, Src>) -> Self::Output {
+        // Vectors are relative, so ignore translation
+        Vector {
+            x: Dst::new(self.x.get() * rhs.a_xx + self.y.get() * rhs.a_xy),
+            y: Dst::new(self.x.get() * rhs.a_yx + self.y.get() * rhs.a_yy),
+        }
+    }
+}
+
 impl<U> From<Translate<U>> for Vector<U>
 where
     U: Unit,
@@ -445,7 +464,7 @@ where
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::{Inch, Mm};
+    use crate::{declare_units, Inch, Mm};
 
     use super::*;
 
@@ -831,6 +850,22 @@ mod tests {
 
         assert_is_close!(scale.x, 0.5);
         assert_is_close!(scale.y, 2.0);
+    }
+
+    #[test]
+    fn vector_convert() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let vector = Vector {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * conv;
+
+        assert_is_close!(vector.x, Test(3.5));
+        assert_is_close!(vector.y, Test(3.5));
     }
 
     #[test]

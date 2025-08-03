@@ -3,8 +3,8 @@ use std::ops;
 use isclose::IsClose;
 
 use crate::{
-    ConvertFrom, ConvertInto as _, Path, PathSegment, Point, Rect, Rotate, Scale, Transform,
-    Translate, Unit, Vector,
+    Conversion, ConvertFrom, ConvertInto as _, Path, PathSegment, Point, Rect, Rotate, Scale,
+    Transform, Translate, Unit, Vector,
 };
 
 /// An ellipse
@@ -268,12 +268,25 @@ where
     }
 }
 
+impl<Dst, Src> ops::Mul<Conversion<Dst, Src>> for Ellipse<Src>
+where
+    Dst: Unit,
+    Src: Unit,
+{
+    type Output = Path<Dst>;
+
+    #[inline]
+    fn mul(self, rhs: Conversion<Dst, Src>) -> Self::Output {
+        self.to_path() * rhs
+    }
+}
+
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::{Angle, Inch, Mm, PathBuilder};
+    use crate::{declare_units, Angle, Inch, Mm, PathBuilder};
 
     use super::*;
 
@@ -579,6 +592,53 @@ mod tests {
         let path = ellipse * transform;
 
         let mut exp_bldr = PathBuilder::<Mm>::new();
+        exp_bldr.abs_move(Point::new(1.0, 6.25));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(-A, -3.0 * A),
+            Vector::new(-A, -3.5 + 0.5 * A),
+            Vector::new(0.0, -3.5),
+        );
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(A, -0.5 * A),
+            Vector::new(2.0 - A, 2.5 - 3.0 * A),
+            Vector::new(2.0, 2.5),
+        );
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(A, 3.0 * A),
+            Vector::new(A, 3.5 - 0.5 * A),
+            Vector::new(0.0, 3.5),
+        );
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(-A, 0.5 * A),
+            Vector::new(-2.0 + A, -2.5 + 3.0 * A),
+            Vector::new(-2.0, -2.5),
+        );
+        exp_bldr.close();
+        let expected = exp_bldr.build();
+
+        assert_eq!(path.len(), expected.len());
+        assert_is_close!(path.bounds, expected.bounds);
+        for (&res, &exp) in path.iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
+    }
+
+    #[test]
+    fn ellipse_convert() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
+
+        let ellipse = Ellipse::<Mm> {
+            center: Point::new(1.5, 3.0),
+            radii: Vector::new(1.0, 2.0),
+        };
+        let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let path = ellipse * conv;
+
+        let mut exp_bldr = PathBuilder::new();
         exp_bldr.abs_move(Point::new(1.0, 6.25));
         exp_bldr.rel_cubic_bezier(
             Vector::new(-A, -3.0 * A),

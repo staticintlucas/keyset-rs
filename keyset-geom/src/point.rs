@@ -2,7 +2,9 @@ use std::ops;
 
 use isclose::IsClose;
 
-use crate::{ConvertFrom, ConvertInto as _, Rotate, Scale, Transform, Translate, Unit, Vector};
+use crate::{
+    Conversion, ConvertFrom, ConvertInto as _, Rotate, Scale, Transform, Translate, Unit, Vector,
+};
 
 /// A 2 dimensional point
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -385,12 +387,28 @@ where
     }
 }
 
+impl<Dst, Src> ops::Mul<Conversion<Dst, Src>> for Point<Src>
+where
+    Dst: Unit,
+    Src: Unit,
+{
+    type Output = Point<Dst>;
+
+    #[inline]
+    fn mul(self, rhs: Conversion<Dst, Src>) -> Self::Output {
+        Point {
+            x: Dst::new(self.x.get() * rhs.a_xx + self.y.get() * rhs.a_xy + rhs.t_x),
+            y: Dst::new(self.x.get() * rhs.a_yx + self.y.get() * rhs.a_yy + rhs.t_y),
+        }
+    }
+}
+
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::{Inch, Mm};
+    use crate::{declare_units, Inch, Mm};
 
     use super::*;
 
@@ -738,5 +756,21 @@ mod tests {
 
         assert_is_close!(point.x, Mm(2.5));
         assert_is_close!(point.y, Mm(5.5));
+    }
+
+    #[test]
+    fn point_convert() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let point = Point {
+            x: Mm(2.0),
+            y: Mm(3.0),
+        } * conv;
+
+        assert_is_close!(point.x, Test(2.5));
+        assert_is_close!(point.y, Test(5.5));
     }
 }

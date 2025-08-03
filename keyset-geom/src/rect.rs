@@ -3,8 +3,8 @@ use std::ops;
 use isclose::IsClose;
 
 use crate::{
-    ConvertFrom, ConvertInto as _, Path, PathSegment, Point, Rotate, Scale, Transform, Translate,
-    Unit, Vector,
+    Conversion, ConvertFrom, ConvertInto as _, Path, PathSegment, Point, Rotate, Scale, Transform,
+    Translate, Unit, Vector,
 };
 
 /// A 2 dimensional rectangle
@@ -341,6 +341,19 @@ where
     }
 }
 
+impl<Dst, Src> ops::Mul<Conversion<Dst, Src>> for Rect<Src>
+where
+    Dst: Unit,
+    Src: Unit,
+{
+    type Output = Path<Dst>;
+
+    #[inline]
+    fn mul(self, rhs: Conversion<Dst, Src>) -> Self::Output {
+        self.to_path() * rhs
+    }
+}
+
 /// A 2 dimensional rectangle with rounded corners
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct RoundRect<U: Unit> {
@@ -663,6 +676,19 @@ where
     }
 }
 
+impl<Dst, Src> ops::Mul<Conversion<Dst, Src>> for RoundRect<Src>
+where
+    Dst: Unit,
+    Src: Unit,
+{
+    type Output = Path<Dst>;
+
+    #[inline]
+    fn mul(self, rhs: Conversion<Dst, Src>) -> Self::Output {
+        self.to_path() * rhs
+    }
+}
+
 /// A set of offsets for the top, right, bottom, and left sides of a rectangle
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct OffsetRect<U: Unit> {
@@ -859,7 +885,7 @@ where
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::{Angle, Inch, Length, Mm, PathBuilder};
+    use crate::{declare_units, Angle, Inch, Length, Mm, PathBuilder};
 
     use super::*;
 
@@ -1221,6 +1247,34 @@ mod tests {
         let path = rect * transform;
 
         let mut exp_bldr = PathBuilder::<Mm>::new();
+        exp_bldr.abs_move(Point::new(-0.5, 3.5));
+        exp_bldr.rel_line(Vector::new(2.0, -1.0));
+        exp_bldr.rel_line(Vector::new(1.5, 4.5));
+        exp_bldr.rel_line(Vector::new(-2.0, 1.0));
+        exp_bldr.close();
+        let expected = exp_bldr.build();
+
+        assert_eq!(path.len(), expected.len());
+        assert_is_close!(path.bounds, expected.bounds);
+        for (&res, &exp) in path.iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
+    }
+
+    #[test]
+    fn rect_convert() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let rect = Rect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+        };
+        let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let path = rect * conv;
+
+        let mut exp_bldr = PathBuilder::new();
         exp_bldr.abs_move(Point::new(-0.5, 3.5));
         exp_bldr.rel_line(Vector::new(2.0, -1.0));
         exp_bldr.rel_line(Vector::new(1.5, 4.5));
@@ -1667,6 +1721,57 @@ mod tests {
         let path = rect * transform;
 
         let mut exp_bldr = PathBuilder::<Mm>::new();
+        exp_bldr.abs_move(Point::new(0.0, 5.0));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(-0.5 * A, -1.5 * A),
+            Vector::new(-0.5 * A, -1.75 + 0.25 * A),
+            Vector::new(0.0, -1.75),
+        );
+        exp_bldr.rel_line(Vector::new(1.0, -0.5));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(0.5 * A, -0.25 * A),
+            Vector::new(1.0 - 0.5 * A, 1.25 - 1.5 * A),
+            Vector::new(1.0, 1.25),
+        );
+        exp_bldr.rel_line(Vector::new(0.5, 1.5));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(0.5 * A, 1.5 * A),
+            Vector::new(0.5 * A, 1.75 - 0.25 * A),
+            Vector::new(0.0, 1.75),
+        );
+        exp_bldr.rel_line(Vector::new(-1.0, 0.5));
+        exp_bldr.rel_cubic_bezier(
+            Vector::new(-0.5 * A, 0.25 * A),
+            Vector::new(-1.0 + 0.5 * A, -1.25 + 1.5 * A),
+            Vector::new(-1.0, -1.25),
+        );
+        exp_bldr.close();
+        let expected = exp_bldr.build();
+
+        assert_eq!(path.len(), expected.len());
+        // assert_is_close!(path.bounds, expected.bounds);
+        for (&res, &exp) in path.iter().zip(expected.iter()) {
+            assert_is_close!(res, exp);
+        }
+    }
+
+    #[test]
+    fn round_rect_convert() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
+
+        let rect = RoundRect::<Mm> {
+            min: Point::new(0.0, 1.0),
+            max: Point::new(2.0, 4.0),
+            radii: Vector::new(0.5, 1.0),
+        };
+        let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let path = rect * conv;
+
+        let mut exp_bldr = PathBuilder::new();
         exp_bldr.abs_move(Point::new(0.0, 5.0));
         exp_bldr.rel_cubic_bezier(
             Vector::new(-0.5 * A, -1.5 * A),

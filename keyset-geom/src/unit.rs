@@ -4,6 +4,8 @@ use std::ops;
 
 use isclose::IsClose;
 
+use crate::{Angle, Vector};
+
 /// Trait for Unit types
 pub trait Unit:
     Sized
@@ -36,12 +38,6 @@ pub trait Unit:
     #[must_use]
     fn zero() -> Self {
         Self::new(0.0)
-    }
-
-    /// Convert the unit to another unit using the given conversion
-    #[inline]
-    fn convert<V: Unit>(self, conversion: Conversion<V, Self>) -> V {
-        V::new(self.get() * conversion.get())
     }
 
     /// Return the minimum of two units
@@ -285,10 +281,39 @@ declare_units! {
     pub Inch = 0.75;
 }
 
-/// A conversion between two units
+/// A conversion between two unit systems.
+///
+/// This allows conversion between any coordinate systems that can be converted
+/// using an affine transform. It cannot be used to convert between cartesian
+/// and polar coordinates, for example.
+///
+/// The affine transform is in the form:
+///
+/// $$
+/// \\begin{bmatrix}
+/// a_{xx} & a_{xy} & t_{x} \\\\
+/// a_{yx} & a_{yy} & t_{y} \\\\
+///   0    &   0    &   1
+/// \\end{bmatrix}
+/// $$
+///
+/// Note: only the first 2 rows of the matrix are stored as the last row is
+/// a constant \\([0, 0, 1]\\).
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Conversion<Dst: Unit, Src: Unit> {
-    factor: f32,
+    /// Element of the affine transform matrix
+    pub a_xx: f32,
+    /// Element of the affine transform matrix
+    pub a_xy: f32,
+    /// Element of the affine transform matrix
+    pub t_x: f32,
+    /// Element of the affine transform matrix
+    pub a_yx: f32,
+    /// Element of the affine transform matrix
+    pub a_yy: f32,
+    /// Element of the affine transform matrix
+    pub t_y: f32,
+    #[doc(hidden)]
     _phantom: PhantomData<(Dst, Src)>,
 }
 
@@ -297,38 +322,156 @@ where
     Dst: Unit,
     Src: Unit,
 {
-    /// Create a new conversion with the given conversion factor
+    /// Creates a new conversion with the given affine transform
+    #[allow(clippy::similar_names)]
     #[inline]
     #[must_use]
-    pub const fn new(factor: f32) -> Self {
+    pub const fn new(a_xx: f32, a_xy: f32, t_x: f32, a_yx: f32, a_yy: f32, t_y: f32) -> Self {
         Self {
-            factor,
+            a_xx,
+            a_xy,
+            t_x,
+            a_yx,
+            a_yy,
+            t_y,
             _phantom: PhantomData,
         }
     }
 
-    /// Gets the conversion factor
+    /// Create a new conversion with the given scaling factors
     #[inline]
     #[must_use]
-    pub const fn get(self) -> f32 {
-        self.factor
-    }
-
-    /// Create a new conversion from two equivalent values in different units
-    #[inline]
-    pub fn from(dest: Dst, source: Src) -> Self {
+    pub const fn from_scale(x: f32, y: f32) -> Self {
         Self {
-            factor: dest.get() / source.get(),
+            a_xx: x,
+            a_xy: 0.0,
+            t_x: 0.0,
+            a_yx: 0.0,
+            a_yy: y,
+            t_y: 0.0,
             _phantom: PhantomData,
         }
     }
 
-    /// Inverts the conversion
+    /// Create a new conversion with the given translations
     #[inline]
     #[must_use]
-    pub fn inverse(self) -> Conversion<Src, Dst> {
-        Conversion {
-            factor: 1.0 / self.factor,
+    pub const fn from_translate(x: f32, y: f32) -> Self {
+        Self {
+            a_xx: 1.0,
+            a_xy: 0.0,
+            t_x: x,
+            a_yx: 0.0,
+            a_yy: 1.0,
+            t_y: y,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Create a new conversion with the given scaling factors
+    #[inline]
+    #[must_use]
+    pub fn from_rotate(angle: Angle) -> Self {
+        let (sin, cos) = angle.sin_cos();
+        Self {
+            a_xx: cos,
+            a_xy: -sin,
+            t_x: 0.0,
+            a_yx: sin,
+            a_yy: cos,
+            t_y: 0.0,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Apply the given scaling factors after the current conversion
+    #[inline]
+    #[must_use]
+    pub const fn then_scale(self, x: f32, y: f32) -> Self {
+        Self {
+            a_xx: self.a_xx * x,
+            a_xy: self.a_xy * x,
+            t_x: self.t_x * x,
+            a_yx: self.a_yx * y,
+            a_yy: self.a_yy * y,
+            t_y: self.t_y * y,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Apply the given translations after the current conversion
+    #[inline]
+    #[must_use]
+    pub fn then_translate(self, translate: Vector<Dst>) -> Self {
+        Self {
+            a_xx: self.a_xx,
+            a_xy: self.a_xy,
+            t_x: self.t_x + translate.x.get(),
+            a_yx: self.a_yx,
+            a_yy: self.a_yy,
+            t_y: self.t_y + translate.y.get(),
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Apply the given rotation after the current conversion
+    #[inline]
+    #[must_use]
+    pub fn then_rotate(self, angle: Angle) -> Self {
+        let (sin, cos) = angle.sin_cos();
+        Self {
+            a_xx: self.a_xx * cos + self.a_yx * -sin,
+            a_xy: self.a_xy * cos + self.a_yy * -sin,
+            t_x: self.t_x * cos + self.t_y * -sin,
+            a_yx: self.a_xx * sin + self.a_yx * cos,
+            a_yy: self.a_xy * sin + self.a_yy * cos,
+            t_y: self.t_x * sin + self.t_y * cos,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Apply the given scaling factors before the current conversion
+    #[inline]
+    #[must_use]
+    pub const fn pre_scale(self, x: f32, y: f32) -> Self {
+        Self {
+            a_xx: self.a_xx * x,
+            a_xy: self.a_xy * x,
+            t_x: self.t_x,
+            a_yx: self.a_yx * y,
+            a_yy: self.a_yy * y,
+            t_y: self.t_y,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Apply the given translations before the current conversion
+    #[inline]
+    #[must_use]
+    pub fn pre_translate(self, translate: Vector<Src>) -> Self {
+        Self {
+            a_xx: self.a_xx,
+            a_xy: self.a_xy,
+            t_x: self.a_xx * translate.x.get() + self.a_xy * translate.y.get() + self.t_x,
+            a_yx: self.a_yx,
+            a_yy: self.a_yy,
+            t_y: self.a_yx * translate.x.get() + self.a_yy * translate.y.get() + self.t_y,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Apply the given rotation before the current conversion
+    #[inline]
+    #[must_use]
+    pub fn pre_rotate(self, angle: Angle) -> Self {
+        let (sin, cos) = angle.sin_cos();
+        Self {
+            a_xx: self.a_xx * cos + self.a_xy * sin,
+            a_xy: self.a_xx * -sin + self.a_xy * cos,
+            t_x: self.t_x,
+            a_yx: self.a_yx * cos + self.a_yy * sin,
+            a_yy: self.a_yx * -sin + self.a_yy * cos,
+            t_y: self.t_y,
             _phantom: PhantomData,
         }
     }
@@ -360,17 +503,6 @@ mod tests {
 
         let key_unit = KeyUnit::zero();
         assert_is_close!(key_unit.0, 0.0);
-    }
-
-    #[test]
-    fn key_unit_convert() {
-        let conversion = Conversion::<Mm, KeyUnit> {
-            factor: 19.05,
-            _phantom: PhantomData,
-        };
-
-        let key_unit = KeyUnit(4.0 / 3.0);
-        assert_is_close!(key_unit.convert(conversion), Mm(25.4));
     }
 
     #[test]
@@ -483,17 +615,6 @@ mod tests {
     }
 
     #[test]
-    fn dot_convert() {
-        let conversion = Conversion::<KeyUnit, Dot> {
-            factor: 1.0 / 1000.0,
-            _phantom: PhantomData,
-        };
-
-        let dot = Dot(2500.0);
-        assert_is_close!(dot.convert(conversion), KeyUnit(2.5));
-    }
-
-    #[test]
     fn dot_cmp() {
         let dot1 = Dot(4.0 / 3.0);
         let dot2 = Dot(1.5);
@@ -600,17 +721,6 @@ mod tests {
 
         let mm = Mm::zero();
         assert_is_close!(mm.0, 0.0);
-    }
-
-    #[test]
-    fn mm_convert() {
-        let conversion = Conversion::<Dot, Mm> {
-            factor: 100_000.0 / 1905.0,
-            _phantom: PhantomData,
-        };
-
-        let mm = Mm(25.4);
-        assert_is_close!(mm.convert(conversion), Dot(4000.0 / 3.0));
     }
 
     #[test]
@@ -723,17 +833,6 @@ mod tests {
     }
 
     #[test]
-    fn inch_convert() {
-        let conversion = Conversion::<Mm, Inch> {
-            factor: 25.4,
-            _phantom: PhantomData,
-        };
-
-        let inch = Inch(0.75);
-        assert_is_close!(inch.convert(conversion), Mm(19.05));
-    }
-
-    #[test]
     fn inch_cmp() {
         let inch1 = Inch(4.0 / 3.0);
         let inch2 = Inch(1.5);
@@ -823,32 +922,161 @@ mod tests {
 
     #[test]
     fn conversion_new() {
-        let conversion = Conversion::<Mm, Inch>::new(25.4);
-        assert_is_close!(conversion.factor, 25.4);
-    }
-
-    #[test]
-    fn conversion_get() {
-        let conversion = Conversion::<Mm, Inch> {
-            factor: 25.4,
-            _phantom: PhantomData,
-        };
-        assert_is_close!(conversion.get(), 25.4);
-    }
-
-    #[test]
-    fn conversion_from() {
-        let conversion = Conversion::from(Mm(25.4), Inch(1.0));
-        assert_is_close!(conversion.factor, 25.4);
-    }
-
-    #[test]
-    fn conversion_inverse() {
-        let conversion = Conversion::<Mm, Inch> {
-            factor: 25.4,
-            _phantom: PhantomData,
+        declare_units! {
+            Test = 1.0;
         }
-        .inverse();
-        assert_is_close!(conversion.factor, 1.0 / 25.4);
+
+        let conv = Conversion::<Mm, Test>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+        assert_is_close!(conv.a_xx, 1.0);
+        assert_is_close!(conv.a_xy, 2.0);
+        assert_is_close!(conv.t_x, 3.0);
+        assert_is_close!(conv.a_yx, 4.0);
+        assert_is_close!(conv.a_yy, 5.0);
+        assert_is_close!(conv.t_y, 6.0);
+    }
+
+    #[test]
+    fn conversion_from_scale() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Mm, Test>::from_scale(0.5, 2.0);
+        assert_is_close!(conv.a_xx, 0.5);
+        assert_is_close!(conv.a_xy, 0.0);
+        assert_is_close!(conv.t_x, 0.0);
+        assert_is_close!(conv.a_yx, 0.0);
+        assert_is_close!(conv.a_yy, 2.0);
+        assert_is_close!(conv.t_y, 0.0);
+    }
+
+    #[test]
+    fn conversion_from_translate() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Mm, Test>::from_translate(0.5, 2.0);
+        assert_is_close!(conv.a_xx, 1.0);
+        assert_is_close!(conv.a_xy, 0.0);
+        assert_is_close!(conv.t_x, 0.5);
+        assert_is_close!(conv.a_yx, 0.0);
+        assert_is_close!(conv.a_yy, 1.0);
+        assert_is_close!(conv.t_y, 2.0);
+    }
+
+    #[test]
+    fn conversion_from_rotate() {
+        use std::f32::consts::FRAC_1_SQRT_2;
+
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Mm, Test>::from_rotate(Angle::degrees(45.0));
+        assert_is_close!(conv.a_xx, FRAC_1_SQRT_2);
+        assert_is_close!(conv.a_xy, -FRAC_1_SQRT_2);
+        assert_is_close!(conv.t_x, 0.0);
+        assert_is_close!(conv.a_yx, FRAC_1_SQRT_2);
+        assert_is_close!(conv.a_yy, FRAC_1_SQRT_2);
+        assert_is_close!(conv.t_y, 0.0);
+    }
+
+    #[test]
+    fn conversion_then_scale() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Mm, Test>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0).then_scale(0.5, 2.0);
+        assert_is_close!(conv.a_xx, 0.5);
+        assert_is_close!(conv.a_xy, 1.0);
+        assert_is_close!(conv.t_x, 1.5);
+        assert_is_close!(conv.a_yx, 8.0);
+        assert_is_close!(conv.a_yy, 10.0);
+        assert_is_close!(conv.t_y, 12.0);
+    }
+
+    #[test]
+    fn conversion_then_translate() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Mm, Test>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
+            .then_translate(Vector::new(0.5, 2.0));
+        assert_is_close!(conv.a_xx, 1.0);
+        assert_is_close!(conv.a_xy, 2.0);
+        assert_is_close!(conv.t_x, 3.5);
+        assert_is_close!(conv.a_yx, 4.0);
+        assert_is_close!(conv.a_yy, 5.0);
+        assert_is_close!(conv.t_y, 8.0);
+    }
+
+    #[test]
+    fn conversion_then_rotate() {
+        use std::f32::consts::FRAC_1_SQRT_2;
+
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Mm, Test>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
+            .then_rotate(Angle::degrees(45.0));
+        assert_is_close!(conv.a_xx, -3.0 * FRAC_1_SQRT_2);
+        assert_is_close!(conv.a_xy, -3.0 * FRAC_1_SQRT_2);
+        assert_is_close!(conv.t_x, -3.0 * FRAC_1_SQRT_2);
+        assert_is_close!(conv.a_yx, 5.0 * FRAC_1_SQRT_2);
+        assert_is_close!(conv.a_yy, 7.0 * FRAC_1_SQRT_2);
+        assert_is_close!(conv.t_y, 9.0 * FRAC_1_SQRT_2);
+    }
+
+    #[test]
+    fn conversion_pre_scale() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Mm, Test>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0).pre_scale(0.5, 2.0);
+        assert_is_close!(conv.a_xx, 0.5);
+        assert_is_close!(conv.a_xy, 1.0);
+        assert_is_close!(conv.t_x, 3.0);
+        assert_is_close!(conv.a_yx, 8.0);
+        assert_is_close!(conv.a_yy, 10.0);
+        assert_is_close!(conv.t_y, 6.0);
+    }
+
+    #[test]
+    fn conversion_pre_translate() {
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Mm, Test>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
+            .pre_translate(Vector::new(0.5, 2.0));
+        assert_is_close!(conv.a_xx, 1.0);
+        assert_is_close!(conv.a_xy, 2.0);
+        assert_is_close!(conv.t_x, 7.5);
+        assert_is_close!(conv.a_yx, 4.0);
+        assert_is_close!(conv.a_yy, 5.0);
+        assert_is_close!(conv.t_y, 18.0);
+    }
+
+    #[test]
+    fn conversion_pre_rotate() {
+        use std::f32::consts::FRAC_1_SQRT_2;
+
+        declare_units! {
+            Test = 1.0;
+        }
+
+        let conv = Conversion::<Mm, Test>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
+            .pre_rotate(Angle::degrees(45.0));
+        assert_is_close!(conv.a_xx, 3.0 * FRAC_1_SQRT_2);
+        assert_is_close!(conv.a_xy, FRAC_1_SQRT_2);
+        assert_is_close!(conv.t_x, 3.0);
+        assert_is_close!(conv.a_yx, 9.0 * FRAC_1_SQRT_2);
+        assert_is_close!(conv.a_yy, FRAC_1_SQRT_2);
+        assert_is_close!(conv.t_y, 6.0);
     }
 }
