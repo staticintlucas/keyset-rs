@@ -97,6 +97,8 @@ where
 /// # Example
 ///
 /// ```
+/// # use keyset_geom::declare_units;
+///
 /// declare_units! {
 ///     #[doc  = "Keyboard Unit, usually 19.05 mm or 0.75 in"]
 ///     pub KeyUnit = 1.0;
@@ -117,9 +119,12 @@ macro_rules! declare_units {
         macro_rules! per_consts {
             ($self_name:ident, $self_conv:literal) => {
                 impl $self_name {
-                    $crate::__paste! {
-                        $(const [<PER_ $name:snake:upper>]: f32 = $self_conv / $conv;)+
-                    }
+                    $(
+                        $crate::__paste! {
+                            #[doc = "Conversion ratio between [`" $name "`] and [`" $self_name "`]"]
+                            pub const [<PER_ $name:snake:upper>]: f32 = $self_conv / $conv;
+                        }
+                    )+
                 }
             }
         }
