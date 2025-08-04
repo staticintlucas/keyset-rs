@@ -11,24 +11,17 @@ pub struct Angle {
 
 impl Angle {
     /// An angle of 0.0 radians
-    pub const ZERO: Self = Self::new(0.0);
+    pub const ZERO: Self = Self::radians(0.0);
     /// An angle of π radians (180°)
-    pub const PI: Self = Self::new(consts::PI);
+    pub const PI: Self = Self::radians(consts::PI);
     /// An angle of τ (2π) radians (360°)
-    pub const TAU: Self = Self::new(consts::TAU);
+    pub const TAU: Self = Self::radians(consts::TAU);
     /// An angle of π/2 radians (90°)
-    pub const FRAC_PI_2: Self = Self::new(consts::FRAC_PI_2);
+    pub const FRAC_PI_2: Self = Self::radians(consts::FRAC_PI_2);
     /// An angle of π/3 radians (60°)
-    pub const FRAC_PI_3: Self = Self::new(consts::FRAC_PI_3);
+    pub const FRAC_PI_3: Self = Self::radians(consts::FRAC_PI_3);
     /// An angle of π/4 radians (45°)
-    pub const FRAC_PI_4: Self = Self::new(consts::FRAC_PI_4);
-
-    /// Creates a new [`Angle`] with the given value in radians
-    #[inline]
-    #[must_use]
-    pub const fn new(radians: f32) -> Self {
-        Self::radians(radians)
-    }
+    pub const FRAC_PI_4: Self = Self::radians(consts::FRAC_PI_4);
 
     /// Creates a new [`Angle`] with the given value in radians
     #[inline]
@@ -240,12 +233,6 @@ mod tests {
     use isclose::assert_is_close;
 
     use super::*;
-
-    #[test]
-    fn angle_new() {
-        let angle = Angle::new(1.0);
-        assert_is_close!(angle.radians, 1.0);
-    }
 
     #[test]
     fn angle_radians() {

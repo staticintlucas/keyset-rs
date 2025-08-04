@@ -22,21 +22,15 @@ where
     /// Create a new point
     #[inline]
     #[must_use]
-    pub fn new(x: f32, y: f32) -> Self {
-        Self {
-            x: U::new(x),
-            y: U::new(y),
-        }
+    pub const fn new(x: U, y: U) -> Self {
+        Self { x, y }
     }
 
     /// Create a point with the same value for the `x` and `y` coordinates
     #[inline]
     #[must_use]
-    pub fn splat(v: f32) -> Self {
-        Self {
-            x: U::new(v),
-            y: U::new(v),
-        }
+    pub const fn splat(v: U) -> Self {
+        Self { x: v, y: v }
     }
 
     /// Create a point at the origin (0, 0)
@@ -47,13 +41,6 @@ where
             x: U::zero(),
             y: U::zero(),
         }
-    }
-
-    /// Create a new point from unit values
-    #[inline]
-    #[must_use]
-    pub const fn from_units(x: U, y: U) -> Self {
-        Self { x, y }
     }
 
     /// Swap the `x` and `y` coordinates of the point
@@ -414,14 +401,14 @@ mod tests {
 
     #[test]
     fn point_new() {
-        let point = Point::<Mm>::new(2.0, 3.0);
+        let point = Point::new(Mm(2.0), Mm(3.0));
         assert_is_close!(point.x, Mm(2.0));
         assert_is_close!(point.y, Mm(3.0));
     }
 
     #[test]
     fn point_splat() {
-        let point = Point::<Mm>::splat(2.0);
+        let point = Point::splat(Mm(2.0));
         assert_is_close!(point.x, Mm(2.0));
         assert_is_close!(point.y, Mm(2.0));
     }
@@ -431,13 +418,6 @@ mod tests {
         let point = Point::<Mm>::origin();
         assert_is_close!(point.x, Mm(0.0));
         assert_is_close!(point.y, Mm(0.0));
-    }
-
-    #[test]
-    fn point_from_units() {
-        let point = Point::from_units(Mm(2.0), Mm(3.0));
-        assert_is_close!(point.x, Mm(2.0));
-        assert_is_close!(point.y, Mm(3.0));
     }
 
     #[test]
@@ -722,7 +702,7 @@ mod tests {
         let point = Point {
             x: Mm(2.0),
             y: Mm(3.0),
-        } * Translate::new(2.0, -1.0);
+        } * Translate::new(Mm(2.0), Mm(-1.0));
 
         assert_is_close!(point.x, Mm(4.0));
         assert_is_close!(point.y, Mm(2.0));
@@ -731,7 +711,7 @@ mod tests {
             x: Mm(2.0),
             y: Mm(3.0),
         };
-        point *= Translate::new(2.0, -1.0);
+        point *= Translate::new(Mm(2.0), Mm(-1.0));
 
         assert_is_close!(point.x, Mm(4.0));
         assert_is_close!(point.y, Mm(2.0));
@@ -739,7 +719,7 @@ mod tests {
 
     #[test]
     fn point_transform() {
-        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let transform = Transform::new(1.0, 0.5, Mm(-1.0), -0.5, 1.5, Mm(2.0));
         let point = Point {
             x: Mm(2.0),
             y: Mm(3.0),

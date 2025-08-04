@@ -1011,7 +1011,7 @@ mod tests {
         }
 
         let conv = Conversion::<Mm, Test>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
-            .then_translate(Vector::new(0.5, 2.0));
+            .then_translate(Vector::new(Mm(0.5), Mm(2.0)));
         assert_is_close!(conv.a_xx, 1.0);
         assert_is_close!(conv.a_xy, 2.0);
         assert_is_close!(conv.t_x, 3.5);
@@ -1060,7 +1060,7 @@ mod tests {
         }
 
         let conv = Conversion::<Mm, Test>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
-            .pre_translate(Vector::new(0.5, 2.0));
+            .pre_translate(Vector::new(Test(0.5), Test(2.0)));
         assert_is_close!(conv.a_xx, 1.0);
         assert_is_close!(conv.a_xy, 2.0);
         assert_is_close!(conv.t_x, 7.5);

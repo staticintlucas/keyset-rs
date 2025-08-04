@@ -25,9 +25,10 @@ where
     pub const fn new(center: Point<U>, radii: Vector<U>) -> Self {
         Self { center, radii }
     }
+
     /// Create a new circle with the given center and radius
     #[inline]
-    pub fn from_circle(center: Point<U>, radius: f32) -> Self {
+    pub const fn from_circle(center: Point<U>, radius: U) -> Self {
         Self {
             center,
             radii: Vector::splat(radius),
@@ -56,26 +57,26 @@ where
 
         Path {
             data: Box::new([
-                PathSegment::Move(Point::from_units(cx - rx, cy)),
+                PathSegment::Move(Point::new(cx - rx, cy)),
                 PathSegment::CubicBezier(
-                    Vector::from_units(U::zero(), -ry * A),
-                    Vector::from_units(rx * (1.0 - A), -ry),
-                    Vector::from_units(rx, -ry),
+                    Vector::new(U::zero(), -ry * A),
+                    Vector::new(rx * (1.0 - A), -ry),
+                    Vector::new(rx, -ry),
                 ),
                 PathSegment::CubicBezier(
-                    Vector::from_units(rx * A, U::zero()),
-                    Vector::from_units(rx, ry * (1.0 - A)),
-                    Vector::from_units(rx, ry),
+                    Vector::new(rx * A, U::zero()),
+                    Vector::new(rx, ry * (1.0 - A)),
+                    Vector::new(rx, ry),
                 ),
                 PathSegment::CubicBezier(
-                    Vector::from_units(U::zero(), ry * A),
-                    Vector::from_units(-rx * (1.0 - A), ry),
-                    Vector::from_units(-rx, ry),
+                    Vector::new(U::zero(), ry * A),
+                    Vector::new(-rx * (1.0 - A), ry),
+                    Vector::new(-rx, ry),
                 ),
                 PathSegment::CubicBezier(
-                    Vector::from_units(-rx * A, U::zero()),
-                    Vector::from_units(-rx, -ry * (1.0 - A)),
-                    Vector::from_units(-rx, -ry),
+                    Vector::new(-rx * A, U::zero()),
+                    Vector::new(-rx, -ry * (1.0 - A)),
+                    Vector::new(-rx, -ry),
                 ),
                 PathSegment::Close,
             ]),
@@ -292,71 +293,71 @@ mod tests {
 
     #[test]
     fn ellipse_new() {
-        let ellipse = Ellipse::<Mm>::new(Point::new(1.5, 3.0), Vector::new(1.0, 2.0));
-        assert_is_close!(ellipse.center, Point::new(1.5, 3.0));
-        assert_is_close!(ellipse.radii, Vector::new(1.0, 2.0));
+        let ellipse = Ellipse::new(Point::new(Mm(1.5), Mm(3.0)), Vector::new(Mm(1.0), Mm(2.0)));
+        assert_is_close!(ellipse.center, Point::new(Mm(1.5), Mm(3.0)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(1.0), Mm(2.0)));
     }
 
     #[test]
     fn ellipse_from_circle() {
-        let circle = Ellipse::<Mm>::from_circle(Point::new(1.5, 3.0), 1.5);
-        assert_is_close!(circle.center, Point::new(1.5, 3.0));
-        assert_is_close!(circle.radii, Vector::new(1.5, 1.5));
+        let circle = Ellipse::from_circle(Point::new(Mm(1.5), Mm(3.0)), Mm(1.5));
+        assert_is_close!(circle.center, Point::new(Mm(1.5), Mm(3.0)));
+        assert_is_close!(circle.radii, Vector::new(Mm(1.5), Mm(1.5)));
     }
 
     #[test]
     fn ellipse_width() {
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         assert_is_close!(ellipse.width(), Mm(2.0));
     }
 
     #[test]
     fn ellipse_height() {
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         assert_is_close!(ellipse.height(), Mm(4.0));
     }
 
     #[test]
     fn ellipse_to_path() {
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         let mut builder = PathBuilder::new();
-        builder.abs_move(Point::new(0.5, 3.0));
+        builder.abs_move(Point::new(Mm(0.5), Mm(3.0)));
         builder.rel_arc(
-            Vector::new(1.0, 2.0),
-            Angle::new(0.0),
+            Vector::new(Mm(1.0), Mm(2.0)),
+            Angle::ZERO,
             false,
             true,
-            Vector::new(1.0, -2.0),
+            Vector::new(Mm(1.0), Mm(-2.0)),
         );
         builder.rel_arc(
-            Vector::new(1.0, 2.0),
-            Angle::new(0.0),
+            Vector::new(Mm(1.0), Mm(2.0)),
+            Angle::ZERO,
             false,
             true,
-            Vector::new(1.0, 2.0),
+            Vector::new(Mm(1.0), Mm(2.0)),
         );
         builder.rel_arc(
-            Vector::new(1.0, 2.0),
-            Angle::new(0.0),
+            Vector::new(Mm(1.0), Mm(2.0)),
+            Angle::ZERO,
             false,
             true,
-            Vector::new(-1.0, 2.0),
+            Vector::new(Mm(-1.0), Mm(2.0)),
         );
         builder.rel_arc(
-            Vector::new(1.0, 2.0),
-            Angle::new(0.0),
+            Vector::new(Mm(1.0), Mm(2.0)),
+            Angle::ZERO,
             false,
             true,
-            Vector::new(-1.0, -2.0),
+            Vector::new(Mm(-1.0), Mm(-2.0)),
         );
         builder.close();
         let expected = builder.build();
@@ -370,105 +371,105 @@ mod tests {
 
     #[test]
     fn ellipse_from_unit() {
-        let ellipse = Ellipse::<Mm>::convert_from(Ellipse::<Inch> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse::<Mm>::convert_from(Ellipse {
+            center: Point::new(Inch(1.5), Inch(3.0)),
+            radii: Vector::new(Inch(1.0), Inch(2.0)),
         });
-        assert_is_close!(ellipse.center, Point::new(38.1, 76.2));
-        assert_is_close!(ellipse.radii, Vector::new(25.4, 50.8));
+        assert_is_close!(ellipse.center, Point::new(Mm(38.1), Mm(76.2)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(25.4), Mm(50.8)));
     }
 
     #[test]
     fn ellipse_mul_f32() {
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         } * 1.5;
-        assert_is_close!(ellipse.center, Point::new(2.25, 4.5));
-        assert_is_close!(ellipse.radii, Vector::new(1.5, 3.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(2.25), Mm(4.5)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(1.5), Mm(3.0)));
 
         // TODO: see comment by Unit
-        // let ellipse = 1.5 * Ellipse::<Mm> {
-        //     center: Point::new(1.5, 3.0),
-        //     radii: Vector::new(1.0, 2.0),
+        // let ellipse = 1.5 * Ellipse {
+        //     center: Point::new(Mm(1.5), Mm(3.0)),
+        //     radii: Vector::new(Mm(1.0), Mm(2.0)),
         // };
-        // assert_is_close!(ellipse.center, Point::new(2.25, 4.5));
-        // assert_is_close!(ellipse.radii, Vector::new(1.5, 3.0));
+        // assert_is_close!(ellipse.center, Point::new(Mm(2.25), Mm(4.5)));
+        // assert_is_close!(ellipse.radii, Vector::new(Mm(1.5), Mm(3.0)));
     }
 
     #[test]
     fn ellipse_mul_assign_f32() {
-        let mut ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let mut ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         ellipse *= 1.5;
-        assert_is_close!(ellipse.center, Point::new(2.25, 4.5));
-        assert_is_close!(ellipse.radii, Vector::new(1.5, 3.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(2.25), Mm(4.5)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(1.5), Mm(3.0)));
     }
 
     #[test]
     fn ellipse_div_f32() {
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         } / 1.5;
-        assert_is_close!(ellipse.center, Point::new(1.0, 2.0));
-        assert_is_close!(ellipse.radii, Vector::new(2.0 / 3.0, 4.0 / 3.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(1.0), Mm(2.0)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(2.0 / 3.0), Mm(4.0 / 3.0)));
     }
 
     #[test]
     fn ellipse_div_assign_f32() {
-        let mut ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let mut ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         ellipse /= 1.5;
-        assert_is_close!(ellipse.center, Point::new(1.0, 2.0));
-        assert_is_close!(ellipse.radii, Vector::new(2.0 / 3.0, 4.0 / 3.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(1.0), Mm(2.0)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(2.0 / 3.0), Mm(4.0 / 3.0)));
     }
 
     #[test]
     fn ellipse_is_close() {
-        assert!(Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        assert!(Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         }
         .is_close(&Ellipse {
-            center: Point::new(1.0, 2.0) * 1.5,
-            radii: Vector::new(2.0, 4.0) / 2.0,
+            center: Point::new(Mm(1.0), Mm(2.0)) * 1.5,
+            radii: Vector::new(Mm(2.0), Mm(4.0)) / 2.0,
         }));
-        assert!(!Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        assert!(!Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         }
         .is_close(&Ellipse {
-            center: Point::new(1.1, 2.0) * 1.5,
-            radii: Vector::new(2.0, 4.0) / 2.0,
+            center: Point::new(Mm(1.1), Mm(2.0)) * 1.5,
+            radii: Vector::new(Mm(2.0), Mm(4.0)) / 2.0,
         }));
-        assert!(!Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        assert!(!Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         }
         .is_close(&Ellipse {
-            center: Point::new(1.0, 2.1) * 1.5,
-            radii: Vector::new(2.0, 4.0) / 2.0,
+            center: Point::new(Mm(1.0), Mm(2.1)) * 1.5,
+            radii: Vector::new(Mm(2.0), Mm(4.0)) / 2.0,
         }));
-        assert!(!Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        assert!(!Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         }
         .is_close(&Ellipse {
-            center: Point::new(1.0, 2.0) * 1.5,
-            radii: Vector::new(2.1, 4.0) / 2.0,
+            center: Point::new(Mm(1.0), Mm(2.0)) * 1.5,
+            radii: Vector::new(Mm(2.1), Mm(4.0)) / 2.0,
         }));
-        assert!(!Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        assert!(!Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         }
         .is_close(&Ellipse {
-            center: Point::new(1.0, 2.0) * 1.5,
-            radii: Vector::new(2.0, 4.1) / 2.0,
+            center: Point::new(Mm(1.0), Mm(2.0)) * 1.5,
+            radii: Vector::new(Mm(2.0), Mm(4.1)) / 2.0,
         }));
     }
 
@@ -476,42 +477,42 @@ mod tests {
     fn ellipse_rotate() {
         use std::f32::consts::SQRT_2;
 
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         let rotate = Rotate::degrees(135.0);
         let path = ellipse * rotate;
 
-        let mut exp_bldr = PathBuilder::<Mm>::new();
-        exp_bldr.abs_move(Point::new(-1.75 * SQRT_2, -1.25 * SQRT_2));
+        let mut exp_bldr = PathBuilder::new();
+        exp_bldr.abs_move(Point::new(Mm(-1.75 * SQRT_2), Mm(-1.25 * SQRT_2)));
         exp_bldr.rel_arc(
-            Vector::new(1.0, 2.0),
+            Vector::new(Mm(1.0), Mm(2.0)),
             Angle::degrees(135.0),
             false,
             true,
-            Vector::new(0.5 * SQRT_2, 1.5 * SQRT_2),
+            Vector::new(Mm(0.5 * SQRT_2), Mm(1.5 * SQRT_2)),
         );
         exp_bldr.rel_arc(
-            Vector::new(1.0, 2.0),
+            Vector::new(Mm(1.0), Mm(2.0)),
             Angle::degrees(135.0),
             false,
             true,
-            Vector::new(-1.5 * SQRT_2, -0.5 * SQRT_2),
+            Vector::new(Mm(-1.5 * SQRT_2), Mm(-0.5 * SQRT_2)),
         );
         exp_bldr.rel_arc(
-            Vector::new(1.0, 2.0),
+            Vector::new(Mm(1.0), Mm(2.0)),
             Angle::degrees(135.0),
             false,
             true,
-            Vector::new(-0.5 * SQRT_2, -1.5 * SQRT_2),
+            Vector::new(Mm(-0.5 * SQRT_2), Mm(-1.5 * SQRT_2)),
         );
         exp_bldr.rel_arc(
-            Vector::new(1.0, 2.0),
+            Vector::new(Mm(1.0), Mm(2.0)),
             Angle::degrees(135.0),
             false,
             true,
-            Vector::new(1.5 * SQRT_2, 0.5 * SQRT_2),
+            Vector::new(Mm(1.5 * SQRT_2), Mm(0.5 * SQRT_2)),
         );
         exp_bldr.close();
         let expected = exp_bldr.build();
@@ -525,93 +526,93 @@ mod tests {
 
     #[test]
     fn ellipse_scale() {
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         } * Scale::new(2.0, 0.5);
 
-        assert_is_close!(ellipse.center, Point::new(3.0, 1.5));
-        assert_is_close!(ellipse.radii, Vector::new(2.0, 1.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(3.0), Mm(1.5)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(2.0), Mm(1.0)));
 
-        let mut ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let mut ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         ellipse *= Scale::new(2.0, 0.5);
 
-        assert_is_close!(ellipse.center, Point::new(3.0, 1.5));
-        assert_is_close!(ellipse.radii, Vector::new(2.0, 1.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(3.0), Mm(1.5)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(2.0), Mm(1.0)));
 
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         } / Scale::new(2.0, 0.5);
 
-        assert_is_close!(ellipse.center, Point::new(0.75, 6.0));
-        assert_is_close!(ellipse.radii, Vector::new(0.5, 4.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(0.75), Mm(6.0)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(0.5), Mm(4.0)));
 
-        let mut ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let mut ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         ellipse /= Scale::new(2.0, 0.5);
 
-        assert_is_close!(ellipse.center, Point::new(0.75, 6.0));
-        assert_is_close!(ellipse.radii, Vector::new(0.5, 4.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(0.75), Mm(6.0)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(0.5), Mm(4.0)));
     }
 
     #[test]
     fn ellipse_translate() {
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
-        } * Translate::new(2.0, -1.0);
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
+        } * Translate::new(Mm(2.0), Mm(-1.0));
 
-        assert_is_close!(ellipse.center, Point::new(3.5, 2.0));
-        assert_is_close!(ellipse.radii, Vector::new(1.0, 2.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(3.5), Mm(2.0)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(1.0), Mm(2.0)));
 
-        let mut ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let mut ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
-        ellipse *= Translate::new(2.0, -1.0);
+        ellipse *= Translate::new(Mm(2.0), Mm(-1.0));
 
-        assert_is_close!(ellipse.center, Point::new(3.5, 2.0));
-        assert_is_close!(ellipse.radii, Vector::new(1.0, 2.0));
+        assert_is_close!(ellipse.center, Point::new(Mm(3.5), Mm(2.0)));
+        assert_is_close!(ellipse.radii, Vector::new(Mm(1.0), Mm(2.0)));
     }
 
     #[test]
     fn ellipse_transform() {
         const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
 
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
-        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let transform = Transform::new(1.0, 0.5, Mm(-1.0), -0.5, 1.5, Mm(2.0));
         let path = ellipse * transform;
 
-        let mut exp_bldr = PathBuilder::<Mm>::new();
-        exp_bldr.abs_move(Point::new(1.0, 6.25));
+        let mut exp_bldr = PathBuilder::new();
+        exp_bldr.abs_move(Point::new(Mm(1.0), Mm(6.25)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(-A, -3.0 * A),
-            Vector::new(-A, -3.5 + 0.5 * A),
-            Vector::new(0.0, -3.5),
+            Vector::new(Mm(-A), Mm(-3.0 * A)),
+            Vector::new(Mm(-A), Mm(-3.5 + 0.5 * A)),
+            Vector::new(Mm(0.0), Mm(-3.5)),
         );
         exp_bldr.rel_cubic_bezier(
-            Vector::new(A, -0.5 * A),
-            Vector::new(2.0 - A, 2.5 - 3.0 * A),
-            Vector::new(2.0, 2.5),
+            Vector::new(Mm(A), Mm(-0.5 * A)),
+            Vector::new(Mm(2.0 - A), Mm(2.5 - 3.0 * A)),
+            Vector::new(Mm(2.0), Mm(2.5)),
         );
         exp_bldr.rel_cubic_bezier(
-            Vector::new(A, 3.0 * A),
-            Vector::new(A, 3.5 - 0.5 * A),
-            Vector::new(0.0, 3.5),
+            Vector::new(Mm(A), Mm(3.0 * A)),
+            Vector::new(Mm(A), Mm(3.5 - 0.5 * A)),
+            Vector::new(Mm(0.0), Mm(3.5)),
         );
         exp_bldr.rel_cubic_bezier(
-            Vector::new(-A, 0.5 * A),
-            Vector::new(-2.0 + A, -2.5 + 3.0 * A),
-            Vector::new(-2.0, -2.5),
+            Vector::new(Mm(-A), Mm(0.5 * A)),
+            Vector::new(Mm(-2.0 + A), Mm(-2.5 + 3.0 * A)),
+            Vector::new(Mm(-2.0), Mm(-2.5)),
         );
         exp_bldr.close();
         let expected = exp_bldr.build();
@@ -631,34 +632,34 @@ mod tests {
 
         const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
 
-        let ellipse = Ellipse::<Mm> {
-            center: Point::new(1.5, 3.0),
-            radii: Vector::new(1.0, 2.0),
+        let ellipse = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
         let path = ellipse * conv;
 
         let mut exp_bldr = PathBuilder::new();
-        exp_bldr.abs_move(Point::new(1.0, 6.25));
+        exp_bldr.abs_move(Point::new(Test(1.0), Test(6.25)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(-A, -3.0 * A),
-            Vector::new(-A, -3.5 + 0.5 * A),
-            Vector::new(0.0, -3.5),
+            Vector::new(Test(-A), Test(-3.0 * A)),
+            Vector::new(Test(-A), Test(-3.5 + 0.5 * A)),
+            Vector::new(Test(0.0), Test(-3.5)),
         );
         exp_bldr.rel_cubic_bezier(
-            Vector::new(A, -0.5 * A),
-            Vector::new(2.0 - A, 2.5 - 3.0 * A),
-            Vector::new(2.0, 2.5),
+            Vector::new(Test(A), Test(-0.5 * A)),
+            Vector::new(Test(2.0 - A), Test(2.5 - 3.0 * A)),
+            Vector::new(Test(2.0), Test(2.5)),
         );
         exp_bldr.rel_cubic_bezier(
-            Vector::new(A, 3.0 * A),
-            Vector::new(A, 3.5 - 0.5 * A),
-            Vector::new(0.0, 3.5),
+            Vector::new(Test(A), Test(3.0 * A)),
+            Vector::new(Test(A), Test(3.5 - 0.5 * A)),
+            Vector::new(Test(0.0), Test(3.5)),
         );
         exp_bldr.rel_cubic_bezier(
-            Vector::new(-A, 0.5 * A),
-            Vector::new(-2.0 + A, -2.5 + 3.0 * A),
-            Vector::new(-2.0, -2.5),
+            Vector::new(Test(-A), Test(0.5 * A)),
+            Vector::new(Test(-2.0 + A), Test(-2.5 + 3.0 * A)),
+            Vector::new(Test(-2.0), Test(-2.5)),
         );
         exp_bldr.close();
         let expected = exp_bldr.build();

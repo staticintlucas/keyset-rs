@@ -22,21 +22,15 @@ where
     /// Create a new vector
     #[inline]
     #[must_use]
-    pub fn new(x: f32, y: f32) -> Self {
-        Self {
-            x: U::new(x),
-            y: U::new(y),
-        }
+    pub const fn new(x: U, y: U) -> Self {
+        Self { x, y }
     }
 
     /// Create a vector with the same value for the `x` and `y` coordinates
     #[inline]
     #[must_use]
-    pub fn splat(v: f32) -> Self {
-        Self {
-            x: U::new(v),
-            y: U::new(v),
-        }
+    pub const fn splat(v: U) -> Self {
+        Self { x: v, y: v }
     }
 
     /// Create a new zero-length vector
@@ -47,13 +41,6 @@ where
             x: U::zero(),
             y: U::zero(),
         }
-    }
-
-    /// Create a new vector from unit values
-    #[inline]
-    #[must_use]
-    pub const fn from_units(x: U, y: U) -> Self {
-        Self { x, y }
     }
 
     /// Swap the `x` and `y` coordinates of the vector
@@ -490,14 +477,14 @@ mod tests {
 
     #[test]
     fn vector_new() {
-        let vector = Vector::<Mm>::new(2.0, 3.0);
+        let vector = Vector::new(Mm(2.0), Mm(3.0));
         assert_is_close!(vector.x, Mm(2.0));
         assert_is_close!(vector.y, Mm(3.0));
     }
 
     #[test]
     fn vector_splat() {
-        let vector = Vector::<Mm>::splat(2.0);
+        let vector = Vector::splat(Mm(2.0));
         assert_is_close!(vector.x, Mm(2.0));
         assert_is_close!(vector.y, Mm(2.0));
     }
@@ -507,13 +494,6 @@ mod tests {
         let vector = Vector::<Mm>::zero();
         assert_is_close!(vector.x, Mm(0.0));
         assert_is_close!(vector.y, Mm(0.0));
-    }
-
-    #[test]
-    fn vector_from_units() {
-        let vector = Vector::from_units(Mm(2.0), Mm(3.0));
-        assert_is_close!(vector.x, Mm(2.0));
-        assert_is_close!(vector.y, Mm(3.0));
     }
 
     #[test]
@@ -842,7 +822,7 @@ mod tests {
         let vector = Vector {
             x: Mm(2.0),
             y: Mm(3.0),
-        } * Translate::new(2.0, -1.0);
+        } * Translate::new(Mm(2.0), Mm(-1.0));
 
         assert_is_close!(vector.x, Mm(2.0));
         assert_is_close!(vector.y, Mm(3.0));
@@ -851,7 +831,7 @@ mod tests {
             x: Mm(2.0),
             y: Mm(3.0),
         };
-        vector *= Translate::new(2.0, -1.0);
+        vector *= Translate::new(Mm(2.0), Mm(-1.0));
 
         assert_is_close!(vector.x, Mm(2.0));
         assert_is_close!(vector.y, Mm(3.0));
@@ -859,7 +839,7 @@ mod tests {
 
     #[test]
     fn vector_transform() {
-        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let transform = Transform::new(1.0, 0.5, Mm(-1.0), -0.5, 1.5, Mm(2.0));
         let vector = Vector {
             x: Mm(2.0),
             y: Mm(3.0),

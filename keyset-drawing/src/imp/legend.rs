@@ -41,7 +41,7 @@ pub fn draw(
             }
             let width_factor = width_factor.max(1.0);
 
-            path * Translate::from_units(Dot(0.0), -f32::saturating_from(line_offset) * line_height)
+            path * Translate::new(Dot(0.0), -f32::saturating_from(line_offset) * line_height)
                 * Scale::new(1.0 / width_factor, 1.0)
         })
         .collect();
@@ -50,13 +50,13 @@ pub fn draw(
     // and text height so each character (especially symbols) are still aligned across keys
     let height = text_height + line_height * f32::saturating_from(n_lines - 1);
     let bounds = Rect::new(
-        Point::from_units(text_path.bounds.min.x, -height),
-        Point::from_units(text_path.bounds.max.x, Dot(0.0)),
+        Point::new(text_path.bounds.min.x, -height),
+        Point::new(text_path.bounds.max.x, Dot(0.0)),
     );
 
     // Align the legend within the margins
     let size = margin.size() - bounds.size();
-    let point = margin.min + Vector::from_units(size.x * align.x, size.y * align.y);
+    let point = margin.min + Vector::new(size.x * align.x, size.y * align.y);
     let text_path = text_path * Translate::from(point - bounds.min);
 
     KeyPath {
@@ -72,7 +72,7 @@ mod tests {
     use isclose::assert_is_close;
 
     use color::Color;
-    use geom::PathSegment;
+    use geom::{KeyUnit, PathSegment};
     use key::Text;
 
     use super::*;
@@ -86,7 +86,9 @@ mod tests {
         };
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
         let profile = Profile::default();
-        let top_rect = profile.top_with_size(Vector::new(1.0, 1.0)).to_rect();
+        let top_rect = profile
+            .top_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)))
+            .to_rect();
         let path = draw(&legend, &font, &profile, top_rect, Scale::new(0.0, 0.0));
 
         assert_eq!(
@@ -115,8 +117,11 @@ mod tests {
 
         assert_is_close!(
             path.data.bounds.width(),
-            (profile.top_with_size(Vector::new(1.0, 1.0)).to_rect() - profile.text_margin.get(5))
-                .width()
+            (profile
+                .top_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)))
+                .to_rect()
+                - profile.text_margin.get(5))
+            .width()
         );
 
         let legend = ::key::Legend {

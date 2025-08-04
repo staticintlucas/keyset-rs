@@ -119,9 +119,12 @@ impl Template {
     pub fn draw(&self, keys: &[Key]) -> Drawing {
         let bounds = keys
             .iter()
-            .map(|k| k.shape.outer_rect() * Translate::from_units(k.position.x, k.position.y))
+            .map(|k| k.shape.outer_rect() * Translate::new(k.position.x, k.position.y))
             .fold(
-                Rect::from_origin_and_size(Point::origin(), Vector::new(1.0, 1.0)),
+                Rect::from_origin_and_size(
+                    Point::origin(),
+                    Vector::new(KeyUnit(1.0), KeyUnit(1.0)),
+                ),
                 |rect, key| Rect::new(rect.min.min(key.min), rect.max.max(key.max)),
             );
 

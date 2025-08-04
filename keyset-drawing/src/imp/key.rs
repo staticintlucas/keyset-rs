@@ -15,11 +15,11 @@ pub fn top(key: &key::Key, template: &Template) -> KeyPath {
         }
         key::Shape::Homing(..) => template
             .profile
-            .top_with_size(Vector::new(1.0, 1.0))
+            .top_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)))
             .to_path(),
         key::Shape::SteppedCaps => template
             .profile
-            .top_with_size(Vector::new(1.25, 1.0))
+            .top_with_size(Vector::new(KeyUnit(1.25), KeyUnit(1.0)))
             .to_path(),
         key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_top_path(&template.profile),
     };
@@ -42,11 +42,11 @@ pub fn bottom(key: &key::Key, template: &Template) -> KeyPath {
         }
         key::Shape::Homing(..) => template
             .profile
-            .bottom_with_size(Vector::new(1.0, 1.0))
+            .bottom_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)))
             .to_path(),
         key::Shape::SteppedCaps => template
             .profile
-            .bottom_with_size(Vector::new(1.75, 1.0))
+            .bottom_with_size(Vector::new(KeyUnit(1.75), KeyUnit(1.0)))
             .to_path(),
         key::Shape::IsoHorizontal | key::Shape::IsoVertical => iso_bottom_path(&template.profile),
     };
@@ -77,15 +77,15 @@ pub fn homing(key: &key::Key, template: &Template) -> Option<KeyPath> {
         key::Homing::Scoop => None,
         key::Homing::Bar => Some(
             Rect::from_center_and_size(
-                center + Vector::new(0.0, profile.homing.bar.y_offset.get()),
+                center + Vector::new(Dot(0.0), profile.homing.bar.y_offset),
                 profile.homing.bar.size,
             )
             .to_path(),
         ),
         key::Homing::Bump => Some(
             Ellipse::from_circle(
-                center + Vector::new(0.0, profile.homing.bump.y_offset.get()),
-                profile.homing.bump.diameter.get() / 2.0,
+                center + Vector::new(Dot(0.0), profile.homing.bump.y_offset),
+                profile.homing.bump.diameter / 2.0,
             )
             .to_path(),
         ),
@@ -108,8 +108,8 @@ pub fn step(key: &key::Key, template: &Template) -> Option<KeyPath> {
         // Take average dimensions of top and bottom
         let rect = {
             let frac = 0.5;
-            let top = profile.top_with_size(Vector::new(1.0, 1.0));
-            let btm = profile.bottom_with_size(Vector::new(1.0, 1.0));
+            let top = profile.top_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)));
+            let btm = profile.bottom_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)));
             RoundRect::new(
                 Point::lerp(top.min, btm.min, frac),
                 Point::lerp(top.max, btm.max, frac),
@@ -129,14 +129,19 @@ pub fn step(key: &key::Key, template: &Template) -> Option<KeyPath> {
 }
 
 fn iso_bottom_path(profile: &Profile) -> Path<Dot> {
-    let rect150 = profile.bottom_with_size(Vector::new(1.5, 1.0)).to_rect();
-    let rect125 = profile
-        .bottom_with_rect(Rect::new(Point::new(0.25, 0.0), Point::new(1.5, 2.0)))
+    let rect150 = profile
+        .bottom_with_size(Vector::new(KeyUnit(1.5), KeyUnit(1.0)))
         .to_rect();
-    let radii = Vector::splat(profile.bottom.radius.get());
+    let rect125 = profile
+        .bottom_with_rect(Rect::new(
+            Point::new(KeyUnit(0.25), KeyUnit(0.0)),
+            Point::new(KeyUnit(1.5), KeyUnit(2.0)),
+        ))
+        .to_rect();
+    let radii = Vector::splat(profile.bottom.radius);
 
     let mut path = Path::builder();
-    path.abs_move(rect150.min + Vector::from_units(Dot::zero(), radii.x));
+    path.abs_move(rect150.min + Vector::new(Dot::zero(), radii.x));
     path.rel_arc(radii, Angle::ZERO, false, true, radii.neg_y());
     path.abs_horiz_line(rect150.max.x - radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, radii);
@@ -154,14 +159,19 @@ fn iso_bottom_path(profile: &Profile) -> Path<Dot> {
 }
 
 fn iso_top_path(profile: &Profile) -> Path<Dot> {
-    let rect150 = profile.top_with_size(Vector::new(1.5, 1.0)).to_rect();
-    let rect125 = profile
-        .top_with_rect(Rect::new(Point::new(0.25, 0.0), Point::new(1.5, 2.0)))
+    let rect150 = profile
+        .top_with_size(Vector::new(KeyUnit(1.5), KeyUnit(1.0)))
         .to_rect();
-    let radii = Vector::splat(profile.top.radius.get());
+    let rect125 = profile
+        .top_with_rect(Rect::new(
+            Point::new(KeyUnit(0.25), KeyUnit(0.0)),
+            Point::new(KeyUnit(1.5), KeyUnit(2.0)),
+        ))
+        .to_rect();
+    let radii = Vector::splat(profile.top.radius);
 
     let mut path = Path::builder();
-    path.abs_move(rect150.min + Vector::from_units(Dot::zero(), radii.x));
+    path.abs_move(rect150.min + Vector::new(Dot::zero(), radii.x));
     path.rel_arc(radii, Angle::ZERO, false, true, radii.neg_y());
     path.abs_horiz_line(rect150.max.x - radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, radii);
@@ -181,12 +191,12 @@ fn iso_top_path(profile: &Profile) -> Path<Dot> {
 fn step_path(rect: RoundRect<Dot>) -> Path<Dot> {
     let radii = rect.radii;
     let rect = Rect::from_origin_and_size(
-        Point::from_units(Dot::convert_from(KeyUnit(1.25)) - rect.min.x, rect.min.y),
-        Vector::from_units(KeyUnit(0.5).convert_into(), rect.height()),
+        Point::new(Dot::convert_from(KeyUnit(1.25)) - rect.min.x, rect.min.y),
+        Vector::new(KeyUnit(0.5).convert_into(), rect.height()),
     );
 
     let mut path = Path::builder();
-    path.abs_move(rect.min + Vector::from_units(Dot::zero(), radii.y));
+    path.abs_move(rect.min + Vector::new(Dot::zero(), radii.y));
     path.rel_arc(radii, Angle::ZERO, false, false, -radii);
     path.abs_horiz_line(rect.max.x - radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, radii);
@@ -221,13 +231,15 @@ mod tests {
         assert_is_close!(path.fill.unwrap(), key.color);
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
-        let top_rect = template.profile.top_with_size(Vector::new(1.0, 1.0));
+        let top_rect = template
+            .profile
+            .top_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)));
         assert_is_close!(bounds, top_rect.to_rect());
 
         // None
         let key = {
             let mut key = Key::example();
-            key.shape = key::Shape::None(Vector::splat(1.0));
+            key.shape = key::Shape::None(Vector::splat(KeyUnit(1.0)));
             key
         };
         let path = top(&key, &template);
@@ -242,7 +254,7 @@ mod tests {
         };
         let path = top(&key, &template);
         let bounds = path.data.bounds;
-        let top_rect = template.profile.top_with_size(Vector::splat(1.0));
+        let top_rect = template.profile.top_with_size(Vector::splat(KeyUnit(1.0)));
         assert_is_close!(bounds, top_rect.to_rect());
 
         // Stepped caps
@@ -253,7 +265,9 @@ mod tests {
         };
         let path = top(&key, &template);
         let bounds = path.data.bounds;
-        let top_rect = template.profile.top_with_size(Vector::new(1.25, 1.0));
+        let top_rect = template
+            .profile
+            .top_with_size(Vector::new(KeyUnit(1.25), KeyUnit(1.0)));
         assert_is_close!(bounds, top_rect.to_rect());
 
         // ISO enter
@@ -264,7 +278,9 @@ mod tests {
         };
         let path = top(&key, &template);
         let bounds = path.data.bounds;
-        let top_rect = template.profile.top_with_size(Vector::new(1.5, 2.0));
+        let top_rect = template
+            .profile
+            .top_with_size(Vector::new(KeyUnit(1.5), KeyUnit(2.0)));
         assert_is_close!(bounds, top_rect.to_rect());
     }
 
@@ -280,13 +296,15 @@ mod tests {
         assert_is_close!(path.fill.unwrap(), key.color);
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
-        let bottom_rect = template.profile.bottom_with_size(Vector::new(1.0, 1.0));
+        let bottom_rect = template
+            .profile
+            .bottom_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)));
         assert_is_close!(bounds, bottom_rect.to_rect());
 
         // None
         let key = {
             let mut key = Key::example();
-            key.shape = key::Shape::None(Vector::splat(1.0));
+            key.shape = key::Shape::None(Vector::splat(KeyUnit(1.0)));
             key
         };
         let path = bottom(&key, &template);
@@ -301,7 +319,9 @@ mod tests {
         };
         let path = bottom(&key, &template);
         let bounds = path.data.bounds;
-        let bottom_rect = template.profile.bottom_with_size(Vector::splat(1.0));
+        let bottom_rect = template
+            .profile
+            .bottom_with_size(Vector::splat(KeyUnit(1.0)));
         assert_is_close!(bounds, bottom_rect.to_rect());
 
         // Stepped caps
@@ -312,7 +332,9 @@ mod tests {
         };
         let path = bottom(&key, &template);
         let bounds = path.data.bounds;
-        let bottom_rect = template.profile.bottom_with_size(Vector::new(1.75, 1.0));
+        let bottom_rect = template
+            .profile
+            .bottom_with_size(Vector::new(KeyUnit(1.75), KeyUnit(1.0)));
         assert_is_close!(bounds, bottom_rect.to_rect());
 
         // ISO enter
@@ -323,7 +345,9 @@ mod tests {
         };
         let path = bottom(&key, &template);
         let bounds = path.data.bounds;
-        let bottom_rect = template.profile.bottom_with_size(Vector::new(1.5, 2.0));
+        let bottom_rect = template
+            .profile
+            .bottom_with_size(Vector::new(KeyUnit(1.5), KeyUnit(2.0)));
         assert_is_close!(bounds, bottom_rect.to_rect());
     }
 
@@ -357,9 +381,12 @@ mod tests {
         assert_is_close!(path.outline.unwrap().color, bar.color.highlight(0.15));
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
         let expected = Rect::from_center_and_size(
-            template.profile.top_with_size(Vector::splat(1.0)).center(),
+            template
+                .profile
+                .top_with_size(Vector::splat(KeyUnit(1.0)))
+                .center(),
             template.profile.homing.bar.size,
-        ) * Translate::new(0.0, template.profile.homing.bar.y_offset.get());
+        ) * Translate::new(Dot(0.0), template.profile.homing.bar.y_offset);
         assert_is_close!(bounds, expected);
 
         // Bump
@@ -378,9 +405,12 @@ mod tests {
         assert_is_close!(path.outline.unwrap().color, bump.color.highlight(0.15));
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
         let expected = Rect::from_center_and_size(
-            template.profile.top_with_size(Vector::splat(1.0)).center(),
-            Vector::splat(template.profile.homing.bump.diameter.get()),
-        ) * Translate::new(0.0, template.profile.homing.bump.y_offset.get());
+            template
+                .profile
+                .top_with_size(Vector::splat(KeyUnit(1.0)))
+                .center(),
+            Vector::splat(template.profile.homing.bump.diameter),
+        ) * Translate::new(Dot(0.0), template.profile.homing.bump.y_offset);
         assert_is_close!(bounds, expected);
 
         // Non-homing key
@@ -408,19 +438,21 @@ mod tests {
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
 
-        let top_rect = template.profile.top_with_size(Vector::splat(1.0));
-        let bottom_rect = template.profile.bottom_with_size(Vector::splat(1.0));
+        let top_rect = template.profile.top_with_size(Vector::splat(KeyUnit(1.0)));
+        let bottom_rect = template
+            .profile
+            .bottom_with_size(Vector::splat(KeyUnit(1.0)));
         let rect = RoundRect::new(
             top_rect.min.lerp(bottom_rect.min, 0.5),
             top_rect.max.lerp(bottom_rect.max, 0.5),
             (top_rect.radii + bottom_rect.radii) / 2.0,
         );
         let rect = Rect::new(
-            Point::from_units(
+            Point::new(
                 Dot::convert_from(KeyUnit(1.25)) - rect.min.x - rect.radii.x,
                 rect.min.y,
             ),
-            Point::from_units(Dot::convert_from(KeyUnit(1.75)) - rect.min.x, rect.max.y),
+            Point::new(Dot::convert_from(KeyUnit(1.75)) - rect.min.x, rect.max.y),
         );
 
         assert_is_close!(bounds, rect);

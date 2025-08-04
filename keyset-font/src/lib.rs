@@ -226,12 +226,12 @@ impl Font {
         let mut position = Vector::zero();
         for (info, pos) in izip!(infos, positions) {
             let advance = Vector::new(
-                pos.x_advance.saturating_into(),
-                pos.y_advance.saturating_into(),
+                FontUnit(pos.x_advance.saturating_into()),
+                FontUnit(pos.y_advance.saturating_into()),
             );
             let offset = Vector::new(
-                pos.x_offset.saturating_into(),
-                pos.y_offset.saturating_into(),
+                FontUnit(pos.x_offset.saturating_into()),
+                FontUnit(pos.y_offset.saturating_into()),
             );
 
             self.0.face.outline_glyph(

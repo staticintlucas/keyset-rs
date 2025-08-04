@@ -29,7 +29,7 @@ impl std::error::Error for Error {}
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
-    use geom::Point;
+    use geom::{KeyUnit, Point};
 
     use crate::Template;
 
@@ -39,7 +39,7 @@ mod tests {
         let key1 = key::Key::example();
         let key2 = {
             let mut tmp = key1.clone();
-            tmp.position = Point::new(1e20, 1e20);
+            tmp.position = Point::new(KeyUnit(1e20), KeyUnit(1e20));
             tmp
         };
 

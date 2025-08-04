@@ -139,7 +139,7 @@ mod tests {
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = template
             .profile
-            .top_with_size(Vector::new(1.5, 1.0))
+            .top_with_size(Vector::new(KeyUnit(1.5), KeyUnit(1.0)))
             .to_rect()
             - template.profile.text_margin.get(font_size);
         assert_is_close!(bounding_box, margin_rect);
@@ -162,12 +162,9 @@ mod tests {
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let margin_rect = template
             .profile
-            .top_with_size(Vector::new(1.25, 2.0))
+            .top_with_size(Vector::new(KeyUnit(1.25), KeyUnit(2.0)))
             .to_rect()
-            * Translate::<Dot>::from_units(
-                KeyUnit(0.25).convert_into(),
-                KeyUnit(0.0).convert_into(),
-            )
+            * Translate::<Dot>::new(KeyUnit(0.25).convert_into(), KeyUnit(0.0).convert_into())
             - template.profile.text_margin.get(font_size);
         assert_is_close!(bounding_box, margin_rect);
     }

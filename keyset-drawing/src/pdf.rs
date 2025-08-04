@@ -82,7 +82,7 @@ pub fn draw(drawing: &Drawing) -> Vec<u8> {
 
 fn draw_key(content: &mut Content, key: &KeyDrawing, conv: Conversion<PdfUnit, Dot>) {
     // Convert global conversion to local (per-key) conversion
-    let conv = conv.pre_translate(Vector::from_units(
+    let conv = conv.pre_translate(Vector::new(
         key.origin.x.convert_into(),
         key.origin.y.convert_into(),
     ));

@@ -4,7 +4,7 @@ mod error;
 
 use kle_serial::f32 as kle;
 
-use geom::{Point, Vector};
+use geom::{KeyUnit, Point, Vector};
 
 pub use self::error::{Error, Result};
 use crate::{Homing, Key, Legend, Shape, Text};
@@ -40,13 +40,13 @@ fn shape_from_kle(key: &kle::Key) -> Result<Shape> {
     } else if is_1u && (key.profile.contains("bump") || key.profile.contains("dot")) {
         Ok(Shape::Homing(Some(Homing::Bump)))
     } else if is_normal && key.profile.contains("space") {
-        Ok(Shape::Space(Vector::new(w, h)))
+        Ok(Shape::Space(Vector::new(KeyUnit(w), KeyUnit(h))))
     } else if is_1u && key.homing {
         Ok(Shape::Homing(None))
     } else if key.decal {
-        Ok(Shape::None(Vector::new(w, h)))
+        Ok(Shape::None(Vector::new(KeyUnit(w), KeyUnit(h))))
     } else if is_normal {
-        Ok(Shape::Normal(Vector::new(w, h)))
+        Ok(Shape::Normal(Vector::new(KeyUnit(w), KeyUnit(h))))
     } else if is_close(&dims, &STEP_CAPS) {
         Ok(Shape::SteppedCaps)
     } else if is_close(&dims, &ISO_VERT) {
@@ -82,7 +82,10 @@ impl TryFrom<kle::Key> for Key {
 
     #[inline]
     fn try_from(mut key: kle::Key) -> Result<Self> {
-        let position = Point::new(key.x + key.x2.min(0.0), key.y + key.y2.min(0.0));
+        let position = Point::new(
+            KeyUnit(key.x + key.x2.min(0.0)),
+            KeyUnit(key.y + key.y2.min(0.0)),
+        );
         let shape = shape_from_kle(&key)?;
         let color = key.color.rgb().into();
         let legends = {
@@ -195,10 +198,10 @@ mod tests {
         })
         .unwrap();
 
-        assert_matches!(default_key, Shape::Normal(size) if size.is_close(&Vector::new(1.0, 1.0)));
-        assert_matches!(regular_key, Shape::Normal(size) if size.is_close(&Vector::new(2.25, 1.0)));
-        assert_matches!(decal, Shape::None(size) if size.is_close(&Vector::new(1.0, 1.0)));
-        assert_matches!(space, Shape::Space(size) if size.is_close(&Vector::new(1.0, 1.0)));
+        assert_matches!(default_key, Shape::Normal(size) if size.is_close(&Vector::new(KeyUnit(1.0), KeyUnit(1.0))));
+        assert_matches!(regular_key, Shape::Normal(size) if size.is_close(&Vector::new(KeyUnit(2.25), KeyUnit(1.0))));
+        assert_matches!(decal, Shape::None(size) if size.is_close(&Vector::new(KeyUnit(1.0), KeyUnit(1.0))));
+        assert_matches!(space, Shape::Space(size) if size.is_close(&Vector::new(KeyUnit(1.0), KeyUnit(1.0))));
         assert_matches!(homing_default, Shape::Homing(None));
         assert_matches!(homing_scoop, Shape::Homing(Some(Homing::Scoop)));
         assert_matches!(homing_bar, Shape::Homing(Some(Homing::Bar)));
@@ -261,10 +264,10 @@ mod tests {
         .unwrap();
 
         assert_eq!(result1.len(), 4);
-        assert_is_close!(result1[0].position, Point::new(0.0, 0.0));
-        assert_is_close!(result1[1].position, Point::new(1.0, 0.0));
-        assert_is_close!(result1[2].position, Point::new(1.5, 0.25));
-        assert_is_close!(result1[3].position, Point::new(0.0, 1.25));
+        assert_is_close!(result1[0].position, Point::new(KeyUnit(0.0), KeyUnit(0.0)));
+        assert_is_close!(result1[1].position, Point::new(KeyUnit(1.0), KeyUnit(0.0)));
+        assert_is_close!(result1[2].position, Point::new(KeyUnit(1.5), KeyUnit(0.25)));
+        assert_is_close!(result1[3].position, Point::new(KeyUnit(0.0), KeyUnit(1.25)));
 
         let result2 = from_json(indoc!(
             r#"

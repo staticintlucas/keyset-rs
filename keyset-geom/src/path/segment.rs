@@ -389,14 +389,14 @@ mod tests {
     #[test]
     fn path_seg_is_close() {
         let segs = [
-            Move(Point::<Mm>::new(1.0, 1.0)),
-            Line(Vector::new(1.0, 1.0)),
+            Move(Point::new(Mm(1.0), Mm(1.0))),
+            Line(Vector::new(Mm(1.0), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.0, 0.5),
-                Vector::new(0.5, 1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(0.0), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(1.0), Mm(1.0))),
             Close,
         ];
         let segs2 = segs.map(|s| s * 3.0 / 3.0);
@@ -419,25 +419,25 @@ mod tests {
     #[test]
     fn path_seg_mul() {
         let input = vec![
-            Move(Point::<Mm>::new(1.0, 1.0)),
-            Line(Vector::new(1.0, 1.0)),
+            Move(Point::new(Mm(1.0), Mm(1.0))),
+            Line(Vector::new(Mm(1.0), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.0, 0.5),
-                Vector::new(0.5, 1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(0.0), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(1.0), Mm(1.0))),
             Close,
         ];
         let expected = vec![
-            Move(Point::<Mm>::new(2.0, 2.0)),
-            Line(Vector::new(2.0, 2.0)),
+            Move(Point::new(Mm(2.0), Mm(2.0))),
+            Line(Vector::new(Mm(2.0), Mm(2.0))),
             CubicBezier(
-                Vector::new(0.0, 1.0),
-                Vector::new(1.0, 2.0),
-                Vector::new(2.0, 2.0),
+                Vector::new(Mm(0.0), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(2.0)),
+                Vector::new(Mm(2.0), Mm(2.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 2.0), Vector::new(2.0, 2.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(2.0)), Vector::new(Mm(2.0), Mm(2.0))),
             Close,
         ];
 
@@ -455,25 +455,25 @@ mod tests {
     #[test]
     fn path_seg_div() {
         let input = vec![
-            Move(Point::<Mm>::new(1.0, 1.0)),
-            Line(Vector::new(1.0, 1.0)),
+            Move(Point::new(Mm(1.0), Mm(1.0))),
+            Line(Vector::new(Mm(1.0), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.0, 0.5),
-                Vector::new(0.5, 1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(0.0), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(1.0), Mm(1.0))),
             Close,
         ];
         let expected = vec![
-            Move(Point::<Mm>::new(0.5, 0.5)),
-            Line(Vector::new(0.5, 0.5)),
+            Move(Point::new(Mm(0.5), Mm(0.5))),
+            Line(Vector::new(Mm(0.5), Mm(0.5))),
             CubicBezier(
-                Vector::new(0.0, 0.25),
-                Vector::new(0.25, 0.5),
-                Vector::new(0.5, 0.5),
+                Vector::new(Mm(0.0), Mm(0.25)),
+                Vector::new(Mm(0.25), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(0.5)),
             ),
-            QuadraticBezier(Vector::new(0.0, 0.5), Vector::new(0.5, 0.5)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(0.5)), Vector::new(Mm(0.5), Mm(0.5))),
             Close,
         ];
 
@@ -495,27 +495,27 @@ mod tests {
         let rotate = Rotate::degrees(135.0);
 
         let input = vec![
-            Move(Point::<Mm>::new(1.0, 1.0)),
-            Line(Vector::new(1.0, 1.0)),
+            Move(Point::new(Mm(1.0), Mm(1.0))),
+            Line(Vector::new(Mm(1.0), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.0, 0.5),
-                Vector::new(0.5, 1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(0.0), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(1.0), Mm(1.0))),
             Close,
         ];
         let expected = vec![
-            Move(Point::<Mm>::new(-SQRT_2, 0.0)),
-            Line(Vector::new(-SQRT_2, 0.0)),
+            Move(Point::new(Mm(-SQRT_2), Mm(0.0))),
+            Line(Vector::new(Mm(-SQRT_2), Mm(0.0))),
             CubicBezier(
-                Vector::new(-0.25 * SQRT_2, -0.25 * SQRT_2),
-                Vector::new(-0.75 * SQRT_2, -0.25 * SQRT_2),
-                Vector::new(-SQRT_2, 0.0),
+                Vector::new(Mm(-0.25 * SQRT_2), Mm(-0.25 * SQRT_2)),
+                Vector::new(Mm(-0.75 * SQRT_2), Mm(-0.25 * SQRT_2)),
+                Vector::new(Mm(-SQRT_2), Mm(0.0)),
             ),
             QuadraticBezier(
-                Vector::new(-0.5 * SQRT_2, -0.5 * SQRT_2),
-                Vector::new(-SQRT_2, 0.0),
+                Vector::new(Mm(-0.5 * SQRT_2), Mm(-0.5 * SQRT_2)),
+                Vector::new(Mm(-SQRT_2), Mm(0.0)),
             ),
             Close,
         ];
@@ -535,25 +535,25 @@ mod tests {
         let scale = Scale::new(2.0, 0.5);
 
         let input = vec![
-            Move(Point::<Mm>::new(1.0, 1.0)),
-            Line(Vector::new(1.0, 1.0)),
+            Move(Point::new(Mm(1.0), Mm(1.0))),
+            Line(Vector::new(Mm(1.0), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.0, 0.5),
-                Vector::new(0.5, 1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(0.0), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(1.0), Mm(1.0))),
             Close,
         ];
         let expected = vec![
-            Move(Point::<Mm>::new(2.0, 0.5)),
-            Line(Vector::new(2.0, 0.5)),
+            Move(Point::new(Mm(2.0), Mm(0.5))),
+            Line(Vector::new(Mm(2.0), Mm(0.5))),
             CubicBezier(
-                Vector::new(0.0, 0.25),
-                Vector::new(1.0, 0.5),
-                Vector::new(2.0, 0.5),
+                Vector::new(Mm(0.0), Mm(0.25)),
+                Vector::new(Mm(1.0), Mm(0.5)),
+                Vector::new(Mm(2.0), Mm(0.5)),
             ),
-            QuadraticBezier(Vector::new(0.0, 0.5), Vector::new(2.0, 0.5)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(0.5)), Vector::new(Mm(2.0), Mm(0.5))),
             Close,
         ];
 
@@ -567,14 +567,14 @@ mod tests {
         }
 
         let expected = vec![
-            Move(Point::<Mm>::new(0.5, 2.0)),
-            Line(Vector::new(0.5, 2.0)),
+            Move(Point::new(Mm(0.5), Mm(2.0))),
+            Line(Vector::new(Mm(0.5), Mm(2.0))),
             CubicBezier(
-                Vector::new(0.0, 1.0),
-                Vector::new(0.25, 2.0),
-                Vector::new(0.5, 2.0),
+                Vector::new(Mm(0.0), Mm(1.0)),
+                Vector::new(Mm(0.25), Mm(2.0)),
+                Vector::new(Mm(0.5), Mm(2.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 2.0), Vector::new(0.5, 2.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(2.0)), Vector::new(Mm(0.5), Mm(2.0))),
             Close,
         ];
 
@@ -590,28 +590,28 @@ mod tests {
 
     #[test]
     fn path_seg_translate() {
-        let translate = Translate::new(2.0, -1.0);
+        let translate = Translate::new(Mm(2.0), Mm(-1.0));
 
         let input = vec![
-            Move(Point::<Mm>::new(1.0, 1.0)),
-            Line(Vector::new(1.0, 1.0)),
+            Move(Point::new(Mm(1.0), Mm(1.0))),
+            Line(Vector::new(Mm(1.0), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.0, 0.5),
-                Vector::new(0.5, 1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(0.0), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(1.0), Mm(1.0))),
             Close,
         ];
         let expected = vec![
-            Move(Point::<Mm>::new(3.0, 0.0)),
-            Line(Vector::new(1.0, 1.0)),
+            Move(Point::new(Mm(3.0), Mm(0.0))),
+            Line(Vector::new(Mm(1.0), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.0, 0.5),
-                Vector::new(0.5, 1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(0.0), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(1.0), Mm(1.0))),
             Close,
         ];
 
@@ -627,28 +627,28 @@ mod tests {
 
     #[test]
     fn path_seg_transform() {
-        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let transform = Transform::new(1.0, 0.5, Mm(-1.0), -0.5, 1.5, Mm(2.0));
 
         let input = vec![
-            Move(Point::<Mm>::new(1.0, 1.0)),
-            Line(Vector::new(1.0, 1.0)),
+            Move(Point::new(Mm(1.0), Mm(1.0))),
+            Line(Vector::new(Mm(1.0), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.0, 0.5),
-                Vector::new(0.5, 1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(0.0), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(1.0), Mm(1.0))),
             Close,
         ];
         let expected = vec![
-            Move(Point::<Mm>::new(0.5, 3.0)),
-            Line(Vector::new(1.5, 1.0)),
+            Move(Point::new(Mm(0.5), Mm(3.0))),
+            Line(Vector::new(Mm(1.5), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.25, 0.75),
-                Vector::new(1.0, 1.25),
-                Vector::new(1.5, 1.0),
+                Vector::new(Mm(0.25), Mm(0.75)),
+                Vector::new(Mm(1.0), Mm(1.25)),
+                Vector::new(Mm(1.5), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.5, 1.5), Vector::new(1.5, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.5), Mm(1.5)), Vector::new(Mm(1.5), Mm(1.0))),
             Close,
         ];
 
@@ -671,25 +671,28 @@ mod tests {
         let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
 
         let input = vec![
-            Move(Point::<Mm>::new(1.0, 1.0)),
-            Line(Vector::new(1.0, 1.0)),
+            Move(Point::new(Mm(1.0), Mm(1.0))),
+            Line(Vector::new(Mm(1.0), Mm(1.0))),
             CubicBezier(
-                Vector::new(0.0, 0.5),
-                Vector::new(0.5, 1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(0.0), Mm(0.5)),
+                Vector::new(Mm(0.5), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.0, 1.0), Vector::new(1.0, 1.0)),
+            QuadraticBezier(Vector::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(1.0), Mm(1.0))),
             Close,
         ];
         let expected = vec![
-            Move(Point::new(0.5, 3.0)),
-            Line(Vector::new(1.5, 1.0)),
+            Move(Point::new(Test(0.5), Test(3.0))),
+            Line(Vector::new(Test(1.5), Test(1.0))),
             CubicBezier(
-                Vector::new(0.25, 0.75),
-                Vector::new(1.0, 1.25),
-                Vector::new(1.5, 1.0),
+                Vector::new(Test(0.25), Test(0.75)),
+                Vector::new(Test(1.0), Test(1.25)),
+                Vector::new(Test(1.5), Test(1.0)),
             ),
-            QuadraticBezier(Vector::new(0.5, 1.5), Vector::new(1.5, 1.0)),
+            QuadraticBezier(
+                Vector::new(Test(0.5), Test(1.5)),
+                Vector::new(Test(1.5), Test(1.0)),
+            ),
             Close,
         ];
 

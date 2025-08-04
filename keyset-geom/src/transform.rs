@@ -112,28 +112,15 @@ where
     /// Create a new translation with the given distances
     #[inline]
     #[must_use]
-    pub fn new(x: f32, y: f32) -> Self {
-        Self {
-            x: U::new(x),
-            y: U::new(y),
-        }
+    pub const fn new(x: U, y: U) -> Self {
+        Self { x, y }
     }
 
     /// Create a new translation with the same value for the `x` and `y` distances
     #[inline]
     #[must_use]
-    pub fn splat(v: f32) -> Self {
-        Self {
-            x: U::new(v),
-            y: U::new(v),
-        }
-    }
-
-    /// Create a new translation from unit distances
-    #[inline]
-    #[must_use]
-    pub const fn from_units(x: U, y: U) -> Self {
-        Self { x, y }
+    pub const fn splat(v: U) -> Self {
+        Self { x: v, y: v }
     }
 }
 
@@ -214,15 +201,6 @@ pub struct Rotate {
 }
 
 impl Rotate {
-    /// Create a new rotation with the given angle in radians
-    #[inline]
-    #[must_use]
-    pub const fn new(radians: f32) -> Self {
-        Self {
-            angle: Angle::new(radians),
-        }
-    }
-
     /// Creates a new rotation with the given angle in radians
     #[inline]
     #[must_use]
@@ -333,14 +311,14 @@ where
     #[allow(clippy::similar_names)]
     #[inline]
     #[must_use]
-    pub fn new(a_xx: f32, a_xy: f32, t_x: f32, a_yx: f32, a_yy: f32, t_y: f32) -> Self {
+    pub const fn new(a_xx: f32, a_xy: f32, t_x: U, a_yx: f32, a_yy: f32, t_y: U) -> Self {
         Self {
             a_xx,
             a_xy,
-            t_x: U::new(t_x),
+            t_x,
             a_yx,
             a_yy,
-            t_y: U::new(t_y),
+            t_y,
         }
     }
 
@@ -522,23 +500,16 @@ mod tests {
 
     #[test]
     fn translate_new() {
-        let translate = Translate::<Mm>::new(2.0, 3.0);
+        let translate = Translate::new(Mm(2.0), Mm(3.0));
         assert_is_close!(translate.x, Mm(2.0));
         assert_is_close!(translate.y, Mm(3.0));
     }
 
     #[test]
     fn translate_splat() {
-        let translate = Translate::<Mm>::splat(4.0);
+        let translate = Translate::splat(Mm(4.0));
         assert_is_close!(translate.x, Mm(4.0));
         assert_is_close!(translate.y, Mm(4.0));
-    }
-
-    #[test]
-    fn translate_from_units() {
-        let translate = Translate::from_units(Mm(2.0), Mm(3.0));
-        assert_is_close!(translate.x, Mm(2.0));
-        assert_is_close!(translate.y, Mm(3.0));
     }
 
     #[test]
@@ -624,12 +595,6 @@ mod tests {
     }
 
     #[test]
-    fn rotate_new() {
-        let rotate = Rotate::new(1.0);
-        assert_is_close!(rotate.angle.to_radians(), 1.0);
-    }
-
-    #[test]
     fn rotate_radians() {
         let rotate = Rotate::radians(1.0);
         assert_is_close!(rotate.angle.to_radians(), 1.0);
@@ -684,7 +649,7 @@ mod tests {
 
     #[test]
     fn transform_new() {
-        let transform = Transform::<Mm>::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+        let transform = Transform::new(1.0, 2.0, Mm(3.0), 4.0, 5.0, Mm(6.0));
         assert_is_close!(transform.a_xx, 1.0);
         assert_is_close!(transform.a_xy, 2.0);
         assert_is_close!(transform.t_x, Mm(3.0));
@@ -695,7 +660,7 @@ mod tests {
 
     #[test]
     fn transform_then() {
-        let transform1 = Transform::<Mm> {
+        let transform1 = Transform {
             a_xx: 1.0,
             a_xy: 2.0,
             t_x: Mm(3.0),
@@ -736,8 +701,8 @@ mod tests {
 
     #[test]
     fn transform_from_translate() {
-        let translate = Translate::new(2.0, -1.0);
-        let transform = Transform::<Mm>::from(translate);
+        let translate = Translate::new(Mm(2.0), Mm(-1.0));
+        let transform = Transform::from(translate);
 
         assert_is_close!(transform.a_xx, 1.0);
         assert_is_close!(transform.a_xy, 0.0);
@@ -763,7 +728,7 @@ mod tests {
 
     #[test]
     fn transform_mul() {
-        let transform1 = Transform::<Mm> {
+        let transform1 = Transform {
             a_xx: 1.0,
             a_xy: 2.0,
             t_x: Mm(3.0),

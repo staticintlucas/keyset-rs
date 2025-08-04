@@ -83,7 +83,7 @@ impl<'de> Deserialize<'de> for BarProps {
         RawBarProps::deserialize(deserializer).map(|props| {
             // Convert to Length
             Self {
-                size: Vector::<Mm>::new(props.width, props.height).convert_into(),
+                size: Vector::new(Mm(props.width), Mm(props.height)).convert_into(),
                 y_offset: Mm(props.y_offset).convert_into(),
             }
         })
@@ -131,7 +131,7 @@ impl<'de> Deserialize<'de> for TopSurface {
         RawTopSurface::deserialize(deserializer).map(|surface| {
             // Convert to Length
             Self {
-                size: Vector::<Mm>::new(surface.width, surface.height).convert_into(),
+                size: Vector::new(Mm(surface.width), Mm(surface.height)).convert_into(),
                 radius: Mm(surface.radius).convert_into(),
                 y_offset: Mm(surface.y_offset).convert_into(),
             }
@@ -156,7 +156,7 @@ impl<'de> Deserialize<'de> for BottomSurface {
         RawBottomSurface::deserialize(deserializer).map(|surface| {
             // Convert to Length
             Self {
-                size: Vector::<Mm>::new(surface.width, surface.height).convert_into(),
+                size: Vector::new(Mm(surface.width), Mm(surface.height)).convert_into(),
                 radius: Mm(surface.radius).convert_into(),
             }
         })
@@ -176,9 +176,9 @@ struct LegendProps {
 impl LegendProps {
     fn rect(&self, top_offset: Dot) -> Rect<Dot> {
         Rect::from_center_and_size(
-            Point::convert_from(Point::<KeyUnit>::new(0.5, 0.5))
-                + Vector::new(0.0, top_offset.get() + self.y_offset),
-            Vector::new(self.width, self.height),
+            Point::convert_from(Point::new(KeyUnit(0.5), KeyUnit(0.5)))
+                + Vector::new(Dot(0.0), top_offset + Dot(self.y_offset)),
+            Vector::new(Dot(self.width), Dot(self.height)),
         )
     }
 }
@@ -290,7 +290,7 @@ mod tests {
 
         assert_is_close!(
             bar_props.size,
-            Vector::convert_from(Vector::<Mm>::new(3.85, 0.4))
+            Vector::convert_from(Vector::new(Mm(3.85), Mm(0.4)))
         );
         assert_is_close!(bar_props.y_offset, Dot::convert_from(Mm(5.05)));
     }
@@ -313,7 +313,7 @@ mod tests {
 
         assert_is_close!(
             surf.size,
-            Vector::convert_from(Vector::<Mm>::new(11.81, 13.91))
+            Vector::convert_from(Vector::new(Mm(11.81), Mm(13.91)))
         );
         assert_is_close!(surf.radius, Dot::convert_from(Mm(1.52)));
         assert_is_close!(surf.y_offset, Dot::convert_from(Mm(-1.62)));
@@ -324,7 +324,7 @@ mod tests {
         let surf: BottomSurface =
             serde_json::from_str(r#"{ "width": 18.29, "height": 18.29, "radius": 0.38 }"#).unwrap();
 
-        assert_is_close!(surf.size, Vector::convert_from(Vector::<Mm>::splat(18.29)));
+        assert_is_close!(surf.size, Vector::convert_from(Vector::splat(Mm(18.29))));
         assert_is_close!(surf.radius, Dot::convert_from(Mm(0.38)));
     }
 }

@@ -95,9 +95,9 @@ where
         Path {
             data: Box::new([
                 PathSegment::Move(self.min),
-                PathSegment::Line(Vector::from_units(self.width(), U::zero())),
-                PathSegment::Line(Vector::from_units(U::zero(), self.height())),
-                PathSegment::Line(Vector::from_units(-self.width(), U::zero())),
+                PathSegment::Line(Vector::new(self.width(), U::zero())),
+                PathSegment::Line(Vector::new(U::zero(), self.height())),
+                PathSegment::Line(Vector::new(-self.width(), U::zero())),
                 PathSegment::Close,
             ]),
             bounds: self,
@@ -464,29 +464,29 @@ where
 
         Path {
             data: Box::new([
-                PathSegment::Move(Point::from_units(mx, my + ry)),
+                PathSegment::Move(Point::new(mx, my + ry)),
                 PathSegment::CubicBezier(
-                    Vector::from_units(U::zero(), -ry * A),
-                    Vector::from_units(rx * (1.0 - A), -ry),
-                    Vector::from_units(rx, -ry),
+                    Vector::new(U::zero(), -ry * A),
+                    Vector::new(rx * (1.0 - A), -ry),
+                    Vector::new(rx, -ry),
                 ),
-                PathSegment::Line(Vector::from_units(self.width() - rx * 2.0, U::zero())),
+                PathSegment::Line(Vector::new(self.width() - rx * 2.0, U::zero())),
                 PathSegment::CubicBezier(
-                    Vector::from_units(rx * A, U::zero()),
-                    Vector::from_units(rx, ry * (1.0 - A)),
-                    Vector::from_units(rx, ry),
+                    Vector::new(rx * A, U::zero()),
+                    Vector::new(rx, ry * (1.0 - A)),
+                    Vector::new(rx, ry),
                 ),
-                PathSegment::Line(Vector::from_units(U::zero(), self.height() - ry * 2.0)),
+                PathSegment::Line(Vector::new(U::zero(), self.height() - ry * 2.0)),
                 PathSegment::CubicBezier(
-                    Vector::from_units(U::zero(), ry * A),
-                    Vector::from_units(-rx * (1.0 - A), ry),
-                    Vector::from_units(-rx, ry),
+                    Vector::new(U::zero(), ry * A),
+                    Vector::new(-rx * (1.0 - A), ry),
+                    Vector::new(-rx, ry),
                 ),
-                PathSegment::Line(Vector::from_units(-(self.width() - rx * 2.0), U::zero())),
+                PathSegment::Line(Vector::new(-(self.width() - rx * 2.0), U::zero())),
                 PathSegment::CubicBezier(
-                    Vector::from_units(-rx * A, U::zero()),
-                    Vector::from_units(-rx, -ry * (1.0 - A)),
-                    Vector::from_units(-rx, -ry),
+                    Vector::new(-rx * A, U::zero()),
+                    Vector::new(-rx, -ry * (1.0 - A)),
+                    Vector::new(-rx, -ry),
                 ),
                 PathSegment::Close,
             ]),
@@ -718,7 +718,7 @@ where
     /// Create a new offset rectangle with the given offsets
     #[inline]
     #[must_use]
-    pub fn new(top: f32, right: f32, bottom: f32, left: f32) -> Self {
+    pub const fn new(top: U, right: U, bottom: U, left: U) -> Self {
         Self {
             min: Vector::new(left, top),
             max: Vector::new(right, bottom),
@@ -728,19 +728,10 @@ where
     /// Create a new offset rectangle with the same offset
     #[inline]
     #[must_use]
-    pub fn splat(value: f32) -> Self {
+    pub const fn splat(value: U) -> Self {
         Self {
             min: Vector::splat(value),
             max: Vector::splat(value),
-        }
-    }
-
-    /// Create a new offset rectangle with the given offsets
-    #[inline]
-    pub const fn from_units(top: U, right: U, bottom: U, left: U) -> Self {
-        Self {
-            min: Vector::from_units(left, top),
-            max: Vector::from_units(right, bottom),
         }
     }
 
@@ -900,90 +891,92 @@ mod tests {
 
     #[test]
     fn rect_new() {
-        let rect = Rect::<Mm>::new(Point::new(0.0, 1.0), Point::new(2.0, 4.0));
-        assert_is_close!(rect.min, Point::new(0.0, 1.0));
-        assert_is_close!(rect.max, Point::new(2.0, 4.0));
+        let rect = Rect::new(Point::new(Mm(0.0), Mm(1.0)), Point::new(Mm(2.0), Mm(4.0)));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(2.0), Mm(4.0)));
     }
 
     #[test]
     fn rect_from_origin_and_size() {
-        let rect = Rect::<Mm>::from_origin_and_size(Point::new(0.0, 1.0), Vector::new(2.0, 3.0));
-        assert_is_close!(rect.min, Point::new(0.0, 1.0));
-        assert_is_close!(rect.max, Point::new(2.0, 4.0));
+        let rect =
+            Rect::from_origin_and_size(Point::new(Mm(0.0), Mm(1.0)), Vector::new(Mm(2.0), Mm(3.0)));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(2.0), Mm(4.0)));
     }
 
     #[test]
     fn rect_from_center_and_size() {
-        let rect = Rect::<Mm>::from_center_and_size(Point::new(1.0, 2.5), Vector::new(2.0, 3.0));
-        assert_is_close!(rect.min, Point::new(0.0, 1.0));
-        assert_is_close!(rect.max, Point::new(2.0, 4.0));
+        let rect =
+            Rect::from_center_and_size(Point::new(Mm(1.0), Mm(2.5)), Vector::new(Mm(2.0), Mm(3.0)));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(2.0), Mm(4.0)));
     }
 
     #[test]
     fn rect_empty() {
-        let rect = Rect::<Mm>::empty();
-        assert_is_close!(rect.min, Point::new(0.0, 0.0));
-        assert_is_close!(rect.max, Point::new(0.0, 0.0));
+        let rect = Rect::empty();
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(0.0)));
+        assert_is_close!(rect.max, Point::new(Mm(0.0), Mm(0.0)));
     }
 
     #[test]
     fn rect_size() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
-        assert_is_close!(rect.size(), Vector::new(2.0, 3.0));
+        assert_is_close!(rect.size(), Vector::new(Mm(2.0), Mm(3.0)));
     }
 
     #[test]
     fn rect_width() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         assert_is_close!(rect.width(), Mm(2.0));
     }
 
     #[test]
     fn rect_height() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         assert_is_close!(rect.height(), Mm(3.0));
     }
 
     #[test]
     fn rect_center() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
-        assert_is_close!(rect.center(), Point::new(1.0, 2.5));
+        assert_is_close!(rect.center(), Point::new(Mm(1.0), Mm(2.5)));
     }
 
     #[test]
     fn rect_union() {
-        let rect1 = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect1 = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
-        let rect2 = Rect::<Mm> {
-            min: Point::new(0.2, 0.5),
-            max: Point::new(1.0, 6.5),
+        let rect2 = Rect {
+            min: Point::new(Mm(0.2), Mm(0.5)),
+            max: Point::new(Mm(1.0), Mm(6.5)),
         };
-        assert_is_close!(rect1.union(rect2).min, Point::new(0.0, 0.5));
-        assert_is_close!(rect1.union(rect2).max, Point::new(2.0, 6.5));
+        assert_is_close!(rect1.union(rect2).min, Point::new(Mm(0.0), Mm(0.5)));
+        assert_is_close!(rect1.union(rect2).max, Point::new(Mm(2.0), Mm(6.5)));
     }
 
     #[test]
     fn rect_to_path() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         let mut builder = PathBuilder::new();
-        builder.abs_move(Point::new(0.0, 1.0));
+        builder.abs_move(Point::new(Mm(0.0), Mm(1.0)));
         builder.rel_horiz_line(Mm(2.0));
         builder.rel_vert_line(Mm(3.0));
         builder.rel_horiz_line(Mm(-2.0));
@@ -999,159 +992,159 @@ mod tests {
 
     #[test]
     fn rect_convert_from() {
-        let rect = Rect::<Mm>::convert_from(Rect::<Inch> {
-            min: Point::new(0.0, 0.75),
-            max: Point::new(1.0, 1.5),
+        let rect = Rect::<Mm>::convert_from(Rect {
+            min: Point::new(Inch(0.0), Inch(0.75)),
+            max: Point::new(Inch(1.0), Inch(1.5)),
         });
-        assert_is_close!(rect.min, Point::new(0.0, 19.05));
-        assert_is_close!(rect.max, Point::new(25.4, 38.1));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(19.05)));
+        assert_is_close!(rect.max, Point::new(Mm(25.4), Mm(38.1)));
     }
 
     #[test]
     fn rect_add_offset_rect() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         } + OffsetRect {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         };
-        assert_is_close!(rect.min, Point::new(-0.5, -1.0));
-        assert_is_close!(rect.max, Point::new(3.5, 5.0));
+        assert_is_close!(rect.min, Point::new(Mm(-0.5), Mm(-1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(3.5), Mm(5.0)));
     }
 
     #[test]
     fn rect_add_assign_offset_rect() {
-        let mut rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let mut rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         rect += OffsetRect {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         };
-        assert_is_close!(rect.min, Point::new(-0.5, -1.0));
-        assert_is_close!(rect.max, Point::new(3.5, 5.0));
+        assert_is_close!(rect.min, Point::new(Mm(-0.5), Mm(-1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(3.5), Mm(5.0)));
     }
 
     #[test]
     fn rect_sub_offset_rect() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         } - OffsetRect {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         };
-        assert_is_close!(rect.min, Point::new(0.5, 3.0));
-        assert_is_close!(rect.max, Point::new(0.5, 3.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.5), Mm(3.0)));
+        assert_is_close!(rect.max, Point::new(Mm(0.5), Mm(3.0)));
     }
 
     #[test]
     fn rect_sub_assign_offset_rect() {
-        let mut rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let mut rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         rect -= OffsetRect {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         };
-        assert_is_close!(rect.min, Point::new(0.5, 3.0));
-        assert_is_close!(rect.max, Point::new(0.5, 3.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.5), Mm(3.0)));
+        assert_is_close!(rect.max, Point::new(Mm(0.5), Mm(3.0)));
     }
 
     #[test]
     fn rect_mul_f32() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         } * 1.5;
-        assert_is_close!(rect.min, Point::new(0.0, 1.5));
-        assert_is_close!(rect.max, Point::new(3.0, 6.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.5)));
+        assert_is_close!(rect.max, Point::new(Mm(3.0), Mm(6.0)));
 
         // TODO: see comment by Unit
-        // let rect = 1.5 * Rect::<Mm> {
-        //     min: Point::new(0.0, 1.0),
-        //     max: Point::new(2.0, 4.0),
+        // let rect = 1.5 * Rect {
+        //     min: Point::new(Mm(0.0), Mm(1.0)),
+        //     max: Point::new(Mm(2.0), Mm(4.0)),
         // };
-        // assert_is_close!(rect.min, Point::new(0.0, 1.5));
-        // assert_is_close!(rect.max, Point::new(3.0, 6.0));
+        // assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.5)));
+        // assert_is_close!(rect.max, Point::new(Mm(3.0), Mm(6.0)));
     }
 
     #[test]
     fn rect_mul_assign_f32() {
-        let mut rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let mut rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         rect *= 1.5;
-        assert_is_close!(rect.min, Point::new(0.0, 1.5));
-        assert_is_close!(rect.max, Point::new(3.0, 6.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.5)));
+        assert_is_close!(rect.max, Point::new(Mm(3.0), Mm(6.0)));
     }
 
     #[test]
     fn rect_div_f32() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         } / 1.5;
-        assert_is_close!(rect.min, Point::new(0.0, 2.0 / 3.0));
-        assert_is_close!(rect.max, Point::new(4.0 / 3.0, 8.0 / 3.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(2.0 / 3.0)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0 / 3.0), Mm(8.0 / 3.0)));
     }
 
     #[test]
     fn rect_div_assign_f32() {
-        let mut rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let mut rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         rect /= 1.5;
-        assert_is_close!(rect.min, Point::new(0.0, 2.0 / 3.0));
-        assert_is_close!(rect.max, Point::new(4.0 / 3.0, 8.0 / 3.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(2.0 / 3.0)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0 / 3.0), Mm(8.0 / 3.0)));
     }
 
     #[test]
     fn rect_is_close() {
-        assert!(Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        assert!(Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         }
         .is_close(&Rect {
-            min: Point::new(0.0, 2.0) * 0.5,
-            max: Point::new(1.0, 2.0) * 2.0,
+            min: Point::new(Mm(0.0), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.0)) * 2.0,
         }));
-        assert!(!Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        assert!(!Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         }
         .is_close(&Rect {
-            min: Point::new(0.1, 2.0) * 0.5,
-            max: Point::new(1.0, 2.0) * 2.0,
+            min: Point::new(Mm(0.1), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.0)) * 2.0,
         }));
-        assert!(!Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        assert!(!Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         }
         .is_close(&Rect {
-            min: Point::new(0.0, 2.1) * 0.5,
-            max: Point::new(1.0, 2.0) * 2.0,
+            min: Point::new(Mm(0.0), Mm(2.1)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.0)) * 2.0,
         }));
-        assert!(!Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        assert!(!Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         }
         .is_close(&Rect {
-            min: Point::new(0.0, 2.0) * 0.5,
-            max: Point::new(1.1, 2.0) * 2.0,
+            min: Point::new(Mm(0.0), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.1), Mm(2.0)) * 2.0,
         }));
-        assert!(!Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        assert!(!Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         }
         .is_close(&Rect {
-            min: Point::new(0.0, 2.0) * 0.5,
-            max: Point::new(1.0, 2.1) * 2.0,
+            min: Point::new(Mm(0.0), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.1)) * 2.0,
         }));
     }
 
@@ -1159,18 +1152,18 @@ mod tests {
     fn rect_rotate() {
         use std::f32::consts::SQRT_2;
 
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         let rotate = Rotate::degrees(135.0);
         let path = rect * rotate;
 
-        let mut exp_bldr = PathBuilder::<Mm>::new();
-        exp_bldr.abs_move(Point::new(-0.5 * SQRT_2, -0.5 * SQRT_2));
-        exp_bldr.rel_line(Vector::new(-SQRT_2, SQRT_2));
-        exp_bldr.rel_line(Vector::new(-1.5 * SQRT_2, -1.5 * SQRT_2));
-        exp_bldr.rel_line(Vector::new(SQRT_2, -SQRT_2));
+        let mut exp_bldr = PathBuilder::new();
+        exp_bldr.abs_move(Point::new(Mm(-0.5 * SQRT_2), Mm(-0.5 * SQRT_2)));
+        exp_bldr.rel_line(Vector::new(Mm(-SQRT_2), Mm(SQRT_2)));
+        exp_bldr.rel_line(Vector::new(Mm(-1.5 * SQRT_2), Mm(-1.5 * SQRT_2)));
+        exp_bldr.rel_line(Vector::new(Mm(SQRT_2), Mm(-SQRT_2)));
         exp_bldr.close();
         let expected = exp_bldr.build();
 
@@ -1183,75 +1176,75 @@ mod tests {
 
     #[test]
     fn rect_scale() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         } * Scale::new(2.0, 0.5);
 
-        assert_is_close!(rect.min, Point::new(0.0, 0.5));
-        assert_is_close!(rect.max, Point::new(4.0, 2.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(0.5)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0), Mm(2.0)));
 
-        let mut rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let mut rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         rect *= Scale::new(2.0, 0.5);
 
-        assert_is_close!(rect.min, Point::new(0.0, 0.5));
-        assert_is_close!(rect.max, Point::new(4.0, 2.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(0.5)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0), Mm(2.0)));
 
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         } / Scale::new(2.0, 0.5);
 
-        assert_is_close!(rect.min, Point::new(0.0, 2.0));
-        assert_is_close!(rect.max, Point::new(1.0, 8.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(2.0)));
+        assert_is_close!(rect.max, Point::new(Mm(1.0), Mm(8.0)));
 
-        let mut rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let mut rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         rect /= Scale::new(2.0, 0.5);
 
-        assert_is_close!(rect.min, Point::new(0.0, 2.0));
-        assert_is_close!(rect.max, Point::new(1.0, 8.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(2.0)));
+        assert_is_close!(rect.max, Point::new(Mm(1.0), Mm(8.0)));
     }
 
     #[test]
     fn rect_translate() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-        } * Translate::new(2.0, -1.0);
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+        } * Translate::new(Mm(2.0), Mm(-1.0));
 
-        assert_is_close!(rect.min, Point::new(2.0, 0.0));
-        assert_is_close!(rect.max, Point::new(4.0, 3.0));
+        assert_is_close!(rect.min, Point::new(Mm(2.0), Mm(0.0)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0), Mm(3.0)));
 
-        let mut rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let mut rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
-        rect *= Translate::new(2.0, -1.0);
+        rect *= Translate::new(Mm(2.0), Mm(-1.0));
 
-        assert_is_close!(rect.min, Point::new(2.0, 0.0));
-        assert_is_close!(rect.max, Point::new(4.0, 3.0));
+        assert_is_close!(rect.min, Point::new(Mm(2.0), Mm(0.0)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0), Mm(3.0)));
     }
 
     #[test]
     fn rect_transform() {
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
-        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let transform = Transform::new(1.0, 0.5, Mm(-1.0), -0.5, 1.5, Mm(2.0));
         let path = rect * transform;
 
-        let mut exp_bldr = PathBuilder::<Mm>::new();
-        exp_bldr.abs_move(Point::new(-0.5, 3.5));
-        exp_bldr.rel_line(Vector::new(2.0, -1.0));
-        exp_bldr.rel_line(Vector::new(1.5, 4.5));
-        exp_bldr.rel_line(Vector::new(-2.0, 1.0));
+        let mut exp_bldr = PathBuilder::new();
+        exp_bldr.abs_move(Point::new(Mm(-0.5), Mm(3.5)));
+        exp_bldr.rel_line(Vector::new(Mm(2.0), Mm(-1.0)));
+        exp_bldr.rel_line(Vector::new(Mm(1.5), Mm(4.5)));
+        exp_bldr.rel_line(Vector::new(Mm(-2.0), Mm(1.0)));
         exp_bldr.close();
         let expected = exp_bldr.build();
 
@@ -1268,18 +1261,18 @@ mod tests {
             Test = 1.0;
         }
 
-        let rect = Rect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
+        let rect = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
         };
         let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
         let path = rect * conv;
 
         let mut exp_bldr = PathBuilder::new();
-        exp_bldr.abs_move(Point::new(-0.5, 3.5));
-        exp_bldr.rel_line(Vector::new(2.0, -1.0));
-        exp_bldr.rel_line(Vector::new(1.5, 4.5));
-        exp_bldr.rel_line(Vector::new(-2.0, 1.0));
+        exp_bldr.abs_move(Point::new(Test(-0.5), Test(3.5)));
+        exp_bldr.rel_line(Vector::new(Test(2.0), Test(-1.0)));
+        exp_bldr.rel_line(Vector::new(Test(1.5), Test(4.5)));
+        exp_bldr.rel_line(Vector::new(Test(-2.0), Test(1.0)));
         exp_bldr.close();
         let expected = exp_bldr.build();
 
@@ -1292,142 +1285,142 @@ mod tests {
 
     #[test]
     fn round_rect_new() {
-        let rect = RoundRect::<Mm>::new(
-            Point::new(0.0, 1.0),
-            Point::new(2.0, 4.0),
-            Vector::new(0.5, 1.0),
+        let rect = RoundRect::new(
+            Point::new(Mm(0.0), Mm(1.0)),
+            Point::new(Mm(2.0), Mm(4.0)),
+            Vector::new(Mm(0.5), Mm(1.0)),
         );
-        assert_is_close!(rect.min, Point::new(0.0, 1.0));
-        assert_is_close!(rect.max, Point::new(2.0, 4.0));
-        assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(2.0), Mm(4.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.5), Mm(1.0)));
     }
 
     #[test]
     fn round_rect_from_origin_size_and_radii() {
-        let rect = RoundRect::<Mm>::from_origin_size_and_radii(
-            Point::new(0.0, 1.0),
-            Vector::new(2.0, 3.0),
-            Vector::new(0.5, 1.0),
+        let rect = RoundRect::from_origin_size_and_radii(
+            Point::new(Mm(0.0), Mm(1.0)),
+            Vector::new(Mm(2.0), Mm(3.0)),
+            Vector::new(Mm(0.5), Mm(1.0)),
         );
-        assert_is_close!(rect.min, Point::new(0.0, 1.0));
-        assert_is_close!(rect.max, Point::new(2.0, 4.0));
-        assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(2.0), Mm(4.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.5), Mm(1.0)));
     }
 
     #[test]
     fn round_rect_from_center_size_and_radii() {
-        let rect = RoundRect::<Mm>::from_center_size_and_radii(
-            Point::new(1.0, 2.5),
-            Vector::new(2.0, 3.0),
-            Vector::new(0.5, 1.0),
+        let rect = RoundRect::from_center_size_and_radii(
+            Point::new(Mm(1.0), Mm(2.5)),
+            Vector::new(Mm(2.0), Mm(3.0)),
+            Vector::new(Mm(0.5), Mm(1.0)),
         );
-        assert_is_close!(rect.min, Point::new(0.0, 1.0));
-        assert_is_close!(rect.max, Point::new(2.0, 4.0));
-        assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(2.0), Mm(4.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.5), Mm(1.0)));
     }
 
     #[test]
     fn round_rect_from_rect_and_radii() {
-        let rect = RoundRect::<Mm>::from_rect_and_radii(
-            Rect::new(Point::new(0.0, 1.0), Point::new(2.0, 4.0)),
-            Vector::new(0.5, 1.0),
+        let rect = RoundRect::from_rect_and_radii(
+            Rect::new(Point::new(Mm(0.0), Mm(1.0)), Point::new(Mm(2.0), Mm(4.0))),
+            Vector::new(Mm(0.5), Mm(1.0)),
         );
-        assert_is_close!(rect.min, Point::new(0.0, 1.0));
-        assert_is_close!(rect.max, Point::new(2.0, 4.0));
-        assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(2.0), Mm(4.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.5), Mm(1.0)));
     }
 
     #[test]
     fn round_rect_to_rect() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         }
         .to_rect();
-        assert_is_close!(rect.min, Point::new(0.0, 1.0));
-        assert_is_close!(rect.max, Point::new(2.0, 4.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Point::new(Mm(2.0), Mm(4.0)));
     }
 
     #[test]
     fn round_rect_size() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
-        assert_is_close!(rect.size(), Vector::new(2.0, 3.0));
+        assert_is_close!(rect.size(), Vector::new(Mm(2.0), Mm(3.0)));
     }
 
     #[test]
     fn round_rect_width() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         assert_is_close!(rect.width(), Mm(2.0));
     }
 
     #[test]
     fn round_rect_height() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         assert_is_close!(rect.height(), Mm(3.0));
     }
 
     #[test]
     fn round_rect_center() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
-        assert_is_close!(rect.center(), Point::new(1.0, 2.5));
+        assert_is_close!(rect.center(), Point::new(Mm(1.0), Mm(2.5)));
     }
 
     #[test]
     fn round_rect_to_path() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         let mut builder = PathBuilder::new();
-        builder.abs_move(Point::new(0.0, 2.0));
+        builder.abs_move(Point::new(Mm(0.0), Mm(2.0)));
         builder.rel_arc(
-            Vector::new(0.5, 1.0),
-            Angle::new(0.0),
+            Vector::new(Mm(0.5), Mm(1.0)),
+            Angle::ZERO,
             false,
             true,
-            Vector::new(0.5, -1.0),
+            Vector::new(Mm(0.5), Mm(-1.0)),
         );
         builder.rel_horiz_line(Mm(1.0));
         builder.rel_arc(
-            Vector::new(0.5, 1.0),
-            Angle::new(0.0),
+            Vector::new(Mm(0.5), Mm(1.0)),
+            Angle::ZERO,
             false,
             true,
-            Vector::new(0.5, 1.0),
+            Vector::new(Mm(0.5), Mm(1.0)),
         );
         builder.rel_vert_line(Mm(1.0));
         builder.rel_arc(
-            Vector::new(0.5, 1.0),
-            Angle::new(0.0),
+            Vector::new(Mm(0.5), Mm(1.0)),
+            Angle::ZERO,
             false,
             true,
-            Vector::new(-0.5, 1.0),
+            Vector::new(Mm(-0.5), Mm(1.0)),
         );
         builder.rel_horiz_line(Mm(-1.0));
         builder.rel_arc(
-            Vector::new(0.5, 1.0),
-            Angle::new(0.0),
+            Vector::new(Mm(0.5), Mm(1.0)),
+            Angle::ZERO,
             false,
             true,
-            Vector::new(-0.5, -1.0),
+            Vector::new(Mm(-0.5), Mm(-1.0)),
         );
         builder.close();
         let expected = builder.build();
@@ -1441,147 +1434,147 @@ mod tests {
 
     #[test]
     fn round_rect_convert_from() {
-        let rect = RoundRect::<Mm>::convert_from(RoundRect::<Inch> {
-            min: Point::new(0.0, 0.75),
-            max: Point::new(1.0, 1.5),
-            radii: Vector::new(0.25, 0.5),
+        let rect = RoundRect::<Mm>::convert_from(RoundRect {
+            min: Point::new(Inch(0.0), Inch(0.75)),
+            max: Point::new(Inch(1.0), Inch(1.5)),
+            radii: Vector::new(Inch(0.25), Inch(0.5)),
         });
-        assert_is_close!(rect.min, Point::new(0.0, 19.05));
-        assert_is_close!(rect.max, Point::new(25.4, 38.1));
-        assert_is_close!(rect.radii, Vector::new(6.35, 12.7));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(19.05)));
+        assert_is_close!(rect.max, Point::new(Mm(25.4), Mm(38.1)));
+        assert_is_close!(rect.radii, Vector::new(Mm(6.35), Mm(12.7)));
     }
 
     #[test]
     fn round_rect_mul_f32() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         } * 1.5;
-        assert_is_close!(rect.min, Point::new(0.0, 1.5));
-        assert_is_close!(rect.max, Point::new(3.0, 6.0));
-        assert_is_close!(rect.radii, Vector::new(0.75, 1.5));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.5)));
+        assert_is_close!(rect.max, Point::new(Mm(3.0), Mm(6.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.75), Mm(1.5)));
 
         // TODO: see comment by Unit
         // let rect = 1.5 * RoundRect {
-        //     min: Point::new(0.0, 1.0),
-        //     max: Point::new(2.0, 4.0),
-        //     radii: Vector::new(0.5, 1.0),
+        //     min: Point::new(Mm(0.0), Mm(1.0)),
+        //     max: Point::new(Mm(2.0), Mm(4.0)),
+        //     radii: Vector::new(Mm(0.5), Mm(1.0)),
         // };
-        // assert_is_close!(rect.min, Point::new(0.0, 1.5));
-        // assert_is_close!(rect.max, Point::new(3.0, 6.0));
-        // assert_is_close!(rect.radii, Vector::new(0.75, 1.5));
+        // assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.5)));
+        // assert_is_close!(rect.max, Point::new(Mm(3.0), Mm(6.0)));
+        // assert_is_close!(rect.radii, Vector::new(Mm(0.75), Mm(1.5)));
     }
 
     #[test]
     fn round_rect_mul_assign_f32() {
-        let mut rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let mut rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         rect *= 1.5;
-        assert_is_close!(rect.min, Point::new(0.0, 1.5));
-        assert_is_close!(rect.max, Point::new(3.0, 6.0));
-        assert_is_close!(rect.radii, Vector::new(0.75, 1.5));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(1.5)));
+        assert_is_close!(rect.max, Point::new(Mm(3.0), Mm(6.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.75), Mm(1.5)));
     }
 
     #[test]
     fn round_rect_div_f32() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         } / 1.5;
-        assert_is_close!(rect.min, Point::new(0.0, 2.0 / 3.0));
-        assert_is_close!(rect.max, Point::new(4.0 / 3.0, 8.0 / 3.0));
-        assert_is_close!(rect.radii, Vector::new(1.0 / 3.0, 2.0 / 3.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(2.0 / 3.0)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0 / 3.0), Mm(8.0 / 3.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(1.0 / 3.0), Mm(2.0 / 3.0)));
     }
 
     #[test]
     fn round_rect_div_assign_f32() {
-        let mut rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let mut rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         rect /= 1.5;
-        assert_is_close!(rect.min, Point::new(0.0, 2.0 / 3.0));
-        assert_is_close!(rect.max, Point::new(4.0 / 3.0, 8.0 / 3.0));
-        assert_is_close!(rect.radii, Vector::new(1.0 / 3.0, 2.0 / 3.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(2.0 / 3.0)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0 / 3.0), Mm(8.0 / 3.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(1.0 / 3.0), Mm(2.0 / 3.0)));
     }
 
     #[test]
     fn round_rect_is_close() {
-        assert!(RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        assert!(RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         }
         .is_close(&RoundRect {
-            min: Point::new(0.0, 2.0) * 0.5,
-            max: Point::new(1.0, 2.0) * 2.0,
-            radii: Vector::new(1.5, 3.0) / 3.0,
+            min: Point::new(Mm(0.0), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.0)) * 2.0,
+            radii: Vector::new(Mm(1.5), Mm(3.0)) / 3.0,
         }));
-        assert!(!RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        assert!(!RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         }
         .is_close(&RoundRect {
-            min: Point::new(0.1, 2.0) * 0.5,
-            max: Point::new(1.0, 2.0) * 2.0,
-            radii: Vector::new(1.5, 3.0) / 3.0,
+            min: Point::new(Mm(0.1), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.0)) * 2.0,
+            radii: Vector::new(Mm(1.5), Mm(3.0)) / 3.0,
         }));
-        assert!(!RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        assert!(!RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         }
         .is_close(&RoundRect {
-            min: Point::new(0.0, 2.1) * 0.5,
-            max: Point::new(1.0, 2.0) * 2.0,
-            radii: Vector::new(1.5, 3.0) / 3.0,
+            min: Point::new(Mm(0.0), Mm(2.1)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.0)) * 2.0,
+            radii: Vector::new(Mm(1.5), Mm(3.0)) / 3.0,
         }));
-        assert!(!RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        assert!(!RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         }
         .is_close(&RoundRect {
-            min: Point::new(0.0, 2.0) * 0.5,
-            max: Point::new(1.1, 2.0) * 2.0,
-            radii: Vector::new(1.5, 3.0) / 3.0,
+            min: Point::new(Mm(0.0), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.1), Mm(2.0)) * 2.0,
+            radii: Vector::new(Mm(1.5), Mm(3.0)) / 3.0,
         }));
-        assert!(!RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        assert!(!RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         }
         .is_close(&RoundRect {
-            min: Point::new(0.0, 2.0) * 0.5,
-            max: Point::new(1.0, 2.1) * 2.0,
-            radii: Vector::new(1.5, 3.0) / 3.0,
+            min: Point::new(Mm(0.0), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.1)) * 2.0,
+            radii: Vector::new(Mm(1.5), Mm(3.0)) / 3.0,
         }));
-        assert!(!RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        assert!(!RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         }
         .is_close(&RoundRect {
-            min: Point::new(0.0, 2.0) * 0.5,
-            max: Point::new(1.0, 2.0) * 2.0,
-            radii: Vector::new(1.6, 3.0) / 3.0,
+            min: Point::new(Mm(0.0), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.0)) * 2.0,
+            radii: Vector::new(Mm(1.6), Mm(3.0)) / 3.0,
         }));
-        assert!(!RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        assert!(!RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         }
         .is_close(&RoundRect {
-            min: Point::new(0.0, 2.0) * 0.5,
-            max: Point::new(1.0, 2.0) * 2.0,
-            radii: Vector::new(1.5, 3.1) / 3.0,
+            min: Point::new(Mm(0.0), Mm(2.0)) * 0.5,
+            max: Point::new(Mm(1.0), Mm(2.0)) * 2.0,
+            radii: Vector::new(Mm(1.5), Mm(3.1)) / 3.0,
         }));
     }
 
@@ -1589,46 +1582,46 @@ mod tests {
     fn round_rect_rotate() {
         use std::f32::consts::SQRT_2;
 
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         let rotate = Rotate::degrees(135.0);
         let path = rect * rotate;
 
-        let mut exp_bldr = PathBuilder::<Mm>::new();
-        exp_bldr.abs_move(Point::new(-SQRT_2, -SQRT_2));
+        let mut exp_bldr = PathBuilder::new();
+        exp_bldr.abs_move(Point::new(Mm(-SQRT_2), Mm(-SQRT_2)));
         exp_bldr.rel_arc(
-            Vector::new(0.5, 1.0),
+            Vector::new(Mm(0.5), Mm(1.0)),
             Angle::degrees(135.0),
             false,
             true,
-            Vector::new(0.25 * SQRT_2, 0.75 * SQRT_2),
+            Vector::new(Mm(0.25 * SQRT_2), Mm(0.75 * SQRT_2)),
         );
-        exp_bldr.rel_line(Vector::new(-0.5 * SQRT_2, 0.5 * SQRT_2));
+        exp_bldr.rel_line(Vector::new(Mm(-0.5 * SQRT_2), Mm(0.5 * SQRT_2)));
         exp_bldr.rel_arc(
-            Vector::new(0.5, 1.0),
+            Vector::new(Mm(0.5), Mm(1.0)),
             Angle::degrees(135.0),
             false,
             true,
-            Vector::new(-0.75 * SQRT_2, -0.25 * SQRT_2),
+            Vector::new(Mm(-0.75 * SQRT_2), Mm(-0.25 * SQRT_2)),
         );
-        exp_bldr.rel_line(Vector::new(-0.5 * SQRT_2, -0.5 * SQRT_2));
+        exp_bldr.rel_line(Vector::new(Mm(-0.5 * SQRT_2), Mm(-0.5 * SQRT_2)));
         exp_bldr.rel_arc(
-            Vector::new(0.5, 1.0),
+            Vector::new(Mm(0.5), Mm(1.0)),
             Angle::degrees(135.0),
             false,
             true,
-            Vector::new(-0.25 * SQRT_2, -0.75 * SQRT_2),
+            Vector::new(Mm(-0.25 * SQRT_2), Mm(-0.75 * SQRT_2)),
         );
-        exp_bldr.rel_line(Vector::new(0.5 * SQRT_2, -0.5 * SQRT_2));
+        exp_bldr.rel_line(Vector::new(Mm(0.5 * SQRT_2), Mm(-0.5 * SQRT_2)));
         exp_bldr.rel_arc(
-            Vector::new(0.5, 1.0),
+            Vector::new(Mm(0.5), Mm(1.0)),
             Angle::degrees(135.0),
             false,
             true,
-            Vector::new(0.75 * SQRT_2, 0.25 * SQRT_2),
+            Vector::new(Mm(0.75 * SQRT_2), Mm(0.25 * SQRT_2)),
         );
         exp_bldr.close();
         let expected = exp_bldr.build();
@@ -1642,109 +1635,109 @@ mod tests {
 
     #[test]
     fn round_rect_scale() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         } * Scale::new(2.0, 0.5);
 
-        assert_is_close!(rect.min, Point::new(0.0, 0.5));
-        assert_is_close!(rect.max, Point::new(4.0, 2.0));
-        assert_is_close!(rect.radii, Vector::new(1.0, 0.5));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(0.5)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0), Mm(2.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(1.0), Mm(0.5)));
 
-        let mut rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let mut rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         rect *= Scale::new(2.0, 0.5);
 
-        assert_is_close!(rect.min, Point::new(0.0, 0.5));
-        assert_is_close!(rect.max, Point::new(4.0, 2.0));
-        assert_is_close!(rect.radii, Vector::new(1.0, 0.5));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(0.5)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0), Mm(2.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(1.0), Mm(0.5)));
 
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         } / Scale::new(2.0, 0.5);
 
-        assert_is_close!(rect.min, Point::new(0.0, 2.0));
-        assert_is_close!(rect.max, Point::new(1.0, 8.0));
-        assert_is_close!(rect.radii, Vector::new(0.25, 2.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(2.0)));
+        assert_is_close!(rect.max, Point::new(Mm(1.0), Mm(8.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.25), Mm(2.0)));
 
-        let mut rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let mut rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         rect /= Scale::new(2.0, 0.5);
 
-        assert_is_close!(rect.min, Point::new(0.0, 2.0));
-        assert_is_close!(rect.max, Point::new(1.0, 8.0));
-        assert_is_close!(rect.radii, Vector::new(0.25, 2.0));
+        assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(2.0)));
+        assert_is_close!(rect.max, Point::new(Mm(1.0), Mm(8.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.25), Mm(2.0)));
     }
 
     #[test]
     fn round_rect_translate() {
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
-        } * Translate::new(2.0, -1.0);
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
+        } * Translate::new(Mm(2.0), Mm(-1.0));
 
-        assert_is_close!(rect.min, Point::new(2.0, 0.0));
-        assert_is_close!(rect.max, Point::new(4.0, 3.0));
-        assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+        assert_is_close!(rect.min, Point::new(Mm(2.0), Mm(0.0)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0), Mm(3.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.5), Mm(1.0)));
 
-        let mut rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let mut rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
-        rect *= Translate::new(2.0, -1.0);
+        rect *= Translate::new(Mm(2.0), Mm(-1.0));
 
-        assert_is_close!(rect.min, Point::new(2.0, 0.0));
-        assert_is_close!(rect.max, Point::new(4.0, 3.0));
-        assert_is_close!(rect.radii, Vector::new(0.5, 1.0));
+        assert_is_close!(rect.min, Point::new(Mm(2.0), Mm(0.0)));
+        assert_is_close!(rect.max, Point::new(Mm(4.0), Mm(3.0)));
+        assert_is_close!(rect.radii, Vector::new(Mm(0.5), Mm(1.0)));
     }
 
     #[test]
     fn round_rect_transform() {
         const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
 
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
-        let transform = Transform::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
+        let transform = Transform::new(1.0, 0.5, Mm(-1.0), -0.5, 1.5, Mm(2.0));
         let path = rect * transform;
 
-        let mut exp_bldr = PathBuilder::<Mm>::new();
-        exp_bldr.abs_move(Point::new(0.0, 5.0));
+        let mut exp_bldr = PathBuilder::new();
+        exp_bldr.abs_move(Point::new(Mm(0.0), Mm(5.0)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(-0.5 * A, -1.5 * A),
-            Vector::new(-0.5 * A, -1.75 + 0.25 * A),
-            Vector::new(0.0, -1.75),
+            Vector::new(Mm(-0.5 * A), Mm(-1.5 * A)),
+            Vector::new(Mm(-0.5 * A), Mm(-1.75 + 0.25 * A)),
+            Vector::new(Mm(0.0), Mm(-1.75)),
         );
-        exp_bldr.rel_line(Vector::new(1.0, -0.5));
+        exp_bldr.rel_line(Vector::new(Mm(1.0), Mm(-0.5)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(0.5 * A, -0.25 * A),
-            Vector::new(1.0 - 0.5 * A, 1.25 - 1.5 * A),
-            Vector::new(1.0, 1.25),
+            Vector::new(Mm(0.5 * A), Mm(-0.25 * A)),
+            Vector::new(Mm(1.0 - 0.5 * A), Mm(1.25 - 1.5 * A)),
+            Vector::new(Mm(1.0), Mm(1.25)),
         );
-        exp_bldr.rel_line(Vector::new(0.5, 1.5));
+        exp_bldr.rel_line(Vector::new(Mm(0.5), Mm(1.5)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(0.5 * A, 1.5 * A),
-            Vector::new(0.5 * A, 1.75 - 0.25 * A),
-            Vector::new(0.0, 1.75),
+            Vector::new(Mm(0.5 * A), Mm(1.5 * A)),
+            Vector::new(Mm(0.5 * A), Mm(1.75 - 0.25 * A)),
+            Vector::new(Mm(0.0), Mm(1.75)),
         );
-        exp_bldr.rel_line(Vector::new(-1.0, 0.5));
+        exp_bldr.rel_line(Vector::new(Mm(-1.0), Mm(0.5)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(-0.5 * A, 0.25 * A),
-            Vector::new(-1.0 + 0.5 * A, -1.25 + 1.5 * A),
-            Vector::new(-1.0, -1.25),
+            Vector::new(Mm(-0.5 * A), Mm(0.25 * A)),
+            Vector::new(Mm(-1.0 + 0.5 * A), Mm(-1.25 + 1.5 * A)),
+            Vector::new(Mm(-1.0), Mm(-1.25)),
         );
         exp_bldr.close();
         let expected = exp_bldr.build();
@@ -1764,38 +1757,38 @@ mod tests {
 
         const A: f32 = (4.0 / 3.0) * (std::f32::consts::SQRT_2 - 1.0);
 
-        let rect = RoundRect::<Mm> {
-            min: Point::new(0.0, 1.0),
-            max: Point::new(2.0, 4.0),
-            radii: Vector::new(0.5, 1.0),
+        let rect = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         let conv = Conversion::<Test, Mm>::new(1.0, 0.5, -1.0, -0.5, 1.5, 2.0);
         let path = rect * conv;
 
         let mut exp_bldr = PathBuilder::new();
-        exp_bldr.abs_move(Point::new(0.0, 5.0));
+        exp_bldr.abs_move(Point::new(Test(0.0), Test(5.0)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(-0.5 * A, -1.5 * A),
-            Vector::new(-0.5 * A, -1.75 + 0.25 * A),
-            Vector::new(0.0, -1.75),
+            Vector::new(Test(-0.5 * A), Test(-1.5 * A)),
+            Vector::new(Test(-0.5 * A), Test(-1.75 + 0.25 * A)),
+            Vector::new(Test(0.0), Test(-1.75)),
         );
-        exp_bldr.rel_line(Vector::new(1.0, -0.5));
+        exp_bldr.rel_line(Vector::new(Test(1.0), Test(-0.5)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(0.5 * A, -0.25 * A),
-            Vector::new(1.0 - 0.5 * A, 1.25 - 1.5 * A),
-            Vector::new(1.0, 1.25),
+            Vector::new(Test(0.5 * A), Test(-0.25 * A)),
+            Vector::new(Test(1.0 - 0.5 * A), Test(1.25 - 1.5 * A)),
+            Vector::new(Test(1.0), Test(1.25)),
         );
-        exp_bldr.rel_line(Vector::new(0.5, 1.5));
+        exp_bldr.rel_line(Vector::new(Test(0.5), Test(1.5)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(0.5 * A, 1.5 * A),
-            Vector::new(0.5 * A, 1.75 - 0.25 * A),
-            Vector::new(0.0, 1.75),
+            Vector::new(Test(0.5 * A), Test(1.5 * A)),
+            Vector::new(Test(0.5 * A), Test(1.75 - 0.25 * A)),
+            Vector::new(Test(0.0), Test(1.75)),
         );
-        exp_bldr.rel_line(Vector::new(-1.0, 0.5));
+        exp_bldr.rel_line(Vector::new(Test(-1.0), Test(0.5)));
         exp_bldr.rel_cubic_bezier(
-            Vector::new(-0.5 * A, 0.25 * A),
-            Vector::new(-1.0 + 0.5 * A, -1.25 + 1.5 * A),
-            Vector::new(-1.0, -1.25),
+            Vector::new(Test(-0.5 * A), Test(0.25 * A)),
+            Vector::new(Test(-1.0 + 0.5 * A), Test(-1.25 + 1.5 * A)),
+            Vector::new(Test(-1.0), Test(-1.25)),
         );
         exp_bldr.close();
         let expected = exp_bldr.build();
@@ -1809,166 +1802,166 @@ mod tests {
 
     #[test]
     fn offset_rect_new() {
-        let rect = OffsetRect::<Mm>::new(2.0, 1.5, 1.0, 0.5);
-        assert_is_close!(rect.min, Vector::new(0.5, 2.0));
-        assert_is_close!(rect.max, Vector::new(1.5, 1.0));
+        let rect = OffsetRect::new(Mm(2.0), Mm(1.5), Mm(1.0), Mm(0.5));
+        assert_is_close!(rect.min, Vector::new(Mm(0.5), Mm(2.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(1.5), Mm(1.0)));
     }
 
     #[test]
-    fn offset_rect_from_units() {
-        let rect = OffsetRect::from_units(Mm(2.0), Mm(1.5), Mm(1.0), Mm(0.5));
-        assert_is_close!(rect.min, Vector::new(0.5, 2.0));
-        assert_is_close!(rect.max, Vector::new(1.5, 1.0));
+    fn offset_rect_splat() {
+        let rect = OffsetRect::splat(Mm(2.0));
+        assert_is_close!(rect.min, Vector::new(Mm(2.0), Mm(2.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(2.0), Mm(2.0)));
     }
 
     #[test]
     fn offset_rect_convert_from() {
-        let rect: OffsetRect<Mm> = OffsetRect::<Inch> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        let rect: OffsetRect<Mm> = OffsetRect {
+            min: Vector::new(Inch(0.5), Inch(2.0)),
+            max: Vector::new(Inch(1.5), Inch(1.0)),
         }
         .convert_into();
-        assert_is_close!(rect.min, Vector::new(12.7, 50.8));
-        assert_is_close!(rect.max, Vector::new(38.1, 25.4));
+        assert_is_close!(rect.min, Vector::new(Mm(12.7), Mm(50.8)));
+        assert_is_close!(rect.max, Vector::new(Mm(38.1), Mm(25.4)));
     }
 
     #[test]
     fn offset_rect_add() {
-        let rect = OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        let rect = OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         } + OffsetRect {
-            min: Vector::new(0.5, 1.0),
-            max: Vector::new(0.5, -1.5),
+            min: Vector::new(Mm(0.5), Mm(1.0)),
+            max: Vector::new(Mm(0.5), Mm(-1.5)),
         };
-        assert_is_close!(rect.min, Vector::new(1.0, 3.0));
-        assert_is_close!(rect.max, Vector::new(2.0, -0.5));
+        assert_is_close!(rect.min, Vector::new(Mm(1.0), Mm(3.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(2.0), Mm(-0.5)));
     }
 
     #[test]
     fn offset_rect_add_assign() {
-        let mut rect = OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        let mut rect = OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         };
         rect += OffsetRect {
-            min: Vector::new(0.5, 1.0),
-            max: Vector::new(0.5, -1.5),
+            min: Vector::new(Mm(0.5), Mm(1.0)),
+            max: Vector::new(Mm(0.5), Mm(-1.5)),
         };
-        assert_is_close!(rect.min, Vector::new(1.0, 3.0));
-        assert_is_close!(rect.max, Vector::new(2.0, -0.5));
+        assert_is_close!(rect.min, Vector::new(Mm(1.0), Mm(3.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(2.0), Mm(-0.5)));
     }
 
     #[test]
     fn offset_rect_sub() {
-        let rect = OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        let rect = OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         } - OffsetRect {
-            min: Vector::new(0.5, 1.0),
-            max: Vector::new(0.5, -1.5),
+            min: Vector::new(Mm(0.5), Mm(1.0)),
+            max: Vector::new(Mm(0.5), Mm(-1.5)),
         };
-        assert_is_close!(rect.min, Vector::new(0.0, 1.0));
-        assert_is_close!(rect.max, Vector::new(1.0, 2.5));
+        assert_is_close!(rect.min, Vector::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(1.0), Mm(2.5)));
     }
 
     #[test]
     fn offset_rect_sub_assign() {
-        let mut rect = OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        let mut rect = OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         };
         rect -= OffsetRect {
-            min: Vector::new(0.5, 1.0),
-            max: Vector::new(0.5, -1.5),
+            min: Vector::new(Mm(0.5), Mm(1.0)),
+            max: Vector::new(Mm(0.5), Mm(-1.5)),
         };
-        assert_is_close!(rect.min, Vector::new(0.0, 1.0));
-        assert_is_close!(rect.max, Vector::new(1.0, 2.5));
+        assert_is_close!(rect.min, Vector::new(Mm(0.0), Mm(1.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(1.0), Mm(2.5)));
     }
 
     #[test]
     fn offset_rect_mul_f32() {
-        let rect = OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        let rect = OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         } * 1.5;
-        assert_is_close!(rect.min, Vector::new(0.75, 3.0));
-        assert_is_close!(rect.max, Vector::new(2.25, 1.5));
+        assert_is_close!(rect.min, Vector::new(Mm(0.75), Mm(3.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(2.25), Mm(1.5)));
     }
 
     #[test]
     fn offset_rect_mul_assign_f32() {
-        let mut rect = OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        let mut rect = OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         };
         rect *= 1.5;
-        assert_is_close!(rect.min, Vector::new(0.75, 3.0));
-        assert_is_close!(rect.max, Vector::new(2.25, 1.5));
+        assert_is_close!(rect.min, Vector::new(Mm(0.75), Mm(3.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(2.25), Mm(1.5)));
     }
 
     #[test]
     fn offset_rect_div_f32() {
-        let rect: OffsetRect<Mm> = OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        let rect: OffsetRect<Mm> = OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         } / 1.5;
-        assert_is_close!(rect.min, Vector::new(1.0 / 3.0, 4.0 / 3.0));
-        assert_is_close!(rect.max, Vector::new(1.0, 2.0 / 3.0));
+        assert_is_close!(rect.min, Vector::new(Mm(1.0 / 3.0), Mm(4.0 / 3.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(1.0), Mm(2.0 / 3.0)));
     }
 
     #[test]
     fn offset_rect_div_assign_f32() {
-        let mut rect = OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        let mut rect = OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         };
         rect /= 1.5;
-        assert_is_close!(rect.min, Vector::new(1.0 / 3.0, 4.0 / 3.0));
-        assert_is_close!(rect.max, Vector::new(1.0, 2.0 / 3.0));
+        assert_is_close!(rect.min, Vector::new(Mm(1.0 / 3.0), Mm(4.0 / 3.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(1.0), Mm(2.0 / 3.0)));
     }
 
     #[test]
     fn offset_rect_is_close() {
-        assert!(OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        assert!(OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         }
         .is_close(&OffsetRect {
-            min: Vector::new(0.25, 1.0) * 2.0,
-            max: Vector::new(3.0, 2.0) / 2.0,
+            min: Vector::new(Mm(0.25), Mm(1.0)) * 2.0,
+            max: Vector::new(Mm(3.0), Mm(2.0)) / 2.0,
         }));
-        assert!(!OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        assert!(!OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         }
         .is_close(&OffsetRect {
-            min: Vector::new(0.3, 1.0) * 2.0,
-            max: Vector::new(3.0, 2.0) / 2.0,
+            min: Vector::new(Mm(0.3), Mm(1.0)) * 2.0,
+            max: Vector::new(Mm(3.0), Mm(2.0)) / 2.0,
         }));
-        assert!(!OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        assert!(!OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         }
         .is_close(&OffsetRect {
-            min: Vector::new(0.25, 1.1) * 2.0,
-            max: Vector::new(3.0, 2.0) / 2.0,
+            min: Vector::new(Mm(0.25), Mm(1.1)) * 2.0,
+            max: Vector::new(Mm(3.0), Mm(2.0)) / 2.0,
         }));
-        assert!(!OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        assert!(!OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         }
         .is_close(&OffsetRect {
-            min: Vector::new(0.25, 1.0) * 2.0,
-            max: Vector::new(3.1, 2.0) / 2.0,
+            min: Vector::new(Mm(0.25), Mm(1.0)) * 2.0,
+            max: Vector::new(Mm(3.1), Mm(2.0)) / 2.0,
         }));
-        assert!(!OffsetRect::<Mm> {
-            min: Vector::new(0.5, 2.0),
-            max: Vector::new(1.5, 1.0),
+        assert!(!OffsetRect {
+            min: Vector::new(Mm(0.5), Mm(2.0)),
+            max: Vector::new(Mm(1.5), Mm(1.0)),
         }
         .is_close(&OffsetRect {
-            min: Vector::new(0.25, 1.0) * 2.0,
-            max: Vector::new(3.0, 2.1) / 2.0,
+            min: Vector::new(Mm(0.25), Mm(1.0)) * 2.0,
+            max: Vector::new(Mm(3.0), Mm(2.1)) / 2.0,
         }));
     }
 }

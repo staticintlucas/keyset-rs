@@ -63,12 +63,15 @@ impl Shape {
             Self::None(size) | Self::Normal(size) | Self::Space(size) => {
                 Rect::from_origin_and_size(Point::origin(), size)
             }
-            Self::Homing(..) => Rect::from_origin_and_size(Point::origin(), Vector::new(1.0, 1.0)),
-            Self::SteppedCaps => {
-                Rect::from_origin_and_size(Point::origin(), Vector::new(1.75, 1.0))
+            Self::Homing(..) => {
+                Rect::from_origin_and_size(Point::origin(), Vector::new(KeyUnit(1.0), KeyUnit(1.0)))
             }
+            Self::SteppedCaps => Rect::from_origin_and_size(
+                Point::origin(),
+                Vector::new(KeyUnit(1.75), KeyUnit(1.0)),
+            ),
             Self::IsoVertical | Self::IsoHorizontal => {
-                Rect::from_origin_and_size(Point::origin(), Vector::new(1.5, 2.0))
+                Rect::from_origin_and_size(Point::origin(), Vector::new(KeyUnit(1.5), KeyUnit(2.0)))
             }
         }
     }
@@ -83,15 +86,19 @@ impl Shape {
             Self::None(size) | Self::Normal(size) | Self::Space(size) => {
                 Rect::from_origin_and_size(Point::origin(), size)
             }
-            Self::Homing(..) => Rect::from_origin_and_size(Point::origin(), Vector::new(1.0, 1.0)),
-            Self::SteppedCaps => {
-                Rect::from_origin_and_size(Point::origin(), Vector::new(1.25, 1.0))
+            Self::Homing(..) => {
+                Rect::from_origin_and_size(Point::origin(), Vector::new(KeyUnit(1.0), KeyUnit(1.0)))
             }
-            Self::IsoVertical => {
-                Rect::from_origin_and_size(Point::new(0.25, 0.0), Vector::new(1.25, 2.0))
-            }
+            Self::SteppedCaps => Rect::from_origin_and_size(
+                Point::origin(),
+                Vector::new(KeyUnit(1.25), KeyUnit(1.0)),
+            ),
+            Self::IsoVertical => Rect::from_origin_and_size(
+                Point::new(KeyUnit(0.25), KeyUnit(0.0)),
+                Vector::new(KeyUnit(1.25), KeyUnit(2.0)),
+            ),
             Self::IsoHorizontal => {
-                Rect::from_origin_and_size(Point::origin(), Vector::new(1.5, 1.0))
+                Rect::from_origin_and_size(Point::origin(), Vector::new(KeyUnit(1.5), KeyUnit(1.0)))
             }
         }
     }
@@ -159,7 +166,7 @@ impl Default for Key {
     fn default() -> Self {
         Self {
             position: Point::origin(),
-            shape: Shape::Normal(Vector::new(1.0, 1.0)),
+            shape: Shape::Normal(Vector::new(KeyUnit(1.0), KeyUnit(1.0))),
             color: Color::new(0.8, 0.8, 0.8),
             legends: Legends::default(),
             __non_exhaustive: NonExhaustive,
@@ -178,64 +185,67 @@ mod tests {
     #[test]
     fn shape_outer_rect() {
         assert_is_close!(
-            Shape::None(Vector::new(1.0, 1.0)).outer_rect(),
-            Rect::new(Point::origin(), Point::new(1.0, 1.0))
+            Shape::None(Vector::new(KeyUnit(1.0), KeyUnit(1.0))).outer_rect(),
+            Rect::new(Point::origin(), Point::new(KeyUnit(1.0), KeyUnit(1.0)))
         );
         assert_is_close!(
-            Shape::Normal(Vector::new(2.25, 1.0)).outer_rect(),
-            Rect::new(Point::origin(), Point::new(2.25, 1.0))
+            Shape::Normal(Vector::new(KeyUnit(2.25), KeyUnit(1.0))).outer_rect(),
+            Rect::new(Point::origin(), Point::new(KeyUnit(2.25), KeyUnit(1.0)))
         );
         assert_is_close!(
-            Shape::Space(Vector::new(6.25, 1.0)).outer_rect(),
-            Rect::new(Point::origin(), Point::new(6.25, 1.0))
+            Shape::Space(Vector::new(KeyUnit(6.25), KeyUnit(1.0))).outer_rect(),
+            Rect::new(Point::origin(), Point::new(KeyUnit(6.25), KeyUnit(1.0)))
         );
         assert_is_close!(
             Shape::Homing(None).outer_rect(),
-            Rect::new(Point::origin(), Point::new(1.0, 1.0))
+            Rect::new(Point::origin(), Point::new(KeyUnit(1.0), KeyUnit(1.0)))
         );
         assert_is_close!(
             Shape::IsoVertical.outer_rect(),
-            Rect::new(Point::origin(), Point::new(1.5, 2.0))
+            Rect::new(Point::origin(), Point::new(KeyUnit(1.5), KeyUnit(2.0)))
         );
         assert_is_close!(
             Shape::IsoHorizontal.outer_rect(),
-            Rect::new(Point::origin(), Point::new(1.5, 2.0))
+            Rect::new(Point::origin(), Point::new(KeyUnit(1.5), KeyUnit(2.0)))
         );
         assert_is_close!(
             Shape::SteppedCaps.outer_rect(),
-            Rect::new(Point::origin(), Point::new(1.75, 1.0))
+            Rect::new(Point::origin(), Point::new(KeyUnit(1.75), KeyUnit(1.0)))
         );
     }
 
     #[test]
     fn shape_inner_rect() {
         assert_is_close!(
-            Shape::None(Vector::new(1.0, 1.0)).inner_rect(),
-            Rect::new(Point::origin(), Point::new(1.0, 1.0))
+            Shape::None(Vector::new(KeyUnit(1.0), KeyUnit(1.0))).inner_rect(),
+            Rect::new(Point::origin(), Point::new(KeyUnit(1.0), KeyUnit(1.0)))
         );
         assert_is_close!(
-            Shape::Normal(Vector::new(2.25, 1.0)).inner_rect(),
-            Rect::new(Point::origin(), Point::new(2.25, 1.0))
+            Shape::Normal(Vector::new(KeyUnit(2.25), KeyUnit(1.0))).inner_rect(),
+            Rect::new(Point::origin(), Point::new(KeyUnit(2.25), KeyUnit(1.0)))
         );
         assert_is_close!(
-            Shape::Space(Vector::new(6.25, 1.0)).inner_rect(),
-            Rect::new(Point::origin(), Point::new(6.25, 1.0))
+            Shape::Space(Vector::new(KeyUnit(6.25), KeyUnit(1.0))).inner_rect(),
+            Rect::new(Point::origin(), Point::new(KeyUnit(6.25), KeyUnit(1.0)))
         );
         assert_is_close!(
             Shape::Homing(None).inner_rect(),
-            Rect::new(Point::origin(), Point::new(1.0, 1.0))
+            Rect::new(Point::origin(), Point::new(KeyUnit(1.0), KeyUnit(1.0)))
         );
         assert_is_close!(
             Shape::IsoVertical.inner_rect(),
-            Rect::new(Point::new(0.25, 0.0), Point::new(1.5, 2.0))
+            Rect::new(
+                Point::new(KeyUnit(0.25), KeyUnit(0.0)),
+                Point::new(KeyUnit(1.5), KeyUnit(2.0))
+            )
         );
         assert_is_close!(
             Shape::IsoHorizontal.inner_rect(),
-            Rect::new(Point::origin(), Point::new(1.5, 1.0))
+            Rect::new(Point::origin(), Point::new(KeyUnit(1.5), KeyUnit(1.0)))
         );
         assert_is_close!(
             Shape::SteppedCaps.inner_rect(),
-            Rect::new(Point::origin(), Point::new(1.25, 1.0))
+            Rect::new(Point::origin(), Point::new(KeyUnit(1.25), KeyUnit(1.0)))
         );
     }
 
@@ -248,7 +258,7 @@ mod tests {
             format!(
                 "Key {{ position: {:?}, shape: {:?}, color: {:?}, legends: {:?} }}",
                 Point::<KeyUnit>::origin(),
-                Shape::Normal(Vector::splat(1.0)),
+                Shape::Normal(Vector::splat(KeyUnit(1.0))),
                 Color::new(0.8, 0.8, 0.8),
                 Legends::default(),
             )
@@ -259,8 +269,8 @@ mod tests {
     fn key_new() {
         let key = Key::new();
 
-        assert_is_close!(key.position, Point::new(0.0, 0.0));
-        assert_matches!(key.shape, Shape::Normal(size) if size.is_close(&Vector::new(1.0, 1.0)));
+        assert_is_close!(key.position, Point::new(KeyUnit(0.0), KeyUnit(0.0)));
+        assert_matches!(key.shape, Shape::Normal(size) if size.is_close(&Vector::new(KeyUnit(1.0), KeyUnit(1.0))));
         assert_eq!(key.color, Color::new(0.8, 0.8, 0.8));
         for legend in key.legends {
             assert!(legend.is_none());
@@ -272,8 +282,8 @@ mod tests {
         let key = Key::example();
         let legend_is_some = [true, false, true, false, false, false, true, false, true];
 
-        assert_is_close!(key.position, Point::new(0.0, 0.0));
-        assert_matches!(key.shape, Shape::Normal(size) if size.is_close(&Vector::new(1.0, 1.0)));
+        assert_is_close!(key.position, Point::new(KeyUnit(0.0), KeyUnit(0.0)));
+        assert_matches!(key.shape, Shape::Normal(size) if size.is_close(&Vector::new(KeyUnit(1.0), KeyUnit(1.0))));
         assert_eq!(key.color, Color::new(0.8, 0.8, 0.8));
         for (legend, is_some) in key.legends.into_iter().zip(legend_is_some) {
             assert_eq!(legend.is_some(), is_some);

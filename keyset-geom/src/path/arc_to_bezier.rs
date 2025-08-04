@@ -28,7 +28,7 @@ pub fn arc_to_bezier<U: Unit>(
     let r = r * lambda;
 
     // Scale down by the radii we can do all math as if r = (1, 1)
-    let scale = r / Vector::splat(1.0);
+    let scale = r / Vector::splat(U::new(1.0));
     let d = d / scale;
 
     let c = get_center(laf, sf, d);
@@ -76,9 +76,7 @@ fn get_center<U: Unit>(laf: bool, sf: bool, d: Vector<U>) -> Vector<U> {
 
     let sign = if laf == sf { 1.0 } else { -1.0 };
 
-    let (d_2x, d_2y) = (d_2.x.get(), d_2.y.get());
-
-    let expr = d_2x * d_2x + d_2y * d_2y;
+    let expr = d_2.hypot2();
     let v = (1.0 - expr) / expr;
 
     let co = if v.is_close(&0.0) {
@@ -86,7 +84,7 @@ fn get_center<U: Unit>(laf: bool, sf: bool, d: Vector<U>) -> Vector<U> {
     } else {
         sign * v.sqrt()
     };
-    let c = Vector::new(d_2y, -d_2x);
+    let c = d_2.swap_xy().neg_y();
 
     c * co + d_2
 }
@@ -94,11 +92,11 @@ fn get_center<U: Unit>(laf: bool, sf: bool, d: Vector<U>) -> Vector<U> {
 fn create_arc<U: Unit>(phi0: Angle, dphi: Angle) -> (Vector<U>, Vector<U>, Vector<U>) {
     let a = (4.0 / 3.0) * (dphi / 4.0).tan();
 
-    let d1 = Vector::new(phi0.cos(), phi0.sin());
-    let d4 = Vector::new((phi0 + dphi).cos(), (phi0 + dphi).sin());
+    let d1 = Vector::new(U::new(phi0.cos()), U::new(phi0.sin()));
+    let d4 = Vector::new(U::new((phi0 + dphi).cos()), U::new((phi0 + dphi).sin()));
 
-    let d2 = Vector::from_units(d1.x - d1.y * a, d1.y + d1.x * a);
-    let d3 = Vector::from_units(d4.x + d4.y * a, d4.y - d4.x * a);
+    let d2 = Vector::new(d1.x - d1.y * a, d1.y + d1.x * a);
+    let d3 = Vector::new(d4.x + d4.y * a, d4.y - d4.x * a);
 
     (d2 - d1, d3 - d1, d4 - d1)
 }
@@ -120,151 +118,157 @@ mod tests {
     fn test_arc_to_bezier() {
         let tests: [fn(&mut Vec<_>); 12] = [
             |vec| {
-                arc_to_bezier::<Mm>(
-                    Vector::new(1.0, 1.0),
+                arc_to_bezier(
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     Angle::degrees(0.0),
                     false,
                     false,
-                    Vector::new(1.0, 1.0),
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(1.0, 1.0),
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     Angle::degrees(0.0),
                     true,
                     false,
-                    Vector::new(1.0, 1.0),
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(1.0, 1.0),
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     Angle::degrees(0.0),
                     true,
                     true,
-                    Vector::new(1.0, 1.0),
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(1.0, 1.0),
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     Angle::degrees(0.0),
                     true,
                     true,
-                    Vector::new(1.0, -1.0),
+                    Vector::new(Mm(1.0), Mm(-1.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(1.0, 2.0),
+                    Vector::new(Mm(1.0), Mm(2.0)),
                     Angle::degrees(0.0),
                     false,
                     false,
-                    Vector::new(1.0, 2.0),
+                    Vector::new(Mm(1.0), Mm(2.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(1.0, 2.0),
+                    Vector::new(Mm(1.0), Mm(2.0)),
                     Angle::degrees(90.0),
                     false,
                     false,
-                    Vector::new(2.0, -1.0),
+                    Vector::new(Mm(2.0), Mm(-1.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(1.0, 1.0),
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     Angle::degrees(0.0),
                     false,
                     false,
-                    Vector::new(0.0, 0.0),
+                    Vector::new(Mm(0.0), Mm(0.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(SQRT_2, SQRT_2),
+                    Vector::new(Mm(SQRT_2), Mm(SQRT_2)),
                     Angle::degrees(0.0),
                     false,
                     true,
-                    Vector::new(0.0, -2.0),
+                    Vector::new(Mm(0.0), Mm(-2.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(SQRT_2, SQRT_2),
+                    Vector::new(Mm(SQRT_2), Mm(SQRT_2)),
                     Angle::degrees(0.0),
                     false,
                     false,
-                    Vector::new(0.0, 2.0),
+                    Vector::new(Mm(0.0), Mm(2.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(1.0, 1.0),
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     Angle::degrees(0.0),
                     false,
                     false,
-                    Vector::new(2.0, 0.0),
+                    Vector::new(Mm(2.0), Mm(0.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(1.0, 1.0),
+                    Vector::new(Mm(1.0), Mm(1.0)),
                     Angle::degrees(0.0),
                     false,
                     false,
-                    Vector::new(4.0, 0.0),
+                    Vector::new(Mm(4.0), Mm(0.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
             |vec| {
                 arc_to_bezier(
-                    Vector::new(0.0, 0.0),
+                    Vector::new(Mm(0.0), Mm(0.0)),
                     Angle::degrees(0.0),
                     false,
                     false,
-                    Vector::new(1.0, 0.0),
+                    Vector::new(Mm(1.0), Mm(0.0)),
                     |_p1, _p2, p| vec.push(p),
                 );
             },
         ];
         let expected = [
-            vec![Vector::new(1.0, 1.0)],
+            vec![Vector::new(Mm(1.0), Mm(1.0))],
             vec![
-                Vector::new(-1.0, 1.0),
-                Vector::new(1.0, 1.0),
-                Vector::new(1.0, -1.0),
+                Vector::new(Mm(-1.0), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(-1.0)),
             ],
             vec![
-                Vector::new(1.0, -1.0),
-                Vector::new(1.0, 1.0),
-                Vector::new(-1.0, 1.0),
+                Vector::new(Mm(1.0), Mm(-1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
+                Vector::new(Mm(-1.0), Mm(1.0)),
             ],
             vec![
-                Vector::new(-1.0, -1.0),
-                Vector::new(1.0, -1.0),
-                Vector::new(1.0, 1.0),
+                Vector::new(Mm(-1.0), Mm(-1.0)),
+                Vector::new(Mm(1.0), Mm(-1.0)),
+                Vector::new(Mm(1.0), Mm(1.0)),
             ],
-            vec![Vector::new(1.0, 2.0)],
-            vec![Vector::new(2.0, -1.0)],
-            vec![Vector::new(0.0, 0.0)],
-            vec![Vector::new(0.0, -2.0)],
-            vec![Vector::new(0.0, 2.0)],
-            vec![Vector::new(1.0, 1.0), Vector::new(1.0, -1.0)],
-            vec![Vector::new(2.0, 2.0), Vector::new(2.0, -2.0)],
-            vec![Vector::new(1.0, 0.0)],
+            vec![Vector::new(Mm(1.0), Mm(2.0))],
+            vec![Vector::new(Mm(2.0), Mm(-1.0))],
+            vec![Vector::new(Mm(0.0), Mm(0.0))],
+            vec![Vector::new(Mm(0.0), Mm(-2.0))],
+            vec![Vector::new(Mm(0.0), Mm(2.0))],
+            vec![
+                Vector::new(Mm(1.0), Mm(1.0)),
+                Vector::new(Mm(1.0), Mm(-1.0)),
+            ],
+            vec![
+                Vector::new(Mm(2.0), Mm(2.0)),
+                Vector::new(Mm(2.0), Mm(-2.0)),
+            ],
+            vec![Vector::new(Mm(1.0), Mm(0.0))],
         ];
 
         for (arc_to_bezier, exp) in tests.into_iter().zip(expected) {
@@ -281,18 +285,18 @@ mod tests {
     #[test]
     fn test_get_center() {
         let tests = [
-            || get_center::<Mm>(false, false, Vector::new(1.0, 1.0)),
-            || get_center(true, false, Vector::new(1.0, 1.0)),
-            || get_center(false, true, Vector::new(1.0, 1.0)),
-            || get_center(true, true, Vector::new(1.0, 1.0)),
-            || get_center(false, false, Vector::new(2.0, 0.0)),
+            || get_center(false, false, Vector::new(Mm(1.0), Mm(1.0))),
+            || get_center(true, false, Vector::new(Mm(1.0), Mm(1.0))),
+            || get_center(false, true, Vector::new(Mm(1.0), Mm(1.0))),
+            || get_center(true, true, Vector::new(Mm(1.0), Mm(1.0))),
+            || get_center(false, false, Vector::new(Mm(2.0), Mm(0.0))),
         ];
         let expected = [
-            Vector::new(1.0, 0.0),
-            Vector::new(0.0, 1.0),
-            Vector::new(0.0, 1.0),
-            Vector::new(1.0, 0.0),
-            Vector::new(1.0, 0.0),
+            Vector::new(Mm(1.0), Mm(0.0)),
+            Vector::new(Mm(0.0), Mm(1.0)),
+            Vector::new(Mm(0.0), Mm(1.0)),
+            Vector::new(Mm(1.0), Mm(0.0)),
+            Vector::new(Mm(1.0), Mm(0.0)),
         ];
 
         for (get_center, exp) in tests.into_iter().zip(expected) {
@@ -305,7 +309,7 @@ mod tests {
     fn test_create_arc() {
         let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).tan();
         let tests = [
-            || create_arc::<Mm>(Angle::degrees(0.0), Angle::degrees(90.0)),
+            || create_arc(Angle::degrees(0.0), Angle::degrees(90.0)),
             || create_arc(Angle::degrees(90.0), Angle::degrees(90.0)),
             || create_arc(Angle::degrees(180.0), Angle::degrees(90.0)),
             || create_arc(Angle::degrees(-90.0), Angle::degrees(90.0)),
@@ -324,7 +328,7 @@ mod tests {
             [(0.0, a), (1.0 - a, 1.0), (1.0, 1.0)],
             [(-a, 0.0), (-1.0, 1.0 - a), (-1.0, 1.0)],
         ]
-        .map(|pts| pts.map(|(x, y)| Vector::new(x, y)));
+        .map(|pts| pts.map(|(x, y)| Vector::new(Mm(x), Mm(y))));
 
         for (create_arc, exp) in tests.into_iter().zip(expected) {
             let points = create_arc();

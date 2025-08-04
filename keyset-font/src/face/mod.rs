@@ -201,25 +201,27 @@ impl Face {
 
         impl ttf_parser::OutlineBuilder for OutlineBuilder<'_> {
             fn move_to(&mut self, x: f32, y: f32) {
-                self.builder.abs_move(Point::new(x, y) + self.offset);
+                self.builder
+                    .abs_move(Point::new(FontUnit(x), FontUnit(y)) + self.offset);
             }
 
             fn line_to(&mut self, x: f32, y: f32) {
-                self.builder.abs_line(Point::new(x, y) + self.offset);
+                self.builder
+                    .abs_line(Point::new(FontUnit(x), FontUnit(y)) + self.offset);
             }
 
             fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
                 self.builder.abs_quadratic_bezier(
-                    Point::new(x1, y1) + self.offset,
-                    Point::new(x, y) + self.offset,
+                    Point::new(FontUnit(x1), FontUnit(y1)) + self.offset,
+                    Point::new(FontUnit(x), FontUnit(y)) + self.offset,
                 );
             }
 
             fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
                 self.builder.abs_cubic_bezier(
-                    Point::new(x1, y1) + self.offset,
-                    Point::new(x2, y2) + self.offset,
-                    Point::new(x, y) + self.offset,
+                    Point::new(FontUnit(x1), FontUnit(y1)) + self.offset,
+                    Point::new(FontUnit(x2), FontUnit(y2)) + self.offset,
+                    Point::new(FontUnit(x), FontUnit(y)) + self.offset,
                 );
             }
 
