@@ -5,9 +5,7 @@ use std::collections::HashMap;
 use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use geom::{
-    ConvertFrom as _, ConvertInto as _, Dot, KeyUnit, Length, Mm, Point, Rect, Unit as _, Vector,
-};
+use geom::{ConvertFrom as _, ConvertInto as _, Dot, KeyUnit, Mm, Point, Rect, Unit as _, Vector};
 
 pub use self::error::{Error, Result};
 use super::{BarProps, BumpProps, Profile, TopSurface};
@@ -36,10 +34,10 @@ impl<'de> Deserialize<'de> for Type {
             // Convert to Length
             match typ {
                 RawType::Cylindrical { depth } => Self::Cylindrical {
-                    depth: Length::<Mm>::new(depth).convert_into(),
+                    depth: Mm(depth).convert_into(),
                 },
                 RawType::Spherical { depth } => Self::Spherical {
-                    depth: Length::<Mm>::new(depth).convert_into(),
+                    depth: Mm(depth).convert_into(),
                 },
                 RawType::Flat => Self::Flat,
             }
@@ -62,7 +60,7 @@ impl<'de> Deserialize<'de> for ScoopProps {
         RawScoopProps::deserialize(deserializer).map(|props| {
             // Convert to Dist
             Self {
-                depth: Length::<Mm>::new(props.depth).convert_into(),
+                depth: Mm(props.depth).convert_into(),
             }
         })
     }
@@ -86,7 +84,7 @@ impl<'de> Deserialize<'de> for BarProps {
             // Convert to Length
             Self {
                 size: Vector::<Mm>::new(props.width, props.height).convert_into(),
-                y_offset: Length::<Mm>::new(props.y_offset).convert_into(),
+                y_offset: Mm(props.y_offset).convert_into(),
             }
         })
     }
@@ -108,8 +106,8 @@ impl<'de> Deserialize<'de> for BumpProps {
         RawBumpProps::deserialize(deserializer).map(|props| {
             // Convert to Length
             Self {
-                diameter: Length::<Mm>::new(props.diameter).convert_into(),
-                y_offset: Length::<Mm>::new(props.y_offset).convert_into(),
+                diameter: Mm(props.diameter).convert_into(),
+                y_offset: Mm(props.y_offset).convert_into(),
             }
         })
     }
@@ -134,8 +132,8 @@ impl<'de> Deserialize<'de> for TopSurface {
             // Convert to Length
             Self {
                 size: Vector::<Mm>::new(surface.width, surface.height).convert_into(),
-                radius: Length::<Mm>::new(surface.radius).convert_into(),
-                y_offset: Length::<Mm>::new(surface.y_offset).convert_into(),
+                radius: Mm(surface.radius).convert_into(),
+                y_offset: Mm(surface.y_offset).convert_into(),
             }
         })
     }
@@ -159,7 +157,7 @@ impl<'de> Deserialize<'de> for BottomSurface {
             // Convert to Length
             Self {
                 size: Vector::<Mm>::new(surface.width, surface.height).convert_into(),
-                radius: Length::<Mm>::new(surface.radius).convert_into(),
+                radius: Mm(surface.radius).convert_into(),
             }
         })
     }
@@ -176,10 +174,10 @@ struct LegendProps {
 }
 
 impl LegendProps {
-    fn rect(&self, top_offset: Length<Dot>) -> Rect<Dot> {
+    fn rect(&self, top_offset: Dot) -> Rect<Dot> {
         Rect::from_center_and_size(
             Point::convert_from(Point::<KeyUnit>::new(0.5, 0.5))
-                + Vector::new(0.0, top_offset.length.get() + self.y_offset),
+                + Vector::new(0.0, top_offset.get() + self.y_offset),
             Vector::new(self.width, self.height),
         )
     }
@@ -231,7 +229,7 @@ impl<'de> Deserialize<'de> for Profile {
             .legend
             .into_iter()
             .map(|(i, props)| {
-                let height = Length::new(props.size);
+                let height = Dot(props.size);
                 let offset = raw_data.top.rect() - props.rect(raw_data.top.y_offset);
                 ((i, height), (i, offset))
             })
@@ -267,12 +265,12 @@ mod tests {
         assert_matches!(
             cyl,
             Type::Cylindrical { depth }
-                if depth.is_close(&Length::from_unit(Mm(0.5).convert_into()))
+                if depth.is_close(&Dot::convert_from(Mm(0.5)))
         );
         assert_matches!(
             sph,
             Type::Spherical { depth }
-                if depth.is_close(&Length::from_unit(Mm(0.8).convert_into()))
+                if depth.is_close(&Dot::convert_from(Mm(0.8)))
         );
         assert_matches!(chc, Type::Flat);
         assert_matches!(flt, Type::Flat);
@@ -282,7 +280,7 @@ mod tests {
     fn deserialize_scoop_props() {
         let scoop_props: ScoopProps = serde_json::from_str(r#"{ "depth": 0.8 }"#).unwrap();
 
-        assert_is_close!(scoop_props.depth, Length::from_unit(Mm(0.8).convert_into()));
+        assert_is_close!(scoop_props.depth, Dot::convert_from(Mm(0.8)));
     }
 
     #[test]
@@ -294,10 +292,7 @@ mod tests {
             bar_props.size,
             Vector::convert_from(Vector::<Mm>::new(3.85, 0.4))
         );
-        assert_is_close!(
-            bar_props.y_offset,
-            Length::from_unit(Mm(5.05).convert_into())
-        );
+        assert_is_close!(bar_props.y_offset, Dot::convert_from(Mm(5.05)));
     }
 
     #[test]
@@ -305,14 +300,8 @@ mod tests {
         let bar_props: BumpProps =
             serde_json::from_str(r#"{ "diameter": 0.4, "y-offset": -0.2 }"#).unwrap();
 
-        assert_is_close!(
-            bar_props.diameter,
-            Length::from_unit(Mm(0.4).convert_into())
-        );
-        assert_is_close!(
-            bar_props.y_offset,
-            Length::from_unit(Mm(-0.2).convert_into())
-        );
+        assert_is_close!(bar_props.diameter, Dot::convert_from(Mm(0.4)));
+        assert_is_close!(bar_props.y_offset, Dot::convert_from(Mm(-0.2)));
     }
 
     #[test]
@@ -326,8 +315,8 @@ mod tests {
             surf.size,
             Vector::convert_from(Vector::<Mm>::new(11.81, 13.91))
         );
-        assert_is_close!(surf.radius, Length::from_unit(Mm(1.52).convert_into()));
-        assert_is_close!(surf.y_offset, Length::from_unit(Mm(-1.62).convert_into()));
+        assert_is_close!(surf.radius, Dot::convert_from(Mm(1.52)));
+        assert_is_close!(surf.y_offset, Dot::convert_from(Mm(-1.62)));
     }
 
     #[test]
@@ -336,6 +325,6 @@ mod tests {
             serde_json::from_str(r#"{ "width": 18.29, "height": 18.29, "radius": 0.38 }"#).unwrap();
 
         assert_is_close!(surf.size, Vector::convert_from(Vector::<Mm>::splat(18.29)));
-        assert_is_close!(surf.radius, Length::from_unit(Mm(0.38).convert_into()));
+        assert_is_close!(surf.radius, Dot::convert_from(Mm(0.38)));
     }
 }

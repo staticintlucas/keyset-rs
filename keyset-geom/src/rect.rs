@@ -894,7 +894,7 @@ where
 mod tests {
     use isclose::assert_is_close;
 
-    use crate::{declare_units, Angle, Inch, Length, Mm, PathBuilder};
+    use crate::{declare_units, Angle, Inch, Mm, PathBuilder};
 
     use super::*;
 
@@ -984,9 +984,9 @@ mod tests {
         };
         let mut builder = PathBuilder::new();
         builder.abs_move(Point::new(0.0, 1.0));
-        builder.rel_horiz_line(Length::new(2.0));
-        builder.rel_vert_line(Length::new(3.0));
-        builder.rel_horiz_line(Length::new(-2.0));
+        builder.rel_horiz_line(Mm(2.0));
+        builder.rel_vert_line(Mm(3.0));
+        builder.rel_horiz_line(Mm(-2.0));
         builder.close();
         let expected = builder.build();
 
@@ -1405,7 +1405,7 @@ mod tests {
             true,
             Vector::new(0.5, -1.0),
         );
-        builder.rel_horiz_line(Length::new(1.0));
+        builder.rel_horiz_line(Mm(1.0));
         builder.rel_arc(
             Vector::new(0.5, 1.0),
             Angle::new(0.0),
@@ -1413,7 +1413,7 @@ mod tests {
             true,
             Vector::new(0.5, 1.0),
         );
-        builder.rel_vert_line(Length::new(1.0));
+        builder.rel_vert_line(Mm(1.0));
         builder.rel_arc(
             Vector::new(0.5, 1.0),
             Angle::new(0.0),
@@ -1421,7 +1421,7 @@ mod tests {
             true,
             Vector::new(-0.5, 1.0),
         );
-        builder.rel_horiz_line(Length::new(-1.0));
+        builder.rel_horiz_line(Mm(-1.0));
         builder.rel_arc(
             Vector::new(0.5, 1.0),
             Angle::new(0.0),

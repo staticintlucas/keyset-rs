@@ -86,7 +86,7 @@ fn draw_path(path: &KeyPath) -> SvgPath {
     if let Some(outline) = path.outline {
         svg_path
             .set("stroke", format!("{:x}", outline.color))
-            .set("stroke-width", float!(outline.width.length))
+            .set("stroke-width", float!(outline.width))
     } else {
         svg_path.set("stroke", "none")
     }

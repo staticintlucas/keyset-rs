@@ -1,6 +1,6 @@
 use geom::{
-    Angle, ConvertFrom as _, ConvertInto as _, Dot, Ellipse, KeyUnit, Length, Path, Point, Rect,
-    RoundRect, Unit as _, Vector,
+    Angle, ConvertFrom as _, ConvertInto as _, Dot, Ellipse, KeyUnit, Path, Point, Rect, RoundRect,
+    Unit as _, Vector,
 };
 use profile::Profile;
 
@@ -77,15 +77,15 @@ pub fn homing(key: &key::Key, template: &Template) -> Option<KeyPath> {
         key::Homing::Scoop => None,
         key::Homing::Bar => Some(
             Rect::from_center_and_size(
-                center + Vector::new(0.0, profile.homing.bar.y_offset.length.get()),
+                center + Vector::new(0.0, profile.homing.bar.y_offset.get()),
                 profile.homing.bar.size,
             )
             .to_path(),
         ),
         key::Homing::Bump => Some(
             Ellipse::from_circle(
-                center + Vector::new(0.0, profile.homing.bump.y_offset.length.get()),
-                profile.homing.bump.diameter.length.get() / 2.0,
+                center + Vector::new(0.0, profile.homing.bump.y_offset.get()),
+                profile.homing.bump.diameter.get() / 2.0,
             )
             .to_path(),
         ),
@@ -133,20 +133,20 @@ fn iso_bottom_path(profile: &Profile) -> Path<Dot> {
     let rect125 = profile
         .bottom_with_rect(Rect::new(Point::new(0.25, 0.0), Point::new(1.5, 2.0)))
         .to_rect();
-    let radii = Vector::splat(profile.bottom.radius.length.get());
+    let radii = Vector::splat(profile.bottom.radius.get());
 
     let mut path = Path::builder();
     path.abs_move(rect150.min + Vector::from_units(Dot::zero(), radii.x));
     path.rel_arc(radii, Angle::ZERO, false, true, radii.neg_y());
-    path.abs_horiz_line(Length::from_unit(rect150.max.x - radii.x));
+    path.abs_horiz_line(rect150.max.x - radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, radii);
-    path.abs_vert_line(Length::from_unit(rect125.max.y - radii.y));
+    path.abs_vert_line(rect125.max.y - radii.y);
     path.rel_arc(radii, Angle::ZERO, false, true, radii.neg_x());
-    path.abs_horiz_line(Length::from_unit(rect125.min.x + radii.x));
+    path.abs_horiz_line(rect125.min.x + radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, -radii);
-    path.abs_vert_line(Length::from_unit(rect150.max.y + radii.y));
+    path.abs_vert_line(rect150.max.y + radii.y);
     path.rel_arc(radii, Angle::ZERO, false, false, -radii);
-    path.abs_horiz_line(Length::from_unit(rect150.min.x + radii.x));
+    path.abs_horiz_line(rect150.min.x + radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, -radii);
     path.close();
 
@@ -158,20 +158,20 @@ fn iso_top_path(profile: &Profile) -> Path<Dot> {
     let rect125 = profile
         .top_with_rect(Rect::new(Point::new(0.25, 0.0), Point::new(1.5, 2.0)))
         .to_rect();
-    let radii = Vector::splat(profile.top.radius.length.get());
+    let radii = Vector::splat(profile.top.radius.get());
 
     let mut path = Path::builder();
     path.abs_move(rect150.min + Vector::from_units(Dot::zero(), radii.x));
     path.rel_arc(radii, Angle::ZERO, false, true, radii.neg_y());
-    path.abs_horiz_line(Length::from_unit(rect150.max.x - radii.x));
+    path.abs_horiz_line(rect150.max.x - radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, radii);
-    path.abs_vert_line(Length::from_unit(rect125.max.y - radii.y));
+    path.abs_vert_line(rect125.max.y - radii.y);
     path.rel_arc(radii, Angle::ZERO, false, true, radii.neg_x());
-    path.abs_horiz_line(Length::from_unit(rect125.min.x + radii.x));
+    path.abs_horiz_line(rect125.min.x + radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, -radii);
-    path.abs_vert_line(Length::from_unit(rect150.max.y + radii.y));
+    path.abs_vert_line(rect150.max.y + radii.y);
     path.rel_arc(radii, Angle::ZERO, false, false, -radii);
-    path.abs_horiz_line(Length::from_unit(rect150.min.x + radii.x));
+    path.abs_horiz_line(rect150.min.x + radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, -radii);
     path.close();
 
@@ -188,11 +188,11 @@ fn step_path(rect: RoundRect<Dot>) -> Path<Dot> {
     let mut path = Path::builder();
     path.abs_move(rect.min + Vector::from_units(Dot::zero(), radii.y));
     path.rel_arc(radii, Angle::ZERO, false, false, -radii);
-    path.abs_horiz_line(Length::from_unit(rect.max.x - radii.x));
+    path.abs_horiz_line(rect.max.x - radii.x);
     path.rel_arc(radii, Angle::ZERO, false, true, radii);
-    path.abs_vert_line(Length::from_unit(rect.max.y - radii.y));
+    path.abs_vert_line(rect.max.y - radii.y);
     path.rel_arc(radii, Angle::ZERO, false, true, radii.neg_x());
-    path.abs_horiz_line(Length::from_unit(rect.min.x - radii.x));
+    path.abs_horiz_line(rect.min.x - radii.x);
     path.rel_arc(radii, Angle::ZERO, false, false, radii.neg_y());
     path.close();
 
@@ -359,7 +359,7 @@ mod tests {
         let expected = Rect::from_center_and_size(
             template.profile.top_with_size(Vector::splat(1.0)).center(),
             template.profile.homing.bar.size,
-        ) * Translate::new(0.0, template.profile.homing.bar.y_offset.length.get());
+        ) * Translate::new(0.0, template.profile.homing.bar.y_offset.get());
         assert_is_close!(bounds, expected);
 
         // Bump
@@ -379,8 +379,8 @@ mod tests {
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
         let expected = Rect::from_center_and_size(
             template.profile.top_with_size(Vector::splat(1.0)).center(),
-            Vector::splat(template.profile.homing.bump.diameter.length.get()),
-        ) * Translate::new(0.0, template.profile.homing.bump.y_offset.length.get());
+            Vector::splat(template.profile.homing.bump.diameter.get()),
+        ) * Translate::new(0.0, template.profile.homing.bump.y_offset.get());
         assert_is_close!(bounds, expected);
 
         // Non-homing key

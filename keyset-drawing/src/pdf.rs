@@ -153,7 +153,7 @@ fn draw_path(content: &mut Content, path: &KeyPath, conv: Conversion<PdfUnit, Do
         _ = content.set_stroke_rgb(r, g, b);
         // Use mean of x and y scales
         let scale = (f32::hypot(conv.a_xx, conv.a_yx) + f32::hypot(conv.a_xy, conv.a_yy)) / 2.0;
-        _ = content.set_line_width((outline.width * scale).length.get());
+        _ = content.set_line_width((outline.width * scale).get());
     }
 
     match (path.fill, path.outline) {

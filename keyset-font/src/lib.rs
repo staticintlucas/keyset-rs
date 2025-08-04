@@ -16,7 +16,7 @@ use rustybuzz::ttf_parser::name_id;
 use rustybuzz::{BufferClusterLevel, ShapePlan, UnicodeBuffer};
 use saturate::SaturatingInto as _;
 
-use geom::{Angle, Length, Path, PathBuilder, Vector};
+use geom::{Angle, Path, PathBuilder, Unit as _, Vector};
 
 pub use self::error::{Error, Result};
 use self::face::Face;
@@ -31,8 +31,8 @@ struct FontData {
     face: Face,
     family: String,
     name: String,
-    cap_height: Length<FontUnit>,
-    x_height: Length<FontUnit>, // TODO is this used?
+    cap_height: FontUnit,
+    x_height: FontUnit, // TODO is this used?
 }
 
 impl Default for Font {
@@ -68,14 +68,14 @@ impl Font {
             .name(name_id::FULL_NAME)
             .ok_or_else(|| Error::MissingProperty("full font name".to_owned()))?;
 
-        let cap_height = Length::new(
+        let cap_height = FontUnit::new(
             face.capital_height()
                 .or_else(|| Some(face.glyph_bounds(face.glyph_index('H')?)?.height()))
                 .ok_or_else(|| Error::MissingProperty("capital height".to_owned()))?
                 .into(),
         );
 
-        let x_height = Length::new(
+        let x_height = FontUnit::new(
             face.x_height()
                 .or_else(|| Some(face.glyph_bounds(face.glyph_index('x')?)?.height()))
                 .ok_or_else(|| Error::MissingProperty("x height".to_owned()))?
@@ -110,8 +110,8 @@ impl Font {
     /// The number font units per EM
     #[inline]
     #[must_use]
-    pub fn em_size(&self) -> Length<FontUnit> {
-        Length::new(self.0.face.units_per_em().into())
+    pub fn em_size(&self) -> FontUnit {
+        FontUnit(self.0.face.units_per_em().into())
     }
 
     /// The capital height in font units
@@ -119,7 +119,7 @@ impl Font {
     /// Measures the height of the uppercase `'H'` if not set by the font
     #[inline]
     #[must_use]
-    pub fn cap_height(&self) -> Length<FontUnit> {
+    pub fn cap_height(&self) -> FontUnit {
         self.0.cap_height
     }
 
@@ -128,15 +128,15 @@ impl Font {
     /// Measures the height of the lowercase `'x'` if not set by the font
     #[inline]
     #[must_use]
-    pub fn x_height(&self) -> Length<FontUnit> {
+    pub fn x_height(&self) -> FontUnit {
         self.0.x_height
     }
 
     /// The font's ascender in font units
     #[inline]
     #[must_use]
-    pub fn ascender(&self) -> Length<FontUnit> {
-        Length::new(self.0.face.ascender().into())
+    pub fn ascender(&self) -> FontUnit {
+        FontUnit(self.0.face.ascender().into())
     }
 
     /// The font's descender in font units
@@ -144,15 +144,15 @@ impl Font {
     /// Positive values are in a downwards direction
     #[inline]
     #[must_use]
-    pub fn descender(&self) -> Length<FontUnit> {
-        Length::new((-self.0.face.descender()).into())
+    pub fn descender(&self) -> FontUnit {
+        FontUnit((-self.0.face.descender()).into())
     }
 
     /// The font's line gap in font units
     #[inline]
     #[must_use]
-    pub fn line_gap(&self) -> Length<FontUnit> {
-        Length::new(self.0.face.line_gap().into())
+    pub fn line_gap(&self) -> FontUnit {
+        FontUnit(self.0.face.line_gap().into())
     }
 
     /// The font's line height in font units
@@ -160,7 +160,7 @@ impl Font {
     /// This is equal to `self.ascender() + self.descender() + self.line_gap()`
     #[inline]
     #[must_use]
-    pub fn line_height(&self) -> Length<FontUnit> {
+    pub fn line_height(&self) -> FontUnit {
         self.ascender() + self.descender() + self.line_gap()
     }
 
@@ -262,8 +262,8 @@ mod tests {
         assert_matches!(default.0.face.number_of_glyphs(), 1); // Only .notdef
         assert_eq!(default.0.family, "default");
         assert_eq!(default.0.name, "default regular");
-        assert_is_close!(default.0.cap_height, Length::new(714.0));
-        assert_is_close!(default.0.x_height, Length::new(523.0));
+        assert_is_close!(default.0.cap_height, FontUnit(714.0));
+        assert_is_close!(default.0.x_height, FontUnit(523.0));
     }
 
     #[test]
@@ -274,8 +274,8 @@ mod tests {
         assert_eq!(font.0.face.number_of_glyphs(), 3);
         assert_eq!(font.0.family, "demo");
         assert_eq!(font.0.name, "demo regular");
-        assert_is_close!(font.0.cap_height, Length::new(650.0));
-        assert_is_close!(font.0.x_height, Length::new(450.0));
+        assert_is_close!(font.0.cap_height, FontUnit(650.0));
+        assert_is_close!(font.0.x_height, FontUnit(450.0));
     }
 
     #[test]
@@ -285,13 +285,13 @@ mod tests {
 
         assert_eq!(font.family(), "demo");
         assert_eq!(font.name(), "demo regular");
-        assert_is_close!(font.em_size(), Length::new(1000.0));
-        assert_is_close!(font.cap_height(), Length::new(650.0));
-        assert_is_close!(font.x_height(), Length::new(450.0));
-        assert_is_close!(font.ascender(), Length::new(1024.0));
-        assert_is_close!(font.descender(), Length::new(400.0));
-        assert_is_close!(font.line_gap(), Length::new(0.0));
-        assert_is_close!(font.line_height(), Length::new(1424.0));
+        assert_is_close!(font.em_size(), FontUnit(1000.0));
+        assert_is_close!(font.cap_height(), FontUnit(650.0));
+        assert_is_close!(font.x_height(), FontUnit(450.0));
+        assert_is_close!(font.ascender(), FontUnit(1024.0));
+        assert_is_close!(font.descender(), FontUnit(400.0));
+        assert_is_close!(font.line_gap(), FontUnit(0.0));
+        assert_is_close!(font.line_height(), FontUnit(1424.0));
         assert_is_close!(font.slope(), Angle::ZERO);
         assert_eq!(font.num_glyphs(), 3);
 

@@ -120,7 +120,7 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, conv: Conversion<Pixel, Dot>) 
             ..Default::default()
         };
         let stroke = Stroke {
-            width: outline.width.length.get(),
+            width: outline.width.get(),
             ..Default::default()
         };
         pixmap.stroke_path(&skia_path, &paint, &stroke, skia_transform, None);

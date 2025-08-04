@@ -6,9 +6,7 @@ use std::ops;
 
 use self::arc_to_bezier::arc_to_bezier;
 pub use self::segment::PathSegment;
-use crate::{
-    Angle, Conversion, Length, Point, Rect, Rotate, Scale, Transform, Translate, Unit, Vector,
-};
+use crate::{Angle, Conversion, Point, Rect, Rotate, Scale, Transform, Translate, Unit, Vector};
 
 /// A 2-dimensional path represented by a number of path segments
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -501,14 +499,14 @@ where
 
     /// Add a horizontal line segment with relative distance
     #[inline]
-    pub fn rel_horiz_line(&mut self, dx: Length<U>) {
-        self.rel_line(Vector::new(dx.length.get(), 0.0));
+    pub fn rel_horiz_line(&mut self, dx: U) {
+        self.rel_line(Vector::new(dx.get(), 0.0));
     }
 
     /// Add a vertical line segment with relative distance
     #[inline]
-    pub fn rel_vert_line(&mut self, dy: Length<U>) {
-        self.rel_line(Vector::new(0.0, dy.length.get()));
+    pub fn rel_vert_line(&mut self, dy: U) {
+        self.rel_line(Vector::new(0.0, dy.get()));
     }
 
     /// Add a cubic Bézier segment with relative control points and distance
@@ -594,14 +592,14 @@ where
 
     /// Add a horizontal line segment with absolute distance
     #[inline]
-    pub fn abs_horiz_line(&mut self, x: Length<U>) {
-        self.rel_horiz_line(x - Length::from_unit(self.point.x));
+    pub fn abs_horiz_line(&mut self, x: U) {
+        self.rel_horiz_line(x - self.point.x);
     }
 
     /// Add a vertical line segment with absolute distance
     #[inline]
-    pub fn abs_vert_line(&mut self, y: Length<U>) {
-        self.rel_vert_line(y - Length::from_unit(self.point.y));
+    pub fn abs_vert_line(&mut self, y: U) {
+        self.rel_vert_line(y - self.point.y);
     }
 
     /// Add a cubic Bézier segment with absolute control points and distance
@@ -1609,13 +1607,13 @@ mod tests {
         line.close();
 
         let mut vert_horiz = PathBuilder::new();
-        vert_horiz.abs_vert_line(Length::new(2.0));
-        vert_horiz.rel_horiz_line(Length::new(2.0));
+        vert_horiz.abs_vert_line(Mm(2.0));
+        vert_horiz.rel_horiz_line(Mm(2.0));
         vert_horiz.close();
 
         let mut horiz_vert = PathBuilder::new();
-        horiz_vert.abs_horiz_line(Length::new(2.0));
-        horiz_vert.rel_vert_line(Length::new(2.0));
+        horiz_vert.abs_horiz_line(Mm(2.0));
+        horiz_vert.rel_vert_line(Mm(2.0));
         horiz_vert.close();
 
         let mut curve1 = PathBuilder::new();

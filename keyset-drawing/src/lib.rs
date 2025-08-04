@@ -20,7 +20,7 @@ compile_error!("no output format is enabled");
 use std::fmt;
 
 use font::Font;
-use geom::{ConvertInto as _, Dot, KeyUnit, Length, Point, Rect, Translate, Vector};
+use geom::{ConvertInto as _, Dot, KeyUnit, Point, Rect, Translate, Vector};
 use key::Key;
 use profile::Profile;
 
@@ -100,7 +100,7 @@ pub struct Template {
     /// The scale used for the drawing
     pub scale: f32,
     /// The outline width for drawing key edges
-    pub outline_width: Length<Dot>,
+    pub outline_width: Dot,
     /// Whether to show the keys in the drawing. Does not affect legends
     pub show_keys: bool,
     /// Show the margin used for legend alignment. Useful for debug purposes
@@ -142,7 +142,7 @@ impl Default for Template {
             profile: Profile::default(),
             font: Font::default(),
             scale: 1.0,
-            outline_width: Length::<KeyUnit>::new(0.01).convert_into(),
+            outline_width: KeyUnit(0.01).convert_into(),
             show_keys: true,
             show_margin: false,
             __non_exhaustive: NonExhaustive,
@@ -174,7 +174,7 @@ impl fmt::Debug for Template {
 mod tests {
     use isclose::assert_is_close;
 
-    use geom::Mm;
+    use geom::{ConvertFrom as _, Mm};
 
     use super::*;
 
@@ -191,16 +191,13 @@ mod tests {
             profile,
             font,
             scale: 2.0,
-            outline_width: Length::<Mm>::new(20.0).convert_into(),
+            outline_width: Mm(20.0).convert_into(),
             show_keys: false,
             show_margin: true,
             ..Template::default()
         };
 
-        assert_is_close!(
-            template.profile.typ.depth(),
-            Length::from_unit(Mm(1.0).convert_into())
-        );
+        assert_is_close!(template.profile.typ.depth(), Dot::convert_from(Mm(1.0)));
         assert_eq!(template.font.num_glyphs(), 3); // .notdef, A, V
         assert_is_close!(template.scale, 2.0);
     }
@@ -217,7 +214,7 @@ mod tests {
                 Profile::default(),
                 Font::default(),
                 1.0,
-                Length::<Dot>::new(10.0),
+                Dot(10.0),
                 true,
                 false
             ),

@@ -16,11 +16,11 @@ pub fn draw(
 ) -> KeyPath {
     // Get transform to correct height & flip y-axis
     let text_height = profile.text_height.get(legend.size_idx);
-    let text_scale = text_height.length.get() / font.cap_height().length.get();
+    let text_scale = text_height.get() / font.cap_height().get();
     let text_conv = Conversion::<Dot, FontUnit>::from_scale(text_scale, -text_scale);
 
     // Dimensions used to position text
-    let line_height = Dot(font.line_height().length.get() * text_scale);
+    let line_height = Dot(font.line_height().get() * text_scale);
     let n_lines = legend.text.lines().count();
     let margin = top_rect - profile.text_margin.get(legend.size_idx);
 
@@ -48,7 +48,7 @@ pub fn draw(
 
     // Calculate legend bounds. For x this is based on actual size while for y we use the base line
     // and text height so each character (especially symbols) are still aligned across keys
-    let height = text_height.length + line_height * f32::saturating_from(n_lines - 1);
+    let height = text_height + line_height * f32::saturating_from(n_lines - 1);
     let bounds = Rect::new(
         Point::from_units(text_path.bounds.min.x, -height),
         Point::from_units(text_path.bounds.max.x, Dot(0.0)),
@@ -126,6 +126,6 @@ mod tests {
         };
         let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0));
 
-        assert!(path.data.bounds.height() > profile.text_height.get(legend.size_idx).length * 2.0);
+        assert!(path.data.bounds.height() > profile.text_height.get(legend.size_idx) * 2.0);
     }
 }
