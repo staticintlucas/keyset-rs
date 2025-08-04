@@ -42,7 +42,7 @@ rustybuzz = "0.20"
 saturate = "0.1"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_json = "1.0"
-soml = { version = "0.1", default-features = false, features = ["std"] }
+soml = { version = "0.2", default-features = false, features = ["std"] }
 svg = "0.18"
 tiny-skia = "0.11"
 
