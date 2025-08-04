@@ -2,14 +2,17 @@ mod error;
 
 use std::collections::HashMap;
 
-use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer};
 
-use geom::{ConvertFrom as _, ConvertInto as _, Dot, KeyUnit, Mm, Point, Rect, Unit as _, Vector};
+use geom::{ConvertInto as _, Dot, Mm, Rect, Vector};
 
 pub use self::error::{Error, Result};
 use super::{BarProps, BumpProps, Profile, TopSurface};
 use crate::{BottomSurface, HomingProps, ScoopProps, TextHeight, TextMargin, Type};
+
+#[derive(Deserialize)]
+#[serde(remote = "Mm")]
+struct MmAsF32(f32);
 
 impl<'de> Deserialize<'de> for Type {
     #[inline]
@@ -21,10 +24,12 @@ impl<'de> Deserialize<'de> for Type {
         #[serde(tag = "type", rename_all = "kebab-case")]
         enum RawType {
             Cylindrical {
-                depth: f32,
+                #[serde(with = "MmAsF32")]
+                depth: Mm,
             },
             Spherical {
-                depth: f32,
+                #[serde(with = "MmAsF32")]
+                depth: Mm,
             },
             #[serde(alias = "chiclet")]
             Flat,
@@ -34,10 +39,10 @@ impl<'de> Deserialize<'de> for Type {
             // Convert to Length
             match typ {
                 RawType::Cylindrical { depth } => Self::Cylindrical {
-                    depth: Mm(depth).convert_into(),
+                    depth: depth.convert_into(),
                 },
                 RawType::Spherical { depth } => Self::Spherical {
-                    depth: Mm(depth).convert_into(),
+                    depth: depth.convert_into(),
                 },
                 RawType::Flat => Self::Flat,
             }
@@ -54,13 +59,14 @@ impl<'de> Deserialize<'de> for ScoopProps {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawScoopProps {
-            depth: f32,
+            #[serde(with = "MmAsF32")]
+            depth: Mm,
         }
 
         RawScoopProps::deserialize(deserializer).map(|props| {
             // Convert to Dist
             Self {
-                depth: Mm(props.depth).convert_into(),
+                depth: props.depth.convert_into(),
             }
         })
     }
@@ -75,16 +81,19 @@ impl<'de> Deserialize<'de> for BarProps {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawBarProps {
-            width: f32,
-            height: f32,
-            y_offset: f32,
+            #[serde(with = "MmAsF32")]
+            width: Mm,
+            #[serde(with = "MmAsF32")]
+            height: Mm,
+            #[serde(with = "MmAsF32")]
+            y_offset: Mm,
         }
 
         RawBarProps::deserialize(deserializer).map(|props| {
             // Convert to Length
             Self {
-                size: Vector::new(Mm(props.width), Mm(props.height)).convert_into(),
-                y_offset: Mm(props.y_offset).convert_into(),
+                size: Vector::new(props.width, props.height).convert_into(),
+                y_offset: props.y_offset.convert_into(),
             }
         })
     }
@@ -99,15 +108,17 @@ impl<'de> Deserialize<'de> for BumpProps {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawBumpProps {
-            diameter: f32,
-            y_offset: f32,
+            #[serde(with = "MmAsF32")]
+            diameter: Mm,
+            #[serde(with = "MmAsF32")]
+            y_offset: Mm,
         }
 
         RawBumpProps::deserialize(deserializer).map(|props| {
             // Convert to Length
             Self {
-                diameter: Mm(props.diameter).convert_into(),
-                y_offset: Mm(props.y_offset).convert_into(),
+                diameter: props.diameter.convert_into(),
+                y_offset: props.y_offset.convert_into(),
             }
         })
     }
@@ -122,18 +133,22 @@ impl<'de> Deserialize<'de> for TopSurface {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawTopSurface {
-            width: f32,
-            height: f32,
-            radius: f32,
-            y_offset: f32,
+            #[serde(with = "MmAsF32")]
+            width: Mm,
+            #[serde(with = "MmAsF32")]
+            height: Mm,
+            #[serde(with = "MmAsF32")]
+            radius: Mm,
+            #[serde(with = "MmAsF32")]
+            y_offset: Mm,
         }
 
         RawTopSurface::deserialize(deserializer).map(|surface| {
             // Convert to Length
             Self {
-                size: Vector::new(Mm(surface.width), Mm(surface.height)).convert_into(),
-                radius: Mm(surface.radius).convert_into(),
-                y_offset: Mm(surface.y_offset).convert_into(),
+                size: Vector::new(surface.width, surface.height).convert_into(),
+                radius: surface.radius.convert_into(),
+                y_offset: surface.y_offset.convert_into(),
             }
         })
     }
@@ -148,62 +163,22 @@ impl<'de> Deserialize<'de> for BottomSurface {
         #[derive(Deserialize)]
         #[serde(rename_all = "kebab-case")]
         struct RawBottomSurface {
-            width: f32,
-            height: f32,
-            radius: f32,
+            #[serde(with = "MmAsF32")]
+            width: Mm,
+            #[serde(with = "MmAsF32")]
+            height: Mm,
+            #[serde(with = "MmAsF32")]
+            radius: Mm,
         }
 
         RawBottomSurface::deserialize(deserializer).map(|surface| {
             // Convert to Length
             Self {
-                size: Vector::new(Mm(surface.width), Mm(surface.height)).convert_into(),
-                radius: Mm(surface.radius).convert_into(),
+                size: Vector::new(surface.width, surface.height).convert_into(),
+                radius: surface.radius.convert_into(),
             }
         })
     }
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-struct LegendProps {
-    size: f32,
-    width: f32,
-    height: f32,
-    #[serde(default)]
-    y_offset: f32,
-}
-
-impl LegendProps {
-    fn rect(&self, top_offset: Dot) -> Rect<Dot> {
-        Rect::from_center_and_size(
-            Point::convert_from(Point::new(KeyUnit(0.5), KeyUnit(0.5)))
-                + Vector::new(Dot(0.0), top_offset + Dot(self.y_offset)),
-            Vector::new(Dot(self.width), Dot(self.height)),
-        )
-    }
-}
-
-fn deserialize_legend_map<'de, D>(
-    deserializer: D,
-) -> std::result::Result<HashMap<usize, LegendProps>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    HashMap::<String, LegendProps>::deserialize(deserializer)?
-        .into_iter()
-        .map(|(s, p)| {
-            let i = s
-                .parse()
-                .map_err(|_| D::Error::invalid_value(Unexpected::Str(&s), &"an integer"))?;
-            let p = LegendProps {
-                size: Dot::convert_from(Mm(p.size)).get(),
-                width: Dot::convert_from(Mm(p.width)).get(),
-                height: Dot::convert_from(Mm(p.height)).get(),
-                y_offset: Dot::convert_from(Mm(p.y_offset)).get(),
-            };
-            Ok((i, p))
-        })
-        .collect()
 }
 
 impl<'de> Deserialize<'de> for Profile {
@@ -212,14 +187,26 @@ impl<'de> Deserialize<'de> for Profile {
     where
         D: Deserializer<'de>,
     {
+        #[derive(Debug, Clone, Deserialize)]
+        #[serde(rename_all = "kebab-case")]
+        struct RawLegendProps {
+            #[serde(with = "MmAsF32")]
+            size: Mm,
+            #[serde(with = "MmAsF32")]
+            width: Mm,
+            #[serde(with = "MmAsF32")]
+            height: Mm,
+            #[serde(default, with = "MmAsF32")]
+            y_offset: Mm,
+        }
+
         #[derive(Deserialize)]
         struct RawProfileData {
             #[serde(flatten)]
             typ: Type,
             bottom: BottomSurface,
             top: TopSurface,
-            #[serde(deserialize_with = "deserialize_legend_map")]
-            legend: HashMap<usize, LegendProps>,
+            legend: HashMap<usize, RawLegendProps>,
             homing: HomingProps,
         }
 
@@ -229,9 +216,16 @@ impl<'de> Deserialize<'de> for Profile {
             .legend
             .into_iter()
             .map(|(i, props)| {
-                let height = Dot(props.size);
-                let offset = raw_data.top.rect() - props.rect(raw_data.top.y_offset);
-                ((i, height), (i, offset))
+                let text_height = props.size.convert_into();
+
+                let key_top = raw_data.top.rect();
+                let text_rect = Rect::from_center_and_size(
+                    key_top.center() + Vector::new(Dot(0.0), props.y_offset.convert_into()),
+                    Vector::new(props.width, props.height).convert_into(),
+                );
+                let offset = key_top - text_rect;
+
+                ((i, text_height), (i, offset))
             })
             .unzip();
 
@@ -252,6 +246,8 @@ impl<'de> Deserialize<'de> for Profile {
 mod tests {
     use assert_matches::assert_matches;
     use isclose::{assert_is_close, IsClose as _};
+
+    use geom::ConvertFrom as _;
 
     use super::*;
 
