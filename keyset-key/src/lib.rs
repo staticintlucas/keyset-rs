@@ -16,7 +16,7 @@ use std::fmt;
 use color::Color;
 use geom::{KeyUnit, Point, Rect, Vector};
 
-pub use self::legend::{Legend, Legends, Text};
+pub use self::legend::{Legend, Text};
 
 /// The type of homing used on a homing key
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -117,7 +117,7 @@ pub struct Key {
     /// The key's colour
     pub color: Color,
     /// The key's legends
-    pub legends: Legends,
+    pub legends: [Option<Box<Legend>>; 9],
     /// Hidden field to enforce non-exhaustive struct while still allowing instantiation using
     /// `..Default::default()` functional update syntax
     #[allow(private_interfaces)]
@@ -155,7 +155,7 @@ impl Key {
     #[must_use]
     pub fn example() -> Self {
         Self {
-            legends: Legends::example(),
+            legends: Legend::example_set(),
             ..Self::default()
         }
     }
@@ -168,7 +168,7 @@ impl Default for Key {
             position: Point::origin(),
             shape: Shape::Normal(Vector::new(KeyUnit(1.0), KeyUnit(1.0))),
             color: Color::new(0.8, 0.8, 0.8),
-            legends: Legends::default(),
+            legends: Default::default(),
             __non_exhaustive: NonExhaustive,
         }
     }
@@ -260,7 +260,7 @@ mod tests {
                 Point::<KeyUnit>::origin(),
                 Shape::Normal(Vector::splat(KeyUnit(1.0))),
                 Color::new(0.8, 0.8, 0.8),
-                Legends::default(),
+                [None::<()>; 9],
             )
         );
     }

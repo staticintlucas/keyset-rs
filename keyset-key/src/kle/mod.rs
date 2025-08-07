@@ -2,6 +2,8 @@
 
 mod error;
 
+use std::array;
+
 use kle_serial::f32 as kle;
 
 use geom::{KeyUnit, Point, Vector};
@@ -81,7 +83,7 @@ impl TryFrom<kle::Key> for Key {
     type Error = Error;
 
     #[inline]
-    fn try_from(mut key: kle::Key) -> Result<Self> {
+    fn try_from(key: kle::Key) -> Result<Self> {
         let position = Point::new(
             KeyUnit(key.x + key.x2.min(0.0)),
             KeyUnit(key.y + key.y2.min(0.0)),
@@ -89,11 +91,10 @@ impl TryFrom<kle::Key> for Key {
         let shape = shape_from_kle(&key)?;
         let color = key.color.rgb().into();
         let legends = {
-            let mut arr = <[Option<kle::Legend>; 9]>::default();
-            arr.swap_with_slice(&mut key.legends[..9]);
-            arr
+            let mut iter = key.legends.into_iter();
+            array::from_fn(|_| iter.next().flatten().map(|l| Box::new(Legend::from(l))))
         };
-        let legends = legends.map(|l| l.map(Legend::from)).into();
+
         Ok(Self {
             position,
             shape,
