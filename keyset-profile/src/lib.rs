@@ -383,53 +383,18 @@ impl Profile {
         serde_json::from_str(s).map_err(de::Error::from)
     }
 
-    /// Get the key top rectangle for a given key size
+    /// Get the key top rectangle for the profile
     #[inline]
     #[must_use]
-    pub fn top_with_size(&self, size: Vector<KeyUnit>) -> RoundRect<Dot> {
-        let dmax = size - Vector::splat(KeyUnit(1.0));
-
-        let RoundRect { min, max, radii } = self.top.round_rect();
-        let max = max + dmax.convert_into();
-
-        RoundRect::new(min, max, radii)
+    pub fn top_rect(&self) -> RoundRect<Dot> {
+        self.top.round_rect()
     }
 
-    /// Get the key top rectangle for a given key rect
+    /// Get the key bottom rectangle for the profile
     #[inline]
     #[must_use]
-    pub fn top_with_rect(&self, rect: Rect<KeyUnit>) -> RoundRect<Dot> {
-        let Rect { min, max } = rect;
-        let (dmin, dmax) = (min - Point::origin(), max - Point::splat(KeyUnit(1.0)));
-
-        let RoundRect { min, max, radii } = self.top.round_rect();
-        let (min, max) = (min + dmin.convert_into(), max + dmax.convert_into());
-
-        RoundRect::new(min, max, radii)
-    }
-
-    /// Get the key bottom rectangle for a given key size
-    #[inline]
-    #[must_use]
-    pub fn bottom_with_size(&self, size: Vector<KeyUnit>) -> RoundRect<Dot> {
-        let dmax = size - Vector::splat(KeyUnit(1.0));
-
-        let RoundRect { min, max, radii } = self.bottom.round_rect();
-        let max = max + dmax.convert_into();
-        RoundRect::new(min, max, radii)
-    }
-
-    /// Get the key bottom rectangle for a given key rectangle
-    #[inline]
-    #[must_use]
-    pub fn bottom_with_rect(&self, rect: Rect<KeyUnit>) -> RoundRect<Dot> {
-        let Rect { min, max } = rect;
-        let (dmin, dmax) = (min - Point::origin(), max - Point::splat(KeyUnit(1.0)));
-
-        let RoundRect { min, max, radii } = self.bottom.round_rect();
-        let (min, max) = (min + dmin.convert_into(), max + dmax.convert_into());
-
-        RoundRect::new(min, max, radii)
+    pub fn bottom_rect(&self) -> RoundRect<Dot> {
+        self.bottom.round_rect()
     }
 }
 
@@ -958,10 +923,10 @@ mod tests {
     }
 
     #[test]
-    fn test_profile_with_size() {
+    fn test_profile_rect() {
         let profile = Profile::default();
 
-        let top = profile.top_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)));
+        let top = profile.top_rect();
         let exp = RoundRect::from_center_size_and_radii(
             Point::convert_from(Point::splat(KeyUnit(0.5)))
                 + Vector::new(Dot(0.0), profile.top.y_offset),
@@ -970,27 +935,10 @@ mod tests {
         );
         assert_is_close!(top, exp);
 
-        let bottom = profile.bottom_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)));
+        let bottom = profile.bottom_rect();
         let exp = RoundRect::from_center_size_and_radii(
             Point::splat(KeyUnit(0.5)).convert_into(),
             profile.bottom.size,
-            Vector::splat(profile.bottom.radius),
-        );
-        assert_is_close!(bottom, exp);
-
-        let top = profile.top_with_size(Vector::new(KeyUnit(3.0), KeyUnit(2.0)));
-        let exp = RoundRect::from_center_size_and_radii(
-            Point::convert_from(Point::new(KeyUnit(1.5), KeyUnit(1.0)))
-                + Vector::new(Dot(0.0), profile.top.y_offset),
-            profile.top.size + Vector::new(KeyUnit(2.0), KeyUnit(1.0)).convert_into(),
-            Vector::splat(profile.top.radius),
-        );
-        assert_is_close!(top, exp);
-
-        let bottom = profile.bottom_with_size(Vector::new(KeyUnit(3.0), KeyUnit(2.0)));
-        let exp = RoundRect::from_center_size_and_radii(
-            Point::new(KeyUnit(1.5), KeyUnit(1.0)).convert_into(),
-            profile.bottom.size + Vector::new(KeyUnit(2.0), KeyUnit(1.0)).convert_into(),
             Vector::splat(profile.bottom.radius),
         );
         assert_is_close!(bottom, exp);

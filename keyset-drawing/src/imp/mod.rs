@@ -5,7 +5,7 @@ use std::collections::HashSet;
 
 use ::key::{Key, Shape as KeyShape};
 use color::Color;
-use geom::{Dot, KeyUnit, Path, Point, Scale};
+use geom::{ConvertInto as _, Dot, KeyUnit, Path, Point, Rect, Scale};
 
 use crate::{Error, Template};
 
@@ -37,10 +37,13 @@ impl KeyDrawing {
         let step = show_key.then(|| key::step(key, template)).flatten();
         let homing = show_key.then(|| key::homing(key, template)).flatten();
 
-        let top_rect = template
-            .profile
-            .top_with_rect(key.shape.inner_rect())
-            .to_rect();
+        let top_rect = {
+            let Rect { min, max } = key.shape.inner_rect();
+            let (dmin, dmax) = (min - Point::origin(), max - Point::splat(KeyUnit(1.0)));
+
+            let Rect { min, max } = template.profile.top_rect().to_rect();
+            Rect::new(min + dmin.convert_into(), max + dmax.convert_into())
+        };
 
         let margin = template.show_margin.then(|| {
             // Cann't get unique margins because SideOffsets: !Hash, use unique size_idx's instead
@@ -137,11 +140,12 @@ mod tests {
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
         let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
-        let margin_rect = template
-            .profile
-            .top_with_size(Vector::new(KeyUnit(1.5), KeyUnit(1.0)))
-            .to_rect()
-            - template.profile.text_margin.get(font_size);
+        let top_rect = {
+            let Rect { min, max } = template.profile.top_rect().to_rect();
+            let max = max + Vector::new(KeyUnit(0.5), KeyUnit(0.0)).convert_into();
+            Rect::new(min, max)
+        };
+        let margin_rect = top_rect - template.profile.text_margin.get(font_size);
         assert_is_close!(bounding_box, margin_rect);
 
         // ISO V
@@ -160,10 +164,12 @@ mod tests {
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
         let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
-        let margin_rect = template
-            .profile
-            .top_with_size(Vector::new(KeyUnit(1.25), KeyUnit(2.0)))
-            .to_rect()
+        let top_rect = {
+            let Rect { min, max } = template.profile.top_rect().to_rect();
+            let max = max + Vector::new(KeyUnit(0.25), KeyUnit(1.0)).convert_into();
+            Rect::new(min, max)
+        };
+        let margin_rect = top_rect
             * Translate::<Dot>::new(KeyUnit(0.25).convert_into(), KeyUnit(0.0).convert_into())
             - template.profile.text_margin.get(font_size);
         assert_is_close!(bounding_box, margin_rect);

@@ -77,7 +77,7 @@ mod tests {
     use isclose::assert_is_close;
 
     use color::Color;
-    use geom::{KeyUnit, PathSegment};
+    use geom::PathSegment;
     use key::Text;
 
     use super::*;
@@ -91,9 +91,7 @@ mod tests {
         };
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
         let profile = Profile::default();
-        let top_rect = profile
-            .top_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)))
-            .to_rect();
+        let top_rect = profile.top_rect().to_rect();
         let path = draw(&legend, &font, &profile, top_rect, Scale::new(0.0, 0.0)).unwrap();
 
         assert_eq!(
@@ -122,11 +120,7 @@ mod tests {
 
         assert_is_close!(
             path.data.bounds.width(),
-            (profile
-                .top_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)))
-                .to_rect()
-                - profile.text_margin.get(5))
-            .width()
+            (profile.top_rect().to_rect() - profile.text_margin.get(5)).width()
         );
 
         let legend = ::key::Legend {
