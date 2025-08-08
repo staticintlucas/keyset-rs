@@ -114,9 +114,12 @@ pub struct Template {
 
 impl Template {
     /// Draw the given keys using this template
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the size requested keys cannot be drawn
     #[inline]
-    #[must_use]
-    pub fn draw(&self, keys: &[Key]) -> Drawing {
+    pub fn draw(&self, keys: &[Key]) -> Result<Drawing, Error> {
         let bounds = keys
             .iter()
             .map(|k| k.shape.outer_rect() * Translate::new(k.position.x, k.position.y))
@@ -128,13 +131,16 @@ impl Template {
                 |rect, key| Rect::new(rect.min.min(key.min), rect.max.max(key.max)),
             );
 
-        let keys = keys.iter().map(|key| KeyDrawing::new(key, self)).collect();
+        let keys = keys
+            .iter()
+            .map(|key| KeyDrawing::new(key, self))
+            .collect::<Result<_, _>>()?;
 
-        Drawing {
+        Ok(Drawing {
             bounds,
             keys,
             scale: self.scale,
-        }
+        })
     }
 }
 
@@ -229,7 +235,7 @@ mod tests {
         let template = Template::default();
         let keys = [Key::example()];
 
-        let drawing = template.draw(&keys);
+        let drawing = template.draw(&keys).unwrap();
 
         assert_is_close!(drawing.bounds.width(), KeyUnit(1.0));
         assert_is_close!(drawing.bounds.height(), KeyUnit(1.0));

@@ -65,7 +65,7 @@ let template = drawing::Template {
 };
 
 // Create drawing
-let drawing = template.draw(&keys);
+let drawing = template.draw(&keys)?;
 
 // Save output
 let path = std::env::current_dir()?;

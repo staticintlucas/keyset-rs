@@ -1,5 +1,5 @@
 use isclose::IsClose;
-use saturate::SaturatingFrom as _;
+use num_traits::ToPrimitive as _;
 
 use crate::{Angle, Rotate, Unit, Vector};
 
@@ -56,7 +56,9 @@ pub fn arc_to_bezier<U: Unit>(
 
     // Subtract f32::TOLERANCE so 90.0001 deg doesn't become 2 segs
     let segments = ((dphi / Angle::FRAC_PI_2).abs() - <f32 as IsClose>::ABS_TOL).ceil();
-    let i_segments = u8::saturating_from(segments); // 0 < segments <= 4
+    let i_segments = segments
+        .to_u8()
+        .unwrap_or_else(|| unreachable!("0 < segments <= 4"));
     let dphi = dphi / segments;
 
     for i in 0..i_segments {

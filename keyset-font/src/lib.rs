@@ -12,9 +12,9 @@ mod unit;
 use std::sync::{Arc, OnceLock};
 
 use itertools::izip;
+use num_traits::ToPrimitive as _;
 use rustybuzz::ttf_parser::name_id;
 use rustybuzz::{BufferClusterLevel, ShapePlan, UnicodeBuffer};
-use saturate::SaturatingInto as _;
 
 use geom::{Angle, Path, PathBuilder, Unit as _, Vector};
 
@@ -218,24 +218,29 @@ impl Font {
 
         let capacity = infos
             .iter()
-            .map(|info| info.glyph_id.saturating_into()) // guaranteed in u16 range by rustybuzz
+            .map(|info| {
+                info.glyph_id
+                    .to_u16()
+                    .unwrap_or_else(|| unreachable!("guaranteed in u16 range by rustybuzz"))
+            })
             .map(|glyph_id| self.0.face.outline_length(glyph_id))
             .sum();
 
         let mut builder = PathBuilder::with_capacity(capacity);
         let mut position = Vector::zero();
         for (info, pos) in izip!(infos, positions) {
+            #[allow(clippy::cast_precision_loss)] // f32 precision is plenty
             let advance = Vector::new(
-                FontUnit(pos.x_advance.saturating_into()),
-                FontUnit(pos.y_advance.saturating_into()),
+                FontUnit(pos.x_advance as f32),
+                FontUnit(pos.y_advance as f32),
             );
-            let offset = Vector::new(
-                FontUnit(pos.x_offset.saturating_into()),
-                FontUnit(pos.y_offset.saturating_into()),
-            );
+            #[allow(clippy::cast_precision_loss)] // f32 precision is plenty
+            let offset = Vector::new(FontUnit(pos.x_offset as f32), FontUnit(pos.y_offset as f32));
 
             self.0.face.outline_glyph(
-                info.glyph_id.saturating_into(), // guaranteed to be in u16 range by rustybuzz
+                info.glyph_id
+                    .to_u16()
+                    .unwrap_or_else(|| unreachable!("guaranteed in u16 range by rustybuzz")),
                 &mut builder,
                 position + offset,
             );

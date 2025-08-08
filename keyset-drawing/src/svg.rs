@@ -108,7 +108,7 @@ mod tests {
             ..Default::default()
         };
         let keys = [Key::example()];
-        let drawing = template.draw(&keys);
+        let drawing = template.draw(&keys).unwrap();
 
         let svg = drawing.to_svg();
 

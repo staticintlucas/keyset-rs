@@ -1,9 +1,11 @@
 use log::warn;
-use saturate::SaturatingFrom as _;
 
 use font::{Font, FontUnit};
 use geom::{Conversion, Dot, Path, Point, Rect, Scale, Translate, Unit as _, Vector};
+use num_traits::ToPrimitive as _;
 use profile::Profile;
+
+use crate::Error;
 
 use super::KeyPath;
 
@@ -13,7 +15,7 @@ pub fn draw(
     profile: &Profile,
     top_rect: Rect<Dot>,
     align: Scale, // Not really a scale, but it's a unitless vector so...
-) -> KeyPath {
+) -> Result<KeyPath, Error> {
     // Get transform to correct height & flip y-axis
     let text_height = profile.text_height.get(legend.size_idx);
     let text_scale = text_height.get() / font.cap_height().get();
@@ -21,7 +23,8 @@ pub fn draw(
 
     // Dimensions used to position text
     let line_height = Dot(font.line_height().get() * text_scale);
-    let n_lines = legend.text.lines().count();
+    let num_lines = legend.text.lines().count();
+    let num_lines = num_lines.to_f32().ok_or(Error::TooManyLines(num_lines))?;
     let margin = top_rect - profile.text_margin.get(legend.size_idx);
 
     let text_path: Path<_> = legend
@@ -29,7 +32,9 @@ pub fn draw(
         .lines()
         .enumerate()
         .map(|(i, text)| {
-            let line_offset = n_lines - i - 1;
+            #[allow(clippy::cast_precision_loss)] // i <= 9
+            let i = i as f32;
+            let line_offset = num_lines - i - 1.0;
 
             let path = font.render_string(text) * text_conv;
 
@@ -41,14 +46,14 @@ pub fn draw(
             }
             let width_factor = width_factor.max(1.0);
 
-            path * Translate::new(Dot(0.0), -f32::saturating_from(line_offset) * line_height)
+            path * Translate::new(Dot(0.0), -line_offset * line_height)
                 * Scale::new(1.0 / width_factor, 1.0)
         })
         .collect();
 
     // Calculate legend bounds. For x this is based on actual size while for y we use the base line
     // and text height so each character (especially symbols) are still aligned across keys
-    let height = text_height + line_height * f32::saturating_from(n_lines - 1);
+    let height = text_height + line_height * (num_lines - 1.0);
     let bounds = Rect::new(
         Point::new(text_path.bounds.min.x, -height),
         Point::new(text_path.bounds.max.x, Dot(0.0)),
@@ -59,11 +64,11 @@ pub fn draw(
     let point = margin.min + Vector::new(size.x * align.x, size.y * align.y);
     let text_path = text_path * Translate::from(point - bounds.min);
 
-    KeyPath {
+    Ok(KeyPath {
         data: text_path,
         outline: None,
         fill: Some(legend.color),
-    }
+    })
 }
 
 #[cfg(test)]
@@ -89,7 +94,7 @@ mod tests {
         let top_rect = profile
             .top_with_size(Vector::new(KeyUnit(1.0), KeyUnit(1.0)))
             .to_rect();
-        let path = draw(&legend, &font, &profile, top_rect, Scale::new(0.0, 0.0));
+        let path = draw(&legend, &font, &profile, top_rect, Scale::new(0.0, 0.0)).unwrap();
 
         assert_eq!(
             path.data
@@ -104,7 +109,7 @@ mod tests {
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
-        let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0));
+        let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0)).unwrap();
 
         assert_eq!(path.data.len(), 12); // == .notdef length
 
@@ -113,7 +118,7 @@ mod tests {
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
-        let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0));
+        let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0)).unwrap();
 
         assert_is_close!(
             path.data.bounds.width(),
@@ -129,7 +134,7 @@ mod tests {
             size_idx: 5,
             color: Color::new(0.0, 0.0, 0.0),
         };
-        let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0));
+        let path = draw(&legend, &font, &profile, top_rect, Scale::new(1.0, 1.0)).unwrap();
 
         assert!(path.data.bounds.height() > profile.text_height.get(legend.size_idx) * 2.0);
     }

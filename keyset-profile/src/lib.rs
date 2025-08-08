@@ -14,7 +14,6 @@ use std::collections::HashMap;
 use std::{array, fmt};
 
 use interp::{interp_array, InterpMode};
-use saturate::SaturatingFrom as _;
 
 use geom::{
     ConvertFrom as _, ConvertInto as _, Dot, Inch, KeyUnit, Mm, OffsetRect, Point, Rect, RoundRect,
@@ -157,12 +156,12 @@ impl TextHeight {
                 vec.push((0, 0.0));
                 vec.extend(heights.iter().map(|(&i, &h)| (i, h.get())));
                 vec.sort_unstable_by_key(|&(i, _h)| i);
-                vec.into_iter()
-                    .map(|(i, h)| (f32::saturating_from(i), h))
-                    .unzip()
+                #[allow(clippy::cast_precision_loss)] // i <= 9
+                vec.into_iter().map(|(i, h)| (i as f32, h)).unzip()
             };
 
-            let all_indices = array::from_fn(f32::saturating_from);
+            #[allow(clippy::cast_precision_loss)] // i <= 9
+            let all_indices = array::from_fn(|i| i as f32);
             Self(interp_array(&indices, &heights, &all_indices, &InterpMode::Extrapolate).map(Dot))
         }
     }
@@ -182,10 +181,8 @@ impl Default for TextHeight {
     #[inline]
     fn default() -> Self {
         // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5/kb.css#L113
-        Self(
-            array::from_fn(|i| 6.0 + 2.0 * f32::saturating_from(i))
-                .map(|sz| KeyUnit(sz / 72.0).convert_into()),
-        )
+        #[allow(clippy::cast_precision_loss)] // i <= 9
+        Self(array::from_fn(|i| 6.0 + 2.0 * (i as f32)).map(|sz| KeyUnit(sz / 72.0).convert_into()))
     }
 }
 
@@ -457,6 +454,7 @@ mod tests {
     use assert_matches::assert_matches;
     use indoc::indoc;
     use isclose::{assert_is_close, IsClose as _};
+    use num_traits::ToPrimitive as _;
 
     use super::*;
 
@@ -503,9 +501,8 @@ mod tests {
 
     #[test]
     fn test_text_height_new() {
-        let expected: [_; 10] = array::from_fn(|i| {
-            Dot::convert_from(KeyUnit(6.0 + 2.0 * f32::saturating_from(i)) / 72.0)
-        });
+        let expected: [_; 10] =
+            array::from_fn(|i| Dot::convert_from(KeyUnit(6.0 + 2.0 * i.to_f32().unwrap()) / 72.0));
         let result = TextHeight::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
@@ -553,7 +550,7 @@ mod tests {
         for (i, h) in heights.0.into_iter().enumerate() {
             assert_is_close!(
                 h,
-                Dot::convert_from(KeyUnit(6.0 + 2.0 * f32::saturating_from(i)) / 72.0)
+                Dot::convert_from(KeyUnit(6.0 + 2.0 * i.to_f32().unwrap()) / 72.0)
             );
         }
     }

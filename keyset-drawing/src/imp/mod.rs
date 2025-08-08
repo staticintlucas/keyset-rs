@@ -3,13 +3,11 @@ mod legend;
 
 use std::collections::HashSet;
 
-use saturate::SaturatingFrom as _;
-
 use ::key::{Key, Shape as KeyShape};
 use color::Color;
 use geom::{Dot, KeyUnit, Path, Point, Scale};
 
-use crate::Template;
+use crate::{Error, Template};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Outline {
@@ -31,7 +29,7 @@ pub struct KeyDrawing {
 }
 
 impl KeyDrawing {
-    pub fn new(key: &Key, template: &Template) -> Self {
+    pub fn new(key: &Key, template: &Template) -> Result<Self, Error> {
         let show_key = template.show_keys && !matches!(key.shape, KeyShape::None(..));
 
         let bottom = show_key.then(|| key::bottom(key, template));
@@ -47,11 +45,10 @@ impl KeyDrawing {
         let margin = template.show_margin.then(|| {
             // Cann't get unique margins because SideOffsets: !Hash, use unique size_idx's instead
             let sizes: HashSet<_> = key.legends.iter().flatten().map(|l| l.size_idx).collect();
-            let paths: Vec<_> = sizes
+            let path = sizes
                 .into_iter()
                 .map(|s| (top_rect - template.profile.text_margin.get(s)).to_path())
                 .collect();
-            let path = Path::from_slice(&paths);
 
             KeyPath {
                 data: path,
@@ -63,15 +60,18 @@ impl KeyDrawing {
             }
         });
 
-        let legends = key.legends.iter().enumerate().filter_map(|(i, l)| {
-            l.as_ref().map(|legend| {
-                let align = Scale::new(
-                    f32::saturating_from(i % 3) / 2.0,
-                    f32::saturating_from(i / 3) / 2.0,
-                );
-                legend::draw(legend, &template.font, &template.profile, top_rect, align)
+        let legends = key
+            .legends
+            .iter()
+            .enumerate()
+            .filter_map(|(i, l)| {
+                l.as_ref().map(|legend| {
+                    #[allow(clippy::cast_precision_loss)] // i <= 9
+                    let align = Scale::new(0.5 * ((i % 3) as f32), 0.5 * ((i / 3) as f32));
+                    legend::draw(legend, &template.font, &template.profile, top_rect, align)
+                })
             })
-        });
+            .collect::<Result<Vec<_>, _>>()?;
 
         // Do a bunch of chaining here rather than using [...].iter().filter_map(|it| it). This
         // gives iterator a known size so it will allocate the required size when collecting to a
@@ -84,10 +84,10 @@ impl KeyDrawing {
             .chain(margin)
             .chain(legends);
 
-        Self {
+        Ok(Self {
             origin: key.position,
             paths: paths.collect(),
-        }
+        })
     }
 }
 
@@ -104,7 +104,7 @@ mod tests {
         // Regular 1u
         let key = Key::example();
         let template = Template::default();
-        let drawing = KeyDrawing::new(&key, &template);
+        let drawing = KeyDrawing::new(&key, &template).unwrap();
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 6); // top, bottom, 4x legends
@@ -116,7 +116,7 @@ mod tests {
             key
         };
         let template = Template::default();
-        let drawing = KeyDrawing::new(&key, &template);
+        let drawing = KeyDrawing::new(&key, &template).unwrap();
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, step, 4x legends
@@ -131,7 +131,7 @@ mod tests {
             show_margin: true,
             ..Template::default()
         };
-        let drawing = KeyDrawing::new(&key, &template);
+        let drawing = KeyDrawing::new(&key, &template).unwrap();
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
@@ -154,7 +154,7 @@ mod tests {
             show_margin: true,
             ..Template::default()
         };
-        let drawing = KeyDrawing::new(&key, &template);
+        let drawing = KeyDrawing::new(&key, &template).unwrap();
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends

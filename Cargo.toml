@@ -34,12 +34,12 @@ itertools = "0.14"
 kle-serial = "0.3"
 log = "0.4"
 miniz_oxide = "0.8"
+num-traits = "0.2"
 ouroboros = "0.18"
 paste = "1.0"
 pdf-writer = "0.13"
 rgb = { version = "0.8", default-features = false }
 rustybuzz = "0.20"
-saturate = "0.1"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_json = "1.0"
 soml = { version = "0.2", default-features = false, features = ["std"] }

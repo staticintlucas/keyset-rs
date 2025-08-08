@@ -9,6 +9,8 @@ use crate::png::Pixel;
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub enum Error {
+    /// There are too many lines of text in a legend
+    TooManyLines(usize),
     /// The drawing is larger than the maximum PNG dimensions
     #[cfg(feature = "png")]
     PngDimensionsError(Vector<Pixel>),
@@ -18,6 +20,7 @@ impl fmt::Display for Error {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
+            Self::TooManyLines(lines) => write!(f, "too many lines ({lines}) in legend"),
             #[cfg(feature = "png")]
             Self::PngDimensionsError(dims) => write!(f, "invalid PNG dimensions {dims:?}"),
         }
@@ -45,6 +48,7 @@ mod tests {
 
         let error = Template::default()
             .draw(&[key1, key2])
+            .unwrap()
             .to_png(1.0)
             .unwrap_err();
 

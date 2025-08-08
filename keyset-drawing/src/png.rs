@@ -1,4 +1,4 @@
-use saturate::SaturatingInto as _;
+use num_traits::ToPrimitive as _;
 use tiny_skia::{
     FillRule, Paint, PathBuilder as SkPathBuilder, Pixmap, Shader, Stroke, Transform as SkTransform,
 };
@@ -18,11 +18,8 @@ pub fn draw(drawing: &Drawing, ppi: f32) -> Result<Vec<u8>, Error> {
     let conv = Conversion::<Pixel, Dot>::from_scale(scale, scale);
     let size = Vector::<Dot>::convert_from(drawing.bounds.size()) * conv;
 
-    let mut pixmap = Pixmap::new(
-        size.x.get().saturating_into(),
-        size.y.get().saturating_into(),
-    )
-    .ok_or(Error::PngDimensionsError(size))?;
+    let mut pixmap = (|| Pixmap::new(size.x.get().to_u32()?, size.y.get().to_u32()?))()
+        .ok_or(Error::PngDimensionsError(size))?;
 
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
 
@@ -152,7 +149,7 @@ mod tests {
     fn test_to_png() {
         let template = Template::default();
         let keys = [Key::example()];
-        let drawing = template.draw(&keys);
+        let drawing = template.draw(&keys).unwrap();
 
         let png = drawing.to_png(96.0).unwrap();
 

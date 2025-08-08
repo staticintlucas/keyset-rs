@@ -31,7 +31,6 @@ mod rgb;
 use std::fmt::{Display, LowerHex, UpperHex};
 
 use isclose::IsClose;
-use saturate::SaturatingInto as _;
 
 /// sRGB Color type.
 ///
@@ -100,14 +99,18 @@ impl Color {
     #[inline]
     #[must_use]
     pub fn as_rgb8(&self) -> (u8, u8, u8) {
-        self.0.map(|c| (c * 256.0).saturating_into()).into()
+        // we want truncation here
+        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        self.0.map(|c| (c * 256.0) as _).into()
     }
 
     /// Returns a tuple containing the red, green, and blue components as [`u16`].
     #[inline]
     #[must_use]
     pub fn as_rgb16(&self) -> (u16, u16, u16) {
-        self.0.map(|c| (c * 65536.0).saturating_into()).into()
+        // we want truncation here
+        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        self.0.map(|c| (c * 65536.0) as _).into()
     }
 
     /// Creates a new [`Color`] from a tuple containing the red, green, and blue

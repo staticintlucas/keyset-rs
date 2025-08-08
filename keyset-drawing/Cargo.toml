@@ -34,8 +34,8 @@ profile.workspace = true
 
 log.workspace = true
 miniz_oxide = { workspace = true, optional = true }
+num-traits.workspace = true
 pdf-writer = { workspace = true, optional = true }
-saturate.workspace = true
 tiny-skia = { workspace = true, optional = true }
 svg = { workspace = true, optional = true }
 
