@@ -1,11 +1,10 @@
 mod key;
 mod legend;
 
-use std::collections::HashSet;
-
-use ::key::{Key, Shape as KeyShape};
+use ::key::{Homing, Key, Shape as KeyShape};
 use color::Color;
-use geom::{ConvertInto as _, Dot, KeyUnit, Path, Point, Rect, Scale};
+use geom::{ConvertInto as _, Dot, KeyUnit, Path, Point, Rect, Scale, Vector};
+use isclose::IsClose as _;
 
 use crate::{Error, Template};
 
@@ -30,38 +29,89 @@ pub struct KeyDrawing {
 
 impl KeyDrawing {
     pub fn new(key: &Key, template: &Template) -> Result<Self, Error> {
-        let show_key = template.show_keys && !matches!(key.shape, KeyShape::None(..));
+        let cap = Self::required_capacity(key, template);
+        let mut paths = Vec::with_capacity(cap);
 
-        let bottom = show_key.then(|| key::bottom(key, template));
-        let top = show_key.then(|| key::top(key, template));
-        let step = show_key.then(|| key::step(key, template)).flatten();
-        let homing = show_key.then(|| key::homing(key, template)).flatten();
+        let Template {
+            ref profile,
+            ref font,
+            show_keys,
+            show_margin,
+            ..
+        } = *template;
+
+        match key.shape {
+            _ if !show_keys => {}
+            KeyShape::None(..) => {}
+            KeyShape::Normal(size) | KeyShape::Space(size) => {
+                paths.push(key::bottom(template, key.color, size));
+                paths.push(key::top(template, key.color, size));
+            }
+            KeyShape::Homing(homing) => {
+                paths.push(key::bottom(
+                    template,
+                    key.color,
+                    Vector::splat(KeyUnit(1.0)),
+                ));
+                paths.push(key::top(template, key.color, Vector::splat(KeyUnit(1.0))));
+
+                match homing.unwrap_or(profile.homing.default) {
+                    Homing::Scoop => {}
+                    Homing::Bar => {
+                        paths.push(key::homing_bar(template, key.color));
+                    }
+                    Homing::Bump => {
+                        paths.push(key::homing_bump(template, key.color));
+                    }
+                }
+            }
+            KeyShape::SteppedCaps => {
+                paths.push(key::bottom(
+                    template,
+                    key.color,
+                    Vector::new(KeyUnit(1.75), KeyUnit(1.0)),
+                ));
+                paths.push(key::top(
+                    template,
+                    key.color,
+                    Vector::new(KeyUnit(1.25), KeyUnit(1.0)),
+                ));
+                paths.push(key::step(template, key.color));
+            }
+            KeyShape::IsoVertical | KeyShape::IsoHorizontal => {
+                paths.push(key::iso_bottom(template, key.color));
+                paths.push(key::iso_top(template, key.color));
+            }
+        }
 
         let top_rect = {
             let Rect { min, max } = key.shape.inner_rect();
             let (dmin, dmax) = (min - Point::origin(), max - Point::splat(KeyUnit(1.0)));
-
-            let Rect { min, max } = template.profile.top_rect().to_rect();
+            let Rect { min, max } = profile.top_rect().to_rect();
             Rect::new(min + dmin.convert_into(), max + dmax.convert_into())
         };
 
-        let margin = template.show_margin.then(|| {
-            // Cann't get unique margins because SideOffsets: !Hash, use unique size_idx's instead
-            let sizes: HashSet<_> = key.legends.iter().flatten().map(|l| l.size_idx).collect();
-            let path = sizes
-                .into_iter()
-                .map(|s| (top_rect - template.profile.text_margin.get(s)).to_path())
-                .collect();
+        if show_margin {
+            let mut boundses = Vec::<Rect<Dot>>::with_capacity(key.legends.len());
+            for leg in key.legends.iter().flatten() {
+                let size = leg.size_idx;
+                let text_bounds = top_rect - profile.text_margin.get(size);
+                if !boundses.iter().any(|rect| rect.is_close(&text_bounds)) {
+                    boundses.push(text_bounds);
+                }
+            }
 
-            KeyPath {
-                data: path,
+            let data = boundses.into_iter().map(Rect::to_path).collect();
+
+            paths.push(KeyPath {
+                data,
                 outline: Some(Outline {
                     color: Color::new(1.0, 0.0, 0.0),
                     width: Dot(5.0),
                 }),
                 fill: None,
-            }
-        });
+            });
+        }
 
         let legends = key
             .legends
@@ -71,33 +121,53 @@ impl KeyDrawing {
                 l.as_ref().map(|legend| {
                     #[allow(clippy::cast_precision_loss)] // i <= 9
                     let align = Scale::new(0.5 * ((i % 3) as f32), 0.5 * ((i / 3) as f32));
-                    legend::draw(legend, &template.font, &template.profile, top_rect, align)
+                    legend::draw(legend, font, profile, top_rect, align)
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        // Do a bunch of chaining here rather than using [...].iter().filter_map(|it| it). This
-        // gives iterator a known size so it will allocate the required size when collecting to a
-        // Vec<_>
-        let paths = bottom
-            .into_iter()
-            .chain(top)
-            .chain(step)
-            .chain(homing)
-            .chain(margin)
-            .chain(legends);
+        paths.extend_from_slice(&legends);
 
         Ok(Self {
             origin: key.position,
-            paths: paths.collect(),
+            paths: paths.into_boxed_slice(),
         })
+    }
+
+    fn required_capacity(key: &Key, template: &Template) -> usize {
+        let Template {
+            ref profile,
+            show_keys,
+            show_margin,
+            ..
+        } = *template;
+
+        let key_paths = match key.shape {
+            _ if !show_keys => 0,
+            KeyShape::None(..) => 0,
+            KeyShape::Normal(..)
+            | KeyShape::Space(..)
+            | KeyShape::IsoVertical
+            | KeyShape::IsoHorizontal => 2,
+            KeyShape::Homing(homing) => match homing.unwrap_or(profile.homing.default) {
+                Homing::Scoop => 2,
+                Homing::Bar | Homing::Bump => 3,
+            },
+            KeyShape::SteppedCaps => 3,
+        };
+
+        let margin = usize::from(show_margin);
+
+        let legends = key.legends.iter().flatten().count();
+
+        key_paths + margin + legends
     }
 }
 
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
-    use geom::{ConvertInto as _, Translate, Vector};
+    use geom::{ConvertInto as _, Translate};
     use isclose::assert_is_close;
 
     use super::*;
