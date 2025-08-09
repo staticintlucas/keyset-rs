@@ -89,6 +89,16 @@ where
         }
     }
 
+    /// Linearly interpolate between rectangles
+    #[inline]
+    #[must_use]
+    pub fn lerp(self, other: Self, factor: f32) -> Self {
+        Self {
+            min: self.min.lerp(other.min, factor),
+            max: self.max.lerp(other.max, factor),
+        }
+    }
+
     /// Converts the rectangle to a [`Path`]
     #[inline]
     pub fn to_path(self) -> Path<U> {
@@ -452,6 +462,17 @@ where
     #[inline]
     pub fn center(&self) -> Point<U> {
         self.min.lerp(self.max, 0.5)
+    }
+
+    /// Linearly interpolate between rectangles
+    #[inline]
+    #[must_use]
+    pub fn lerp(self, other: Self, factor: f32) -> Self {
+        Self {
+            min: self.min.lerp(other.min, factor),
+            max: self.max.lerp(other.max, factor),
+            radii: self.radii.lerp(other.radii, factor),
+        }
     }
 
     /// Converts the rectangle to a [`Path`]
@@ -970,6 +991,28 @@ mod tests {
     }
 
     #[test]
+    fn rect_lerp() {
+        let rect1 = Rect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+        };
+        let rect2 = Rect {
+            min: Point::new(Mm(0.2), Mm(0.5)),
+            max: Point::new(Mm(1.0), Mm(6.5)),
+        };
+
+        assert_is_close!(rect1.lerp(rect2, 0.0), rect1);
+        assert_is_close!(
+            rect1.lerp(rect2, 0.5),
+            Rect {
+                min: Point::new(Mm(0.1), Mm(0.75)),
+                max: Point::new(Mm(1.5), Mm(5.25)),
+            }
+        );
+        assert_is_close!(rect1.lerp(rect2, 1.0), rect2);
+    }
+
+    #[test]
     fn rect_to_path() {
         let rect = Rect {
             min: Point::new(Mm(0.0), Mm(1.0)),
@@ -1380,6 +1423,31 @@ mod tests {
             radii: Vector::new(Mm(0.5), Mm(1.0)),
         };
         assert_is_close!(rect.center(), Point::new(Mm(1.0), Mm(2.5)));
+    }
+
+    #[test]
+    fn round_rect_lerp() {
+        let rect1 = RoundRect {
+            min: Point::new(Mm(0.0), Mm(1.0)),
+            max: Point::new(Mm(2.0), Mm(4.0)),
+            radii: Vector::new(Mm(0.5), Mm(1.0)),
+        };
+        let rect2 = RoundRect {
+            min: Point::new(Mm(0.2), Mm(0.5)),
+            max: Point::new(Mm(1.0), Mm(6.5)),
+            radii: Vector::new(Mm(1.5), Mm(0.5)),
+        };
+
+        assert_is_close!(rect1.lerp(rect2, 0.0), rect1);
+        assert_is_close!(
+            rect1.lerp(rect2, 0.5),
+            RoundRect {
+                min: Point::new(Mm(0.1), Mm(0.75)),
+                max: Point::new(Mm(1.5), Mm(5.25)),
+                radii: Vector::new(Mm(1.0), Mm(0.75)),
+            }
+        );
+        assert_is_close!(rect1.lerp(rect2, 1.0), rect2);
     }
 
     #[test]

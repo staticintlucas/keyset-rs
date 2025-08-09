@@ -47,6 +47,16 @@ where
         self.radii.y * 2.0
     }
 
+    /// Linearly interpolate between ellipses
+    #[inline]
+    #[must_use]
+    pub fn lerp(self, other: Self, factor: f32) -> Self {
+        Self {
+            center: self.center.lerp(other.center, factor),
+            radii: self.radii.lerp(other.radii, factor),
+        }
+    }
+
     /// Converts the ellipse to a [`Path`]
     #[inline]
     pub fn to_path(self) -> Path<U> {
@@ -321,6 +331,28 @@ mod tests {
             radii: Vector::new(Mm(1.0), Mm(2.0)),
         };
         assert_is_close!(ellipse.height(), Mm(4.0));
+    }
+
+    #[test]
+    fn ellipse_lerp() {
+        let ellipse1 = Ellipse {
+            center: Point::new(Mm(1.5), Mm(3.0)),
+            radii: Vector::new(Mm(1.0), Mm(2.0)),
+        };
+        let ellipse2 = Ellipse {
+            center: Point::new(Mm(3.0), Mm(1.5)),
+            radii: Vector::new(Mm(2.0), Mm(1.0)),
+        };
+
+        assert_is_close!(ellipse1.lerp(ellipse2, 0.0), ellipse1);
+        assert_is_close!(
+            ellipse1.lerp(ellipse2, 0.5),
+            Ellipse {
+                center: Point::new(Mm(2.25), Mm(2.25)),
+                radii: Vector::new(Mm(1.5), Mm(1.5)),
+            }
+        );
+        assert_is_close!(ellipse1.lerp(ellipse2, 1.0), ellipse2);
     }
 
     #[test]
