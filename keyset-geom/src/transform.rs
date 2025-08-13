@@ -28,6 +28,26 @@ impl Scale {
         Self { x: v, y: v }
     }
 
+    /// Returns the minimum values `x` and `y` components from `self` and `other`
+    #[inline]
+    #[must_use]
+    pub fn min(self, other: Self) -> Self {
+        Self {
+            x: self.x.min(other.x),
+            y: self.y.min(other.y),
+        }
+    }
+
+    /// Returns the maximum values `x` and `y` components from `self` and `other`
+    #[inline]
+    #[must_use]
+    pub fn max(self, other: Self) -> Self {
+        Self {
+            x: self.x.max(other.x),
+            y: self.y.max(other.y),
+        }
+    }
+
     /// Returns the hypotenuse of the scale
     #[inline]
     #[must_use]
@@ -450,6 +470,29 @@ mod tests {
         let scale = Scale::splat(4.0);
         assert_is_close!(scale.x, 4.0);
         assert_is_close!(scale.y, 4.0);
+    }
+
+    #[test]
+    fn scale_cmp() {
+        let scale1 = Scale { x: 2.0, y: 3.0 };
+        let scale2 = Scale { x: 4.0, y: -3.5 };
+
+        assert_is_close!(scale1.max(scale2).x, 4.0);
+        assert_is_close!(scale1.max(scale2).y, 3.0);
+
+        assert_is_close!(scale1.min(scale2).x, 2.0);
+        assert_is_close!(scale1.min(scale2).y, -3.5);
+    }
+
+    #[test]
+    fn scale_hypot() {
+        let scale = Scale { x: 3.0, y: 4.0 };
+        assert_is_close!(scale.hypot(), 5.0);
+        assert_is_close!(scale.hypot2(), 25.0);
+
+        let scale = Scale { x: 12.0, y: -5.0 };
+        assert_is_close!(scale.hypot(), 13.0);
+        assert_is_close!(scale.hypot2(), 169.0);
     }
 
     #[test]
