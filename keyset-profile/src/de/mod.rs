@@ -206,6 +206,7 @@ impl<'de> Deserialize<'de> for Profile {
             typ: Type,
             bottom: BottomSurface,
             top: TopSurface,
+            #[serde(default)]
             legend: HashMap<usize, RawLegendProps>,
             homing: HomingProps,
         }
