@@ -32,8 +32,8 @@ geom.workspace = true
 key.workspace = true
 profile.workspace = true
 
+indoc.workspace = true
 isclose.workspace = true
-log.workspace = true
 miniz_oxide = { workspace = true, optional = true }
 num-traits.workspace = true
 pdf-writer = { workspace = true, optional = true }
@@ -41,5 +41,4 @@ tiny-skia = { workspace = true, optional = true }
 svg = { workspace = true, optional = true }
 
 [dev-dependencies]
-indoc.workspace = true
 itertools.workspace = true

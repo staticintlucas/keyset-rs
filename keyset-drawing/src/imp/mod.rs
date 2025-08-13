@@ -6,7 +6,7 @@ use color::Color;
 use geom::{ConvertInto as _, Dot, KeyUnit, Path, Point, Rect, Scale, Vector};
 use isclose::IsClose as _;
 
-use crate::{Error, Template};
+use crate::{Template, Warning};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Outline {
@@ -28,7 +28,7 @@ pub struct KeyDrawing {
 }
 
 impl KeyDrawing {
-    pub fn new(key: &Key, template: &Template) -> Result<Self, Error> {
+    pub fn new(key: &Key, template: &Template, warnings: &mut Vec<Warning>) -> Self {
         let cap = Self::required_capacity(key, template);
         let mut paths = Vec::with_capacity(cap);
 
@@ -121,17 +121,17 @@ impl KeyDrawing {
                 l.as_ref().map(|legend| {
                     #[allow(clippy::cast_precision_loss)] // i <= 9
                     let align = Scale::new(0.5 * ((i % 3) as f32), 0.5 * ((i / 3) as f32));
-                    legend::draw(legend, font, profile, top_rect, align)
+                    legend::draw(legend, font, profile, top_rect, align, warnings)
                 })
             })
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Vec<_>>();
 
         paths.extend_from_slice(&legends);
 
-        Ok(Self {
+        Self {
             origin: key.position,
             paths: paths.into_boxed_slice(),
-        })
+        }
     }
 
     fn required_capacity(key: &Key, template: &Template) -> usize {
@@ -177,10 +177,12 @@ mod tests {
         // Regular 1u
         let key = Key::example();
         let template = Template::default();
-        let drawing = KeyDrawing::new(&key, &template).unwrap();
+        let mut warnings = Vec::new();
+        let drawing = KeyDrawing::new(&key, &template, &mut warnings);
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 6); // top, bottom, 4x legends
+        assert!(warnings.is_empty());
 
         // Stepped caps
         let key = {
@@ -189,10 +191,12 @@ mod tests {
             key
         };
         let template = Template::default();
-        let drawing = KeyDrawing::new(&key, &template).unwrap();
+        let mut warnings = Vec::new();
+        let drawing = KeyDrawing::new(&key, &template, &mut warnings);
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, step, 4x legends
+        assert!(warnings.is_empty());
 
         // ISO H
         let key = {
@@ -204,7 +208,8 @@ mod tests {
             show_margin: true,
             ..Template::default()
         };
-        let drawing = KeyDrawing::new(&key, &template).unwrap();
+        let mut warnings = Vec::new();
+        let drawing = KeyDrawing::new(&key, &template, &mut warnings);
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
@@ -217,6 +222,7 @@ mod tests {
         };
         let margin_rect = top_rect - template.profile.text_margin.get(font_size);
         assert_is_close!(bounding_box, margin_rect);
+        assert!(warnings.is_empty());
 
         // ISO V
         let key = {
@@ -228,7 +234,8 @@ mod tests {
             show_margin: true,
             ..Template::default()
         };
-        let drawing = KeyDrawing::new(&key, &template).unwrap();
+        let mut warnings = Vec::new();
+        let drawing = KeyDrawing::new(&key, &template, &mut warnings);
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
@@ -243,5 +250,6 @@ mod tests {
             * Translate::<Dot>::new(KeyUnit(0.25).convert_into(), KeyUnit(0.0).convert_into())
             - template.profile.text_margin.get(font_size);
         assert_is_close!(bounding_box, margin_rect);
+        assert!(warnings.is_empty());
     }
 }

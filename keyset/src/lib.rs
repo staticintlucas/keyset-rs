@@ -54,7 +54,10 @@
 //! };
 //!
 //! // Create drawing
-//! let drawing = template.draw(&keys)?;
+//! let (drawing, warnings) = template.draw(&keys)?;
+//!
+//! // Optionally handle warnings (if any)
+//! assert!(warnings.is_empty());
 //!
 //! // Save output
 //! let path = std::env::current_dir()?;

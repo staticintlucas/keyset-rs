@@ -184,7 +184,7 @@ mod tests {
             ..Default::default()
         };
         let keys = [Key::example()];
-        let drawing = template.draw(&keys).unwrap();
+        let (drawing, _warnings) = template.draw(&keys).unwrap();
 
         let pdf = drawing.to_pdf();
         let ai = drawing.to_ai();

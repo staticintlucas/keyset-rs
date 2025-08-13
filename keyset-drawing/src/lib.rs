@@ -24,7 +24,7 @@ use geom::{ConvertInto as _, Dot, KeyUnit, Point, Rect, Translate, Vector};
 use key::Key;
 use profile::Profile;
 
-pub use self::error::Error;
+pub use self::error::{Error, Warning};
 pub(crate) use self::imp::{KeyDrawing, KeyPath};
 
 /// A drawing
@@ -119,7 +119,9 @@ impl Template {
     ///
     /// Returns an error if the size requested keys cannot be drawn
     #[inline]
-    pub fn draw(&self, keys: &[Key]) -> Result<Drawing, Error> {
+    pub fn draw(&self, keys: &[Key]) -> Result<(Drawing, Vec<Warning>), Error> {
+        let mut warnings = Vec::new();
+
         let bounds = keys
             .iter()
             .map(|k| k.shape.outer_rect() * Translate::new(k.position.x, k.position.y))
@@ -133,14 +135,16 @@ impl Template {
 
         let keys = keys
             .iter()
-            .map(|key| KeyDrawing::new(key, self))
-            .collect::<Result<_, _>>()?;
+            .map(|key| KeyDrawing::new(key, self, &mut warnings))
+            .collect();
 
-        Ok(Drawing {
+        let drawing = Drawing {
             bounds,
             keys,
             scale: self.scale,
-        })
+        };
+
+        Ok((drawing, warnings))
     }
 }
 
@@ -235,11 +239,12 @@ mod tests {
         let template = Template::default();
         let keys = [Key::example()];
 
-        let drawing = template.draw(&keys).unwrap();
+        let (drawing, warnings) = template.draw(&keys).unwrap();
 
         assert_is_close!(drawing.bounds.width(), KeyUnit(1.0));
         assert_is_close!(drawing.bounds.height(), KeyUnit(1.0));
         assert_eq!(drawing.keys.len(), 1);
         assert_is_close!(drawing.scale, template.scale);
+        assert!(warnings.is_empty());
     }
 }
