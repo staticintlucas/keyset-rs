@@ -105,9 +105,10 @@ pub struct Template {
     pub show_keys: bool,
     /// Show the margin used for legend alignment. Useful for debug purposes
     pub show_margin: bool,
-    /// Hidden field to enforce non-exhaustive struct while still allowing instantiation using
-    /// `..Default::default()` functional update syntax
-    #[allow(private_interfaces)]
+    #[expect(
+        private_interfaces,
+        reason = "enforces non-exhaustive struct while still allowing functional update syntax"
+    )]
     #[doc(hidden)]
     pub __non_exhaustive: NonExhaustive,
 }

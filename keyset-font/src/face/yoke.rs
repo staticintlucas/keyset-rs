@@ -68,7 +68,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[allow(clippy::explicit_deref_methods)]
+    #[expect(clippy::explicit_deref_methods, reason = "we want to test them")]
     fn wrapper_ref_deref() {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let mut wrapper = RbFaceWrapper(RbFace::from_slice(&data, 0).unwrap());

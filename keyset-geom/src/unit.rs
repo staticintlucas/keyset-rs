@@ -330,7 +330,7 @@ where
     Src: Unit,
 {
     /// Creates a new conversion with the given affine transform
-    #[allow(clippy::similar_names)]
+    #[expect(clippy::similar_names, reason = "it should be pretty obvious")]
     #[inline]
     #[must_use]
     pub const fn new(a_xx: f32, a_xy: f32, t_x: f32, a_yx: f32, a_yy: f32, t_y: f32) -> Self {

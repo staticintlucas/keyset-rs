@@ -119,7 +119,7 @@ impl KeyDrawing {
             .enumerate()
             .filter_map(|(i, l)| {
                 l.as_ref().map(|legend| {
-                    #[allow(clippy::cast_precision_loss)] // i <= 9
+                    #[expect(clippy::cast_precision_loss, reason = "i <= 9")]
                     let align = Scale::new(0.5 * ((i % 3) as f32), 0.5 * ((i / 3) as f32));
                     legend::draw(legend, font, profile, top_rect, align, warnings)
                 })

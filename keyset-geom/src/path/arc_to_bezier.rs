@@ -71,7 +71,6 @@ pub fn arc_to_bezier<U: Unit>(
     }
 }
 
-#[allow(clippy::similar_names)]
 fn get_center<U: Unit>(laf: bool, sf: bool, d: Vector<U>) -> Vector<U> {
     // Since we only use half d in this calculation, pre-halve it
     let d_2 = d * 0.5;
@@ -116,7 +115,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[allow(clippy::too_many_lines)]
+    #[expect(clippy::too_many_lines, reason = "it's only a test")]
     fn test_arc_to_bezier() {
         let tests: [fn(&mut Vec<_>); 12] = [
             |vec| {

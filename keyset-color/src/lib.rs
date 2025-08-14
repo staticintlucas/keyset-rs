@@ -99,8 +99,11 @@ impl Color {
     #[inline]
     #[must_use]
     pub fn as_rgb8(&self) -> (u8, u8, u8) {
-        // we want truncation here
-        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        #[expect(
+            clippy::cast_sign_loss,
+            clippy::cast_possible_truncation,
+            reason = "we want truncation here"
+        )]
         self.0.map(|c| (c * 256.0) as _).into()
     }
 
@@ -108,8 +111,11 @@ impl Color {
     #[inline]
     #[must_use]
     pub fn as_rgb16(&self) -> (u16, u16, u16) {
-        // we want truncation here
-        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        #[expect(
+            clippy::cast_sign_loss,
+            clippy::cast_possible_truncation,
+            reason = "we want truncation here"
+        )]
         self.0.map(|c| (c * 65536.0) as _).into()
     }
 

@@ -23,7 +23,10 @@ pub fn draw(
 
     // Dimensions used to position text
     let line_height = Dot(font.line_height().get() * text_scale);
-    #[allow(clippy::cast_precision_loss)] // If there are more lines than f32 we have bigger issues
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "if there are more lines than f32 allows we have bigger issues"
+    )]
     let num_lines = legend.text.lines().count() as f32;
     let margin = top_rect - profile.text_margin.get(legend.size_idx);
 
@@ -32,7 +35,7 @@ pub fn draw(
         .lines()
         .enumerate()
         .map(|(i, text)| {
-            #[allow(clippy::cast_precision_loss)] // i <= 9
+            #[expect(clippy::cast_precision_loss, reason = "i <= 9")]
             let i = i as f32;
             let line_offset = num_lines - i - 1.0;
 

@@ -118,9 +118,10 @@ pub struct Key {
     pub color: Color,
     /// The key's legends
     pub legends: [Option<Box<Legend>>; 9],
-    /// Hidden field to enforce non-exhaustive struct while still allowing instantiation using
-    /// `..Default::default()` functional update syntax
-    #[allow(private_interfaces)]
+    #[expect(
+        private_interfaces,
+        reason = "enforces non-exhaustive struct while still allowing functional update syntax"
+    )]
     #[doc(hidden)]
     pub __non_exhaustive: NonExhaustive,
 }

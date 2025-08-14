@@ -229,12 +229,12 @@ impl Font {
         let mut builder = PathBuilder::with_capacity(capacity);
         let mut position = Vector::zero();
         for (info, pos) in izip!(infos, positions) {
-            #[allow(clippy::cast_precision_loss)] // f32 precision is plenty
+            #[expect(clippy::cast_precision_loss, reason = "f32 precision is plenty")]
             let advance = Vector::new(
                 FontUnit(pos.x_advance as f32),
                 FontUnit(pos.y_advance as f32),
             );
-            #[allow(clippy::cast_precision_loss)] // f32 precision is plenty
+            #[expect(clippy::cast_precision_loss, reason = "f32 precision is plenty")]
             let offset = Vector::new(FontUnit(pos.x_offset as f32), FontUnit(pos.y_offset as f32));
 
             self.0.face.outline_glyph(

@@ -328,7 +328,7 @@ where
     U: Unit,
 {
     /// Creates a new affine transform
-    #[allow(clippy::similar_names)]
+    #[expect(clippy::similar_names, reason = "it's obvious enough")]
     #[inline]
     #[must_use]
     pub const fn new(a_xx: f32, a_xy: f32, t_x: U, a_yx: f32, a_yy: f32, t_y: U) -> Self {
@@ -347,7 +347,10 @@ where
     /// Equivalent to `other * self`
     #[inline]
     #[must_use]
-    #[allow(clippy::suspicious_operation_groupings)]
+    #[expect(
+        clippy::suspicious_operation_groupings,
+        reason = "clippy's wrong, this is correct"
+    )]
     pub fn then(self, other: impl Into<Self>) -> Self {
         let other: Self = other.into();
         Self {
@@ -797,7 +800,7 @@ mod tests {
         assert_is_close!(transform.t_y, Mm(12.0));
     }
 
-    #[allow(clippy::too_many_lines)]
+    #[expect(clippy::too_many_lines, reason = "it's only a test")]
     #[test]
     fn transform_is_close() {
         assert!(Transform {

@@ -156,11 +156,11 @@ impl TextHeight {
                 vec.push((0, 0.0));
                 vec.extend(heights.iter().map(|(&i, &h)| (i, h.get())));
                 vec.sort_unstable_by_key(|&(i, _h)| i);
-                #[allow(clippy::cast_precision_loss)] // i <= 9
+                #[expect(clippy::cast_precision_loss, reason = "i <= 9")]
                 vec.into_iter().map(|(i, h)| (i as f32, h)).unzip()
             };
 
-            #[allow(clippy::cast_precision_loss)] // i <= 9
+            #[expect(clippy::cast_precision_loss, reason = "i <= 9")]
             let all_indices = array::from_fn(|i| i as f32);
             Self(interp_array(&indices, &heights, &all_indices, &InterpMode::Extrapolate).map(Dot))
         }
@@ -181,7 +181,7 @@ impl Default for TextHeight {
     #[inline]
     fn default() -> Self {
         // From: https://github.com/ijprest/keyboard-layout-editor/blob/d2945e5/kb.css#L113
-        #[allow(clippy::cast_precision_loss)] // i <= 9
+        #[expect(clippy::cast_precision_loss, reason = "i <= 9")]
         Self(array::from_fn(|i| 6.0 + 2.0 * (i as f32)).map(|sz| KeyUnit(sz / 72.0).convert_into()))
     }
 }
@@ -334,9 +334,10 @@ pub struct Profile {
     pub text_height: TextHeight,
     /// Homing properties
     pub homing: HomingProps,
-    /// Hidden field to enforce non-exhaustive struct while still allowing instantiation using
-    /// `..Default::default()` functional update syntax
-    #[allow(private_interfaces)]
+    #[expect(
+        private_interfaces,
+        reason = "enforces non-exhaustive struct while still allowing functional update syntax"
+    )]
     #[doc(hidden)]
     pub __non_exhaustive: NonExhaustive,
 }

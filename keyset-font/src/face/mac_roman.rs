@@ -4,7 +4,7 @@ type PlatformId = rustybuzz::ttf_parser::PlatformId;
 // https://github.com/fonttools/fonttools/issues/236
 // https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html
 
-#[allow(dead_code)]
+#[expect(dead_code, reason = "just being comprehensive by including everything")]
 mod mac_encoding_id {
     pub const ROMAN: u16 = 0;
     pub const JAPANESE: u16 = 1;
@@ -43,7 +43,7 @@ mod mac_encoding_id {
     pub const ROMANIAN: u16 = 38;
 }
 
-#[allow(dead_code)]
+#[expect(dead_code, reason = "just being comprehensive by including everything")]
 mod mac_language_id {
     pub const ENGLISH: u16 = 0;
     pub const FRENCH: u16 = 1;

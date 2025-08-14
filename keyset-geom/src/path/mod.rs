@@ -1522,7 +1522,10 @@ mod tests {
         cross.abs_move(Point::new(Mm(0.0), Mm(1.0)));
         cross.abs_line(Point::new(Mm(1.0), Mm(0.0)));
 
-        #[allow(clippy::redundant_clone)]
+        #[expect(
+            clippy::redundant_clone,
+            reason = "it's a little cleaner and this is only a test"
+        )]
         let params = [
             (empty.clone(), empty.clone(), empty.clone()),
             (line1.clone(), empty.clone(), line1.clone()),
@@ -1584,7 +1587,10 @@ mod tests {
         cross_bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
         cross_bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
 
-        #[allow(clippy::redundant_clone)]
+        #[expect(
+            clippy::redundant_clone,
+            reason = "it's a little cleaner and this is only a test"
+        )]
         let params = [
             (empty_bldr.clone(), empty_path.clone(), empty_bldr.clone()),
             (line1_bldr.clone(), empty_path.clone(), line1_bldr.clone()),
@@ -1714,7 +1720,10 @@ mod tests {
         cross.abs_move(Point::new(Mm(0.0), Mm(1.0)));
         cross.abs_line(Point::new(Mm(1.0), Mm(0.0)));
 
-        #[allow(clippy::redundant_clone)]
+        #[expect(
+            clippy::redundant_clone,
+            reason = "it's a little cleaner and this is only a test"
+        )]
         let params = [
             (empty.clone(), empty.clone(), empty.clone()),
             (line1.clone(), empty.clone(), line1.clone()),
@@ -1803,7 +1812,10 @@ mod tests {
         cross_bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
         cross_bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
 
-        #[allow(clippy::redundant_clone)]
+        #[expect(
+            clippy::redundant_clone,
+            reason = "it's a little cleaner and this is only a test"
+        )]
         let params = [
             (empty_bldr.clone(), empty_path.clone(), empty_bldr.clone()),
             (line1_bldr.clone(), empty_path.clone(), line1_bldr.clone()),
