@@ -1,49 +1,21 @@
 use svg::node::element::{Group, Path as SvgPath};
 use svg::Document;
 
-use geom::{
-    ConvertFrom as _, ConvertInto as _, Dot, Mm, PathSegment, Point, Rect, Unit as _, Vector,
-};
+use geom::{ConvertFrom as _, ConvertInto as _, Dot, Mm, Point, Rect, Unit as _, Vector};
 
+use self::utils::{ToSvg as _, ToViewBox as _};
 use super::{Drawing, KeyDrawing, KeyPath};
 
-macro_rules! float {
-    ($arg:expr $(,)?) => {
-        format!("{}", float!(@round $arg))
-    };
-    ($arg0:expr, $($args:expr),+ $(,)?) => {
-        format!("{}{}", float!(@round $arg0), float!(@inner $($args),+))
-    };
-    (@inner $arg:expr $(,)?) => {
-        format_args!("{}", float!(@format $arg))
-    };
-    (@inner $arg0:expr, $($args:expr),+ $(,)?) => {
-        format_args!("{}{}", float!(@format $arg0), float!(@inner $($args),+))
-    };
-    (@format $arg:expr) => {
-        format_args!("{}{}", if ($arg).get().is_sign_positive() { " " } else { "" }, float!(@round $arg))
-    };
-    (@round $arg:expr) => {
-        (($arg).get() * 1e3).round() / 1e3
-    };
-}
+mod utils;
 
 pub fn draw(drawing: &Drawing) -> String {
     let size = Vector::<Mm>::convert_from(drawing.bounds.size()) * drawing.scale;
     let view_box: Rect<Dot> = drawing.bounds.convert_into(); // Use 1000 user units per key
 
     let document = Document::new()
-        .set("width", format!("{}mm", float!(size.x)))
-        .set("height", format!("{}mm", float!(size.y)))
-        .set(
-            "viewBox",
-            float!(
-                view_box.min.x,
-                view_box.min.y,
-                view_box.width(),
-                view_box.height(),
-            ),
-        );
+        .set("width", format!("{}mm", size.x.get().to_svg()))
+        .set("height", format!("{}mm", size.y.get().to_svg()))
+        .set("viewBox", view_box.to_view_box().to_string());
 
     let document = drawing
         .keys
@@ -58,26 +30,13 @@ fn draw_key(key: &KeyDrawing) -> Group {
     let origin: Point<Dot> = key.origin.convert_into();
     let group = Group::new().set(
         "transform",
-        format!("translate({},{})", float!(origin.x), float!(origin.y)),
+        format!("translate({},{})", origin.x.to_svg(), origin.y.to_svg()),
     );
     key.paths.iter().map(draw_path).fold(group, Group::add)
 }
 
 fn draw_path(path: &KeyPath) -> SvgPath {
-    let data: String = path
-        .data
-        .iter()
-        .map(|el| match *el {
-            PathSegment::Move(p) => format!("M{}", float!(p.x, p.y)),
-            PathSegment::Line(d) => format!("l{}", float!(d.x, d.y)),
-            PathSegment::CubicBezier(c1, c2, d) => {
-                format!("c{}", float!(c1.x, c1.y, c2.x, c2.y, d.x, d.y))
-            }
-            PathSegment::QuadraticBezier(c1, d) => format!("q{}", float!(c1.x, c1.y, d.x, d.y)),
-            PathSegment::Close => "z".into(),
-        })
-        .collect();
-
+    let data = path.data.to_svg().to_string();
     let fill = path
         .fill
         .map_or_else(|| "none".to_owned(), |color| format!("{color:x}"));
@@ -86,7 +45,7 @@ fn draw_path(path: &KeyPath) -> SvgPath {
     if let Some(outline) = path.outline {
         svg_path
             .set("stroke", format!("{:x}", outline.color))
-            .set("stroke-width", float!(outline.width))
+            .set("stroke-width", outline.width.to_svg().to_string())
     } else {
         svg_path.set("stroke", "none")
     }
