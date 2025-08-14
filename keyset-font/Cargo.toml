@@ -25,8 +25,8 @@ geom.workspace = true
 
 itertools.workspace = true
 num-traits.workspace = true
-ouroboros.workspace = true
 rustybuzz.workspace = true
+yoke.workspace = true
 
 [dev-dependencies]
 assert_matches.workspace = true

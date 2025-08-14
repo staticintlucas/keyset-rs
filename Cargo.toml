@@ -44,6 +44,7 @@ serde_json = "1.0"
 soml = { version = "0.2", default-features = false, features = ["std"] }
 svg = "0.18"
 tiny-skia = "0.11"
+yoke = { version = "0.8", default-features = false, features = ["alloc", "derive"] }
 
 [workspace.lints.rust]
 deprecated_safe = "warn"

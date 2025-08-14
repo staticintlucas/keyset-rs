@@ -1,162 +1,138 @@
-// TODO these warnings originate from within ouroboros
-#![allow(clippy::future_not_send, clippy::redundant_pub_crate)]
-
 mod mac_roman;
+mod yoke;
 
 use std::fmt;
 
-use ouroboros::self_referencing;
-use rustybuzz::ttf_parser::{self, GlyphId};
+use rustybuzz::ttf_parser::{self, GlyphId, Permissions};
 
 use geom::{PathBuilder, Point, Vector};
 
 use self::mac_roman::{is_mac_roman_encoding, mac_roman_decode};
+use self::yoke::{RbFaceWrapper, RbFaceYoke};
 use crate::error::PermissionError;
 use crate::{FontUnit, Result};
 
-#[self_referencing]
+/// The face struct containing the yoke
+#[repr(transparent)]
 pub struct Face {
-    data: Box<[u8]>,
-    #[borrows(data)]
-    #[covariant]
-    inner: rustybuzz::Face<'this>,
-}
-
-impl Clone for Face {
-    fn clone(&self) -> Self {
-        FaceBuilder {
-            data: self.borrow_data().clone(),
-            inner_builder: |data| {
-                rustybuzz::Face::from_slice(data, 0)
-                    .unwrap_or_else(|| unreachable!("face was already parsed"))
-            },
-        }
-        .build()
-    }
+    yoke: RbFaceYoke,
 }
 
 impl fmt::Debug for Face {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.borrow_inner().fmt(f)
+        fmt::Debug::fmt(&**self.inner(), f)
     }
 }
 
 impl Face {
     pub fn from_ttf(data: Vec<u8>) -> Result<Self> {
-        FaceTryBuilder {
-            data: data.into_boxed_slice(),
-            inner_builder: |data| {
-                let face = ttf_parser::Face::parse(data, 0)?;
+        let data = data.into_boxed_slice();
+        RbFaceYoke::try_attach_to_cart(data, |data| {
+            let face = ttf_parser::Face::parse(data, 0)?;
 
-                // Check font permissions (if set). Use getters on the OS/2 table rather than on
-                // Face since Face defaults to not allowed if there is no OS/2 table. We assume the
-                // user has read the font's license and knows what they're doing unless the font
-                // tells us otherwise.
-                match face.tables().os2 {
-                    Some(os2)
-                        if matches!(
-                            os2.permissions(),
-                            Some(ttf_parser::Permissions::Restricted)
-                        ) =>
-                    {
-                        Err(PermissionError::RestrictedLicense.into())
-                    }
-                    Some(os2) if !os2.is_subsetting_allowed() => {
-                        Err(PermissionError::NoSubsetting.into())
-                    }
-                    Some(os2) if !os2.is_outline_embedding_allowed() => {
-                        Err(PermissionError::BitmapEmbeddingOnly.into())
-                    }
-                    _ => Ok(rustybuzz::Face::from_face(face)),
+            // Check font permissions (if set). Use getters on the OS/2 table rather than on
+            // Face since Face defaults to not allowed if there is no OS/2 table. We assume the
+            // user has read the font's license and knows what they're doing unless the font
+            // tells us otherwise.
+            match face.tables().os2 {
+                Some(os2) if matches!(os2.permissions(), Some(Permissions::Restricted)) => {
+                    Err(PermissionError::RestrictedLicense.into())
                 }
-            },
-        }
-        .try_build()
+                Some(os2) if !os2.is_subsetting_allowed() => {
+                    Err(PermissionError::NoSubsetting.into())
+                }
+                Some(os2) if !os2.is_outline_embedding_allowed() => {
+                    Err(PermissionError::BitmapEmbeddingOnly.into())
+                }
+                _ => Ok(RbFaceWrapper::from_face(face)),
+            }
+        })
+        .map(|yoke| Self { yoke })
     }
 
     pub fn inner(&self) -> &rustybuzz::Face<'_> {
-        self.borrow_inner()
+        self.yoke.get()
     }
 
     pub fn names(&self) -> ttf_parser::name::Names<'_> {
-        self.borrow_inner().names()
+        self.inner().names()
     }
 
     // TODO: can we delete these altogether? Or should we expose these in the public API
     // pub fn is_regular(&self) -> bool {
-    //     self.borrow_inner().is_regular()
+    //     self.inner().is_regular()
     // }
 
     // pub fn is_italic(&self) -> bool {
-    //     self.borrow_inner().is_italic()
+    //     self.inner().is_italic()
     // }
 
     // pub fn is_bold(&self) -> bool {
-    //     self.borrow_inner().is_bold()
+    //     self.inner().is_bold()
     // }
 
     // pub fn is_oblique(&self) -> bool {
-    //     self.borrow_inner().is_oblique()
+    //     self.inner().is_oblique()
     // }
 
     // pub fn style(&self) -> ttf_parser::Style {
-    //     self.borrow_inner().style()
+    //     self.inner().style()
     // }
 
     // pub fn is_monospaced(&self) -> bool {
-    //     self.borrow_inner().is_monospaced()
+    //     self.inner().is_monospaced()
     // }
 
     // pub fn is_variable(&self) -> bool {
-    //     self.borrow_inner().is_variable()
+    //     self.inner().is_variable()
     // }
 
     // pub fn weight(&self) -> ttf_parser::Weight {
-    //     self.borrow_inner().weight()
+    //     self.inner().weight()
     // }
 
     // pub fn width(&self) -> ttf_parser::Width {
-    //     self.borrow_inner().width()
+    //     self.inner().width()
     // }
 
     pub fn italic_angle(&self) -> f32 {
-        self.borrow_inner().italic_angle()
+        self.inner().italic_angle()
     }
 
     pub fn ascender(&self) -> i16 {
-        self.borrow_inner().ascender()
+        self.inner().ascender()
     }
 
     pub fn descender(&self) -> i16 {
-        self.borrow_inner().descender()
+        self.inner().descender()
     }
 
     // pub fn height(&self) -> i16 {
-    //     self.borrow_inner().height()
+    //     self.inner().height()
     // }
 
     pub fn line_gap(&self) -> i16 {
-        self.borrow_inner().line_gap()
+        self.inner().line_gap()
     }
 
     pub fn units_per_em(&self) -> u16 {
-        self.borrow_inner().as_ref().units_per_em()
+        self.inner().as_ref().units_per_em()
     }
 
     pub fn x_height(&self) -> Option<i16> {
-        self.borrow_inner().x_height()
+        self.inner().x_height()
     }
 
     pub fn capital_height(&self) -> Option<i16> {
-        self.borrow_inner().capital_height()
+        self.inner().capital_height()
     }
 
     pub fn number_of_glyphs(&self) -> u16 {
-        self.borrow_inner().number_of_glyphs()
+        self.inner().number_of_glyphs()
     }
 
     pub fn glyph_index(&self, code_point: char) -> Option<u16> {
-        self.borrow_inner().glyph_index(code_point).map(|gid| gid.0)
+        self.inner().glyph_index(code_point).map(|gid| gid.0)
     }
 
     pub fn outline_length(&self, glyph_id: u16) -> usize {
@@ -263,21 +239,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn face_clone() {
-        let data = std::fs::read(env!("DEMO_TTF")).unwrap();
-        let face = Face::from_ttf(data).unwrap();
-
-        #[allow(clippy::redundant_clone)] // We want to test clone
-        let face2 = face.clone();
-
-        assert_eq!(face.borrow_data(), face2.borrow_data());
-        assert_eq!(
-            face.borrow_inner().number_of_glyphs(),
-            face2.borrow_inner().number_of_glyphs()
-        );
-    }
-
-    #[test]
     fn face_debug() {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let face = Face::from_ttf(data).unwrap();
@@ -290,16 +251,16 @@ mod tests {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let face = Face::from_ttf(data).unwrap();
 
-        let cmap = face.borrow_inner().tables().cmap.unwrap();
-        let kern = face.borrow_inner().tables().kern.unwrap();
+        let cmap = face.inner().tables().cmap.unwrap();
+        let kern = face.inner().tables().kern.unwrap();
         assert_eq!(cmap.subtables.len(), 1);
         assert_eq!(kern.subtables.len(), 1);
 
         let data = std::fs::read(env!("NULL_TTF")).unwrap();
         let face = Face::from_ttf(data).unwrap();
 
-        assert!(face.borrow_inner().tables().cmap.is_none());
-        assert!(face.borrow_inner().tables().kern.is_none());
+        assert!(face.inner().tables().cmap.is_none());
+        assert!(face.inner().tables().kern.is_none());
     }
 
     #[test]

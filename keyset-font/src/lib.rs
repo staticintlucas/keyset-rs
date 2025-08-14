@@ -26,7 +26,7 @@ pub use self::unit::FontUnit;
 #[derive(Debug, Clone)]
 pub struct Font(Arc<FontData>);
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct FontData {
     face: Face,
     family: String,
