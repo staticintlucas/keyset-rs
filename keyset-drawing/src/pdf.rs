@@ -16,19 +16,6 @@ const PDF_DPI: f32 = 72.0; // PDF uses 72 dpi
 const PDF_SCALE: f32 = PDF_DPI / Dot::PER_INCH;
 const COMPRESSION_LEVEL: u8 = CompressionLevel::DefaultLevel as u8;
 
-struct RefGen(i32);
-
-impl RefGen {
-    const fn new() -> Self {
-        Self(0)
-    }
-
-    fn next(&mut self) -> Ref {
-        self.0 += 1;
-        Ref::new(self.0)
-    }
-}
-
 pub fn draw(drawing: &Drawing) -> Vec<u8> {
     let scale = PDF_SCALE * drawing.scale;
     let size = Vector::<Dot>::convert_from(drawing.bounds.size());
@@ -37,16 +24,16 @@ pub fn draw(drawing: &Drawing) -> Vec<u8> {
     let conv = Conversion::from_translate(0.0, size.y.get()).then_scale(scale, -scale);
     let size: Vector<PdfUnit> = size * conv;
 
-    let mut ref_gen = RefGen::new();
+    let mut ref_alloc = Ref::new(1);
 
     let mut writer = Pdf::new();
     writer.set_version(1, 3);
 
-    let catalog_id = ref_gen.next();
-    let tree_id = ref_gen.next();
-    let page_id = ref_gen.next();
-    let content_id = ref_gen.next();
-    let doc_info_id = ref_gen.next();
+    let catalog_id = ref_alloc.bump();
+    let tree_id = ref_alloc.bump();
+    let page_id = ref_alloc.bump();
+    let content_id = ref_alloc.bump();
+    let doc_info_id = ref_alloc.bump();
 
     _ = writer.catalog(catalog_id).pages(tree_id);
     _ = writer.pages(tree_id).kids([page_id]).count(1);
