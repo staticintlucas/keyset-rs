@@ -248,17 +248,23 @@ where
     }
 }
 
-impl<U> IsClose for Rect<U>
+impl<U, V> IsClose<Rect<V>> for Rect<U>
 where
-    U: Unit,
+    U: Unit + IsClose<V>,
+    V: Unit,
 {
-    type Tolerance = f32;
-    const ZERO_TOL: Self::Tolerance = 0.0;
-    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
-    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
+    type Tolerance = <U as IsClose<V>>::Tolerance;
+    const ZERO_TOL: Self::Tolerance = <U as IsClose<V>>::ZERO_TOL;
+    const ABS_TOL: Self::Tolerance = <U as IsClose<V>>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose<V>>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+    fn is_close_tol(
+        &self,
+        other: &Rect<V>,
+        rel_tol: &Self::Tolerance,
+        abs_tol: &Self::Tolerance,
+    ) -> bool {
         self.min.is_close_tol(&other.min, rel_tol, abs_tol)
             && self.max.is_close_tol(&other.max, rel_tol, abs_tol)
     }
@@ -587,17 +593,23 @@ where
     }
 }
 
-impl<U> IsClose for RoundRect<U>
+impl<U, V> IsClose<RoundRect<V>> for RoundRect<U>
 where
-    U: Unit,
+    U: Unit + IsClose<V>,
+    V: Unit,
 {
-    type Tolerance = f32;
-    const ZERO_TOL: Self::Tolerance = 0.0;
-    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
-    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
+    type Tolerance = <U as IsClose<V>>::Tolerance;
+    const ZERO_TOL: Self::Tolerance = <U as IsClose<V>>::ZERO_TOL;
+    const ABS_TOL: Self::Tolerance = <U as IsClose<V>>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose<V>>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+    fn is_close_tol(
+        &self,
+        other: &RoundRect<V>,
+        rel_tol: &Self::Tolerance,
+        abs_tol: &Self::Tolerance,
+    ) -> bool {
         self.min.is_close_tol(&other.min, rel_tol, abs_tol)
             && self.max.is_close_tol(&other.max, rel_tol, abs_tol)
             && self.radii.is_close_tol(&other.radii, rel_tol, abs_tol)
@@ -885,17 +897,23 @@ where
     }
 }
 
-impl<U> IsClose for OffsetRect<U>
+impl<U, V> IsClose<OffsetRect<V>> for OffsetRect<U>
 where
-    U: Unit,
+    U: Unit + IsClose<V>,
+    V: Unit,
 {
-    type Tolerance = f32;
-    const ZERO_TOL: Self::Tolerance = 0.0;
-    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
-    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
+    type Tolerance = <U as IsClose<V>>::Tolerance;
+    const ZERO_TOL: Self::Tolerance = <U as IsClose<V>>::ZERO_TOL;
+    const ABS_TOL: Self::Tolerance = <U as IsClose<V>>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose<V>>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+    fn is_close_tol(
+        &self,
+        other: &OffsetRect<V>,
+        rel_tol: &Self::Tolerance,
+        abs_tol: &Self::Tolerance,
+    ) -> bool {
         self.min.is_close_tol(&other.min, rel_tol, abs_tol)
             && self.max.is_close_tol(&other.max, rel_tol, abs_tol)
     }
@@ -935,7 +953,7 @@ mod tests {
 
     #[test]
     fn rect_empty() {
-        let rect = Rect::empty();
+        let rect = Rect::<Mm>::empty();
         assert_is_close!(rect.min, Point::new(Mm(0.0), Mm(0.0)));
         assert_is_close!(rect.max, Point::new(Mm(0.0), Mm(0.0)));
     }

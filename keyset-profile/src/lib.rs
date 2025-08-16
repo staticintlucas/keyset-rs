@@ -16,8 +16,7 @@ use std::{array, fmt};
 use interp::{interp_array, InterpMode};
 
 use geom::{
-    ConvertFrom as _, ConvertInto as _, Dot, Inch, KeyUnit, Mm, OffsetRect, Point, Rect, RoundRect,
-    Unit as _, Vector,
+    ConvertInto as _, Dot, Inch, KeyUnit, Mm, OffsetRect, Point, Rect, RoundRect, Unit as _, Vector,
 };
 use key::Homing;
 
@@ -262,8 +261,7 @@ pub struct TopSurface {
 impl TopSurface {
     pub(crate) fn rect(&self) -> Rect<Dot> {
         Rect::from_center_and_size(
-            Point::<Dot>::convert_from(Point::splat(KeyUnit(0.5)))
-                + Vector::new(Dot(0.0), self.y_offset),
+            Point::splat(KeyUnit(0.5).convert_into()) + Vector::new(Dot(0.0), self.y_offset),
             self.size,
         )
     }
@@ -418,6 +416,7 @@ impl Default for Profile {
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
     use assert_matches::assert_matches;
+    use geom::ConvertFrom as _;
     use indoc::indoc;
     use isclose::{assert_is_close, IsClose as _};
     use num_traits::ToPrimitive as _;
@@ -436,43 +435,30 @@ mod tests {
         assert_matches!(
             Type::default(),
             Type::Cylindrical { depth }
-                if depth.is_close(&Dot::convert_from(Mm(1.0)))
+                if depth.is_close(&Mm(1.0))
         );
     }
 
     #[test]
     fn test_homing_props_default() {
         assert_matches!(HomingProps::default().default, Homing::Bar);
-        assert_is_close!(
-            HomingProps::default().scoop.depth,
-            Dot::convert_from(Mm(2.0))
-        );
+        assert_is_close!(HomingProps::default().scoop.depth, Mm(2.0));
         assert_is_close!(
             HomingProps::default().bar.size,
-            Vector::convert_from(Vector::new(Mm(3.81), Mm(0.508)))
+            Vector::new(Mm(3.81), Mm(0.508))
         );
-        assert_is_close!(
-            HomingProps::default().bar.y_offset,
-            Dot::convert_from(Mm(6.35))
-        );
-        assert_is_close!(
-            HomingProps::default().bump.diameter,
-            Dot::convert_from(Mm(0.508))
-        );
-        assert_is_close!(
-            HomingProps::default().bump.y_offset,
-            Dot::convert_from(Mm(0.0))
-        );
+        assert_is_close!(HomingProps::default().bar.y_offset, Mm(6.35));
+        assert_is_close!(HomingProps::default().bump.diameter, Mm(0.508));
+        assert_is_close!(HomingProps::default().bump.y_offset, Mm(0.0));
     }
 
     #[test]
     fn test_text_height_new() {
-        let expected: [_; 10] =
-            array::from_fn(|i| Dot::convert_from(KeyUnit(6.0 + 2.0 * i.to_f32().unwrap()) / 72.0));
+        let expected: [_; 10] = array::from_fn(|i| KeyUnit(6.0 + 2.0 * i.to_f32().unwrap()) / 72.0);
         let result = TextHeight::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
-        for (e, r) in expected.iter().zip(result.iter()) {
+        for (&e, &r) in expected.iter().zip(result.iter()) {
             assert_is_close!(e, r);
         }
 
@@ -514,21 +500,18 @@ mod tests {
         let heights = TextHeight::default();
 
         for (i, h) in heights.0.into_iter().enumerate() {
-            assert_is_close!(
-                h,
-                Dot::convert_from(KeyUnit(6.0 + 2.0 * i.to_f32().unwrap()) / 72.0)
-            );
+            assert_is_close!(h, KeyUnit(6.0 + 2.0 * i.to_f32().unwrap()) / 72.0);
         }
     }
 
     #[test]
     fn test_text_margin_new() {
-        let expected = [OffsetRect::convert_from(OffsetRect::splat(KeyUnit(0.05))); 10];
+        let expected = [OffsetRect::splat(KeyUnit(0.05)); 10];
         let result = TextMargin::new(&HashMap::new()).0;
 
         assert_eq!(expected.len(), result.len());
 
-        for (e, r) in expected.iter().zip(result.iter()) {
+        for (&e, &r) in expected.iter().zip(result.iter()) {
             assert_is_close!(e, r);
         }
 
@@ -567,7 +550,7 @@ mod tests {
         ]));
 
         let offsets = margin.get(2);
-        assert_is_close!(offsets, OffsetRect::zero());
+        assert_is_close!(offsets, OffsetRect::<Dot>::zero());
 
         let offsets = margin.get(62);
         assert_is_close!(offsets, OffsetRect::splat(Dot(-100.0)));
@@ -578,10 +561,7 @@ mod tests {
         let margin = TextMargin::default();
 
         for offsets in margin.0 {
-            assert_is_close!(
-                offsets,
-                OffsetRect::convert_from(OffsetRect::splat(KeyUnit(0.05)))
-            );
+            assert_is_close!(offsets, OffsetRect::splat(KeyUnit(0.05)));
         }
     }
 
@@ -591,8 +571,8 @@ mod tests {
         assert_is_close!(
             surf.rect(),
             Rect::from_origin_and_size(
-                Point::new(KeyUnit(0.170), KeyUnit(0.055)).convert_into(),
-                Vector::new(KeyUnit(0.660), KeyUnit(0.735)).convert_into()
+                Point::new(KeyUnit(0.170), KeyUnit(0.055)),
+                Vector::new(KeyUnit(0.660), KeyUnit(0.735)),
             )
         );
     }
@@ -603,9 +583,9 @@ mod tests {
         assert_is_close!(
             surf.round_rect(),
             RoundRect::new(
-                Point::new(KeyUnit(0.170), KeyUnit(0.055)).convert_into(),
-                Point::new(KeyUnit(0.830), KeyUnit(0.790)).convert_into(),
-                Vector::splat(KeyUnit(0.065)).convert_into(),
+                Point::new(KeyUnit(0.170), KeyUnit(0.055)),
+                Point::new(KeyUnit(0.830), KeyUnit(0.790)),
+                Vector::splat(KeyUnit(0.065)),
             )
         );
     }
@@ -613,12 +593,9 @@ mod tests {
     #[test]
     fn test_top_surface_default() {
         let surf = TopSurface::default();
-        assert_is_close!(
-            surf.size,
-            Vector::convert_from(Vector::new(KeyUnit(0.660), KeyUnit(0.735)))
-        );
-        assert_is_close!(surf.radius, Dot::convert_from(KeyUnit(0.065)));
-        assert_is_close!(surf.y_offset, Dot::convert_from(KeyUnit(-0.0775)));
+        assert_is_close!(surf.size, Vector::new(KeyUnit(0.660), KeyUnit(0.735)));
+        assert_is_close!(surf.radius, KeyUnit(0.065));
+        assert_is_close!(surf.y_offset, KeyUnit(-0.0775));
     }
 
     #[test]
@@ -627,8 +604,8 @@ mod tests {
         assert_is_close!(
             surf.rect(),
             Rect::new(
-                Point::new(KeyUnit(0.025), KeyUnit(0.025)).convert_into(),
-                Point::new(KeyUnit(0.975), KeyUnit(0.975)).convert_into()
+                Point::new(KeyUnit(0.025), KeyUnit(0.025)),
+                Point::new(KeyUnit(0.975), KeyUnit(0.975)),
             )
         );
     }
@@ -639,9 +616,9 @@ mod tests {
         assert_is_close!(
             surf.round_rect(),
             RoundRect::new(
-                Point::new(KeyUnit(0.025), KeyUnit(0.025)).convert_into(),
-                Point::new(KeyUnit(0.975), KeyUnit(0.975)).convert_into(),
-                Vector::<KeyUnit>::splat(KeyUnit(0.065)).convert_into()
+                Point::new(KeyUnit(0.025), KeyUnit(0.025)),
+                Point::new(KeyUnit(0.975), KeyUnit(0.975)),
+                Vector::splat(KeyUnit(0.065)),
             )
         );
     }
@@ -649,11 +626,8 @@ mod tests {
     #[test]
     fn test_bottom_surface_default() {
         let surf = BottomSurface::default();
-        assert_is_close!(
-            surf.size,
-            Vector::convert_from(Vector::new(KeyUnit(0.950), KeyUnit(0.950)))
-        );
-        assert_is_close!(surf.radius, Dot::convert_from(KeyUnit(0.065)));
+        assert_is_close!(surf.size, Vector::new(KeyUnit(0.950), KeyUnit(0.950)));
+        assert_is_close!(surf.radius, KeyUnit(0.065));
     }
 
     #[test]
@@ -726,29 +700,22 @@ mod tests {
         assert_matches!(
             profile.typ,
             Type::Cylindrical { depth }
-                if depth.is_close(&Dot::convert_from(Mm(0.5)))
+                if depth.is_close(&Mm(0.5))
         );
 
-        assert_is_close!(
-            profile.bottom.size,
-            Vector::convert_from(Vector::splat(Mm(18.29)))
-        );
-        assert_is_close!(profile.bottom.radius, Dot::convert_from(Mm(0.38)));
+        assert_is_close!(profile.bottom.size, Vector::splat(Mm(18.29)));
+        assert_is_close!(profile.bottom.radius, Mm(0.38));
 
-        assert_is_close!(
-            profile.top.size,
-            Vector::convert_from(Vector::new(Mm(11.81), Mm(13.91)))
-        );
-        assert_is_close!(profile.top.radius, Dot::convert_from(Mm(1.52)));
-        assert_is_close!(profile.top.y_offset, Dot::convert_from(Mm(-1.62)));
+        assert_is_close!(profile.top.size, Vector::new(Mm(11.81), Mm(13.91)));
+        assert_is_close!(profile.top.radius, Mm(1.52));
+        assert_is_close!(profile.top.y_offset, Mm(-1.62));
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = [
             0.0, 0.76, 1.52, 2.28, 3.18, 4.84, 6.5, 8.16, 9.82, 11.48, 13.14,
         ]
-        .map(Mm)
-        .map(Dot::convert_from);
-        for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
+        .map(Mm);
+        for (&e, &r) in expected.iter().zip(profile.text_height.0.iter()) {
             assert_is_close!(e, r);
         }
 
@@ -764,21 +731,17 @@ mod tests {
             OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.185), Mm(1.18)),
             OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.185), Mm(1.18)),
             OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.185), Mm(1.18)),
-        ]
-        .map(OffsetRect::convert_from);
-        for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
+        ];
+        for (&e, &r) in expected.iter().zip(profile.text_margin.0.iter()) {
             assert_is_close!(e, r);
         }
 
         assert_matches!(profile.homing.default, Homing::Scoop);
-        assert_is_close!(profile.homing.scoop.depth, Dot::convert_from(Mm(1.5)));
-        assert_is_close!(
-            profile.homing.bar.size,
-            Vector::convert_from(Vector::new(Mm(3.85), Mm(0.4)))
-        );
-        assert_is_close!(profile.homing.bar.y_offset, Dot::convert_from(Mm(5.05)));
-        assert_is_close!(profile.homing.bump.diameter, Dot::convert_from(Mm(0.4)));
-        assert_is_close!(profile.homing.bump.y_offset, Dot::convert_from(Mm(-0.2)));
+        assert_is_close!(profile.homing.scoop.depth, Mm(1.5));
+        assert_is_close!(profile.homing.bar.size, Vector::new(Mm(3.85), Mm(0.4)));
+        assert_is_close!(profile.homing.bar.y_offset, Mm(5.05));
+        assert_is_close!(profile.homing.bump.diameter, Mm(0.4));
+        assert_is_close!(profile.homing.bump.y_offset, Mm(-0.2));
     }
 
     #[cfg(feature = "toml")]
@@ -857,29 +820,22 @@ mod tests {
         assert_matches!(
             profile.typ,
             Type::Cylindrical { depth }
-                if depth.is_close(&Dot::convert_from(Mm(0.5)))
+                if depth.is_close(&Mm(0.5))
         );
 
-        assert_is_close!(
-            profile.bottom.size,
-            Vector::convert_from(Vector::splat(Mm(18.29)))
-        );
-        assert_is_close!(profile.bottom.radius, Dot::convert_from(Mm(0.38)));
+        assert_is_close!(profile.bottom.size, Vector::splat(Mm(18.29)));
+        assert_is_close!(profile.bottom.radius, Mm(0.38));
 
-        assert_is_close!(
-            profile.top.size,
-            Vector::convert_from(Vector::new(Mm(11.81), Mm(13.91)))
-        );
-        assert_is_close!(profile.top.radius, Dot::convert_from(Mm(1.52)));
-        assert_is_close!(profile.top.y_offset, Dot::convert_from(Mm(-1.62)));
+        assert_is_close!(profile.top.size, Vector::new(Mm(11.81), Mm(13.91)));
+        assert_is_close!(profile.top.radius, Mm(1.52));
+        assert_is_close!(profile.top.y_offset, Mm(-1.62));
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = [
             0.0, 0.76, 1.52, 2.28, 3.18, 4.84, 6.5, 8.16, 9.82, 11.48, 13.14,
         ]
-        .map(Mm)
-        .map(Dot::convert_from);
-        for (e, r) in expected.iter().zip(profile.text_height.0.iter()) {
+        .map(Mm);
+        for (&e, &r) in expected.iter().zip(profile.text_height.0.iter()) {
             assert_is_close!(e, r);
         }
 
@@ -895,21 +851,17 @@ mod tests {
             OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.185), Mm(1.18)),
             OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.185), Mm(1.18)),
             OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.185), Mm(1.18)),
-        ]
-        .map(OffsetRect::convert_from);
-        for (e, r) in expected.iter().zip(profile.text_margin.0.iter()) {
+        ];
+        for (&e, &r) in expected.iter().zip(profile.text_margin.0.iter()) {
             assert_is_close!(e, r);
         }
 
         assert_matches!(profile.homing.default, Homing::Scoop);
-        assert_is_close!(profile.homing.scoop.depth, Dot::convert_from(Mm(1.5)));
-        assert_is_close!(
-            profile.homing.bar.size,
-            Vector::convert_from(Vector::new(Mm(3.85), Mm(0.4)))
-        );
-        assert_is_close!(profile.homing.bar.y_offset, Dot::convert_from(Mm(5.05)));
-        assert_is_close!(profile.homing.bump.diameter, Dot::convert_from(Mm(0.4)));
-        assert_is_close!(profile.homing.bump.y_offset, Dot::convert_from(Mm(-0.2)));
+        assert_is_close!(profile.homing.scoop.depth, Mm(1.5));
+        assert_is_close!(profile.homing.bar.size, Vector::new(Mm(3.85), Mm(0.4)));
+        assert_is_close!(profile.homing.bar.y_offset, Mm(5.05));
+        assert_is_close!(profile.homing.bump.diameter, Mm(0.4));
+        assert_is_close!(profile.homing.bump.y_offset, Mm(-0.2));
     }
 
     #[cfg(feature = "json")]
@@ -952,21 +904,18 @@ mod tests {
         assert_matches!(
             profile.typ,
             Type::Cylindrical { depth }
-                if depth.is_close(&Dot::convert_from(Mm(1.0)))
+                if depth.is_close(&Mm(1.0))
         );
 
-        assert_is_close!(
-            profile.bottom.size,
-            Vector::convert_from(Vector::splat(KeyUnit(0.950)))
-        );
-        assert_is_close!(profile.bottom.radius, Dot::convert_from(KeyUnit(0.065)));
+        assert_is_close!(profile.bottom.size, Vector::splat(KeyUnit(0.950)));
+        assert_is_close!(profile.bottom.radius, KeyUnit(0.065));
 
         assert_is_close!(
             profile.top.size,
-            Vector::convert_from(Vector::new(KeyUnit(0.660), KeyUnit(0.735)))
+            Vector::new(KeyUnit(0.660), KeyUnit(0.735))
         );
-        assert_is_close!(profile.top.radius, Dot::convert_from(KeyUnit(0.065)));
-        assert_is_close!(profile.top.y_offset, Dot::convert_from(KeyUnit(-0.0775)));
+        assert_is_close!(profile.top.radius, KeyUnit(0.065));
+        assert_is_close!(profile.top.y_offset, KeyUnit(-0.0775));
 
         assert_eq!(profile.text_height.0.len(), 10);
         let expected = TextHeight::default();

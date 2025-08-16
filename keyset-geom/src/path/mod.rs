@@ -1464,9 +1464,9 @@ mod tests {
 
         for builder in builders {
             assert!(builder.data.is_empty());
-            assert_is_close!(builder.start, Point::origin());
-            assert_is_close!(builder.point, Point::origin());
-            assert_is_close!(builder.bounds, Rect::empty());
+            assert_is_close!(builder.start, Point::<Mm>::origin());
+            assert_is_close!(builder.point, Point::<Mm>::origin());
+            assert_is_close!(builder.bounds, Rect::<Mm>::empty());
         }
     }
 
@@ -1958,7 +1958,7 @@ mod tests {
         let data: Vec<PathSegment<Mm>> = vec![];
         let bounds = calculate_bounds(&data);
 
-        assert_is_close!(bounds, Rect::empty());
+        assert_is_close!(bounds, Rect::<Mm>::empty());
 
         let data = vec![
             PathSegment::Move(Point::new(Mm(1.0), Mm(-1.0))),

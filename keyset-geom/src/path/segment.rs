@@ -19,17 +19,23 @@ pub enum PathSegment<U: Unit> {
     Close,
 }
 
-impl<U> IsClose for PathSegment<U>
+impl<U, V> IsClose<PathSegment<V>> for PathSegment<U>
 where
-    U: Unit,
+    U: Unit + IsClose<V>,
+    V: Unit,
 {
-    type Tolerance = f32;
-    const ZERO_TOL: Self::Tolerance = 0.0;
-    const ABS_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::ABS_TOL;
-    const REL_TOL: Self::Tolerance = <Self::Tolerance as IsClose>::REL_TOL;
+    type Tolerance = <U as IsClose<V>>::Tolerance;
+    const ZERO_TOL: Self::Tolerance = <U as IsClose<V>>::ZERO_TOL;
+    const ABS_TOL: Self::Tolerance = <U as IsClose<V>>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose<V>>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+    fn is_close_tol(
+        &self,
+        other: &PathSegment<V>,
+        rel_tol: &Self::Tolerance,
+        abs_tol: &Self::Tolerance,
+    ) -> bool {
         use PathSegment::*;
         match (*self, *other) {
             (Move(ref s), Move(ref o)) => s.is_close_tol(o, rel_tol, abs_tol),

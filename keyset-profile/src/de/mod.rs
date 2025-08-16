@@ -248,8 +248,6 @@ mod tests {
     use assert_matches::assert_matches;
     use isclose::{assert_is_close, IsClose as _};
 
-    use geom::ConvertFrom as _;
-
     use super::*;
 
     #[test]
@@ -262,12 +260,12 @@ mod tests {
         assert_matches!(
             cyl,
             Type::Cylindrical { depth }
-                if depth.is_close(&Dot::convert_from(Mm(0.5)))
+                if depth.is_close(&Mm(0.5))
         );
         assert_matches!(
             sph,
             Type::Spherical { depth }
-                if depth.is_close(&Dot::convert_from(Mm(0.8)))
+                if depth.is_close(&Mm(0.8))
         );
         assert_matches!(chc, Type::Flat);
         assert_matches!(flt, Type::Flat);
@@ -277,7 +275,7 @@ mod tests {
     fn deserialize_scoop_props() {
         let scoop_props: ScoopProps = serde_json::from_str(r#"{ "depth": 0.8 }"#).unwrap();
 
-        assert_is_close!(scoop_props.depth, Dot::convert_from(Mm(0.8)));
+        assert_is_close!(scoop_props.depth, Mm(0.8));
     }
 
     #[test]
@@ -285,11 +283,8 @@ mod tests {
         let bar_props: BarProps =
             serde_json::from_str(r#"{ "width": 3.85, "height": 0.4, "y-offset": 5.05 }"#).unwrap();
 
-        assert_is_close!(
-            bar_props.size,
-            Vector::convert_from(Vector::new(Mm(3.85), Mm(0.4)))
-        );
-        assert_is_close!(bar_props.y_offset, Dot::convert_from(Mm(5.05)));
+        assert_is_close!(bar_props.size, Vector::new(Mm(3.85), Mm(0.4)));
+        assert_is_close!(bar_props.y_offset, Mm(5.05));
     }
 
     #[test]
@@ -297,8 +292,8 @@ mod tests {
         let bar_props: BumpProps =
             serde_json::from_str(r#"{ "diameter": 0.4, "y-offset": -0.2 }"#).unwrap();
 
-        assert_is_close!(bar_props.diameter, Dot::convert_from(Mm(0.4)));
-        assert_is_close!(bar_props.y_offset, Dot::convert_from(Mm(-0.2)));
+        assert_is_close!(bar_props.diameter, Mm(0.4));
+        assert_is_close!(bar_props.y_offset, Mm(-0.2));
     }
 
     #[test]
@@ -308,12 +303,9 @@ mod tests {
         )
         .unwrap();
 
-        assert_is_close!(
-            surf.size,
-            Vector::convert_from(Vector::new(Mm(11.81), Mm(13.91)))
-        );
-        assert_is_close!(surf.radius, Dot::convert_from(Mm(1.52)));
-        assert_is_close!(surf.y_offset, Dot::convert_from(Mm(-1.62)));
+        assert_is_close!(surf.size, Vector::new(Mm(11.81), Mm(13.91)));
+        assert_is_close!(surf.radius, Mm(1.52));
+        assert_is_close!(surf.y_offset, Mm(-1.62));
     }
 
     #[test]
@@ -321,7 +313,7 @@ mod tests {
         let surf: BottomSurface =
             serde_json::from_str(r#"{ "width": 18.29, "height": 18.29, "radius": 0.38 }"#).unwrap();
 
-        assert_is_close!(surf.size, Vector::convert_from(Vector::splat(Mm(18.29))));
-        assert_is_close!(surf.radius, Dot::convert_from(Mm(0.38)));
+        assert_is_close!(surf.size, Vector::splat(Mm(18.29)));
+        assert_is_close!(surf.radius, Mm(0.38));
     }
 }

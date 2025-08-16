@@ -146,6 +146,24 @@ macro_rules! declare_units {
             }
         }
 
+        macro_rules! is_close_impls {
+            ($self_name:ident) => {
+                $(
+                    impl $crate::__IsClose<$name> for $self_name {
+                        type Tolerance = f32;
+                        const ZERO_TOL: Self::Tolerance = 0.0;
+                        const ABS_TOL: Self::Tolerance = <Self::Tolerance as $crate::__IsClose>::ABS_TOL;
+                        const REL_TOL: Self::Tolerance = <Self::Tolerance as $crate::__IsClose>::REL_TOL;
+
+                        #[inline]
+                        fn is_close_tol(&self, other: &$name, rel_tol: &f32, abs_tol: &f32) -> bool {
+                            self.0.is_close_tol(&<Self as $crate::ConvertFrom<_>>::convert_from(*other).0, abs_tol, rel_tol)
+                        }
+                    }
+                )+
+            }
+        }
+
         $(
             $(#[$attr])*
             #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
@@ -247,17 +265,7 @@ macro_rules! declare_units {
                 }
             }
 
-            impl $crate::__IsClose for $name {
-                type Tolerance = f32;
-                const ZERO_TOL: Self::Tolerance = 0.0;
-                const ABS_TOL: Self::Tolerance = <Self::Tolerance as $crate::__IsClose>::ABS_TOL;
-                const REL_TOL: Self::Tolerance = <Self::Tolerance as $crate::__IsClose>::REL_TOL;
-
-                #[inline]
-                fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
-                    self.0.is_close_tol(&other.0, abs_tol, rel_tol)
-                }
-            }
+            is_close_impls!($name);
 
             impl $crate::Unit for $name {
                 #[inline]
@@ -598,6 +606,12 @@ mod tests {
     fn key_unit_is_close() {
         assert!(KeyUnit(2.5).is_close(&KeyUnit(5.0 / 2.0)));
         assert!(!KeyUnit(2.5).is_close(&KeyUnit(5.1 / 2.0)));
+        assert!(KeyUnit(2.5).is_close(&Dot(Dot::PER_KEY_UNIT * 5.0 / 2.0)));
+        assert!(!KeyUnit(2.5).is_close(&Dot(Dot::PER_KEY_UNIT * 5.1 / 2.0)));
+        assert!(KeyUnit(2.5).is_close(&Mm(Mm::PER_KEY_UNIT * 5.0 / 2.0)));
+        assert!(!KeyUnit(2.5).is_close(&Mm(Mm::PER_KEY_UNIT * 5.1 / 2.0)));
+        assert!(KeyUnit(2.5).is_close(&Inch(Inch::PER_KEY_UNIT * 5.0 / 2.0)));
+        assert!(!KeyUnit(2.5).is_close(&Inch(Inch::PER_KEY_UNIT * 5.1 / 2.0)));
     }
 
     #[test]
@@ -707,6 +721,12 @@ mod tests {
     fn dots_close() {
         assert!(Dot(2.5).is_close(&Dot(5.0 / 2.0)));
         assert!(!Dot(2.5).is_close(&Dot(5.1 / 2.0)));
+        assert!(Dot(2.5).is_close(&KeyUnit(KeyUnit::PER_DOT * 5.0 / 2.0)));
+        assert!(!Dot(2.5).is_close(&KeyUnit(KeyUnit::PER_DOT * 5.1 / 2.0)));
+        assert!(Dot(2.5).is_close(&Mm(Mm::PER_DOT * 5.0 / 2.0)));
+        assert!(!Dot(2.5).is_close(&Mm(Mm::PER_DOT * 5.1 / 2.0)));
+        assert!(Dot(2.5).is_close(&Inch(Inch::PER_DOT * 5.0 / 2.0)));
+        assert!(!Dot(2.5).is_close(&Inch(Inch::PER_DOT * 5.1 / 2.0)));
     }
 
     #[test]
@@ -816,6 +836,12 @@ mod tests {
     fn mm_is_close() {
         assert!(Mm(2.5).is_close(&Mm(5.0 / 2.0)));
         assert!(!Mm(2.5).is_close(&Mm(5.1 / 2.0)));
+        assert!(Mm(2.5).is_close(&KeyUnit(KeyUnit::PER_MM * 5.0 / 2.0)));
+        assert!(!Mm(2.5).is_close(&KeyUnit(KeyUnit::PER_MM * 5.1 / 2.0)));
+        assert!(Mm(2.5).is_close(&Dot(Dot::PER_MM * 5.0 / 2.0)));
+        assert!(!Mm(2.5).is_close(&Dot(Dot::PER_MM * 5.1 / 2.0)));
+        assert!(Mm(2.5).is_close(&Inch(Inch::PER_MM * 5.0 / 2.0)));
+        assert!(!Mm(2.5).is_close(&Inch(Inch::PER_MM * 5.1 / 2.0)));
     }
 
     #[test]
@@ -925,6 +951,12 @@ mod tests {
     fn inch_is_close() {
         assert!(Inch(2.5).is_close(&Inch(5.0 / 2.0)));
         assert!(!Inch(2.5).is_close(&Inch(5.1 / 2.0)));
+        assert!(Inch(2.5).is_close(&KeyUnit(KeyUnit::PER_INCH * 5.0 / 2.0)));
+        assert!(!Inch(2.5).is_close(&KeyUnit(KeyUnit::PER_INCH * 5.1 / 2.0)));
+        assert!(Inch(2.5).is_close(&Dot(Dot::PER_INCH * 5.0 / 2.0)));
+        assert!(!Inch(2.5).is_close(&Dot(Dot::PER_INCH * 5.1 / 2.0)));
+        assert!(Inch(2.5).is_close(&Mm(Mm::PER_INCH * 5.0 / 2.0)));
+        assert!(!Inch(2.5).is_close(&Mm(Mm::PER_INCH * 5.1 / 2.0)));
     }
 
     #[test]

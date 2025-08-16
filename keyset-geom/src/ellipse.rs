@@ -161,17 +161,23 @@ where
     }
 }
 
-impl<U> IsClose for Ellipse<U>
+impl<U, V> IsClose<Ellipse<V>> for Ellipse<U>
 where
-    U: Unit,
+    U: Unit + IsClose<V>,
+    V: Unit,
 {
-    type Tolerance = f32;
-    const ZERO_TOL: Self::Tolerance = 0.0;
-    const ABS_TOL: Self::Tolerance = <U as IsClose>::ABS_TOL;
-    const REL_TOL: Self::Tolerance = <U as IsClose>::REL_TOL;
+    type Tolerance = <U as IsClose<V>>::Tolerance;
+    const ZERO_TOL: Self::Tolerance = <U as IsClose<V>>::ZERO_TOL;
+    const ABS_TOL: Self::Tolerance = <U as IsClose<V>>::ABS_TOL;
+    const REL_TOL: Self::Tolerance = <U as IsClose<V>>::REL_TOL;
 
     #[inline]
-    fn is_close_tol(&self, other: &Self, rel_tol: &f32, abs_tol: &f32) -> bool {
+    fn is_close_tol(
+        &self,
+        other: &Ellipse<V>,
+        rel_tol: &Self::Tolerance,
+        abs_tol: &Self::Tolerance,
+    ) -> bool {
         self.center.is_close_tol(&other.center, rel_tol, abs_tol)
             && self.radii.is_close_tol(&other.radii, rel_tol, abs_tol)
     }

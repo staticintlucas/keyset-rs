@@ -188,7 +188,7 @@ impl fmt::Debug for Template {
 mod tests {
     use isclose::assert_is_close;
 
-    use geom::{ConvertFrom as _, Mm};
+    use geom::Mm;
 
     use super::*;
 
@@ -211,7 +211,7 @@ mod tests {
             ..Template::default()
         };
 
-        assert_is_close!(template.profile.typ.depth(), Dot::convert_from(Mm(1.0)));
+        assert_is_close!(template.profile.typ.depth(), Mm(1.0));
         assert_eq!(template.font.num_glyphs(), 3); // .notdef, A, V
         assert_is_close!(template.scale, 2.0);
     }

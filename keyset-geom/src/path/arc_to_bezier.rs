@@ -310,7 +310,7 @@ mod tests {
     fn test_create_arc() {
         let a = (4.0 / 3.0) * Angle::degrees(90.0 / 4.0).tan();
         let tests = [
-            || create_arc(Angle::degrees(0.0), Angle::degrees(90.0)),
+            || create_arc::<Mm>(Angle::degrees(0.0), Angle::degrees(90.0)),
             || create_arc(Angle::degrees(90.0), Angle::degrees(90.0)),
             || create_arc(Angle::degrees(180.0), Angle::degrees(90.0)),
             || create_arc(Angle::degrees(-90.0), Angle::degrees(90.0)),
