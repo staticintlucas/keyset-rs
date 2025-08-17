@@ -34,7 +34,6 @@ itertools = "0.14"
 kle-serial = "0.3"
 miniz_oxide = "0.8"
 num-traits = "0.2"
-ouroboros = "0.18"
 paste = "1.0"
 pdf-writer = "0.13"
 rgb = { version = "0.8", default-features = false }

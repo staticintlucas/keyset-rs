@@ -14,12 +14,18 @@ jobs:
         with:
           toolchain: nightly
           components: rustfmt, clippy
+      - name: Setup tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-shear
       - name: Run rustfmt
         run: cargo fmt --all -- --check
       - name: Run clippy
         run: cargo clippy --all-targets --all-features
         env:
           RUSTFLAGS: -D warnings
+      - name: Run cargo-shear
+        run: cargo shear
       - name: Run cargo-deny
         uses: EmbarkStudios/cargo-deny-action@v1
         with:
