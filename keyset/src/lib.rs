@@ -22,27 +22,43 @@
 //! ]"#;
 //!
 //! // Approximation of Cherry profile
-//! let profile = r#"{
-//!     "type": "cylindrical",
-//!     "depth": 0.5,
-//!     "bottom": { "width": 18.29, "height": 18.29, "radius": 0.38 },
-//!     "top": { "width": 11.81, "height": 13.91, "radius": 1.52, "y-offset": -1.62 },
-//!     "legend": {
-//!         "5": { "size": 4.84, "width": 9.45, "height": 11.54, "y-offset": 0 },
-//!         "4": { "size": 3.18, "width": 9.53, "height": 9.56, "y-offset": 0.40 },
-//!         "3": { "size": 2.28, "width": 9.45, "height": 11.30, "y-offset": -0.12 }
-//!     },
-//!     "homing": {
-//!         "default": "scoop",
-//!         "scoop": { "depth": 1.5 },
-//!         "bar": { "width": 3.85, "height": 0.4, "y-offset": 5.05 },
-//!         "bump": { "diameter": 0.4, "y-offset": -0.2 }
-//!     }
-//! }"#;
+//! let profile = r#"
+//!     type = "cylindrical"
+//!     depth = 0.5
+//!
+//!     [bottom]
+//!     width = 18.29
+//!     height = 18.29
+//!     radius = 0.38
+//!
+//!     [top]
+//!     width = 11.81
+//!     height = 13.91
+//!     radius = 1.52
+//!     y-offset = -1.62
+//!
+//!     [legend.alpha]
+//!     size = 4.84
+//!     margin = { top-bottom = 1.185, left-right = 1.18 }
+//!
+//!     [legend.symbol]
+//!     size = 3.18
+//!     margin = { top = 2.575, bottom = 1.775, left-right = 1.14 }
+//!
+//!     [legend.modifier]
+//!     size = 2.28
+//!     margin = { top = 1.185, bottom = 1.425, left-right = 1.18 }
+//!
+//!     [homing]
+//!     default = "scoop"
+//!     scoop = { depth = 1.5 }
+//!     bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
+//!     bump = { diameter = 0.4, y-offset = -0.2 }
+//! "#;
 //!
 //! // Use `keyset` to load layout, profile and font
 //! let keys = kle::from_json(kle)?;
-//! let profile = Profile::from_json(profile)?;
+//! let profile = Profile::from_toml(profile)?;
 //! let font = Font::default();
 //! // Or load an actual font with Font::from_ttf(std::fs::read("font.ttf")?)?
 //!

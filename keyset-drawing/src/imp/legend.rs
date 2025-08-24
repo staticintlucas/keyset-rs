@@ -17,8 +17,8 @@ pub fn draw(
     warnings: &mut Vec<Warning>,
 ) -> KeyPath {
     // Get transform to correct height & flip y-axis
-    let text_height = profile.text_height.get(legend.size_idx);
-    let text_scale = text_height.get() / font.cap_height().get();
+    let geom = profile.legend_geom.for_kle_size(legend.size_idx);
+    let text_scale = geom.height.get() / font.cap_height().get();
     let text_conv = Conversion::<Dot, FontUnit>::from_scale(text_scale, -text_scale);
 
     // Dimensions used to position text
@@ -28,7 +28,7 @@ pub fn draw(
         reason = "if there are more lines than f32 allows we have bigger issues"
     )]
     let num_lines = legend.text.lines().count() as f32;
-    let margin = top_rect - profile.text_margin.get(legend.size_idx);
+    let margin = top_rect - geom.margin;
 
     let text_path: Path<_> = legend
         .text
@@ -79,7 +79,7 @@ pub fn draw(
 
     // Calculate legend bounds. For x this is based on actual size while for y we use the base line
     // and text height so each character (especially symbols) are still aligned across keys
-    let height = text_height + line_height * (num_lines - 1.0);
+    let height = geom.height + line_height * (num_lines - 1.0);
     let bounds = Rect::new(
         Point::new(text_path.bounds.min.x, -height),
         Point::new(text_path.bounds.max.x, Dot(0.0)),
@@ -117,7 +117,7 @@ mod tests {
         };
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
         let profile = Profile::default();
-        let top_rect = profile.top_rect().to_rect();
+        let top_rect = profile.top.to_rect();
         let align = Scale::new(0.0, 0.0);
 
         let mut warnings = Vec::new();
@@ -155,7 +155,8 @@ mod tests {
 
         assert_is_close!(
             path.data.bounds.width(),
-            (profile.top_rect().to_rect() - profile.text_margin.get(legend.size_idx)).width()
+            (profile.top.to_rect() - profile.legend_geom.margin_for_kle_size(legend.size_idx))
+                .width()
         );
         assert!(warnings
             .iter()
@@ -170,7 +171,10 @@ mod tests {
         let mut warnings = Vec::new();
         let path = draw(&legend, &font, &profile, top_rect, align, &mut warnings);
 
-        assert!(path.data.bounds.height() > profile.text_height.get(legend.size_idx) * 2.0);
+        assert!(
+            path.data.bounds.height()
+                > profile.legend_geom.height_for_kle_size(legend.size_idx) * 2.0
+        );
         assert!(warnings.is_empty());
 
         let legend = ::key::Legend {
@@ -184,7 +188,8 @@ mod tests {
 
         assert_is_close!(
             path.data.bounds.height(),
-            (profile.top_rect().to_rect() - profile.text_margin.get(legend.size_idx)).height()
+            (profile.top.to_rect() - profile.legend_geom.margin_for_kle_size(legend.size_idx))
+                .height()
         );
         assert!(warnings
             .iter()

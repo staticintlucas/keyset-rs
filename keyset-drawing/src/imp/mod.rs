@@ -87,7 +87,7 @@ impl KeyDrawing {
         let top_rect = {
             let Rect { min, max } = key.shape.inner_rect();
             let (dmin, dmax) = (min - Point::origin(), max - Point::splat(KeyUnit(1.0)));
-            let Rect { min, max } = profile.top_rect().to_rect();
+            let Rect { min, max } = profile.top.to_rect();
             Rect::new(min + dmin.convert_into(), max + dmax.convert_into())
         };
 
@@ -95,7 +95,7 @@ impl KeyDrawing {
             let mut boundses = Vec::<Rect<Dot>>::with_capacity(key.legends.len());
             for leg in key.legends.iter().flatten() {
                 let size = leg.size_idx;
-                let text_bounds = top_rect - profile.text_margin.get(size);
+                let text_bounds = top_rect - profile.legend_geom.for_kle_size(size).margin;
                 if !boundses.iter().any(|rect| rect.is_close(&text_bounds)) {
                     boundses.push(text_bounds);
                 }
@@ -216,11 +216,11 @@ mod tests {
         let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let top_rect = {
-            let Rect { min, max } = template.profile.top_rect().to_rect();
+            let Rect { min, max } = template.profile.top.to_rect();
             let max = max + Vector::new(KeyUnit(0.5), KeyUnit(0.0)).convert_into();
             Rect::new(min, max)
         };
-        let margin_rect = top_rect - template.profile.text_margin.get(font_size);
+        let margin_rect = top_rect - template.profile.legend_geom.margin_for_kle_size(font_size);
         assert_is_close!(bounding_box, margin_rect);
         assert!(warnings.is_empty());
 
@@ -242,13 +242,13 @@ mod tests {
         let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let top_rect = {
-            let Rect { min, max } = template.profile.top_rect().to_rect();
+            let Rect { min, max } = template.profile.top.to_rect();
             let max = max + Vector::new(KeyUnit(0.25), KeyUnit(1.0)).convert_into();
             Rect::new(min, max)
         };
         let margin_rect = top_rect
             * Translate::<Dot>::new(KeyUnit(0.25).convert_into(), KeyUnit(0.0).convert_into())
-            - template.profile.text_margin.get(font_size);
+            - template.profile.legend_geom.margin_for_kle_size(font_size);
         assert_is_close!(bounding_box, margin_rect);
         assert!(warnings.is_empty());
     }

@@ -9,7 +9,7 @@ use super::{KeyPath, Outline};
 use crate::Template;
 
 pub fn top(template: &Template, color: Color, size: Vector<KeyUnit>) -> KeyPath {
-    let data = round_rect_with_size(template.profile.top_rect(), size).to_path();
+    let data = round_rect_with_size(template.profile.top.to_round_rect(), size).to_path();
     KeyPath {
         data,
         fill: Some(color),
@@ -33,7 +33,7 @@ pub fn iso_top(template: &Template, color: Color) -> KeyPath {
 }
 
 pub fn bottom(template: &Template, color: Color, size: Vector<KeyUnit>) -> KeyPath {
-    let data = round_rect_with_size(template.profile.bottom_rect(), size).to_path();
+    let data = round_rect_with_size(template.profile.bottom.to_round_rect(), size).to_path();
     KeyPath {
         data,
         fill: Some(color),
@@ -59,7 +59,7 @@ pub fn iso_bottom(template: &Template, color: Color) -> KeyPath {
 pub fn homing_bar(template: &Template, color: Color) -> KeyPath {
     let profile = &template.profile;
 
-    let center = profile.top_rect().center();
+    let center = profile.top.to_rect().center();
 
     let data = Rect::from_center_and_size(
         center + Vector::new(Dot(0.0), profile.homing.bar.y_offset),
@@ -80,7 +80,7 @@ pub fn homing_bar(template: &Template, color: Color) -> KeyPath {
 pub fn homing_bump(template: &Template, color: Color) -> KeyPath {
     let profile = &template.profile;
 
-    let center = profile.top_rect().center();
+    let center = profile.top.to_rect().center();
 
     let data = Ellipse::from_circle(
         center + Vector::new(Dot(0.0), profile.homing.bump.y_offset),
@@ -104,8 +104,8 @@ pub fn step(template: &Template, color: Color) -> KeyPath {
     // Take average dimensions of top and bottom
     let rect = {
         let frac = 0.5;
-        let top = profile.top_rect();
-        let btm = profile.bottom_rect();
+        let top = profile.top.to_round_rect();
+        let btm = profile.bottom.to_round_rect();
         RoundRect::new(
             Point::lerp(top.min, btm.min, frac),
             Point::lerp(top.max, btm.max, frac),
@@ -124,7 +124,7 @@ pub fn step(template: &Template, color: Color) -> KeyPath {
 }
 
 fn iso_bottom_path(profile: &Profile) -> Path<Dot> {
-    let bottom_rect = profile.bottom_rect().to_rect();
+    let bottom_rect = profile.bottom.to_rect();
     let rect150 = rect_with_size(bottom_rect, Vector::new(KeyUnit(1.5), KeyUnit(1.0)));
     let rect125 = rect_with_size(bottom_rect, Vector::new(KeyUnit(1.25), KeyUnit(2.0)))
         * Translate::new(KeyUnit(0.25).convert_into(), Dot(0.0));
@@ -149,7 +149,7 @@ fn iso_bottom_path(profile: &Profile) -> Path<Dot> {
 }
 
 fn iso_top_path(profile: &Profile) -> Path<Dot> {
-    let top_rect = profile.top_rect().to_rect();
+    let top_rect = profile.top.to_rect();
     let rect150 = rect_with_size(top_rect, Vector::new(KeyUnit(1.5), KeyUnit(1.0)));
     let rect125 = rect_with_size(top_rect, Vector::new(KeyUnit(1.25), KeyUnit(2.0)))
         * Translate::new(KeyUnit(0.25).convert_into(), Dot(0.0));
@@ -227,8 +227,7 @@ mod tests {
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
 
-        let top_rect = template.profile.top_rect();
-        assert_is_close!(bounds, top_rect.to_rect());
+        assert_is_close!(bounds, template.profile.top.to_rect());
     }
 
     #[test]
@@ -248,7 +247,7 @@ mod tests {
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
 
         let top_rect = {
-            let RoundRect { min, max, radii } = template.profile.top_rect();
+            let RoundRect { min, max, radii } = template.profile.top.to_round_rect();
             let max = max + Vector::new(KeyUnit(0.5), KeyUnit(1.0)).convert_into();
             RoundRect::new(min, max, radii)
         };
@@ -267,8 +266,7 @@ mod tests {
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
 
-        let bottom_rect = template.profile.bottom_rect();
-        assert_is_close!(bounds, bottom_rect.to_rect());
+        assert_is_close!(bounds, template.profile.bottom.to_rect());
     }
 
     #[test]
@@ -288,7 +286,7 @@ mod tests {
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
 
         let bottom_rect = {
-            let RoundRect { min, max, radii } = template.profile.bottom_rect();
+            let RoundRect { min, max, radii } = template.profile.bottom.to_round_rect();
             let max = max + Vector::new(KeyUnit(0.5), KeyUnit(1.0)).convert_into();
             RoundRect::new(min, max, radii)
         };
@@ -312,7 +310,7 @@ mod tests {
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
 
         let bar_rect = Rect::from_center_and_size(
-            template.profile.top_rect().center()
+            template.profile.top.to_rect().center()
                 + Vector::new(Dot(0.0), template.profile.homing.bar.y_offset),
             template.profile.homing.bar.size,
         );
@@ -336,7 +334,7 @@ mod tests {
         assert_is_close!(path.outline.unwrap().width, template.outline_width);
 
         let bump_rect = Rect::from_center_and_size(
-            template.profile.top_rect().center()
+            template.profile.top.to_rect().center()
                 + Vector::new(Dot(0.0), template.profile.homing.bump.y_offset),
             Vector::splat(template.profile.homing.bump.diameter),
         );
@@ -362,8 +360,9 @@ mod tests {
         let step_rect = {
             let mid_rect = template
                 .profile
-                .top_rect()
-                .lerp(template.profile.bottom_rect(), 0.5);
+                .top
+                .to_round_rect()
+                .lerp(template.profile.bottom.to_round_rect(), 0.5);
             Rect::new(
                 Point::new(
                     Dot::convert_from(KeyUnit(1.25)) - mid_rect.min.x - mid_rect.radii.x,
