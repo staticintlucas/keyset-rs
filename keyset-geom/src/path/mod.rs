@@ -1496,42 +1496,56 @@ mod tests {
 
     #[test]
     fn path_builder_extend() {
-        let empty = PathBuilder::new();
+        let empty = || PathBuilder::new();
 
-        let mut line1 = PathBuilder::new();
-        line1.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+        let line1 = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr
+        };
 
-        let mut line2 = PathBuilder::new();
-        line2.abs_move(Point::origin());
-        line2.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+        let line2 = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_move(Point::origin());
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr
+        };
 
-        let mut line3 = PathBuilder::new();
-        line3.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let line3 = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        let mut line4 = PathBuilder::new();
-        line4.abs_move(Point::new(Mm(0.0), Mm(1.0)));
-        line4.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let line4 = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        let mut angle = PathBuilder::new();
-        angle.abs_line(Point::new(Mm(1.0), Mm(1.0)));
-        angle.abs_move(Point::origin());
-        angle.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let angle = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr.abs_move(Point::origin());
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        let mut cross = PathBuilder::new();
-        cross.abs_line(Point::new(Mm(1.0), Mm(1.0)));
-        cross.abs_move(Point::new(Mm(0.0), Mm(1.0)));
-        cross.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let cross = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        #[expect(
-            clippy::redundant_clone,
-            reason = "it's a little cleaner and this is only a test"
-        )]
         let params = [
-            (empty.clone(), empty.clone(), empty.clone()),
-            (line1.clone(), empty.clone(), line1.clone()),
-            (empty.clone(), line1.clone(), line2.clone()),
-            (line1.clone(), line3.clone(), angle.clone()),
-            (line1.clone(), line4.clone(), cross.clone()),
+            (empty(), empty(), empty()),
+            (line1(), empty(), line1()),
+            (empty(), line1(), line2()),
+            (line1(), line3(), angle()),
+            (line1(), line4(), cross()),
         ];
 
         for (mut first, second, expected) in params {
@@ -1546,30 +1560,36 @@ mod tests {
 
     #[test]
     fn path_builder_extend_from_path() {
-        let empty_bldr = PathBuilder::new();
-        let empty_path = Path {
+        let empty_bldr = || PathBuilder::new();
+        let empty_path = || Path {
             data: Box::new([]),
             bounds: Rect::empty(),
         };
 
-        let mut line1_bldr = PathBuilder::new();
-        line1_bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+        let line1_bldr = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr
+        };
 
-        let line1_path = Path {
+        let line1_path = || Path {
             data: Box::new([PathSegment::Line(Vector::new(Mm(1.0), Mm(1.0)))]),
             bounds: Rect::new(Point::new(Mm(0.0), Mm(0.0)), Point::new(Mm(1.0), Mm(1.0))),
         };
 
-        let mut line2_bldr = PathBuilder::new();
-        line2_bldr.abs_move(Point::origin());
-        line2_bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+        let line2_bldr = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_move(Point::origin());
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr
+        };
 
-        let line3_path = Path {
+        let line3_path = || Path {
             data: Box::new([PathSegment::Line(Vector::new(Mm(1.0), Mm(0.0)))]),
             bounds: Rect::new(Point::new(Mm(0.0), Mm(0.0)), Point::new(Mm(1.0), Mm(0.0))),
         };
 
-        let line4_path = Path {
+        let line4_path = || Path {
             data: Box::new([
                 PathSegment::Move(Point::new(Mm(0.0), Mm(1.0))),
                 PathSegment::Line(Vector::new(Mm(1.0), Mm(-1.0))),
@@ -1577,26 +1597,28 @@ mod tests {
             bounds: Rect::new(Point::new(Mm(0.0), Mm(0.0)), Point::new(Mm(1.0), Mm(0.0))),
         };
 
-        let mut angle_bldr = PathBuilder::new();
-        angle_bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
-        angle_bldr.abs_move(Point::origin());
-        angle_bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let angle_bldr = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr.abs_move(Point::origin());
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        let mut cross_bldr = PathBuilder::new();
-        cross_bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
-        cross_bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
-        cross_bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let cross_bldr = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        #[expect(
-            clippy::redundant_clone,
-            reason = "it's a little cleaner and this is only a test"
-        )]
         let params = [
-            (empty_bldr.clone(), empty_path.clone(), empty_bldr.clone()),
-            (line1_bldr.clone(), empty_path.clone(), line1_bldr.clone()),
-            (empty_bldr.clone(), line1_path.clone(), line2_bldr.clone()),
-            (line1_bldr.clone(), line3_path.clone(), angle_bldr.clone()),
-            (line1_bldr.clone(), line4_path.clone(), cross_bldr.clone()),
+            (empty_bldr(), empty_path(), empty_bldr()),
+            (line1_bldr(), empty_path(), line1_bldr()),
+            (empty_bldr(), line1_path(), line2_bldr()),
+            (line1_bldr(), line3_path(), angle_bldr()),
+            (line1_bldr(), line4_path(), cross_bldr()),
         ];
 
         for (mut first, second, expected) in params {
@@ -1694,42 +1716,56 @@ mod tests {
 
     #[test]
     fn path_builder_add() {
-        let empty = PathBuilder::new();
+        let empty = || PathBuilder::new();
 
-        let mut line1 = PathBuilder::new();
-        line1.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+        let line1 = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr
+        };
 
-        let mut line2 = PathBuilder::new();
-        line2.abs_move(Point::origin());
-        line2.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+        let line2 = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_move(Point::origin());
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr
+        };
 
-        let mut line3 = PathBuilder::new();
-        line3.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let line3 = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        let mut line4 = PathBuilder::new();
-        line4.abs_move(Point::new(Mm(0.0), Mm(1.0)));
-        line4.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let line4 = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        let mut angle = PathBuilder::new();
-        angle.abs_line(Point::new(Mm(1.0), Mm(1.0)));
-        angle.abs_move(Point::origin());
-        angle.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let angle = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr.abs_move(Point::origin());
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        let mut cross = PathBuilder::new();
-        cross.abs_line(Point::new(Mm(1.0), Mm(1.0)));
-        cross.abs_move(Point::new(Mm(0.0), Mm(1.0)));
-        cross.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let cross = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        #[expect(
-            clippy::redundant_clone,
-            reason = "it's a little cleaner and this is only a test"
-        )]
         let params = [
-            (empty.clone(), empty.clone(), empty.clone()),
-            (line1.clone(), empty.clone(), line1.clone()),
-            (empty.clone(), line1.clone(), line2.clone()),
-            (line1.clone(), line3.clone(), angle.clone()),
-            (line1.clone(), line4.clone(), cross.clone()),
+            (empty(), empty(), empty()),
+            (line1(), empty(), line1()),
+            (empty(), line1(), line2()),
+            (line1(), line3(), angle()),
+            (line1(), line4(), cross()),
         ];
 
         for (first, second, expected) in params.clone() {
@@ -1771,30 +1807,36 @@ mod tests {
 
     #[test]
     fn path_builder_add_path() {
-        let empty_bldr = PathBuilder::new();
-        let empty_path = Path {
+        let empty_bldr = || PathBuilder::new();
+        let empty_path = || Path {
             data: Box::new([]),
             bounds: Rect::empty(),
         };
 
-        let mut line1_bldr = PathBuilder::new();
-        line1_bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+        let line1_bldr = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr
+        };
 
-        let line1_path = Path {
+        let line1_path = || Path {
             data: Box::new([PathSegment::Line(Vector::new(Mm(1.0), Mm(1.0)))]),
             bounds: Rect::new(Point::new(Mm(0.0), Mm(0.0)), Point::new(Mm(1.0), Mm(1.0))),
         };
 
-        let mut line2_bldr = PathBuilder::new();
-        line2_bldr.abs_move(Point::origin());
-        line2_bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+        let line2_bldr = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_move(Point::origin());
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr
+        };
 
-        let line3_path = Path {
+        let line3_path = || Path {
             data: Box::new([PathSegment::Line(Vector::new(Mm(1.0), Mm(0.0)))]),
             bounds: Rect::new(Point::new(Mm(0.0), Mm(0.0)), Point::new(Mm(1.0), Mm(0.0))),
         };
 
-        let line4_path = Path {
+        let line4_path = || Path {
             data: Box::new([
                 PathSegment::Move(Point::new(Mm(0.0), Mm(1.0))),
                 PathSegment::Line(Vector::new(Mm(1.0), Mm(-1.0))),
@@ -1802,26 +1844,28 @@ mod tests {
             bounds: Rect::new(Point::new(Mm(0.0), Mm(0.0)), Point::new(Mm(1.0), Mm(0.0))),
         };
 
-        let mut angle_bldr = PathBuilder::new();
-        angle_bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
-        angle_bldr.abs_move(Point::origin());
-        angle_bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let angle_bldr = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr.abs_move(Point::origin());
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        let mut cross_bldr = PathBuilder::new();
-        cross_bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
-        cross_bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
-        cross_bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+        let cross_bldr = || {
+            let mut bldr = PathBuilder::new();
+            bldr.abs_line(Point::new(Mm(1.0), Mm(1.0)));
+            bldr.abs_move(Point::new(Mm(0.0), Mm(1.0)));
+            bldr.abs_line(Point::new(Mm(1.0), Mm(0.0)));
+            bldr
+        };
 
-        #[expect(
-            clippy::redundant_clone,
-            reason = "it's a little cleaner and this is only a test"
-        )]
         let params = [
-            (empty_bldr.clone(), empty_path.clone(), empty_bldr.clone()),
-            (line1_bldr.clone(), empty_path.clone(), line1_bldr.clone()),
-            (empty_bldr.clone(), line1_path.clone(), line2_bldr.clone()),
-            (line1_bldr.clone(), line3_path.clone(), angle_bldr.clone()),
-            (line1_bldr.clone(), line4_path.clone(), cross_bldr.clone()),
+            (empty_bldr(), empty_path(), empty_bldr()),
+            (line1_bldr(), empty_path(), line1_bldr()),
+            (empty_bldr(), line1_path(), line2_bldr()),
+            (line1_bldr(), line3_path(), angle_bldr()),
+            (line1_bldr(), line4_path(), cross_bldr()),
         ];
 
         for (first, second, expected) in params.clone() {

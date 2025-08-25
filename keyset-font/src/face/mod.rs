@@ -328,10 +328,7 @@ mod tests {
     }
 
     #[test]
-    #[expect(
-        non_snake_case,
-        reason = "makes it more obvious we have uppercase glyphs"
-    )]
+    #[expect(non_snake_case, reason = "more obvious for uppercase glyphs")]
     fn face_outline_length() {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let face = Face::from_ttf(data).unwrap();
@@ -346,10 +343,7 @@ mod tests {
     }
 
     #[test]
-    #[expect(
-        non_snake_case,
-        reason = "makes it more obvious we have uppercase glyphs"
-    )]
+    #[expect(non_snake_case, reason = "more obvious for uppercase glyphs")]
     fn face_outline_glyph() {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let face = Face::from_ttf(data).unwrap();
@@ -376,10 +370,7 @@ mod tests {
     }
 
     #[test]
-    #[expect(
-        non_snake_case,
-        reason = "makes it more obvious we have uppercase glyphs"
-    )]
+    #[expect(non_snake_case, reason = "more obvious for uppercase glyphs")]
     fn face_glyph_bounds() {
         let data = std::fs::read(env!("DEMO_TTF")).unwrap();
         let face = Face::from_ttf(data).unwrap();

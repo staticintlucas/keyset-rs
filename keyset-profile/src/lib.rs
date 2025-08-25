@@ -321,10 +321,7 @@ pub struct Profile {
     pub legend_geom: LegendGeomMap,
     /// Homing properties
     pub homing: HomingProps,
-    #[expect(
-        private_interfaces,
-        reason = "enforces non-exhaustive struct while still allowing functional update syntax"
-    )]
+    #[expect(private_interfaces, reason = "like #[non_exhaustive] but allows FRU")]
     #[doc(hidden)]
     pub __non_exhaustive: NonExhaustive,
 }

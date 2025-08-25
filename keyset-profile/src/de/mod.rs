@@ -244,6 +244,7 @@ mod legend_margin {
     where
         D: Deserializer<'de>,
     {
+        // TODO is there a better way to do this?
         #[expect(
             clippy::cast_possible_truncation,
             reason = "if we use f32 directly here it will fail to deserialize (because f64 is the

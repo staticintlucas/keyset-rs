@@ -118,10 +118,7 @@ pub struct Key {
     pub color: Color,
     /// The key's legends
     pub legends: [Option<Box<Legend>>; 9],
-    #[expect(
-        private_interfaces,
-        reason = "enforces non-exhaustive struct while still allowing functional update syntax"
-    )]
+    #[expect(private_interfaces, reason = "like #[non_exhaustive] but allows FRU")]
     #[doc(hidden)]
     pub __non_exhaustive: NonExhaustive,
 }

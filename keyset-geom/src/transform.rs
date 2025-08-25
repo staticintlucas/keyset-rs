@@ -334,7 +334,7 @@ where
     U: Unit,
 {
     /// Creates a new affine transform
-    #[expect(clippy::similar_names, reason = "it's obvious enough")]
+    #[expect(clippy::similar_names, reason = "standard mathematical naming")]
     #[inline]
     #[must_use]
     pub const fn new(a_xx: f32, a_xy: f32, t_x: U, a_yx: f32, a_yy: f32, t_y: U) -> Self {
@@ -353,10 +353,7 @@ where
     /// Equivalent to `other * self`
     #[inline]
     #[must_use]
-    #[expect(
-        clippy::suspicious_operation_groupings,
-        reason = "clippy's wrong, this is correct"
-    )]
+    #[expect(clippy::suspicious_operation_groupings, reason = "clippy's wrong")]
     pub fn then(self, other: impl Into<Self>) -> Self {
         let other: Self = other.into();
         Self {
