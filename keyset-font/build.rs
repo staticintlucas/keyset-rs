@@ -15,10 +15,11 @@ fn files_with_extension(
 }
 
 fn main() {
-    let workspace_dir =
-        PathBuf::from(env::var_os("CARGO_WORKSPACE_DIR").expect("CARGO_WORKSPACE_DIR not set"));
     let manifest_dir =
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
+    let parent_dir = manifest_dir
+        .parent()
+        .expect("CARGO_MANIFEST_DIR is the root directory");
 
     let font_dir = manifest_dir.join("resources").join("fonts");
     let ttx_files = files_with_extension(&font_dir, "ttx")
@@ -28,8 +29,8 @@ fn main() {
         let env_var = ttx.file_stem().unwrap().to_string_lossy().to_uppercase() + "_TTF";
         let ttf = ttx.with_extension("ttf");
 
-        let ttx_str = ttx.strip_prefix(&workspace_dir).unwrap().to_string_lossy();
-        let ttf_str = ttf.strip_prefix(&workspace_dir).unwrap().to_string_lossy();
+        let ttx_str = ttx.strip_prefix(parent_dir).unwrap().to_string_lossy();
+        let ttf_str = ttf.strip_prefix(parent_dir).unwrap().to_string_lossy();
 
         assert!(
             ttf.exists(),
