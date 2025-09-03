@@ -37,8 +37,8 @@ isclose.workspace = true
 miniz_oxide = { workspace = true, optional = true }
 num-traits.workspace = true
 pdf-writer = { workspace = true, optional = true }
-tiny-skia = { workspace = true, optional = true }
 svg = { workspace = true, optional = true }
+tiny-skia = { workspace = true, optional = true }
 
 [dev-dependencies]
 itertools.workspace = true

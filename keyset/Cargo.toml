@@ -2,7 +2,12 @@
 name = "keyset"
 description = "A Rust tool to create pretty keyset layout diagrams using correct fonts and icons."
 keywords = ["keyboard", "keycap", "keyset", "layout", "diagram"]
-categories = ["command-line-utilities", "graphics", "multimedia::images", "rendering"]
+categories = [
+    "command-line-utilities",
+    "graphics",
+    "multimedia::images",
+    "rendering",
+]
 
 version.workspace = true
 authors.workspace = true
@@ -18,9 +23,18 @@ all-features = true
 workspace = true
 
 [features]
-default = ["json-profile", "toml-profile", "kle-layout", "pdf-drawing", "png-drawing", "svg-drawing"]
-toml-profile = ["profile/toml"]
+default = [
+    "json-profile",
+    "toml-profile",
+    "kle-layout",
+    "pdf-drawing",
+    "png-drawing",
+    "svg-drawing",
+]
+
 json-profile = ["profile/json"]
+toml-profile = ["profile/toml"]
+
 kle-layout = ["key/kle"]
 pdf-drawing = ["drawing/pdf"]
 png-drawing = ["drawing/png"]

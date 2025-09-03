@@ -21,17 +21,17 @@ all-features = true
 workspace = true
 
 [features]
-toml = ["serde", "dep:soml"]
 json = ["serde", "dep:serde_json"]
 serde = ["dep:serde", "dep:serde-untagged"]
+toml = ["serde", "dep:soml"]
 
 [dependencies]
 geom.workspace = true
 key.workspace = true
 
 serde = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
 serde-untagged = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 soml = { workspace = true, optional = true }
 
 [dev-dependencies]

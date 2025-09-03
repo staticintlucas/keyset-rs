@@ -1,12 +1,12 @@
 [workspace]
 members = [
-  "keyset",
-  "keyset-color",
-  "keyset-drawing",
-  "keyset-font",
-  "keyset-geom",
-  "keyset-key",
-  "keyset-profile",
+    "keyset",
+    "keyset-color",
+    "keyset-drawing",
+    "keyset-font",
+    "keyset-geom",
+    "keyset-key",
+    "keyset-profile",
 ]
 resolver = "2"
 
@@ -38,8 +38,8 @@ pdf-writer = "0.13"
 rgb = { version = "0.8", default-features = false }
 rustybuzz = "0.20"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
-serde_json = "1.0"
 serde-untagged = "0.1"
+serde_json = "1.0"
 soml = { version = "0.2", default-features = false, features = ["std"] }
 svg = "0.18"
 tiny-skia = "0.11"
@@ -47,13 +47,13 @@ yoke = { version = "0.8", default-features = false, features = ["alloc", "derive
 
 [workspace.lints.rust]
 deprecated_safe = "warn"
+edition_2024_expr_fragment_specifier = { level = "allow", priority = 1 }
 future_incompatible = "warn"
 keyword_idents = "warn"
 let_underscore = "warn"
 nonstandard_style = "warn"
 refining_impl_trait = "warn"
 rust_2024_compatibility = "warn"
-edition_2024_expr_fragment_specifier = { level = "allow", priority = 1 }
 unused = "warn"
 
 ambiguous_negative_literals = "warn"

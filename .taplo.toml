@@ -1,0 +1,17 @@
+[formatting]
+align_comments = false
+inline_table_expand = false
+indent_string = "    "
+allowed_blank_lines = 1
+
+[[rule]]
+include = ["**/Cargo.toml"]
+keys = [
+    "*dependencies",
+    "features",
+    "lints.*",
+    "workspace.members",
+    "workspace.*dependencies",
+    "workspace.lints.*",
+]
+formatting.reorder_keys = true
