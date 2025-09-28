@@ -105,15 +105,25 @@ impl TryFrom<kle::Key> for Key {
     }
 }
 
+/// Loads a KLE layout from a JSON bytes into a [`Box<[Key]>`]
+///
+/// # Errors
+///
+/// If invalid or unsupported JSON is encountered, this will return an [`Error`]
+#[inline]
+pub fn from_json(json: &[u8]) -> Result<Box<[Key]>> {
+    let key_iter: kle::KeyIterator = serde_json::from_slice(json)?;
+    key_iter.map(Key::try_from).collect()
+}
+
 /// Loads a KLE layout from a JSON string into a [`Box<[Key]>`]
 ///
 /// # Errors
 ///
 /// If an invalid or unsupported JSON string is encountered, this will return an [`Error`]
 #[inline]
-pub fn from_json(json: &str) -> Result<Box<[Key]>> {
-    let key_iter: kle::KeyIterator = serde_json::from_str(json)?;
-    key_iter.map(Key::try_from).collect()
+pub fn from_json_str(json: &str) -> Result<Box<[Key]>> {
+    from_json(json.as_bytes())
 }
 
 #[cfg(test)]
@@ -238,7 +248,7 @@ mod tests {
     #[test]
     fn kle_from_json() {
         let result1 = from_json(indoc!(
-            r#"
+            br#"
             [
                 {
                     "meta": "data"
@@ -271,6 +281,55 @@ mod tests {
         assert_is_close!(result1[3].position, Point::new(KeyUnit(0.0), KeyUnit(1.25)));
 
         let result2 = from_json(indoc!(
+            br#"
+            [
+                [
+                    "A"
+                ]
+            ]
+            "#,
+        ))
+        .unwrap();
+
+        assert_eq!(result2.len(), 1);
+    }
+
+    #[test]
+    fn kle_from_json_str() {
+        let result1 = from_json_str(indoc!(
+            r#"
+            [
+                {
+                    "meta": "data"
+                },
+                [
+                    {
+                        "a": 4,
+                        "unknown": "key"
+                    },
+                    "A",
+                    "B",
+                    {
+                        "x": -0.5,
+                        "y": 0.25
+                    },
+                    "C"
+                ],
+                [
+                    "D"
+                ]
+            ]
+            "#,
+        ))
+        .unwrap();
+
+        assert_eq!(result1.len(), 4);
+        assert_is_close!(result1[0].position, Point::new(KeyUnit(0.0), KeyUnit(0.0)));
+        assert_is_close!(result1[1].position, Point::new(KeyUnit(1.0), KeyUnit(0.0)));
+        assert_is_close!(result1[2].position, Point::new(KeyUnit(1.5), KeyUnit(0.25)));
+        assert_is_close!(result1[3].position, Point::new(KeyUnit(0.0), KeyUnit(1.25)));
+
+        let result2 = from_json_str(indoc!(
             r#"
             [
                 [

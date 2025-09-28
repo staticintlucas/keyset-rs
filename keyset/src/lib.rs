@@ -57,8 +57,8 @@
 //! "#;
 //!
 //! // Use `keyset` to load layout, profile and font
-//! let keys = kle::from_json(kle)?;
-//! let profile = Profile::from_toml(profile)?;
+//! let keys = kle::from_json_str(kle)?;
+//! let profile = Profile::from_toml_str(profile)?;
 //! let font = Font::default();
 //! // Or load an actual font with Font::from_ttf(std::fs::read("font.ttf")?)?
 //!

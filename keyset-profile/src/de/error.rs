@@ -61,13 +61,13 @@ mod tests {
     fn error_fmt() {
         #[cfg(feature = "toml")]
         {
-            let error = Profile::from_toml("null").unwrap_err();
+            let error = Profile::from_toml(b"null").unwrap_err();
 
             assert_eq!(format!("{error}"), "expected = after key");
         };
         #[cfg(feature = "json")]
         {
-            let error = Profile::from_json("null").unwrap_err();
+            let error = Profile::from_json(b"null").unwrap_err();
 
             assert_eq!(
                 format!("{error}"),
@@ -80,7 +80,7 @@ mod tests {
     fn error_source() {
         #[cfg(feature = "toml")]
         {
-            let error = Profile::from_toml("null").unwrap_err();
+            let error = Profile::from_toml(b"null").unwrap_err();
 
             assert!(error.source().is_some());
             assert_eq!(
@@ -90,7 +90,7 @@ mod tests {
         };
         #[cfg(feature = "json")]
         {
-            let error = Profile::from_json("null").unwrap_err();
+            let error = Profile::from_json(b"null").unwrap_err();
 
             assert!(error.source().is_some());
             assert_eq!(

@@ -345,26 +345,48 @@ impl fmt::Debug for Profile {
 }
 
 impl Profile {
-    /// Load a profile from a TOML configuration file
+    /// Load a profile from TOML bytes
     ///
     /// # Errors
     ///
     /// If there was an error parsing the file
     #[cfg(feature = "toml")]
     #[inline]
-    pub fn from_toml(s: &str) -> de::Result<Self> {
-        soml::from_str(s).map_err(de::Error::from)
+    pub fn from_toml(b: &[u8]) -> de::Result<Self> {
+        soml::from_slice(b).map_err(de::Error::from)
     }
 
-    /// Load a profile from a JSON configuration file
+    /// Load a profile from a TOML string
+    ///
+    /// # Errors
+    ///
+    /// If there was an error parsing the file
+    #[cfg(feature = "toml")]
+    #[inline]
+    pub fn from_toml_str(s: &str) -> de::Result<Self> {
+        Self::from_toml(s.as_bytes())
+    }
+
+    /// Load a profile from JSON bytes
     ///
     /// # Errors
     ///
     /// If there was an error parsing the file
     #[cfg(feature = "json")]
     #[inline]
-    pub fn from_json(s: &str) -> de::Result<Self> {
-        serde_json::from_str(s).map_err(de::Error::from)
+    pub fn from_json(b: &[u8]) -> de::Result<Self> {
+        serde_json::from_slice(b).map_err(de::Error::from)
+    }
+
+    /// Load a profile from a JSON string
+    ///
+    /// # Errors
+    ///
+    /// If there was an error parsing the file
+    #[cfg(feature = "json")]
+    #[inline]
+    pub fn from_json_str(s: &str) -> de::Result<Self> {
+        Self::from_json(s.as_bytes())
     }
 }
 
@@ -567,7 +589,7 @@ mod tests {
     #[test]
     fn profile_from_toml() {
         let toml = indoc!(
-            r#"
+            br#"
             type = "cylindrical"
             depth = 0.5
 
@@ -648,7 +670,97 @@ mod tests {
     #[cfg(feature = "toml")]
     #[test]
     fn test_profile_from_invalid_toml() {
-        let result = Profile::from_toml("null");
+        let result = Profile::from_toml(b"null");
+        assert!(result.is_err());
+        assert_eq!(format!("{}", result.unwrap_err()), "expected = after key");
+    }
+
+    #[cfg(feature = "toml")]
+    #[test]
+    fn profile_from_toml_str() {
+        let toml = indoc!(
+            r#"
+            type = "cylindrical"
+            depth = 0.5
+
+            [bottom]
+            width = 18.29
+            height = 18.29
+            radius = 0.38
+
+            [top]
+            width = 11.81
+            height = 13.91
+            radius = 1.52
+            y-offset = -1.62
+
+            [legend.alpha]
+            size = 4.84
+            margin.top-bottom = 1.185
+            margin.left-right = 1.18
+
+            [legend.symbol]
+            size = 3.18
+            margin.top = 2.575
+            margin.bottom = 1.775
+            margin.left-right = 1.14
+
+            [legend.modifier]
+            size = 2.28
+            margin.top = 1.185
+            margin.bottom = 1.425
+            margin.left-right = 1.18
+
+            [homing]
+            default = "scoop"
+            scoop = { depth = 1.5 }
+            bar = { width = 3.85, height = 0.4, y-offset = 5.05 }
+            bump = { diameter = 0.4, y-offset = -0.2 }
+            "#
+        );
+        let profile = Profile::from_toml_str(toml).unwrap();
+
+        assert_matches!(
+            profile.typ,
+            Type::Cylindrical { depth }
+                if depth.is_close(&Mm(0.5))
+        );
+
+        assert_is_close!(profile.bottom.size, Vector::splat(Mm(18.29)));
+        assert_is_close!(profile.bottom.radius, Mm(0.38));
+
+        assert_is_close!(profile.top.size, Vector::new(Mm(11.81), Mm(13.91)));
+        assert_is_close!(profile.top.radius, Mm(1.52));
+        assert_is_close!(profile.top.y_offset, Mm(-1.62));
+
+        assert_is_close!(profile.legend_geom.alpha.height, Mm(4.84));
+        assert_is_close!(
+            profile.legend_geom.alpha.margin,
+            OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.185), Mm(1.18))
+        );
+        assert_is_close!(profile.legend_geom.symbol.height, Mm(3.18));
+        assert_is_close!(
+            profile.legend_geom.symbol.margin,
+            OffsetRect::new(Mm(2.575), Mm(1.14), Mm(1.775), Mm(1.14))
+        );
+        assert_is_close!(profile.legend_geom.modifier.height, Mm(2.28));
+        assert_is_close!(
+            profile.legend_geom.modifier.margin,
+            OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.425), Mm(1.18))
+        );
+
+        assert_matches!(profile.homing.default, Homing::Scoop);
+        assert_is_close!(profile.homing.scoop.depth, Mm(1.5));
+        assert_is_close!(profile.homing.bar.size, Vector::new(Mm(3.85), Mm(0.4)));
+        assert_is_close!(profile.homing.bar.y_offset, Mm(5.05));
+        assert_is_close!(profile.homing.bump.diameter, Mm(0.4));
+        assert_is_close!(profile.homing.bump.y_offset, Mm(-0.2));
+    }
+
+    #[cfg(feature = "toml")]
+    #[test]
+    fn test_profile_from_invalid_toml_str() {
+        let result = Profile::from_toml_str("null");
         assert!(result.is_err());
         assert_eq!(format!("{}", result.unwrap_err()), "expected = after key");
     }
@@ -657,7 +769,7 @@ mod tests {
     #[test]
     fn test_profile_from_json() {
         let json = indoc!(
-            r#"
+            br#"
             {
                 "type": "cylindrical",
                 "depth": 0.5,
@@ -761,7 +873,123 @@ mod tests {
     #[cfg(feature = "json")]
     #[test]
     fn test_profile_from_invalid_json() {
-        let result = Profile::from_json("null");
+        let result = Profile::from_json(b"null");
+        assert!(result.is_err());
+        assert_eq!(
+            format!("{}", result.unwrap_err()),
+            "invalid type: null, expected struct RawProfileData at line 1 column 4"
+        );
+    }
+
+    #[cfg(feature = "json")]
+    #[test]
+    fn test_profile_from_json_str() {
+        let json = indoc!(
+            r#"
+            {
+                "type": "cylindrical",
+                "depth": 0.5,
+
+                "bottom": {
+                    "width": 18.29,
+                    "height": 18.29,
+                    "radius": 0.38
+                },
+
+                "top": {
+                    "width": 11.81,
+                    "height": 13.91,
+                    "radius": 1.52,
+                    "y-offset": -1.62
+                },
+
+                "legend": {
+                    "alpha": {
+                        "size": 4.84,
+                        "margin": {
+                            "top-bottom": 1.185,
+                            "left-right": 1.18
+                        }
+                    },
+                    "symbol": {
+                        "size": 3.18,
+                        "margin": {
+                            "top": 2.575,
+                            "bottom": 1.775,
+                            "left-right": 1.14
+                        }
+                    },
+                    "modifier": {
+                        "size": 2.28,
+                        "margin": {
+                            "top": 1.185,
+                            "bottom": 1.425,
+                            "left-right": 1.18
+                        }
+                    }
+                },
+
+                "homing": {
+                    "default": "scoop",
+                    "scoop": {
+                        "depth": 1.5
+                    },
+                    "bar": {
+                        "width": 3.85,
+                        "height": 0.4,
+                        "y-offset": 5.05
+                    },
+                    "bump": {
+                        "diameter": 0.4,
+                        "y-offset": -0.2
+                    }
+                }
+            }
+            "#
+        );
+        let profile = Profile::from_json_str(json).unwrap();
+
+        assert_matches!(
+            profile.typ,
+            Type::Cylindrical { depth }
+                if depth.is_close(&Mm(0.5))
+        );
+
+        assert_is_close!(profile.bottom.size, Vector::splat(Mm(18.29)));
+        assert_is_close!(profile.bottom.radius, Mm(0.38));
+
+        assert_is_close!(profile.top.size, Vector::new(Mm(11.81), Mm(13.91)));
+        assert_is_close!(profile.top.radius, Mm(1.52));
+        assert_is_close!(profile.top.y_offset, Mm(-1.62));
+
+        assert_is_close!(profile.legend_geom.alpha.height, Mm(4.84));
+        assert_is_close!(
+            profile.legend_geom.alpha.margin,
+            OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.185), Mm(1.18))
+        );
+        assert_is_close!(profile.legend_geom.symbol.height, Mm(3.18));
+        assert_is_close!(
+            profile.legend_geom.symbol.margin,
+            OffsetRect::new(Mm(2.575), Mm(1.14), Mm(1.775), Mm(1.14))
+        );
+        assert_is_close!(profile.legend_geom.modifier.height, Mm(2.28));
+        assert_is_close!(
+            profile.legend_geom.modifier.margin,
+            OffsetRect::new(Mm(1.185), Mm(1.18), Mm(1.425), Mm(1.18))
+        );
+
+        assert_matches!(profile.homing.default, Homing::Scoop);
+        assert_is_close!(profile.homing.scoop.depth, Mm(1.5));
+        assert_is_close!(profile.homing.bar.size, Vector::new(Mm(3.85), Mm(0.4)));
+        assert_is_close!(profile.homing.bar.y_offset, Mm(5.05));
+        assert_is_close!(profile.homing.bump.diameter, Mm(0.4));
+        assert_is_close!(profile.homing.bump.y_offset, Mm(-0.2));
+    }
+
+    #[cfg(feature = "json")]
+    #[test]
+    fn test_profile_from_invalid_json_str() {
+        let result = Profile::from_json_str("null");
         assert!(result.is_err());
         assert_eq!(
             format!("{}", result.unwrap_err()),
