@@ -88,5 +88,6 @@
 pub use color::Color;
 pub use drawing::{self, Drawing};
 pub use font::{self, Font};
+pub use geom;
 pub use key::{self, kle, Key};
 pub use profile::{self, Profile};

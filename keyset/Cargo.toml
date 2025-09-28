@@ -44,5 +44,6 @@ svg-drawing = ["drawing/svg"]
 color.workspace = true
 drawing.workspace = true
 font.workspace = true
+geom.workspace = true
 key.workspace = true
 profile.workspace = true
