@@ -117,7 +117,7 @@ pub struct Key {
     /// The key's colour
     pub color: Color,
     /// The key's legends
-    pub legends: [Option<Box<Legend>>; 9],
+    pub legends: [Option<Box<Legend>>; Self::LEGEND_COUNT],
     #[expect(private_interfaces, reason = "like #[non_exhaustive] but allows FRU")]
     #[doc(hidden)]
     pub __non_exhaustive: NonExhaustive,
@@ -141,6 +141,9 @@ impl fmt::Debug for Key {
 }
 
 impl Key {
+    /// The number of legends in a key
+    pub const LEGEND_COUNT: usize = 9;
+
     /// A new blank key
     #[inline]
     #[must_use]
