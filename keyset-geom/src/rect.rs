@@ -777,6 +777,34 @@ where
             max: Vector::zero(),
         }
     }
+
+    /// Gets the top offset
+    #[inline]
+    #[must_use]
+    pub const fn top(&self) -> U {
+        self.min.y
+    }
+
+    /// Gets the right offset
+    #[inline]
+    #[must_use]
+    pub const fn right(&self) -> U {
+        self.max.x
+    }
+
+    /// Gets the bottom offset
+    #[inline]
+    #[must_use]
+    pub const fn bottom(&self) -> U {
+        self.max.y
+    }
+
+    /// Gets the left offset
+    #[inline]
+    #[must_use]
+    pub const fn left(&self) -> U {
+        self.min.x
+    }
 }
 
 impl<U, V> ConvertFrom<OffsetRect<V>> for OffsetRect<U>
@@ -1898,6 +1926,22 @@ mod tests {
         let rect = OffsetRect::splat(Mm(2.0));
         assert_is_close!(rect.min, Vector::new(Mm(2.0), Mm(2.0)));
         assert_is_close!(rect.max, Vector::new(Mm(2.0), Mm(2.0)));
+    }
+
+    #[test]
+    fn offset_rect_zero() {
+        let rect = OffsetRect::<Mm>::zero();
+        assert_is_close!(rect.min, Vector::new(Mm(0.0), Mm(0.0)));
+        assert_is_close!(rect.max, Vector::new(Mm(0.0), Mm(0.0)));
+    }
+
+    #[test]
+    fn offset_rect_getters() {
+        let rect = OffsetRect::new(Mm(2.0), Mm(1.5), Mm(1.0), Mm(0.5));
+        assert_is_close!(rect.top(), Mm(2.0));
+        assert_is_close!(rect.right(), Mm(1.5));
+        assert_is_close!(rect.bottom(), Mm(1.0));
+        assert_is_close!(rect.left(), Mm(0.5));
     }
 
     #[test]
