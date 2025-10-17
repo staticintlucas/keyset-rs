@@ -73,15 +73,15 @@ let profile = Profile::from_toml_str(profile)?;
 let font = Font::default();
 // Or load an actual font with Font::from_ttf(std::fs::read("font.ttf")?)?
 
-// Create template (tells keyset-rs how to draw the keys)
-let template = drawing::Template {
+// Create stencil (tells keyset-rs how to draw the keys)
+let stencil = drawing::Stencil {
     profile,
     font,
     ..Default::default()
 };
 
 // Create drawing
-let (drawing, warnings) = template.draw(&keys)?;
+let (drawing, warnings) = stencil.draw(&keys)?;
 
 // Optionally handle warnings (if any)
 assert!(warnings.is_empty());

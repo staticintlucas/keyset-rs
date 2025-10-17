@@ -6,7 +6,7 @@ use color::Color;
 use geom::{ConvertInto as _, Dot, KeyUnit, Path, Point, Rect, Scale, Vector};
 use isclose::IsClose as _;
 
-use crate::{Template, Warning};
+use crate::{Stencil, Warning};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Outline {
@@ -28,59 +28,55 @@ pub struct KeyDrawing {
 }
 
 impl KeyDrawing {
-    pub fn new(key: &Key, template: &Template, warnings: &mut Vec<Warning>) -> Self {
-        let cap = Self::required_capacity(key, template);
+    pub fn new(key: &Key, stencil: &Stencil, warnings: &mut Vec<Warning>) -> Self {
+        let cap = Self::required_capacity(key, stencil);
         let mut paths = Vec::with_capacity(cap);
 
-        let Template {
+        let Stencil {
             ref profile,
             ref font,
             show_keys,
             show_margin,
             ..
-        } = *template;
+        } = *stencil;
 
         match key.shape {
             _ if !show_keys => {}
             KeyShape::None(..) => {}
             KeyShape::Normal(size) | KeyShape::Space(size) => {
-                paths.push(key::bottom(template, key.color, size));
-                paths.push(key::top(template, key.color, size));
+                paths.push(key::bottom(stencil, key.color, size));
+                paths.push(key::top(stencil, key.color, size));
             }
             KeyShape::Homing(homing) => {
-                paths.push(key::bottom(
-                    template,
-                    key.color,
-                    Vector::splat(KeyUnit(1.0)),
-                ));
-                paths.push(key::top(template, key.color, Vector::splat(KeyUnit(1.0))));
+                paths.push(key::bottom(stencil, key.color, Vector::splat(KeyUnit(1.0))));
+                paths.push(key::top(stencil, key.color, Vector::splat(KeyUnit(1.0))));
 
                 match homing.unwrap_or(profile.homing.default) {
                     Homing::Scoop => {}
                     Homing::Bar => {
-                        paths.push(key::homing_bar(template, key.color));
+                        paths.push(key::homing_bar(stencil, key.color));
                     }
                     Homing::Bump => {
-                        paths.push(key::homing_bump(template, key.color));
+                        paths.push(key::homing_bump(stencil, key.color));
                     }
                 }
             }
             KeyShape::SteppedCaps => {
                 paths.push(key::bottom(
-                    template,
+                    stencil,
                     key.color,
                     Vector::new(KeyUnit(1.75), KeyUnit(1.0)),
                 ));
                 paths.push(key::top(
-                    template,
+                    stencil,
                     key.color,
                     Vector::new(KeyUnit(1.25), KeyUnit(1.0)),
                 ));
-                paths.push(key::step(template, key.color));
+                paths.push(key::step(stencil, key.color));
             }
             KeyShape::IsoVertical | KeyShape::IsoHorizontal => {
-                paths.push(key::iso_bottom(template, key.color));
-                paths.push(key::iso_top(template, key.color));
+                paths.push(key::iso_bottom(stencil, key.color));
+                paths.push(key::iso_top(stencil, key.color));
             }
         }
 
@@ -134,13 +130,13 @@ impl KeyDrawing {
         }
     }
 
-    fn required_capacity(key: &Key, template: &Template) -> usize {
-        let Template {
+    fn required_capacity(key: &Key, stencil: &Stencil) -> usize {
+        let Stencil {
             ref profile,
             show_keys,
             show_margin,
             ..
-        } = *template;
+        } = *stencil;
 
         let key_paths = match key.shape {
             _ if !show_keys => 0,
@@ -176,9 +172,9 @@ mod tests {
     fn test_key_drawing_new() {
         // Regular 1u
         let key = Key::example();
-        let template = Template::default();
+        let stencil = Stencil::default();
         let mut warnings = Vec::new();
-        let drawing = KeyDrawing::new(&key, &template, &mut warnings);
+        let drawing = KeyDrawing::new(&key, &stencil, &mut warnings);
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 6); // top, bottom, 4x legends
@@ -190,9 +186,9 @@ mod tests {
             key.shape = ::key::Shape::SteppedCaps;
             key
         };
-        let template = Template::default();
+        let stencil = Stencil::default();
         let mut warnings = Vec::new();
-        let drawing = KeyDrawing::new(&key, &template, &mut warnings);
+        let drawing = KeyDrawing::new(&key, &stencil, &mut warnings);
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, step, 4x legends
@@ -204,23 +200,23 @@ mod tests {
             key.shape = ::key::Shape::IsoHorizontal;
             key
         };
-        let template = Template {
+        let stencil = Stencil {
             show_margin: true,
-            ..Template::default()
+            ..Stencil::default()
         };
         let mut warnings = Vec::new();
-        let drawing = KeyDrawing::new(&key, &template, &mut warnings);
+        let drawing = KeyDrawing::new(&key, &stencil, &mut warnings);
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
         let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let top_rect = {
-            let Rect { min, max } = template.profile.top.to_rect();
+            let Rect { min, max } = stencil.profile.top.to_rect();
             let max = max + Vector::new(KeyUnit(0.5), KeyUnit(0.0)).convert_into();
             Rect::new(min, max)
         };
-        let margin_rect = top_rect - template.profile.legend_geom.margin_for_kle_size(font_size);
+        let margin_rect = top_rect - stencil.profile.legend_geom.margin_for_kle_size(font_size);
         assert_is_close!(bounding_box, margin_rect);
         assert!(warnings.is_empty());
 
@@ -230,25 +226,25 @@ mod tests {
             key.shape = ::key::Shape::IsoVertical;
             key
         };
-        let template = Template {
+        let stencil = Stencil {
             show_margin: true,
-            ..Template::default()
+            ..Stencil::default()
         };
         let mut warnings = Vec::new();
-        let drawing = KeyDrawing::new(&key, &template, &mut warnings);
+        let drawing = KeyDrawing::new(&key, &stencil, &mut warnings);
 
         assert_is_close!(drawing.origin, key.position);
         assert_eq!(drawing.paths.len(), 7); // top, bottom, margin, 4x legends
         let bounding_box = drawing.paths[2].data.bounds;
         let font_size = key.legends[0].as_ref().unwrap().size_idx;
         let top_rect = {
-            let Rect { min, max } = template.profile.top.to_rect();
+            let Rect { min, max } = stencil.profile.top.to_rect();
             let max = max + Vector::new(KeyUnit(0.25), KeyUnit(1.0)).convert_into();
             Rect::new(min, max)
         };
         let margin_rect = top_rect
             * Translate::<Dot>::new(KeyUnit(0.25).convert_into(), KeyUnit(0.0).convert_into())
-            - template.profile.legend_geom.margin_for_kle_size(font_size);
+            - stencil.profile.legend_geom.margin_for_kle_size(font_size);
         assert_is_close!(bounding_box, margin_rect);
         assert!(warnings.is_empty());
     }

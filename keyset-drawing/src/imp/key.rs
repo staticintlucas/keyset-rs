@@ -6,58 +6,58 @@ use geom::{
 use profile::Profile;
 
 use super::{KeyPath, Outline};
-use crate::Template;
+use crate::Stencil;
 
-pub fn top(template: &Template, color: Color, size: Vector<KeyUnit>) -> KeyPath {
-    let data = round_rect_with_size(template.profile.top.to_round_rect(), size).to_path();
+pub fn top(stencil: &Stencil, color: Color, size: Vector<KeyUnit>) -> KeyPath {
+    let data = round_rect_with_size(stencil.profile.top.to_round_rect(), size).to_path();
     KeyPath {
         data,
         fill: Some(color),
         outline: Some(Outline {
             color: color.highlight(0.15),
-            width: template.outline_width,
+            width: stencil.outline_width,
         }),
     }
 }
 
-pub fn iso_top(template: &Template, color: Color) -> KeyPath {
-    let data = iso_top_path(&template.profile);
+pub fn iso_top(stencil: &Stencil, color: Color) -> KeyPath {
+    let data = iso_top_path(&stencil.profile);
     KeyPath {
         data,
         fill: Some(color),
         outline: Some(Outline {
             color: color.highlight(0.15),
-            width: template.outline_width,
+            width: stencil.outline_width,
         }),
     }
 }
 
-pub fn bottom(template: &Template, color: Color, size: Vector<KeyUnit>) -> KeyPath {
-    let data = round_rect_with_size(template.profile.bottom.to_round_rect(), size).to_path();
+pub fn bottom(stencil: &Stencil, color: Color, size: Vector<KeyUnit>) -> KeyPath {
+    let data = round_rect_with_size(stencil.profile.bottom.to_round_rect(), size).to_path();
     KeyPath {
         data,
         fill: Some(color),
         outline: Some(Outline {
             color: color.highlight(0.15),
-            width: template.outline_width,
+            width: stencil.outline_width,
         }),
     }
 }
 
-pub fn iso_bottom(template: &Template, color: Color) -> KeyPath {
-    let data = iso_bottom_path(&template.profile);
+pub fn iso_bottom(stencil: &Stencil, color: Color) -> KeyPath {
+    let data = iso_bottom_path(&stencil.profile);
     KeyPath {
         data,
         fill: Some(color),
         outline: Some(Outline {
             color: color.highlight(0.15),
-            width: template.outline_width,
+            width: stencil.outline_width,
         }),
     }
 }
 
-pub fn homing_bar(template: &Template, color: Color) -> KeyPath {
-    let profile = &template.profile;
+pub fn homing_bar(stencil: &Stencil, color: Color) -> KeyPath {
+    let profile = &stencil.profile;
 
     let center = profile.top.to_rect().center();
 
@@ -72,13 +72,13 @@ pub fn homing_bar(template: &Template, color: Color) -> KeyPath {
         fill: Some(color),
         outline: Some(Outline {
             color: color.highlight(0.15),
-            width: template.outline_width,
+            width: stencil.outline_width,
         }),
     }
 }
 
-pub fn homing_bump(template: &Template, color: Color) -> KeyPath {
-    let profile = &template.profile;
+pub fn homing_bump(stencil: &Stencil, color: Color) -> KeyPath {
+    let profile = &stencil.profile;
 
     let center = profile.top.to_rect().center();
 
@@ -93,13 +93,13 @@ pub fn homing_bump(template: &Template, color: Color) -> KeyPath {
         fill: Some(color),
         outline: Some(Outline {
             color: color.highlight(0.15),
-            width: template.outline_width,
+            width: stencil.outline_width,
         }),
     }
 }
 
-pub fn step(template: &Template, color: Color) -> KeyPath {
-    let profile = &template.profile;
+pub fn step(stencil: &Stencil, color: Color) -> KeyPath {
+    let profile = &stencil.profile;
 
     // Take average dimensions of top and bottom
     let rect = {
@@ -118,7 +118,7 @@ pub fn step(template: &Template, color: Color) -> KeyPath {
         fill: Some(color),
         outline: Some(Outline {
             color: color.highlight(0.15),
-            width: template.outline_width,
+            width: stencil.outline_width,
         }),
     }
 }
@@ -217,37 +217,37 @@ mod tests {
 
     #[test]
     fn test_top() {
-        let template = Template::default();
+        let stencil = Stencil::default();
         let key = Key::example();
 
-        let path = top(&template, key.color, key.shape.outer_rect().size());
+        let path = top(&stencil, key.color, key.shape.outer_rect().size());
         let bounds = path.data.bounds;
 
         assert_is_close!(path.fill.unwrap(), key.color);
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_is_close!(path.outline.unwrap().width, template.outline_width);
+        assert_is_close!(path.outline.unwrap().width, stencil.outline_width);
 
-        assert_is_close!(bounds, template.profile.top.to_rect());
+        assert_is_close!(bounds, stencil.profile.top.to_rect());
     }
 
     #[test]
     fn test_iso_top() {
-        let template = Template::default();
+        let stencil = Stencil::default();
         let key = {
             let mut key = Key::example();
             key.shape = key::Shape::IsoVertical;
             key
         };
 
-        let path = iso_top(&template, key.color);
+        let path = iso_top(&stencil, key.color);
         let bounds = path.data.bounds;
 
         assert_is_close!(path.fill.unwrap(), key.color);
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_is_close!(path.outline.unwrap().width, template.outline_width);
+        assert_is_close!(path.outline.unwrap().width, stencil.outline_width);
 
         let top_rect = {
-            let RoundRect { min, max, radii } = template.profile.top.to_round_rect();
+            let RoundRect { min, max, radii } = stencil.profile.top.to_round_rect();
             let max = max + Vector::new(KeyUnit(0.5), KeyUnit(1.0)).convert_into();
             RoundRect::new(min, max, radii)
         };
@@ -256,37 +256,37 @@ mod tests {
 
     #[test]
     fn test_bottom() {
-        let template = Template::default();
+        let stencil = Stencil::default();
         let key = Key::example();
 
-        let path = bottom(&template, key.color, key.shape.outer_rect().size());
+        let path = bottom(&stencil, key.color, key.shape.outer_rect().size());
         let bounds = path.data.bounds;
 
         assert_is_close!(path.fill.unwrap(), key.color);
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_is_close!(path.outline.unwrap().width, template.outline_width);
+        assert_is_close!(path.outline.unwrap().width, stencil.outline_width);
 
-        assert_is_close!(bounds, template.profile.bottom.to_rect());
+        assert_is_close!(bounds, stencil.profile.bottom.to_rect());
     }
 
     #[test]
     fn test_iso_bottom() {
-        let template = Template::default();
+        let stencil = Stencil::default();
         let key = {
             let mut key = Key::example();
             key.shape = key::Shape::IsoVertical;
             key
         };
 
-        let path = iso_bottom(&template, key.color);
+        let path = iso_bottom(&stencil, key.color);
         let bounds = path.data.bounds;
 
         assert_is_close!(path.fill.unwrap(), key.color);
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_is_close!(path.outline.unwrap().width, template.outline_width);
+        assert_is_close!(path.outline.unwrap().width, stencil.outline_width);
 
         let bottom_rect = {
-            let RoundRect { min, max, radii } = template.profile.bottom.to_round_rect();
+            let RoundRect { min, max, radii } = stencil.profile.bottom.to_round_rect();
             let max = max + Vector::new(KeyUnit(0.5), KeyUnit(1.0)).convert_into();
             RoundRect::new(min, max, radii)
         };
@@ -295,74 +295,74 @@ mod tests {
 
     #[test]
     fn test_homing_bar() {
-        let template = Template::default();
+        let stencil = Stencil::default();
         let key = {
             let mut key = Key::example();
             key.shape = key::Shape::Homing(Some(key::Homing::Bar));
             key
         };
 
-        let path = homing_bar(&template, key.color);
+        let path = homing_bar(&stencil, key.color);
         let bounds = path.data.bounds;
 
         assert_is_close!(path.fill.unwrap(), key.color);
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_is_close!(path.outline.unwrap().width, template.outline_width);
+        assert_is_close!(path.outline.unwrap().width, stencil.outline_width);
 
         let bar_rect = Rect::from_center_and_size(
-            template.profile.top.to_rect().center()
-                + Vector::new(Dot(0.0), template.profile.homing.bar.y_offset),
-            template.profile.homing.bar.size,
+            stencil.profile.top.to_rect().center()
+                + Vector::new(Dot(0.0), stencil.profile.homing.bar.y_offset),
+            stencil.profile.homing.bar.size,
         );
         assert_is_close!(bounds, bar_rect);
     }
 
     #[test]
     fn test_homing_bump() {
-        let template = Template::default();
+        let stencil = Stencil::default();
         let key = {
             let mut key = Key::example();
             key.shape = key::Shape::Homing(Some(key::Homing::Bump));
             key
         };
 
-        let path = homing_bump(&template, key.color);
+        let path = homing_bump(&stencil, key.color);
         let bounds = path.data.bounds;
 
         assert_is_close!(path.fill.unwrap(), key.color);
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_is_close!(path.outline.unwrap().width, template.outline_width);
+        assert_is_close!(path.outline.unwrap().width, stencil.outline_width);
 
         let bump_rect = Rect::from_center_and_size(
-            template.profile.top.to_rect().center()
-                + Vector::new(Dot(0.0), template.profile.homing.bump.y_offset),
-            Vector::splat(template.profile.homing.bump.diameter),
+            stencil.profile.top.to_rect().center()
+                + Vector::new(Dot(0.0), stencil.profile.homing.bump.y_offset),
+            Vector::splat(stencil.profile.homing.bump.diameter),
         );
         assert_is_close!(bounds, bump_rect);
     }
 
     #[test]
     fn test_step() {
-        let template = Template::default();
+        let stencil = Stencil::default();
         let key = {
             let mut key = Key::example();
             key.shape = key::Shape::SteppedCaps;
             key
         };
 
-        let path = step(&template, key.color);
+        let path = step(&stencil, key.color);
         let bounds = path.data.bounds;
 
         assert_is_close!(path.fill.unwrap(), key.color);
         assert_is_close!(path.outline.unwrap().color, key.color.highlight(0.15));
-        assert_is_close!(path.outline.unwrap().width, template.outline_width);
+        assert_is_close!(path.outline.unwrap().width, stencil.outline_width);
 
         let step_rect = {
-            let mid_rect = template
+            let mid_rect = stencil
                 .profile
                 .top
                 .to_round_rect()
-                .lerp(template.profile.bottom.to_round_rect(), 0.5);
+                .lerp(stencil.profile.bottom.to_round_rect(), 0.5);
             Rect::new(
                 Point::new(
                     Dot::convert_from(KeyUnit(1.25)) - mid_rect.min.x - mid_rect.radii.x,

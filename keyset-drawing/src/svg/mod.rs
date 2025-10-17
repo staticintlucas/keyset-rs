@@ -58,16 +58,16 @@ mod tests {
 
     use key::Key;
 
-    use crate::Template;
+    use crate::Stencil;
 
     #[test]
     fn test_to_svg() {
-        let template = Template {
+        let stencil = Stencil {
             show_margin: true,
             ..Default::default()
         };
         let keys = [Key::example()];
-        let (drawing, _warnings) = template.draw(&keys).unwrap();
+        let (drawing, _warnings) = stencil.draw(&keys).unwrap();
 
         let svg = drawing.to_svg();
 

@@ -90,9 +90,9 @@ impl Drawing {
 #[derive(Clone, Copy)]
 struct NonExhaustive;
 
-/// Template for generating a drawing
+/// Stencil for generating a drawing
 #[derive(Clone)]
-pub struct Template {
+pub struct Stencil {
     /// The keycap profile used for drawing keys
     pub profile: Profile,
     /// The font used for drawing legends
@@ -110,8 +110,8 @@ pub struct Template {
     pub __non_exhaustive: NonExhaustive,
 }
 
-impl Template {
-    /// Draw the given keys using this template
+impl Stencil {
+    /// Draw the given keys using this stencil
     ///
     /// # Errors
     ///
@@ -146,7 +146,7 @@ impl Template {
     }
 }
 
-impl Default for Template {
+impl Default for Stencil {
     #[inline]
     fn default() -> Self {
         Self {
@@ -161,10 +161,10 @@ impl Default for Template {
     }
 }
 
-impl fmt::Debug for Template {
+impl fmt::Debug for Stencil {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut dbg = f.debug_struct("Template");
+        let mut dbg = f.debug_struct("Stencil");
         let _ = dbg
             .field("profile", &self.profile)
             .field("font", &self.font)
@@ -190,37 +190,37 @@ mod tests {
     use super::*;
 
     #[test]
-    fn template() {
-        let template = Template::default();
+    fn stencil() {
+        let stencil = Stencil::default();
 
-        assert_is_close!(template.scale, 1.0);
-        assert_eq!(template.font.num_glyphs(), 1); // .notdef
+        assert_is_close!(stencil.scale, 1.0);
+        assert_eq!(stencil.font.num_glyphs(), 1); // .notdef
 
         let profile = Profile::default();
         let font = Font::from_ttf(std::fs::read(env!("DEMO_TTF")).unwrap()).unwrap();
-        let template = Template {
+        let stencil = Stencil {
             profile,
             font,
             scale: 2.0,
             outline_width: Mm(20.0).convert_into(),
             show_keys: false,
             show_margin: true,
-            ..Template::default()
+            ..Stencil::default()
         };
 
-        assert_is_close!(template.profile.typ.depth(), Mm(1.0));
-        assert_eq!(template.font.num_glyphs(), 3); // .notdef, A, V
-        assert_is_close!(template.scale, 2.0);
+        assert_is_close!(stencil.profile.typ.depth(), Mm(1.0));
+        assert_eq!(stencil.font.num_glyphs(), 3); // .notdef, A, V
+        assert_is_close!(stencil.scale, 2.0);
     }
 
     #[test]
-    fn template_debug() {
-        let template = Template::default();
+    fn stencil_debug() {
+        let stencil = Stencil::default();
 
         assert_eq!(
-            format!("{template:?}"),
+            format!("{stencil:?}"),
             format!(
-                "Template {{ profile: {:?}, font: {:?}, scale: {:?}, outline_width: {:?}, \
+                "Stencil {{ profile: {:?}, font: {:?}, scale: {:?}, outline_width: {:?}, \
                     show_keys: {:?}, show_margin: {:?} }}",
                 Profile::default(),
                 Font::default(),
@@ -233,16 +233,16 @@ mod tests {
     }
 
     #[test]
-    fn template_draw() {
-        let template = Template::default();
+    fn stencil_draw() {
+        let stencil = Stencil::default();
         let keys = [Key::example()];
 
-        let (drawing, warnings) = template.draw(&keys).unwrap();
+        let (drawing, warnings) = stencil.draw(&keys).unwrap();
 
         assert_is_close!(drawing.bounds.width(), KeyUnit(1.0));
         assert_is_close!(drawing.bounds.height(), KeyUnit(1.0));
         assert_eq!(drawing.keys.len(), 1);
-        assert_is_close!(drawing.scale, template.scale);
+        assert_is_close!(drawing.scale, stencil.scale);
         assert!(warnings.is_empty());
     }
 }

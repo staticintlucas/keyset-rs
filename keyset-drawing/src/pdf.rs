@@ -162,16 +162,16 @@ fn draw_path(content: &mut Content, path: &KeyPath, conv: Conversion<PdfUnit, Do
 mod tests {
     use key::Key;
 
-    use crate::Template;
+    use crate::Stencil;
 
     #[test]
     fn test_to_pdf() {
-        let template = Template {
+        let stencil = Stencil {
             show_margin: true, // to give us an unfilled path
             ..Default::default()
         };
         let keys = [Key::example()];
-        let (drawing, _warnings) = template.draw(&keys).unwrap();
+        let (drawing, _warnings) = stencil.draw(&keys).unwrap();
 
         let pdf = drawing.to_pdf();
         let ai = drawing.to_ai();

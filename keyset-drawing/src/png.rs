@@ -134,7 +134,7 @@ mod tests {
 
     use key::Key;
 
-    use crate::Template;
+    use crate::Stencil;
 
     fn premul_u8_to_f32(color: PremultipliedColorU8) -> Color {
         let [r, g, b, a] =
@@ -148,9 +148,9 @@ mod tests {
 
     #[test]
     fn test_to_png() {
-        let template = Template::default();
+        let stencil = Stencil::default();
         let keys = [Key::example()];
-        let (drawing, _warnings) = template.draw(&keys).unwrap();
+        let (drawing, _warnings) = stencil.draw(&keys).unwrap();
 
         let png = drawing.to_png(96.0).unwrap();
 
