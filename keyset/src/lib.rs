@@ -70,10 +70,10 @@
 //! };
 //!
 //! // Create drawing
-//! let (drawing, warnings) = stencil.draw(&keys)?;
+//! let drawing = stencil.draw(&keys)?;
 //!
 //! // Optionally handle warnings (if any)
-//! assert!(warnings.is_empty());
+//! assert!(drawing.warnings.is_empty());
 //!
 //! // Save output
 //! let path = std::env::current_dir()?;

@@ -24,7 +24,7 @@ use geom::{ConvertInto as _, Dot, KeyUnit, Point, Rect, Translate, Vector};
 use key::Key;
 use profile::Profile;
 
-pub use self::error::{Error, Warning};
+pub use self::error::{Error, Warning, WithWarnings};
 pub(crate) use self::imp::{KeyDrawing, KeyPath};
 
 /// A drawing
@@ -48,8 +48,7 @@ impl Drawing {
     ///
     /// # Errors
     ///
-    /// Returns [`Error::PngDimensionsError`] if the drawing is too large or too small to be
-    /// encoded as a PNG.
+    /// Returns [`Error::PngDimensionsError`] if the drawing is too large to be encoded as a PNG.
     #[cfg(feature = "png")]
     #[inline]
     pub fn to_png(&self, ppi: f32) -> Result<Vec<u8>, Error> {
@@ -117,7 +116,7 @@ impl Stencil {
     ///
     /// Returns an error if the size requested keys cannot be drawn
     #[inline]
-    pub fn draw(&self, keys: &[Key]) -> Result<(Drawing, Vec<Warning>), Error> {
+    pub fn draw(&self, keys: &[Key]) -> Result<WithWarnings<Drawing>, Error> {
         let mut warnings = Vec::new();
 
         let bounds = keys
@@ -142,7 +141,10 @@ impl Stencil {
             scale: self.scale,
         };
 
-        Ok((drawing, warnings))
+        Ok(WithWarnings {
+            value: drawing,
+            warnings,
+        })
     }
 }
 
@@ -237,12 +239,12 @@ mod tests {
         let stencil = Stencil::default();
         let keys = [Key::example()];
 
-        let (drawing, warnings) = stencil.draw(&keys).unwrap();
+        let drawing = stencil.draw(&keys).unwrap();
 
         assert_is_close!(drawing.bounds.width(), KeyUnit(1.0));
         assert_is_close!(drawing.bounds.height(), KeyUnit(1.0));
         assert_eq!(drawing.keys.len(), 1);
         assert_is_close!(drawing.scale, stencil.scale);
-        assert!(warnings.is_empty());
+        assert!(drawing.warnings.is_empty());
     }
 }

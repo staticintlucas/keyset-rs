@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::Deref;
 
 use geom::{Mm, Unit as _, Vector};
 
@@ -107,6 +108,31 @@ impl fmt::Display for Warning {
     }
 }
 
+/// A value with associated warnings
+#[derive(Debug, Clone)]
+pub struct WithWarnings<T> {
+    /// The value
+    pub value: T,
+    /// The associated warnings
+    pub warnings: Vec<Warning>,
+}
+
+impl<T> Deref for WithWarnings<T> {
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+impl<T> From<WithWarnings<T>> for (T, Vec<Warning>) {
+    #[inline]
+    fn from(value: WithWarnings<T>) -> Self {
+        (value.value, value.warnings)
+    }
+}
+
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
@@ -161,5 +187,30 @@ mod tests {
                 legend is being squished to fit
             "# }
         );
+    }
+
+    #[test]
+    fn with_warnings_deref() {
+        let result = WithWarnings {
+            value: 42,
+            warnings: vec![],
+        };
+        assert_eq!(*result, 42);
+    }
+
+    #[test]
+    fn with_warnings_into() {
+        let result = WithWarnings {
+            value: 42,
+            warnings: vec![Warning::LegendTooWide {
+                text: "legend lmao".to_string(),
+                legend: Mm(15.0),
+                bounds: Mm(12.0),
+            }],
+        };
+
+        let (value, warnings): (i32, Vec<Warning>) = result.into();
+        assert_eq!(value, 42);
+        assert_eq!(warnings.len(), 1);
     }
 }

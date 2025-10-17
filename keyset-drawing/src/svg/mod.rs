@@ -67,7 +67,7 @@ mod tests {
             ..Default::default()
         };
         let keys = [Key::example()];
-        let (drawing, _warnings) = stencil.draw(&keys).unwrap();
+        let drawing = stencil.draw(&keys).unwrap();
 
         let svg = drawing.to_svg();
 

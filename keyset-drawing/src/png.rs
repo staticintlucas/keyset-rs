@@ -150,7 +150,7 @@ mod tests {
     fn test_to_png() {
         let stencil = Stencil::default();
         let keys = [Key::example()];
-        let (drawing, _warnings) = stencil.draw(&keys).unwrap();
+        let drawing = stencil.draw(&keys).unwrap();
 
         let png = drawing.to_png(96.0).unwrap();
 
