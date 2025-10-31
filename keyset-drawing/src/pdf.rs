@@ -21,8 +21,8 @@ pub fn draw(drawing: &Drawing) -> Vec<u8> {
     let size = Vector::<Dot>::convert_from(drawing.bounds.size());
 
     // Flip origin since PDF has rising Y axis
-    let conv = Conversion::from_translate(0.0, size.y.get()).then_scale(scale, -scale);
-    let size: Vector<PdfUnit> = size * conv;
+    let conv = Conversion::from_translate(0.0, -size.y.get()).then_scale(scale, -scale);
+    let size: Vector<PdfUnit> = (size * conv).abs();
 
     let mut ref_alloc = Ref::new(1);
 
@@ -40,7 +40,7 @@ pub fn draw(drawing: &Drawing) -> Vec<u8> {
 
     writer
         .page(page_id)
-        .media_box(PdfRect::new(0.0, 0.0, size.x.get(), size.x.get()))
+        .media_box(PdfRect::new(0.0, 0.0, size.x.get(), size.y.get()))
         .parent(tree_id)
         .contents(content_id)
         .finish();
