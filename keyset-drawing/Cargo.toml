@@ -41,4 +41,6 @@ svg = { workspace = true, optional = true }
 tiny-skia = { workspace = true, optional = true }
 
 [dev-dependencies]
+hayro.workspace = true
+image-compare.workspace = true
 itertools.workspace = true

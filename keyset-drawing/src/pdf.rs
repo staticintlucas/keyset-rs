@@ -160,22 +160,75 @@ fn draw_path(content: &mut Content, path: &KeyPath, conv: Conversion<PdfUnit, Do
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
+    use std::sync::Arc;
+
+    use hayro::{render, InterpreterSettings, Pdf, RenderSettings};
+    use image_compare::prelude::*;
+    use tiny_skia::{Color, Pixmap, PixmapPaint, Transform};
+
     use key::Key;
 
+    use super::*;
     use crate::Stencil;
 
     #[test]
     fn test_to_pdf() {
-        let stencil = Stencil {
-            show_margin: true, // to give us an unfilled path
-            ..Default::default()
-        };
+        let stencil = Stencil::default();
         let keys = [Key::example()];
         let drawing = stencil.draw(&keys).unwrap();
 
         let pdf = drawing.to_pdf();
         let ai = drawing.to_ai();
 
-        assert_eq!(pdf, ai);
+        let expected = Pixmap::load_png(env!("REFERENCE_PNG")).unwrap();
+        // Set on a white background since PDF doesn't have transparency
+        let expected = {
+            let mut pixmap = Pixmap::new(expected.width(), expected.height()).unwrap();
+            pixmap.fill(Color::WHITE);
+            pixmap.draw_pixmap(
+                0,
+                0,
+                expected.as_ref(),
+                &PixmapPaint::default(),
+                Transform::identity(),
+                None,
+            );
+            pixmap
+        };
+
+        let interpreter_settings = InterpreterSettings {
+            font_resolver: Arc::new(|_| None),
+            warning_sink: Arc::new(|warning| panic!("warning decoding PDF: {warning:?}")),
+        };
+        let render_settings = RenderSettings {
+            x_scale: 96.0 / PDF_DPI,
+            y_scale: 96.0 / PDF_DPI,
+            ..RenderSettings::default()
+        };
+
+        for data in [pdf, ai] {
+            let pdf = Pdf::new(Arc::new(data)).unwrap();
+            assert_eq!(pdf.pages().len(), 1);
+            let page = pdf.pages().first().unwrap();
+
+            let result = render(page, &interpreter_settings, &render_settings);
+
+            assert_eq!(u32::from(result.width()), expected.width());
+            assert_eq!(u32::from(result.height()), expected.height());
+
+            let result = ImageBuffer::from_vec(
+                result.width().into(),
+                result.height().into(),
+                result.take_u8(),
+            )
+            .unwrap();
+            let expected =
+                ImageBuffer::from_vec(expected.width(), expected.height(), expected.clone().take())
+                    .unwrap();
+
+            let sim = image_compare::rgba_hybrid_compare(&result, &expected).unwrap();
+
+            assert!(sim.score > 0.95, "similarity score = {}", sim.score);
+        }
     }
 }

@@ -27,6 +27,8 @@ key = { package = "keyset-key", path = "keyset-key", version = "0.3.2" }
 profile = { package = "keyset-profile", path = "keyset-profile", version = "0.3.2" }
 
 assert_matches = "1.5"
+hayro = { version = "0.4", default-features = false }
+image-compare = "0.5"
 indoc = "2.0"
 isclose = "0.3"
 itertools = "0.14"
