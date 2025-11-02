@@ -128,21 +128,25 @@ fn draw_path(pixmap: &mut Pixmap, path: &KeyPath, conv: Conversion<Pixel, Dot>) 
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
-    use isclose::assert_is_close;
-    use itertools::izip;
-    use tiny_skia::{Color, Pixmap, PremultipliedColorU8};
+    use image_compare::prelude::*;
+    use itertools::Itertools as _;
+    use tiny_skia::Pixmap;
 
     use key::Key;
 
     use crate::Stencil;
 
-    fn premul_u8_to_f32(color: PremultipliedColorU8) -> Color {
-        let [r, g, b, a] =
-            [color.red(), color.green(), color.blue(), color.alpha()].map(|c| f32::from(c) / 255.0);
-        if color.alpha() == 0 {
-            Color::TRANSPARENT
+    fn demultiply([r, g, b, a]: [u8; 4]) -> [u8; 4] {
+        if a == 0 {
+            [0; 4]
         } else {
-            Color::from_rgba(r, g, b, a).unwrap()
+            let [r, g, b, a] = [r, g, b, a].map(f32::from);
+            #[allow(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "we want truncation here"
+            )]
+            [r / a, g / a, b / a, a].map(|c| (c + 0.5) as _)
         }
     }
 
@@ -160,18 +164,29 @@ mod tests {
         assert_eq!(result.width(), expected.width());
         assert_eq!(result.height(), expected.height());
 
-        let result = result.pixels().iter().map(|&c| premul_u8_to_f32(c));
-        let expected = expected.pixels().iter().map(|&c| premul_u8_to_f32(c));
+        // Demultiply the alpha for both images
+        let (res_width, res_height) = (result.width(), result.height());
+        let result = result
+            .take()
+            .into_iter()
+            .tuples::<(u8, u8, u8, u8)>()
+            .map(Into::into)
+            .flat_map(demultiply)
+            .collect();
+        let (exp_width, exp_height) = (expected.width(), expected.height());
+        let expected = expected
+            .take()
+            .into_iter()
+            .tuples::<(u8, u8, u8, u8)>()
+            .map(Into::into)
+            .flat_map(demultiply)
+            .collect();
 
-        for (res, exp) in izip!(result, expected) {
-            let (res_r, res_g, res_b, res_a) = (res.red(), res.green(), res.blue(), res.alpha());
-            let (exp_r, exp_g, exp_b, exp_a) = (exp.red(), exp.green(), exp.blue(), exp.alpha());
+        let result = ImageBuffer::from_vec(res_width, res_height, result).unwrap();
+        let expected = ImageBuffer::from_vec(exp_width, exp_height, expected).unwrap();
 
-            // TODO: what's a good tolerance here?
-            assert_is_close!(res_r, exp_r, abs_tol = 0.025);
-            assert_is_close!(res_g, exp_g, abs_tol = 0.025);
-            assert_is_close!(res_b, exp_b, abs_tol = 0.025);
-            assert_is_close!(res_a, exp_a, abs_tol = 0.025);
-        }
+        let sim = image_compare::rgba_hybrid_compare(&result, &expected).unwrap();
+
+        assert!(sim.score > 0.99, "similarity score = {}", sim.score);
     }
 }
