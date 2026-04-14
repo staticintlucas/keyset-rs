@@ -56,6 +56,7 @@ fn main() {
         );
 
         println!("cargo:rustc-env={env_var}={}", ttf.display());
+        println!("cargo:rerun-if-changed={}", ttf.display());
         println!("cargo:rerun-if-changed={}", ttx.display());
     }
 
