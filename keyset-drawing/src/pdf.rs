@@ -162,9 +162,11 @@ fn draw_path(content: &mut Content, path: &KeyPath, conv: Conversion<PdfUnit, Do
 mod tests {
     use std::sync::Arc;
 
-    use hayro::{render, InterpreterSettings, Pdf, RenderSettings};
+    use hayro::hayro_interpret::InterpreterSettings;
+    use hayro::hayro_syntax::Pdf;
+    use hayro::{render, RenderCache, RenderSettings};
     use image_compare::prelude::*;
-    use tiny_skia::{Color, Pixmap, PixmapPaint, Transform};
+    use tiny_skia::Pixmap;
 
     use key::Key;
 
@@ -181,24 +183,13 @@ mod tests {
         let ai = drawing.to_ai();
 
         let expected = Pixmap::load_png(env!("REFERENCE_PNG")).unwrap();
-        // Set on a white background since PDF doesn't have transparency
-        let expected = {
-            let mut pixmap = Pixmap::new(expected.width(), expected.height()).unwrap();
-            pixmap.fill(Color::WHITE);
-            pixmap.draw_pixmap(
-                0,
-                0,
-                expected.as_ref(),
-                &PixmapPaint::default(),
-                Transform::identity(),
-                None,
-            );
-            pixmap
-        };
 
         let interpreter_settings = InterpreterSettings {
+            // Ensure that we're only testing our font rendering, there should be no text in the PDF
             font_resolver: Arc::new(|_| None),
+            // Fail on any warnings
             warning_sink: Arc::new(|warning| panic!("warning decoding PDF: {warning:?}")),
+            ..Default::default()
         };
         let render_settings = RenderSettings {
             x_scale: 96.0 / PDF_DPI,
@@ -208,10 +199,11 @@ mod tests {
 
         for data in [pdf, ai] {
             let pdf = Pdf::new(Arc::new(data)).unwrap();
+            let render_cache = RenderCache::new();
             assert_eq!(pdf.pages().len(), 1);
             let page = pdf.pages().first().unwrap();
 
-            let result = render(page, &interpreter_settings, &render_settings);
+            let result = render(page, &render_cache, &interpreter_settings, &render_settings);
 
             assert_eq!(u32::from(result.width()), expected.width());
             assert_eq!(u32::from(result.height()), expected.height());
@@ -219,7 +211,7 @@ mod tests {
             let result = ImageBuffer::from_vec(
                 result.width().into(),
                 result.height().into(),
-                result.take_u8(),
+                result.data_as_u8_slice().to_vec(),
             )
             .unwrap();
             let expected =

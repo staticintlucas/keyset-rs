@@ -45,10 +45,7 @@ impl<'a> TextParser<'a> {
     }
 
     fn parse(mut self) -> Text {
-        loop {
-            let Some((first, rest)) = self.input.split_first() else {
-                break;
-            };
+        while let Some((first, rest)) = self.input.split_first() {
             match *first {
                 // Supported HTML tags
                 b'<' => {
