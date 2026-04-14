@@ -19,6 +19,8 @@ jobs:
       uses: dtolnay/rust-toolchain@v1
       with:
         toolchain: ${{ matrix.rust }}
+    - name: Run cargo update
+      run: cargo update
     - name: Run cargo build
       run: cargo build --all-targets
       env:
