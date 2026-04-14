@@ -139,7 +139,10 @@ fn draw_path(content: &mut Content, path: &KeyPath, conv: Conversion<PdfUnit, Do
         let (r, g, b) = outline.color.into();
         _ = content.set_stroke_rgb(r, g, b);
         // Use mean of x and y scales
-        let scale = (f32::hypot(conv.a_xx, conv.a_yx) + f32::hypot(conv.a_xy, conv.a_yy)) / 2.0;
+        let scale = f32::midpoint(
+            f32::hypot(conv.a_xx, conv.a_yx),
+            f32::hypot(conv.a_xy, conv.a_yy),
+        );
         _ = content.set_line_width((outline.width * scale).get());
     }
 

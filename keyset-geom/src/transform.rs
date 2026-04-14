@@ -31,7 +31,7 @@ impl Scale {
     /// Returns the minimum values `x` and `y` components from `self` and `other`
     #[inline]
     #[must_use]
-    pub fn min(self, other: Self) -> Self {
+    pub const fn min(self, other: Self) -> Self {
         Self {
             x: self.x.min(other.x),
             y: self.y.min(other.y),
@@ -41,7 +41,7 @@ impl Scale {
     /// Returns the maximum values `x` and `y` components from `self` and `other`
     #[inline]
     #[must_use]
-    pub fn max(self, other: Self) -> Self {
+    pub const fn max(self, other: Self) -> Self {
         Self {
             x: self.x.max(other.x),
             y: self.y.max(other.y),
@@ -239,7 +239,7 @@ impl Rotate {
     /// Creates a new rotation with the given angle in degrees
     #[inline]
     #[must_use]
-    pub fn degrees(degrees: f32) -> Self {
+    pub const fn degrees(degrees: f32) -> Self {
         Self {
             angle: Angle::degrees(degrees),
         }

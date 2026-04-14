@@ -40,7 +40,7 @@ impl Angle {
     /// Creates a new [`Angle`] with the given value in degrees
     #[inline]
     #[must_use]
-    pub fn degrees(degrees: f32) -> Self {
+    pub const fn degrees(degrees: f32) -> Self {
         Self {
             radians: degrees.to_radians(),
         }
@@ -49,7 +49,7 @@ impl Angle {
     /// Returns the angle as an [`f32`] value measured in degrees
     #[inline]
     #[must_use]
-    pub fn to_degrees(self) -> f32 {
+    pub const fn to_degrees(self) -> f32 {
         self.radians.to_degrees()
     }
 

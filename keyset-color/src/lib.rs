@@ -145,7 +145,7 @@ impl Color {
     /// Returns a mutable slice containing the red, green, and blue components of the colour.
     #[inline]
     #[must_use]
-    pub fn as_mut_slice(&mut self) -> &mut [f32] {
+    pub const fn as_mut_slice(&mut self) -> &mut [f32] {
         &mut self.0
     }
 }
