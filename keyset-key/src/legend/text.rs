@@ -157,7 +157,7 @@ mod tests {
             &["hello"][..],
         ];
 
-        assert!(input.len() == expected.len());
+        assert_eq!(input.len(), expected.len());
         for (inp, exp) in input.iter().zip(expected) {
             let parser = TextParser {
                 result: Vec::new(),
@@ -227,7 +227,7 @@ mod tests {
             },
         ];
 
-        assert!(input.len() == expected.len());
+        assert_eq!(input.len(), expected.len());
         for (inp, exp) in input.iter().zip(expected) {
             let mut parser = TextParser {
                 result: Vec::new(),
