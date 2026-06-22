@@ -237,11 +237,11 @@ mod tests {
         assert!(invalid.is_err());
         assert_eq!(
             format!("{}", invalid.unwrap_err()),
-            format!(concat!(
+            concat!(
                 "unsupported non-standard key size (w: 1.00, h: 1.00, ",
                 "x2: -0.25, y2: 0.00, w2: 1.50, h2: 1.00). Note only ISO enter and stepped caps ",
                 "are supported as special cases"
-            ))
+            )
         );
     }
 

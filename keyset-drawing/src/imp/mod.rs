@@ -163,7 +163,7 @@ impl KeyDrawing {
 #[cfg(test)]
 #[cfg_attr(coverage, coverage(off))]
 mod tests {
-    use geom::{ConvertInto as _, Translate};
+    use geom::Translate;
     use isclose::assert_is_close;
 
     use super::*;
