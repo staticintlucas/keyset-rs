@@ -1,7 +1,6 @@
 mod arc_to_bezier;
 mod segment;
 
-use core::f32;
 use std::ops;
 
 use self::arc_to_bezier::arc_to_bezier;

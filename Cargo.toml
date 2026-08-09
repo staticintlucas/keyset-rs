@@ -107,4 +107,5 @@ unwrap_used = "warn"
 
 enum_glob_use = { level = "allow", priority = 1 }
 
+assert-is-empty = { level = "allow", priority = 1 } # TODO alternative is ugly and annoying
 suboptimal-flops = { level = "allow", priority = 1 } # TODO rust-lang/rust-clippy#6867
